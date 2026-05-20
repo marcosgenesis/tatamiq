@@ -179,15 +179,6 @@ erDiagram
     uuid reverted_by_user_id FK
   }
 
-  CLASS_QR_TOKEN {
-    uuid id PK
-    uuid academy_id FK
-    uuid class_session_id FK
-    string token_hash
-    datetime valid_from
-    datetime valid_until
-  }
-
   ATTENDANCE {
     uuid id PK
     uuid academy_id FK
@@ -211,7 +202,6 @@ erDiagram
   STUDENT_CLASS_GROUP }o--|| CLASS_GROUP : links
   CLASS_GROUP ||--o{ CLASS_SESSION : has
   CLASS_GROUP ||--o{ CLASS_CANCELLATION : cancels_occurrence
-  CLASS_SESSION ||--o{ CLASS_QR_TOKEN : rotates
   CLASS_SESSION ||--o{ ATTENDANCE : has
   STUDENT ||--o{ ATTENDANCE : confirms
 ```
@@ -397,11 +387,12 @@ sequenceDiagram
   Instrutor->>App: Inicia chamada da turma
   App->>DB: Cria ClassSession ativa com início real
   loop A cada 30 segundos
-    App->>DB: Gera ClassQrToken temporário
+    App->>App: Gera token QR assinado stateless
     App-->>Instrutor: Exibe QR atual
   end
   Aluno->>App: Escaneia QR logado
-  App->>DB: Valida token, aula ativa e janela de validade
+  App->>App: Valida assinatura e janela do token
+  App->>DB: Valida aula ativa
   App->>DB: Verifica vínculo aluno-turma
   App->>DB: Cria Attendance source=qr, outside_class_group conforme vínculo
   App-->>Aluno: Confirma presença registrada

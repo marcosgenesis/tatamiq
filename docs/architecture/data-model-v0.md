@@ -12,6 +12,8 @@
 
 Os diagramas Mermaid do modelo de dados e dos fluxos principais estão em [`docs/architecture/diagrams-v0.md`](./diagrams-v0.md).
 
+A stack técnica da V0 está documentada em [`docs/architecture/technical-stack-v0.md`](./technical-stack-v0.md).
+
 ## Entidades principais
 
 ### Academy
@@ -318,25 +320,17 @@ Regras:
 - motivo da invalidação é obrigatório e visível só ao instrutor;
 - aluno vê status invalidada.
 
-### ClassQrToken
+### QR assinado stateless
 
-Token rotativo usado para confirmação de presença.
-
-Campos sugeridos:
-
-- `id`
-- `academy_id`
-- `class_session_id`
-- `token_hash`
-- `valid_from`
-- `valid_until`
-- `created_at`
+O QR Code da aula não exige tabela própria na V0. O backend gera tokens assinados com dados da aula e janela de validade; o aluno envia o token ao confirmar presença, e o backend valida assinatura, validade, aula ativa e regras de confirmação antes de criar a **Attendance**.
 
 Regras:
 
-- renova a cada 30 segundos;
+- token renova a cada 30 segundos;
 - aceita tolerância curta do token anterior;
-- sem geolocalização.
+- sem geolocalização;
+- token não é persistido a cada rotação;
+- apenas a presença confirmada é persistida.
 
 ## Graduação
 
@@ -579,6 +573,4 @@ Regras:
 ## Questões para detalhamento técnico posterior
 
 - Como representar ocorrências recorrentes previstas sem materializar todas as aulas?
-- Qual serviço de storage será usado para fotos e comprovantes?
-- Qual mecanismo de job diário gerará mensalidades e atualizará atrasos?
 - Como implementar isolamento tenant no banco: RLS, camada de aplicação, ou ambos?

@@ -219,11 +219,13 @@ Presença pode ser criada por QR Code ou manualmente pelo instrutor.
 QR Code:
 
 - exibido pelo instrutor durante aula ativa;
+- usa token assinado stateless gerado pelo backend;
 - rotativo a cada 30 segundos;
 - aceita tolerância curta para código anterior;
 - não exige geolocalização na V0;
 - válido durante toda a aula e até 15 minutos após o fim calculado a partir do início real;
-- fecha imediatamente se o instrutor encerrar a aula manualmente.
+- fecha imediatamente se o instrutor encerrar a aula manualmente;
+- não persiste tokens rotativos a cada 30 segundos.
 
 Confirmação por aluno:
 
@@ -556,3 +558,4 @@ A V0 está pronta para piloto quando uma academia consegue operar por uma semana
 - `docs/adr/0003-rotating-qr-attendance.md`
 - `docs/adr/0004-single-academy-solo-instructor-v0.md`
 - `docs/adr/0005-academy-tenant-isolation.md`
+- `docs/adr/0006-v0-technical-stack.md`

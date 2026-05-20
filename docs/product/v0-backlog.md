@@ -131,10 +131,12 @@ Histórias:
 
 Critérios de aceite:
 
+- QR usa token assinado stateless;
 - QR renova a cada 30 segundos;
 - QR aceita tolerância curta do token anterior;
 - QR vale até 15 minutos após fim calculado pelo início real;
-- encerramento manual fecha o QR.
+- encerramento manual fecha o QR;
+- tokens rotativos não são persistidos a cada 30 segundos.
 
 ### Epic 3.2 — Confirmação de presença pelo aluno
 
