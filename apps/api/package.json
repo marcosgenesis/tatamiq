@@ -1,0 +1,40 @@
+{
+  "name": "@tatamiq/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "build": "nest build",
+    "start": "node dist/apps/api/src/main.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --environment node",
+    "openapi:generate": "tsx src/openapi.ts"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.0.1",
+    "@nestjs/core": "^11.0.1",
+    "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/swagger": "latest",
+    "@tatamiq/contracts": "workspace:*",
+    "@tatamiq/database": "workspace:*",
+    "drizzle-orm": "^0.45.2",
+    "nestjs-pino": "latest",
+    "nestjs-zod": "latest",
+    "pino": "latest",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.0",
+    "@nestjs/schematics": "^11.0.0",
+    "@nestjs/testing": "^11.0.1",
+    "@types/node": "latest",
+    "@types/supertest": "latest",
+    "supertest": "latest",
+    "tsx": "latest",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}

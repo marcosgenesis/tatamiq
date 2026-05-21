@@ -1,0 +1,7 @@
+{
+  "extends": "../config/tsconfig.web.json",
+  "compilerOptions": {
+    "allowImportingTsExtensions": true
+  },
+  "include": ["src/**/*.ts"]
+}

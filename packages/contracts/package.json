@@ -1,0 +1,27 @@
+{
+  "name": "@tatamiq/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts",
+    "./generated": "./src/generated/openapi.ts"
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "openapi:generate": "openapi-typescript openapi.json -o src/generated/openapi.ts"
+  },
+  "dependencies": {
+    "openapi-fetch": "latest",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "openapi-typescript": "latest",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}

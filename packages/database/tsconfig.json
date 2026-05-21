@@ -1,0 +1,10 @@
+{
+  "extends": "../config/tsconfig.node.json",
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true
+  },
+  "include": ["src/**/*.ts", "drizzle.config.ts"]
+}
