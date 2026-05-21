@@ -1,0 +1,33 @@
+{
+  "name": "tatamiq",
+  "private": true,
+  "packageManager": "pnpm@10.12.1",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "typecheck": "turbo typecheck",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "test": "turbo test",
+    "openapi:generate": "pnpm --filter @tatamiq/api openapi:generate && pnpm --filter @tatamiq/contracts openapi:generate",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "latest",
+    "@commitlint/cli": "latest",
+    "@commitlint/config-conventional": "latest",
+    "husky": "latest",
+    "lint-staged": "latest",
+    "turbo": "latest",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,json,jsonc,css,md}": [
+      "biome check --write --no-errors-on-unmatched"
+    ]
+  }
+}
