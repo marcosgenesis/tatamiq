@@ -4,7 +4,7 @@
 
 - O sistema é multi-tenant por **Academia** desde o início.
 - Toda entidade operacional deve pertencer direta ou indiretamente a uma academia.
-- A V0 distingue apenas dois papéis: instrutor e aluno.
+- A V0 distingue o **Dono/Instrutor Solo** e o futuro **Acesso do Aluno**; tecnicamente, o instrutor é `owner` da organization da academia.
 - Histórico operacional não deve ser apagado em fluxos normais; usar inativação, arquivamento, cancelamento ou invalidação.
 - Pagamentos são manuais via Pix com comprovante e verificação pelo instrutor.
 
@@ -16,38 +16,17 @@ A stack técnica da V0 está documentada em [`docs/architecture/technical-stack-
 
 ## Entidades principais
 
-### Academy
+### Better Auth User
 
-Representa a academia cliente/tenant.
+Conta de autenticação gerenciada pelo Better Auth.
 
-Campos sugeridos:
+Campos principais gerenciados pela biblioteca:
 
 - `id`
 - `name`
-- `logo_url`
-- `address`
-- `phone_whatsapp`
-- `instagram`
-- `pix_key`
-- `pix_copy_paste`
-- `created_at`
-- `updated_at`
-
-Regras:
-
-- cada instrutor da V0 pertence a uma única academia;
-- dados da academia aparecem apenas para alunos vinculados.
-
-### User
-
-Conta de autenticação.
-
-Campos sugeridos:
-
-- `id`
 - `email`
-- `password_hash`
-- `role`: `instructor | student`
+- credenciais email/senha
+- dados de sessão, verificação e recuperação de senha
 - `created_at`
 - `updated_at`
 
@@ -56,24 +35,56 @@ Regras:
 - email + senha na V0;
 - confirmação de email não bloqueia uso;
 - recuperação de senha deve existir;
-- uma conta de aluno só se vincula a uma academia na V0.
+- Tatamiq não mantém `password_hash` próprio;
+- todo cadastro público da V0 cria uma conta de **Dono/Instrutor Solo**;
+- uma conta de aluno futura só se vincula a uma academia por **Acesso do Aluno**, não por membership administrativo.
 
-### InstructorProfile
+### Better Auth Organization / Academia
 
-Perfil operacional do instrutor.
+Implementação técnica da **Academia** cliente/tenant via Better Auth Organization.
 
-Campos sugeridos:
+Campos principais:
 
 - `id`
-- `user_id`
-- `academy_id`
 - `name`
+- `slug`
+- `logo`
 - `created_at`
 - `updated_at`
 
+Campos adicionais futuros da Academia podem ser adicionados como `additionalFields` da organization:
+
+- `address`
+- `phone_whatsapp`
+- `instagram`
+- `pix_key`
+- `pix_copy_paste`
+
 Regras:
 
-- na V0, uma academia tem um dono/instrutor solo.
+- cada usuário instrutor da V0 pode criar apenas uma organization/academia;
+- exclusão de organization/academia fica desabilitada na V0;
+- dados da academia aparecem apenas para alunos vinculados;
+- a UI e a documentação de domínio usam **Academia**, não “organization”.
+
+### Better Auth Organization Member
+
+Vínculo técnico entre usuário autenticado e **Academia**.
+
+Campos principais gerenciados pela biblioteca:
+
+- `id`
+- `organization_id`
+- `user_id`
+- `role`
+- `created_at`
+
+Regras:
+
+- o criador da academia recebe role `owner`;
+- `owner` representa o **Dono/Instrutor Solo** na V0;
+- alunos com acesso ao app não são organization members;
+- organization invitation fica reservado para futura equipe/staff, não para **Convite do Aluno**.
 
 ### Student
 
@@ -82,8 +93,8 @@ Ficha de aluno dentro da academia.
 Campos sugeridos:
 
 - `id`
-- `academy_id`
-- `user_id` nullable
+- `academy_id` / `organization_id`
+- `auth_user_id` nullable
 - `name`
 - `birth_date`
 - `enrollment_date`
@@ -170,9 +181,9 @@ Aceite simples no primeiro acesso.
 Campos sugeridos:
 
 - `id`
-- `academy_id`
+- `academy_id` / `organization_id`
 - `student_id`
-- `user_id`
+- `auth_user_id`
 - `accepted_at`
 - `terms_version`
 
@@ -562,7 +573,7 @@ Regras:
 
 ## Índices e restrições importantes
 
-- `academy_id` em todas as entidades operacionais.
+- `academy_id` em todas as entidades operacionais, armazenando o id da Better Auth organization da **Academia**.
 - `MonthlyFee`: único por `(academy_id, student_id, reference_month)`.
 - `Attendance`: evitar duas presenças válidas para `(academy_id, class_session_id, student_id)`.
 - `Student`: índice para `(academy_id, status)`, `(academy_id, name)`, `(academy_id, birth_date)`.

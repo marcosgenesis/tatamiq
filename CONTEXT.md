@@ -6,15 +6,19 @@ Sistema para apoiar a operação diária de uma academia/tatame pequeno de artes
 
 **Academia**:
 Organização local que usa o app para gerir alunos, turmas, aulas, presenças, evolução e mensalidades, com nome, logo, endereço, telefone/WhatsApp e Instagram personalizáveis na V0.
-_Avoid_: equipe, filial, federação
+_Avoid_: equipe, filial, federação, organization como termo de UI/domínio
 
 **Dono/Instrutor Solo**:
-Pessoa responsável por administrar e conduzir a maior parte da operação da **Academia**.
-_Avoid_: administrador genérico, operador
+Pessoa responsável por administrar e conduzir a maior parte da operação da **Academia**; na V0, todo cadastro público cria esse tipo de conta.
+_Avoid_: administrador genérico, operador, gestor como papel separado
 
 **Acesso do Aluno**:
 Capacidade do **Aluno**, inclusive menor de idade quando convidado pelo instrutor, consultar as próximas aulas dos próximos 7 dias das suas turmas, as próprias presenças e mensalidades dos últimos 12 meses, evolução e turmas vinculadas, e alterar contato pessoal e foto, sem administrar a academia/tatame; pode ser revogado pelo instrutor sem inativar o aluno, e alterações de telefone e email mantêm auditoria simples.
 _Avoid_: portal completo, conta administrativa
+
+**Onboarding da Academia**:
+Etapa inicial em que um **Dono/Instrutor Solo** autenticado, mas ainda sem **Academia**, informa o nome obrigatório da organização local que irá gerir.
+_Avoid_: app demo, academia implícita, tenant padrão, perfil completo obrigatório
 
 **Convite do Aluno**:
 Link ou código que o instrutor copia e envia por fora para vincular uma conta de acesso ao cadastro de um **Aluno** existente, expirando em 7 dias e podendo ser reenviado.
@@ -162,6 +166,8 @@ _Avoid_: tarefa, lembrete, prontuário, workflow, comentário do aluno, exclusã
 
 ## Relationships
 
+- O cadastro público da V0 cria sempre um **Dono/Instrutor Solo**
+- Um **Dono/Instrutor Solo** sem **Academia** acessa apenas o **Onboarding da Academia**
 - Uma **Academia** tem um **Dono/Instrutor Solo** no MVP
 - Uma **Academia** tem muitos **Alunos**
 - Uma **Academia** pode ter um **Pix da Academia** para orientar pagamentos de mensalidades
@@ -211,5 +217,6 @@ _Avoid_: tarefa, lembrete, prontuário, workflow, comentário do aluno, exclusã
 - "academia", "equipe" e "federação" são conceitos distintos; o MVP modela apenas a **Academia** usuária do app.
 - "modalidade" e "turma" são conceitos distintos: a modalidade é a arte marcial; a turma é um grupo recorrente dentro dela.
 - "aluno" pode significar pessoa matriculada ou usuário que acessa o sistema; resolvido como **Aluno** para a pessoa e **Acesso do Aluno** para a capacidade de entrar no app.
+- "gestor" pode aparecer como linguagem informal na UI, mas não é um papel separado; no domínio, significa **Dono/Instrutor Solo**.
 - Ficha de saúde e contato de emergência ficam fora da V0, apesar de serem comuns em academias.
 - Aluno menor pode aceitar o uso do app na V0; a autorização do responsável fica como responsabilidade operacional da academia/instrutor, pois responsável não tem acesso próprio.
