@@ -1,84 +1,137 @@
-import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
-import { createRootRoute, createRoute, createRouter, RouterProvider } from "@tanstack/react-router";
-import { api } from "./api";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  createRootRoute,
+  createRoute,
+  createRouter,
+  Outlet,
+  RouterProvider,
+} from "@tanstack/react-router";
+import {
+  BeltIcon,
+  Calendar03Icon,
+  CheckmarkSquare03Icon,
+  GraduationScrollIcon,
+  Money03Icon,
+  Settings02Icon,
+  UserMultipleIcon,
+} from "hugeicons-react";
+import { AppShell } from "./components/layout/app-shell";
+import { DashboardPage } from "./features/dashboard/dashboard-page";
+import { PlaceholderPage } from "./features/placeholder/placeholder-page";
 import "./index.css";
 
 const queryClient = new QueryClient();
 
-function StatusPage() {
-  const healthQuery = useQuery({
-    queryKey: ["health"],
-    queryFn: async () => {
-      const { data, error } = await api.GET("/health");
-      if (error) throw error;
-      return data;
-    },
-  });
+const rootRoute = createRootRoute({
+  component: () => (
+    <AppShell>
+      <Outlet />
+    </AppShell>
+  ),
+});
 
-  const academyQuery = useQuery({
-    queryKey: ["academies", "demo"],
-    queryFn: async () => {
-      const { data, error } = await api.GET("/academies/demo");
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  return (
-    <main className="min-h-screen bg-zinc-950 px-6 py-12 text-zinc-50">
-      <section className="mx-auto max-w-3xl rounded-3xl border border-zinc-800 bg-zinc-900/70 p-8 shadow-2xl">
-        <p className="text-sm font-medium uppercase tracking-[0.35em] text-cyan-300">Tatamiq</p>
-        <h1 className="mt-4 text-4xl font-semibold tracking-tight">V0 scaffold</h1>
-        <p className="mt-3 text-zinc-300">
-          Vite, React, TanStack Query, OpenAPI client, NestJS and Drizzle are wired together.
-        </p>
-
-        <div className="mt-8 grid gap-4 md:grid-cols-2">
-          <StatusCard
-            label="API health"
-            loading={healthQuery.isLoading}
-            error={healthQuery.error}
-            value={healthQuery.data?.status ?? "Unavailable"}
-            detail={healthQuery.data?.timestamp}
-          />
-          <StatusCard
-            label="Demo academy"
-            loading={academyQuery.isLoading}
-            error={academyQuery.error}
-            value={academyQuery.data?.name ?? "Unavailable"}
-            detail={academyQuery.data?.id}
-          />
-        </div>
-      </section>
-    </main>
-  );
-}
-
-function StatusCard(props: {
-  label: string;
-  loading: boolean;
-  error: Error | null;
-  value: string;
-  detail?: string | undefined;
-}) {
-  return (
-    <article className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-5">
-      <h2 className="text-sm font-medium text-zinc-400">{props.label}</h2>
-      <p className="mt-3 text-2xl font-semibold">
-        {props.loading ? "Loading…" : props.error ? "Error" : props.value}
-      </p>
-      {props.detail ? <p className="mt-2 break-all text-xs text-zinc-500">{props.detail}</p> : null}
-    </article>
-  );
-}
-
-const rootRoute = createRootRoute({ component: StatusPage });
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
-  component: StatusPage,
+  component: DashboardPage,
 });
-const router = createRouter({ routeTree: rootRoute.addChildren([indexRoute]) });
+
+const studentsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/students",
+  component: () => (
+    <PlaceholderPage
+      title="Alunos"
+      description="Cadastro, status, responsáveis, turmas vinculadas e histórico operacional dos alunos."
+      icon={UserMultipleIcon}
+    />
+  ),
+});
+
+const classGroupsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/class-groups",
+  component: () => (
+    <PlaceholderPage
+      title="Turmas"
+      description="Organização das turmas recorrentes, etiquetas, duração padrão e vínculos de alunos."
+      icon={BeltIcon}
+    />
+  ),
+});
+
+const scheduleRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/schedule",
+  component: () => (
+    <PlaceholderPage
+      title="Agenda"
+      description="Semana de aulas recorrentes, aulas avulsas, cancelamentos e próximas chamadas."
+      icon={Calendar03Icon}
+    />
+  ),
+});
+
+const attendancesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/attendances",
+  component: () => (
+    <PlaceholderPage
+      title="Presenças"
+      description="Registros por QR Code, presenças manuais, presença fora da turma e invalidações."
+      icon={CheckmarkSquare03Icon}
+    />
+  ),
+});
+
+const graduationRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/graduation",
+  component: () => (
+    <PlaceholderPage
+      title="Graduação"
+      description="Faixas, graus, histórico formal de promoções e elegibilidade interna do instrutor."
+      icon={GraduationScrollIcon}
+    />
+  ),
+});
+
+const monthlyFeesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/monthly-fees",
+  component: () => (
+    <PlaceholderPage
+      title="Mensalidades"
+      description="Cobranças mensais, Pix, comprovantes em verificação, ajustes e mensalidades dispensadas."
+      icon={Money03Icon}
+    />
+  ),
+});
+
+const settingsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/settings",
+  component: () => (
+    <PlaceholderPage
+      title="Configurações"
+      description="Dados da academia, Pix da academia, preferências e regras editáveis da operação."
+      icon={Settings02Icon}
+    />
+  ),
+});
+
+const routeTree = rootRoute.addChildren([
+  indexRoute,
+  studentsRoute,
+  classGroupsRoute,
+  scheduleRoute,
+  attendancesRoute,
+  graduationRoute,
+  monthlyFeesRoute,
+  settingsRoute,
+]);
+
+const router = createRouter({ routeTree });
 
 declare module "@tanstack/react-router" {
   interface Register {

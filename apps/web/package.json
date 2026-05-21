@@ -12,13 +12,18 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.15",
     "@tailwindcss/vite": "latest",
     "@tanstack/react-query": "latest",
     "@tanstack/react-router": "latest",
     "@tatamiq/contracts": "workspace:*",
     "@vitejs/plugin-react": "^4.7.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "hugeicons-react": "^0.4.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
+    "tailwind-merge": "^3.6.0",
     "tailwindcss": "latest",
     "vite": "^6.4.2"
   },

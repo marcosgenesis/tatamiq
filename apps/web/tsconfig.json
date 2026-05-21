@@ -2,7 +2,11 @@
   "extends": "../../packages/config/tsconfig.web.json",
   "compilerOptions": {
     "allowImportingTsExtensions": true,
+    "baseUrl": ".",
     "moduleResolution": "Bundler",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
     "types": ["vite/client"]
   },
   "include": ["src"]
