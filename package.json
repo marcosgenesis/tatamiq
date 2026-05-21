@@ -12,6 +12,7 @@
     "lint": "biome check .",
     "format": "biome format --write .",
     "test": "turbo test",
+    "test:e2e": "playwright test",
     "openapi:generate": "pnpm --filter @tatamiq/api openapi:generate && pnpm --filter @tatamiq/contracts openapi:generate",
     "prepare": "husky"
   },
@@ -19,6 +20,7 @@
     "@biomejs/biome": "latest",
     "@commitlint/cli": "latest",
     "@commitlint/config-conventional": "latest",
+    "@playwright/test": "^1.60.0",
     "husky": "latest",
     "lint-staged": "latest",
     "turbo": "latest",
