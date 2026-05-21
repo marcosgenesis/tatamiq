@@ -1,6 +1,12 @@
 # UI foundation plan
 
-**Status:** Planned
+**Status:** Completed
+
+**Completed on:** 2026-05-21
+
+**Implementation commits:**
+
+- `4916584 feat(web): add instructor UI foundation`
 
 ## Goal
 
@@ -13,8 +19,8 @@ Create the first real instructor-facing UI foundation for Tatamiq. This should r
 - The app uses dark mode by default.
 - Light mode is supported technically, but no theme toggle is included yet.
 - Theme tokens use the shadcn/Tailwind v4 style: `:root` for light and `.dark` for dark.
-- ReUI is the primary component library.
-- shadcn/ui is the fallback when ReUI does not provide a needed component.
+- ReUI is the primary component library via shadcn registry configuration.
+- shadcn/ui-style local wrappers are the fallback when ReUI does not provide a needed component.
 - Tailwind remains the styling foundation.
 - Huge Icons is the icon set, using `hugeicons-react`.
 - No Data Grid is needed in this step.
@@ -116,23 +122,23 @@ Expected web assertions:
 
 ## Acceptance criteria
 
-- [ ] ReUI is installed/configured as the primary UI library.
-- [ ] shadcn/ui fallback setup is available or documented if deferred.
-- [ ] `hugeicons-react` is installed and used in navigation.
-- [ ] Theme tokens are added using `:root` and `.dark`.
-- [ ] App starts in dark mode by default.
-- [ ] `AppShell` exists.
-- [ ] Desktop sidebar navigation exists.
-- [ ] Mobile navigation exists.
-- [ ] Routes exist for all V0 instructor navigation items.
-- [ ] Dashboard technical scaffold cards are removed.
-- [ ] Dashboard product placeholder cards are visible.
-- [ ] Playwright smoke test is updated for the new UI.
-- [ ] `pnpm lint` passes.
-- [ ] `pnpm typecheck` passes.
-- [ ] `pnpm test` passes.
-- [ ] `pnpm test:e2e` passes.
-- [ ] `pnpm build` passes.
+- [x] ReUI is installed/configured as the primary UI library.
+- [x] shadcn/ui fallback setup is available or documented if deferred.
+- [x] `hugeicons-react` is installed and used in navigation.
+- [x] Theme tokens are added using `:root` and `.dark`.
+- [x] App starts in dark mode by default.
+- [x] `AppShell` exists.
+- [x] Desktop sidebar navigation exists.
+- [x] Mobile navigation exists.
+- [x] Routes exist for all V0 instructor navigation items.
+- [x] Dashboard technical scaffold cards are removed.
+- [x] Dashboard product placeholder cards are visible.
+- [x] Playwright smoke test is updated for the new UI.
+- [x] `pnpm lint` passes.
+- [x] `pnpm typecheck` passes.
+- [x] `pnpm test` passes.
+- [x] `pnpm test:e2e` passes.
+- [x] `pnpm build` passes.
 
 ## Follow-up after UI foundation
 
