@@ -1,0 +1,10 @@
+import { organizationClient } from "better-auth/client/plugins";
+import { createAuthClient } from "better-auth/react";
+
+const apiUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3100";
+
+export const authClient = createAuthClient({
+  baseURL: apiUrl,
+  basePath: "/auth",
+  plugins: [organizationClient()],
+});

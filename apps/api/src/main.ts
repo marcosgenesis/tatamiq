@@ -5,11 +5,11 @@ import { cleanupOpenApiDoc } from "nestjs-zod";
 import { AppModule } from "./app.module";
 
 export async function createApp() {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const app = await NestFactory.create(AppModule, { bufferLogs: true, bodyParser: false });
   app.useLogger(app.get(Logger));
 
   app.enableCors({
-    origin: process.env.CORS_ORIGIN ?? "http://localhost:5173",
+    origin: process.env.WEB_APP_URL ?? process.env.CORS_ORIGIN ?? "http://localhost:5173",
     credentials: true,
   });
 
@@ -26,7 +26,7 @@ export async function createApp() {
 
 async function bootstrap() {
   const app = await createApp();
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(process.env.PORT ?? 3100);
 }
 
 if (require.main === module) {

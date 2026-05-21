@@ -7,7 +7,12 @@ import { Separator } from "../ui/separator";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "../ui/sheet";
 import { instructorNavigation } from "./navigation";
 
-export function AppShell({ children }: PropsWithChildren) {
+type AppShellProps = PropsWithChildren<{
+  academyName: string;
+  onSignOut: () => void;
+}>;
+
+export function AppShell({ academyName, onSignOut, children }: AppShellProps) {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
@@ -16,8 +21,8 @@ export function AppShell({ children }: PropsWithChildren) {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,color-mix(in_oklch,var(--border)_45%,transparent)_1px,transparent_0)] bg-[length:28px_28px] opacity-25" />
       </div>
 
-      <DesktopSidebar />
-      <MobileTopbar />
+      <DesktopSidebar academyName={academyName} onSignOut={onSignOut} />
+      <MobileTopbar academyName={academyName} onSignOut={onSignOut} />
 
       <main className="relative pb-24 pt-5 md:pb-8 md:pl-72 md:pt-8">
         <div className="mx-auto w-full max-w-7xl px-4 md:px-8">{children}</div>
@@ -28,7 +33,7 @@ export function AppShell({ children }: PropsWithChildren) {
   );
 }
 
-function BrandMark() {
+function BrandMark({ academyName }: { academyName: string }) {
   return (
     <div className="flex items-center gap-3">
       <div className="grid size-10 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-[0_0_32px_color-mix(in_oklch,var(--primary)_40%,transparent)]">
@@ -36,32 +41,43 @@ function BrandMark() {
       </div>
       <div>
         <p className="text-base font-semibold leading-none tracking-tight">Tatamiq</p>
-        <p className="mt-1 text-xs text-sidebar-foreground/55">Academia Demo</p>
+        <p className="mt-1 text-xs text-sidebar-foreground/55">{academyName}</p>
       </div>
     </div>
   );
 }
 
-function DesktopSidebar() {
+function DesktopSidebar({
+  academyName,
+  onSignOut,
+}: {
+  academyName: string;
+  onSignOut: () => void;
+}) {
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 border-r border-sidebar-border bg-sidebar/95 p-5 text-sidebar-foreground backdrop-blur-xl md:flex md:flex-col">
-      <BrandMark />
+      <BrandMark academyName={academyName} />
       <Separator className="my-6 bg-sidebar-border" />
       <NavigationList />
-      <div className="mt-auto rounded-2xl border border-sidebar-border bg-background/30 p-4">
-        <p className="text-xs font-medium uppercase tracking-[0.28em] text-primary">V0 piloto</p>
-        <p className="mt-2 text-sm text-sidebar-foreground/70">
-          Operação diária para presença, graduação e mensalidades.
-        </p>
+      <div className="mt-auto space-y-3 rounded-2xl border border-sidebar-border bg-background/30 p-4">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-[0.28em] text-primary">V0 piloto</p>
+          <p className="mt-2 text-sm text-sidebar-foreground/70">
+            Operação diária para presença, graduação e mensalidades.
+          </p>
+        </div>
+        <Button variant="secondary" className="w-full" onClick={onSignOut}>
+          Sair
+        </Button>
       </div>
     </aside>
   );
 }
 
-function MobileTopbar() {
+function MobileTopbar({ academyName, onSignOut }: { academyName: string; onSignOut: () => void }) {
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-background/88 px-4 py-3 backdrop-blur-xl md:hidden">
-      <BrandMark />
+      <BrandMark academyName={academyName} />
       <Sheet>
         <SheetTrigger asChild>
           <Button variant="secondary" size="icon" aria-label="Abrir navegação">
@@ -70,9 +86,12 @@ function MobileTopbar() {
         </SheetTrigger>
         <SheetContent>
           <SheetTitle className="sr-only">Navegação do instrutor</SheetTitle>
-          <BrandMark />
+          <BrandMark academyName={academyName} />
           <Separator className="my-6 bg-sidebar-border" />
           <NavigationList />
+          <Button variant="secondary" className="mt-6 w-full" onClick={onSignOut}>
+            Sair
+          </Button>
         </SheetContent>
       </Sheet>
     </header>

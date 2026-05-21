@@ -6,10 +6,3 @@ export const healthResponseSchema = z.object({
 });
 
 export type HealthResponse = z.infer<typeof healthResponseSchema>;
-
-export const academyDemoResponseSchema = z.object({
-  id: z.string().uuid(),
-  name: z.string(),
-});
-
-export type AcademyDemoResponse = z.infer<typeof academyDemoResponseSchema>;

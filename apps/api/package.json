@@ -12,12 +12,15 @@
     "openapi:generate": "tsx src/openapi.ts"
   },
   "dependencies": {
+    "@better-auth/drizzle-adapter": "^1.6.11",
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/swagger": "latest",
     "@tatamiq/contracts": "workspace:*",
     "@tatamiq/database": "workspace:*",
+    "@thallesp/nestjs-better-auth": "^2.6.0",
+    "better-auth": "^1.6.11",
     "drizzle-orm": "^0.45.2",
     "nestjs-pino": "latest",
     "nestjs-zod": "latest",

@@ -3,8 +3,11 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
+  Navigate,
   Outlet,
   RouterProvider,
+  useNavigate,
+  useRouterState,
 } from "@tanstack/react-router";
 import {
   BeltIcon,
@@ -15,19 +18,56 @@ import {
   Settings02Icon,
   UserMultipleIcon,
 } from "hugeicons-react";
+import { useEffect } from "react";
 import { AppShell } from "./components/layout/app-shell";
+import {
+  AcademyOnboardingPage,
+  ForgotPasswordPage,
+  ResetPasswordPage,
+  SignInPage,
+  SignUpPage,
+} from "./features/auth/auth-pages";
 import { DashboardPage } from "./features/dashboard/dashboard-page";
 import { PlaceholderPage } from "./features/placeholder/placeholder-page";
 import "./index.css";
+import { authClient } from "./lib/auth-client";
 
 const queryClient = new QueryClient();
+const publicPaths = new Set(["/sign-in", "/sign-up", "/forgot-password", "/reset-password"]);
+const onboardingPath = "/onboarding/academy";
 
 const rootRoute = createRootRoute({
-  component: () => (
-    <AppShell>
-      <Outlet />
-    </AppShell>
-  ),
+  component: RootLayout,
+});
+
+const signInRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/sign-in",
+  component: SignInPage,
+});
+
+const signUpRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/sign-up",
+  component: SignUpPage,
+});
+
+const forgotPasswordRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/forgot-password",
+  component: ForgotPasswordPage,
+});
+
+const resetPasswordRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/reset-password",
+  component: ResetPasswordPage,
+});
+
+const onboardingRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: onboardingPath,
+  component: AcademyOnboardingPage,
 });
 
 const indexRoute = createRoute({
@@ -121,6 +161,11 @@ const settingsRoute = createRoute({
 });
 
 const routeTree = rootRoute.addChildren([
+  signInRoute,
+  signUpRoute,
+  forgotPasswordRoute,
+  resetPasswordRoute,
+  onboardingRoute,
   indexRoute,
   studentsRoute,
   classGroupsRoute,
@@ -137,6 +182,87 @@ declare module "@tanstack/react-router" {
   interface Register {
     router: typeof router;
   }
+}
+
+type OrganizationSummary = {
+  id: string;
+  name: string;
+};
+
+function RootLayout() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const navigate = useNavigate();
+  const session = authClient.useSession();
+  const organizations = authClient.useListOrganizations();
+  const activeOrganization = authClient.useActiveOrganization();
+  const isPublicPath = publicPaths.has(pathname);
+  const isOnboardingPath = pathname === onboardingPath;
+  const firstOrganization = organizations.data?.[0] as OrganizationSummary | undefined;
+  const activeAcademy = activeOrganization.data as OrganizationSummary | null | undefined;
+  const isLoading =
+    session.isPending ||
+    (!!session.data && (organizations.isPending || activeOrganization.isPending));
+
+  useEffect(() => {
+    if (!session.data) return;
+    void organizations.refetch();
+    void activeOrganization.refetch();
+  }, [session.data, organizations.refetch, activeOrganization.refetch]);
+
+  useEffect(() => {
+    if (!session.data || activeAcademy || !firstOrganization) return;
+    void authClient.organization.setActive({ organizationId: firstOrganization.id }).then(() => {
+      void activeOrganization.refetch();
+    });
+  }, [session.data, activeAcademy, firstOrganization, activeOrganization.refetch]);
+
+  async function signOut() {
+    await authClient.signOut();
+    await navigate({ to: "/sign-in" });
+  }
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
+  if (!session.data && !isPublicPath) {
+    return <Navigate to="/sign-in" />;
+  }
+
+  if (session.data && isPublicPath) {
+    return <Navigate to={firstOrganization ? "/" : onboardingPath} />;
+  }
+
+  if (session.data && !firstOrganization && !isOnboardingPath) {
+    return <Navigate to={onboardingPath} />;
+  }
+
+  if (session.data && firstOrganization && isOnboardingPath) {
+    return <Navigate to="/" />;
+  }
+
+  if (isPublicPath || isOnboardingPath) {
+    return <Outlet />;
+  }
+
+  return (
+    <AppShell
+      academyName={activeAcademy?.name ?? firstOrganization?.name ?? "Academia"}
+      onSignOut={signOut}
+    >
+      <Outlet />
+    </AppShell>
+  );
+}
+
+function LoadingScreen() {
+  return (
+    <main className="grid min-h-screen place-items-center bg-background text-foreground">
+      <div className="rounded-3xl border border-border bg-card/80 px-6 py-5 text-sm text-muted-foreground shadow-2xl">
+        Carregando Tatamiq...
+      </div>
+    </main>
+  );
 }
 
 export function App() {

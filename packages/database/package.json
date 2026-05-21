@@ -17,6 +17,7 @@
     "db:seed": "tsx src/seed.ts"
   },
   "dependencies": {
+    "better-auth": "^1.6.11",
     "drizzle-orm": "latest",
     "postgres": "latest"
   },
