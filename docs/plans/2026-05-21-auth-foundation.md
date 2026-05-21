@@ -1,6 +1,12 @@
 # Auth foundation plan
 
-**Status:** Planned
+**Status:** Completed
+
+**Completed on:** 2026-05-21
+
+**Implementation commits:**
+
+- `0b0ac56 feat(auth): add instructor auth foundation`
 
 ## Goal
 
@@ -190,27 +196,27 @@ Browser validation with `agent-browser`:
 
 ## Acceptance criteria
 
-- [ ] Better Auth is configured in the Nest API.
-- [ ] Better Auth Organization plugin represents **Academia** technically.
-- [ ] `@thallesp/nestjs-better-auth` protects Nest routes by default.
-- [ ] Public API routes are explicitly anonymous.
-- [ ] Instructor operational routes can use `@OrgRoles(["owner"])`.
-- [ ] Better Auth Drizzle schema/migration is in place.
-- [ ] Custom `academies` table and `/academies/demo` endpoint are removed.
-- [ ] Dev seed creates `dev@tatamiq.local` and **Academia de Teste**.
-- [ ] Web has `authClient` separate from product `apiClient`.
-- [ ] Public auth pages exist with essential states.
-- [ ] Academy onboarding creates and activates a Better Auth organization.
-- [ ] Private route guards handle unauthenticated and no-academy states.
-- [ ] AppShell shows active academy and provides **Sair**.
-- [ ] Password reset logs full reset URL in dev.
-- [ ] OpenAPI excludes Better Auth endpoints.
-- [ ] Data model docs are updated.
-- [ ] `pnpm lint` passes.
-- [ ] `pnpm typecheck` passes.
-- [ ] `pnpm test` passes.
-- [ ] `pnpm build` passes.
-- [ ] Auth flow is validated with `agent-browser`.
+- [x] Better Auth is configured in the Nest API.
+- [x] Better Auth Organization plugin represents **Academia** technically.
+- [x] `@thallesp/nestjs-better-auth` protects Nest routes by default.
+- [x] Public API routes are explicitly anonymous.
+- [x] Instructor operational routes can use `@OrgRoles(["owner"])`.
+- [x] Better Auth Drizzle schema/migration is in place.
+- [x] Custom `academies` table and `/academies/demo` endpoint are removed.
+- [x] Dev seed creates `dev@tatamiq.local` and **Academia de Teste**.
+- [x] Web has `authClient` separate from product `apiClient`.
+- [x] Public auth pages exist with essential states.
+- [x] Academy onboarding creates and activates a Better Auth organization.
+- [x] Private route guards handle unauthenticated and no-academy states.
+- [x] AppShell shows active academy and provides **Sair**.
+- [x] Password reset logs full reset URL in dev.
+- [x] OpenAPI excludes Better Auth endpoints.
+- [x] Data model docs are updated.
+- [x] `pnpm lint` passes.
+- [x] `pnpm typecheck` passes.
+- [x] `pnpm test` passes.
+- [x] `pnpm build` passes.
+- [x] Auth flow is validated with `agent-browser`.
 
 ## Follow-up after auth foundation
 
