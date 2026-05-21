@@ -1,5 +1,17 @@
 # Monorepo scaffold plan
 
+**Status:** Completed
+
+**Completed on:** 2026-05-20
+
+**Implementation commits:**
+
+- `3c58b6f chore(repo): configure monorepo tooling`
+- `ee525e7 feat(api): scaffold health and demo academy endpoints`
+- `8512d72 feat(web): scaffold status dashboard`
+- `ea84b5d chore(env): add example environment files`
+- `c044342 test(e2e): add scaffold smoke coverage`
+
 ## Goal
 
 Create the first working code scaffold for Tatamiq as a TypeScript monorepo. The scaffold should validate the chosen stack end-to-end without implementing core product domain flows yet.
@@ -145,20 +157,21 @@ GitHub Actions should run on pull requests and pushes to `main`:
 
 The scaffold is complete when:
 
-- `pnpm install` works;
-- `pnpm dev` starts web and API through Turborepo;
-- local Postgres starts with Docker Compose;
-- Drizzle migration runs;
-- seed creates `Academia Demo`;
-- `GET /health` works;
-- `GET /academies/demo` reads from Postgres;
-- web app displays API health and demo academy;
-- OpenAPI file is generated into `packages/contracts/openapi.json`;
-- frontend client is generated from the OpenAPI file;
-- `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build` pass;
-- Husky + lint-staged are installed;
-- commitlint enforces Conventional Commits;
-- GitHub Actions CI is present.
+- [x] `pnpm install` works;
+- [x] `pnpm dev` starts web and API through Turborepo;
+- [x] local Postgres starts with Docker Compose;
+- [x] Drizzle migration runs;
+- [x] seed creates `Academia Demo`;
+- [x] `GET /health` works;
+- [x] `GET /academies/demo` reads from Postgres;
+- [x] web app displays API health and demo academy;
+- [x] OpenAPI file is generated into `packages/contracts/openapi.json`;
+- [x] frontend client is generated from the OpenAPI file;
+- [x] `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build` pass;
+- [x] Husky + lint-staged are installed;
+- [x] commitlint enforces Conventional Commits;
+- [x] GitHub Actions CI is present;
+- [x] Playwright smoke test validates API health, demo academy, and web status dashboard.
 
 ## Follow-up after scaffold
 
