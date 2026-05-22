@@ -288,5 +288,37 @@ export type ClassGroup = typeof classGroups.$inferSelect;
 export type ClassGroupSchedule = typeof classGroupSchedules.$inferSelect;
 export type ClassGroupTag = typeof classGroupTags.$inferSelect;
 export type StudentClassGroup = typeof studentClassGroups.$inferSelect;
+export const attendances = pgTable(
+  "attendances",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    classSessionId: text("class_session_id")
+      .notNull()
+      .references(() => classSessions.id, { onDelete: "cascade" }),
+    studentId: text("student_id")
+      .notNull()
+      .references(() => students.id, { onDelete: "cascade" }),
+    source: text("source").notNull(),
+    invalidatedAt: timestamp("invalidated_at", { withTimezone: true }),
+    invalidatedByUserId: text("invalidated_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    invalidationReason: text("invalidation_reason"),
+    createdByUserId: text("created_by_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("attendances_organization_id_idx").on(table.organizationId),
+    index("attendances_class_session_id_idx").on(table.classSessionId),
+    index("attendances_student_id_idx").on(table.studentId),
+  ],
+);
+
 export type ClassSession = typeof classSessions.$inferSelect;
 export type ClassCancellation = typeof classCancellations.$inferSelect;
+export type Attendance = typeof attendances.$inferSelect;
