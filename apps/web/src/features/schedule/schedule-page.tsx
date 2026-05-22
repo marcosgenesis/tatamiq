@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import type { ClassGroup, ScheduleOccurrence } from "@tatamiq/contracts";
 import type { components } from "@tatamiq/contracts/generated";
 import { Calendar03Icon, PlusSignIcon } from "hugeicons-react";
@@ -65,6 +66,7 @@ export function SchedulePage() {
   });
 
   const occurrenceMutation = useScheduleOccurrenceMutation();
+  const startClassMutation = useStartClassMutation();
   const days = scheduleQuery.data?.days ?? [];
   const hasOccurrences = days.some((day) => day.occurrences.length > 0);
 
@@ -168,6 +170,8 @@ export function SchedulePage() {
                         key={occurrence.id}
                         occurrence={occurrence}
                         onAction={(action) => occurrenceMutation.mutate({ occurrence, action })}
+                        onStart={() => startClassMutation.mutate(occurrence)}
+                        isStarting={startClassMutation.isPending}
                       />
                     ))}
                     {day.occurrences.length === 0 ? (
@@ -239,6 +243,40 @@ function useScheduleOccurrenceMutation() {
       }
     },
     onSuccess: async () => invalidateSchedule(queryClient),
+  });
+}
+
+function useStartClassMutation() {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  return useMutation({
+    mutationFn: async (occurrence: ScheduleOccurrence) => {
+      if (occurrence.source === "recurring" && occurrence.scheduleId) {
+        const { data, error } = await api.POST("/classes/start-recurring", {
+          body: {
+            classGroupId: occurrence.classGroupId,
+            scheduleId: occurrence.scheduleId,
+            scheduledDate: occurrence.scheduledDate,
+          },
+        });
+        if (error) throw new Error("Não foi possível iniciar a aula recorrente.");
+        return data;
+      }
+
+      if (occurrence.source === "ad_hoc" && occurrence.classSessionId) {
+        const { data, error } = await api.POST("/classes/{id}/start-ad-hoc", {
+          params: { path: { id: occurrence.classSessionId } },
+        });
+        if (error) throw new Error("Não foi possível iniciar a aula avulsa.");
+        return data;
+      }
+
+      throw new Error("Ocorrência inválida para iniciar aula.");
+    },
+    onSuccess: async (data) => {
+      await invalidateSchedule(queryClient);
+      if (data?.id) void navigate({ to: `/classes/${data.id}` });
+    },
   });
 }
 
@@ -358,7 +396,44 @@ export function TodayScheduleCard() {
 
 export function TodayRoutineCard() {
   const todayQuery = useQuery({ queryKey: ["schedule", "today"], queryFn: fetchTodaySchedule });
+  const activeQuery = useQuery({
+    queryKey: ["classes", "active"],
+    queryFn: async () => {
+      const { data } = await api.GET("/classes/active");
+      return data ?? null;
+    },
+  });
+  const activeClass = activeQuery.data;
   const occurrence = todayQuery.data?.occurrences.find((item) => item.status === "scheduled");
+
+  if (activeClass) {
+    return (
+      <Card>
+        <CardHeader>
+          <p className="text-sm text-muted-foreground">Aula em andamento</p>
+          <CardTitle>{activeClass.classGroupName}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-2xl border border-primary/30 bg-primary/5 p-5">
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              <Calendar03Icon className="size-5 text-primary" />
+              <span>{activeClass.durationMinutes}min</span>
+            </div>
+            <p className="mt-3 text-sm leading-6 text-muted-foreground">
+              Aula ativa com QR Code disponível para chamada.
+            </p>
+            <a
+              href={`/classes/${activeClass.id}`}
+              className="mt-3 inline-flex h-9 items-center justify-center rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground"
+            >
+              Continuar aula
+            </a>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -378,7 +453,7 @@ export function TodayRoutineCard() {
               </div>
               <p className="mt-3 text-lg font-medium">{occurrence.classGroupName}</p>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Na próxima fatia, o instrutor poderá iniciar a chamada desta aula e abrir o QR Code.
+                Inicie esta aula na agenda para abrir o QR Code de chamada.
               </p>
             </>
           ) : (
@@ -395,12 +470,17 @@ export function TodayRoutineCard() {
 function OccurrenceCard(props: {
   occurrence: ScheduleOccurrence;
   onAction: (action: "cancel" | "reactivate") => void;
+  onStart: () => void;
+  isStarting: boolean;
 }) {
   const occurrence = props.occurrence;
   const isCancelled = occurrence.status === "cancelled";
+  const isActive = occurrence.status === "active";
+  const isEnded = occurrence.status === "ended";
+  const canStart = occurrence.status === "scheduled";
   return (
     <div
-      className={`rounded-2xl border p-3 ${isCancelled ? "border-destructive/40 bg-destructive/5 opacity-75" : "border-border bg-card"}`}
+      className={`rounded-2xl border p-3 ${isCancelled ? "border-destructive/40 bg-destructive/5 opacity-75" : isActive ? "border-primary/40 bg-primary/5" : "border-border bg-card"}`}
     >
       <div className="flex items-start justify-between gap-2">
         <div>
@@ -408,27 +488,69 @@ function OccurrenceCard(props: {
           <h3 className="mt-1 font-medium">{occurrence.classGroupName}</h3>
         </div>
         <Badge
-          variant={isCancelled ? "muted" : occurrence.source === "ad_hoc" ? "warning" : "default"}
+          variant={
+            isCancelled
+              ? "muted"
+              : isActive
+                ? "default"
+                : isEnded
+                  ? "muted"
+                  : occurrence.source === "ad_hoc"
+                    ? "warning"
+                    : "default"
+          }
         >
-          {isCancelled ? "Cancelada" : occurrence.source === "ad_hoc" ? "Avulsa" : "Recorrente"}
+          {isCancelled
+            ? "Cancelada"
+            : isActive
+              ? "Em andamento"
+              : isEnded
+                ? "Encerrada"
+                : occurrence.source === "ad_hoc"
+                  ? "Avulsa"
+                  : "Recorrente"}
         </Badge>
       </div>
       <p className="mt-1 text-xs text-muted-foreground">
-        {occurrence.durationMinutes}min · {occurrence.studentCount} aluno(s)
+        {occurrence.durationMinutes}min ·{" "}
+        {occurrence.attendanceCount != null
+          ? `${occurrence.attendanceCount}/${occurrence.studentCount} presença(s)`
+          : `${occurrence.studentCount} aluno(s)`}
       </p>
       {occurrence.tags.length > 0 ? (
         <p className="mt-2 text-xs text-primary">
           {occurrence.tags.map((tag) => `#${tag}`).join(" ")}
         </p>
       ) : null}
-      <Button
-        className="mt-3 w-full"
-        size="sm"
-        variant="secondary"
-        onClick={() => props.onAction(isCancelled ? "reactivate" : "cancel")}
-      >
-        {isCancelled ? "Reativar" : "Cancelar"}
-      </Button>
+      <div className="mt-3 flex gap-2">
+        {canStart ? (
+          <Button className="flex-1" size="sm" disabled={props.isStarting} onClick={props.onStart}>
+            {props.isStarting ? "Iniciando..." : "Iniciar aula"}
+          </Button>
+        ) : null}
+        {(isActive || isEnded) && occurrence.classSessionId ? (
+          <Button
+            className="flex-1"
+            size="sm"
+            variant={isEnded ? "secondary" : "default"}
+            onClick={() => {
+              window.location.href = `/classes/${occurrence.classSessionId}`;
+            }}
+          >
+            {isEnded ? "Ver presenças" : "Ver aula"}
+          </Button>
+        ) : null}
+        {canStart || isCancelled ? (
+          <Button
+            className="flex-1"
+            size="sm"
+            variant="secondary"
+            onClick={() => props.onAction(isCancelled ? "reactivate" : "cancel")}
+          >
+            {isCancelled ? "Reativar" : "Cancelar"}
+          </Button>
+        ) : null}
+      </div>
     </div>
   );
 }

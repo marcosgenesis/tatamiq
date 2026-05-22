@@ -25,6 +25,7 @@ import {
   SignUpPage,
 } from "./features/auth/auth-pages";
 import { ClassGroupsPage } from "./features/class-groups/class-groups-page";
+import { ActiveClassPage } from "./features/classes/active-class-page";
 import { DashboardPage } from "./features/dashboard/dashboard-page";
 import { PlaceholderPage } from "./features/placeholder/placeholder-page";
 import { SchedulePage } from "./features/schedule/schedule-page";
@@ -94,6 +95,15 @@ const scheduleRoute = createRoute({
   component: SchedulePage,
 });
 
+const classRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/classes/$classId",
+  component: function ClassPageWrapper() {
+    const { classId } = classRoute.useParams();
+    return <ActiveClassPage classId={classId} />;
+  },
+});
+
 const attendancesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/attendances",
@@ -152,6 +162,7 @@ const routeTree = rootRoute.addChildren([
   studentsRoute,
   classGroupsRoute,
   scheduleRoute,
+  classRoute,
   attendancesRoute,
   graduationRoute,
   monthlyFeesRoute,
