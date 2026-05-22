@@ -1,0 +1,610 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { CreateStudentInput, Student } from "@tatamiq/contracts";
+import type { components } from "@tatamiq/contracts/generated";
+import { PlusSignIcon, UserMultipleIcon } from "hugeicons-react";
+import { type FormEvent, type InputHTMLAttributes, useMemo, useState } from "react";
+import { api } from "../../api";
+import { Badge } from "../../components/ui/badge";
+import { Button } from "../../components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+
+const belts = [
+  ["white", "Branca"],
+  ["gray", "Cinza"],
+  ["yellow", "Amarela"],
+  ["orange", "Laranja"],
+  ["green", "Verde"],
+  ["blue", "Azul"],
+  ["purple", "Roxa"],
+  ["brown", "Marrom"],
+  ["black", "Preta"],
+] as const;
+
+type StudentStatusFilter = "active" | "inactive" | "all";
+type StudentPayload = components["schemas"]["UpdateStudentDto"];
+type StudentFormState = {
+  name: string;
+  birthDate: string;
+  enrollmentDate: string;
+  phone: string;
+  email: string;
+  monthlyAmount: string;
+  monthlyDueDay: string;
+  currentBelt: CreateStudentInput["currentBelt"];
+  currentDegree: string;
+  graduationPath: CreateStudentInput["graduationPath"];
+  status: Student["status"];
+  guardianName: string;
+  guardianPhone: string;
+  guardianEmail: string;
+  guardianRelationship: string;
+};
+
+const emptyForm: StudentFormState = {
+  name: "",
+  birthDate: "",
+  enrollmentDate: new Date().toISOString().slice(0, 10),
+  phone: "",
+  email: "",
+  monthlyAmount: "",
+  monthlyDueDay: "",
+  currentBelt: "white",
+  currentDegree: "0",
+  graduationPath: "adult",
+  status: "active",
+  guardianName: "",
+  guardianPhone: "",
+  guardianEmail: "",
+  guardianRelationship: "",
+};
+
+export function StudentsPage() {
+  const queryClient = useQueryClient();
+  const [status, setStatus] = useState<StudentStatusFilter>("active");
+  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [form, setForm] = useState<StudentFormState>(emptyForm);
+  const [error, setError] = useState<string | null>(null);
+
+  const studentsQuery = useQuery({
+    queryKey: ["students", status],
+    queryFn: async () => {
+      const { data, error } = await api.GET("/students", {
+        params: { query: { status } },
+      });
+      if (error) throw new Error("Não foi possível carregar alunos.");
+      return data;
+    },
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: async (input: StudentPayload) => {
+      if (editingStudent) {
+        const { data, error } = await api.PATCH("/students/{id}", {
+          params: { path: { id: editingStudent.id } },
+          body: input,
+        });
+        if (error) throw new Error("Não foi possível salvar o aluno.");
+        return data;
+      }
+
+      const { data, error } = await api.POST("/students", { body: input });
+      if (error) throw new Error("Não foi possível criar o aluno.");
+      return data;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["students"] });
+      closeForm();
+    },
+    onError: (mutationError) => {
+      setError(mutationError instanceof Error ? mutationError.message : "Erro ao salvar aluno.");
+    },
+  });
+
+  const statusMutation = useMutation({
+    mutationFn: async ({ id, action }: { id: string; action: "inactivate" | "reactivate" }) => {
+      if (action === "inactivate") {
+        const { error } = await api.POST("/students/{id}/inactivate", {
+          params: { path: { id } },
+        });
+        if (error) throw new Error("Não foi possível atualizar o status do aluno.");
+        return;
+      }
+
+      const { error } = await api.POST("/students/{id}/reactivate", {
+        params: { path: { id } },
+      });
+      if (error) throw new Error("Não foi possível atualizar o status do aluno.");
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["students"] });
+    },
+  });
+
+  const students = studentsQuery.data?.students ?? [];
+  const summary = studentsQuery.data?.summary;
+  const hasStudents = students.length > 0;
+
+  const title = useMemo(() => {
+    if (status === "active") return "Alunos ativos";
+    if (status === "inactive") return "Alunos inativos";
+    return "Todos os alunos";
+  }, [status]);
+
+  function openCreateForm() {
+    setEditingStudent(null);
+    setForm(emptyForm);
+    setError(null);
+    setIsFormOpen(true);
+  }
+
+  function openEditForm(student: Student) {
+    setEditingStudent(student);
+    setForm({
+      name: student.name,
+      birthDate: student.birthDate,
+      enrollmentDate: student.enrollmentDate,
+      phone: student.phone ?? "",
+      email: student.email ?? "",
+      monthlyAmount: centsToReais(student.monthlyAmountInCents),
+      monthlyDueDay: student.monthlyDueDay?.toString() ?? "",
+      currentBelt: student.currentBelt,
+      currentDegree: student.currentDegree.toString(),
+      graduationPath: student.graduationPath,
+      status: student.status,
+      guardianName: student.guardian?.name ?? "",
+      guardianPhone: student.guardian?.phone ?? "",
+      guardianEmail: student.guardian?.email ?? "",
+      guardianRelationship: student.guardian?.relationship ?? "",
+    });
+    setError(null);
+    setIsFormOpen(true);
+  }
+
+  function closeForm() {
+    setIsFormOpen(false);
+    setEditingStudent(null);
+    setError(null);
+  }
+
+  function updateForm(field: keyof StudentFormState, value: string) {
+    setForm((current) => ({ ...current, [field]: value }));
+  }
+
+  function submitForm(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+
+    const guardian =
+      form.guardianName.trim() || form.guardianPhone.trim()
+        ? {
+            name: form.guardianName,
+            phone: form.guardianPhone,
+            email: form.guardianEmail,
+            relationship: form.guardianRelationship,
+          }
+        : null;
+
+    const payload: StudentPayload = {
+      name: form.name,
+      birthDate: form.birthDate,
+      enrollmentDate: form.enrollmentDate,
+      phone: form.phone,
+      email: form.email,
+      monthlyAmountInCents: reaisToCents(form.monthlyAmount),
+      monthlyDueDay: form.monthlyDueDay ? Number(form.monthlyDueDay) : null,
+      currentBelt: form.currentBelt,
+      currentDegree: Number(form.currentDegree),
+      graduationPath: form.graduationPath,
+      guardian,
+    };
+
+    if (editingStudent) {
+      payload.status = form.status;
+    }
+
+    saveMutation.mutate(payload);
+  }
+
+  return (
+    <div className="space-y-6">
+      <section className="rounded-[2rem] border border-border bg-card p-6 shadow-2xl md:p-8">
+        <Badge variant="muted">Cadastro V0</Badge>
+        <div className="mt-5 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h1 className="text-3xl font-semibold tracking-tight md:text-5xl">Alunos</h1>
+            <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
+              Cadastre alunos, responsáveis, dados de mensalidade e graduação inicial da academia.
+            </p>
+          </div>
+          <Button onClick={openCreateForm}>
+            <PlusSignIcon className="size-4" /> Novo aluno
+          </Button>
+        </div>
+      </section>
+
+      <div className="grid gap-3 md:grid-cols-3">
+        <SummaryCard
+          label="Ativos"
+          value={summary?.active ?? 0}
+          active={status === "active"}
+          onClick={() => setStatus("active")}
+        />
+        <SummaryCard
+          label="Inativos"
+          value={summary?.inactive ?? 0}
+          active={status === "inactive"}
+          onClick={() => setStatus("inactive")}
+        />
+        <SummaryCard
+          label="Total"
+          value={summary?.total ?? 0}
+          active={status === "all"}
+          onClick={() => setStatus("all")}
+        />
+      </div>
+
+      {isFormOpen ? (
+        <StudentForm
+          editingStudent={editingStudent}
+          error={error}
+          form={form}
+          isSaving={saveMutation.isPending}
+          onCancel={closeForm}
+          onSubmit={submitForm}
+          updateForm={updateForm}
+        />
+      ) : null}
+
+      <Card>
+        <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <CardTitle>{title}</CardTitle>
+          <span className="text-sm text-muted-foreground">{students.length} aluno(s)</span>
+        </CardHeader>
+        <CardContent>
+          {studentsQuery.isLoading ? (
+            <p className="text-sm text-muted-foreground">Carregando alunos...</p>
+          ) : null}
+          {studentsQuery.isError ? (
+            <p className="text-sm text-destructive">Não foi possível carregar alunos.</p>
+          ) : null}
+          {!studentsQuery.isLoading && !hasStudents ? (
+            <StudentsEmptyState onCreate={openCreateForm} />
+          ) : null}
+          {hasStudents ? (
+            <div className="overflow-hidden rounded-2xl border border-border">
+              <div className="hidden grid-cols-[1.5fr_0.8fr_0.8fr_0.8fr_1fr_0.9fr] gap-4 border-border border-b bg-muted/50 px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-[0.18em] md:grid">
+                <span>Aluno</span>
+                <span>Status</span>
+                <span>Matrícula</span>
+                <span>Graduação</span>
+                <span>Mensalidade</span>
+                <span>Ações</span>
+              </div>
+              <div className="divide-y divide-border">
+                {students.map((student) => (
+                  <StudentRow
+                    key={student.id}
+                    student={student}
+                    onEdit={() => openEditForm(student)}
+                    onToggleStatus={() =>
+                      statusMutation.mutate({
+                        id: student.id,
+                        action: student.status === "active" ? "inactivate" : "reactivate",
+                      })
+                    }
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function SummaryCard(props: {
+  label: string;
+  value: number;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={props.onClick}
+      className={`rounded-3xl border p-5 text-left transition ${
+        props.active ? "border-primary bg-primary/10" : "border-border bg-card hover:bg-muted/70"
+      }`}
+    >
+      <span className="text-sm text-muted-foreground">{props.label}</span>
+      <strong className="mt-2 block text-3xl">{props.value}</strong>
+    </button>
+  );
+}
+
+function StudentForm(props: {
+  editingStudent: Student | null;
+  error: string | null;
+  form: StudentFormState;
+  isSaving: boolean;
+  onCancel: () => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  updateForm: (field: keyof StudentFormState, value: string) => void;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{props.editingStudent ? "Editar aluno" : "Novo aluno"}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form className="space-y-6" onSubmit={props.onSubmit}>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field
+              label="Nome"
+              required
+              value={props.form.name}
+              onChange={(value) => props.updateForm("name", value)}
+            />
+            <Field
+              label="Nascimento"
+              required
+              placeholder="AAAA-MM-DD"
+              value={props.form.birthDate}
+              onChange={(value) => props.updateForm("birthDate", value)}
+            />
+            <Field
+              label="Matrícula"
+              required
+              placeholder="AAAA-MM-DD"
+              value={props.form.enrollmentDate}
+              onChange={(value) => props.updateForm("enrollmentDate", value)}
+            />
+            <Field
+              label="Telefone"
+              value={props.form.phone}
+              onChange={(value) => props.updateForm("phone", value)}
+            />
+            <Field
+              label="Email"
+              type="email"
+              value={props.form.email}
+              onChange={(value) => props.updateForm("email", value)}
+            />
+            <Field
+              label="Valor mensal (R$)"
+              inputMode="decimal"
+              value={props.form.monthlyAmount}
+              onChange={(value) => props.updateForm("monthlyAmount", value)}
+            />
+            <Field
+              label="Dia de vencimento"
+              type="number"
+              min="1"
+              max="31"
+              value={props.form.monthlyDueDay}
+              onChange={(value) => props.updateForm("monthlyDueDay", value)}
+            />
+            <SelectField
+              label="Faixa"
+              value={props.form.currentBelt}
+              onChange={(value) => props.updateForm("currentBelt", value)}
+              options={belts.map(([value, label]) => ({ value, label }))}
+            />
+            <SelectField
+              label="Grau"
+              value={props.form.currentDegree}
+              onChange={(value) => props.updateForm("currentDegree", value)}
+              options={[0, 1, 2, 3, 4].map((value) => ({
+                value: String(value),
+                label: `${value} grau(s)`,
+              }))}
+            />
+            <SelectField
+              label="Trilha"
+              value={props.form.graduationPath}
+              onChange={(value) => props.updateForm("graduationPath", value)}
+              options={[
+                { value: "adult", label: "Adulto" },
+                { value: "child", label: "Infantil" },
+              ]}
+            />
+            {props.editingStudent ? (
+              <SelectField
+                label="Status"
+                value={props.form.status}
+                onChange={(value) => props.updateForm("status", value)}
+                options={[
+                  { value: "active", label: "Ativo" },
+                  { value: "inactive", label: "Inativo" },
+                ]}
+              />
+            ) : null}
+          </div>
+
+          <div className="rounded-3xl border border-border bg-muted/30 p-4">
+            <h3 className="font-medium">Responsável</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Obrigatório para aluno menor de idade.
+            </p>
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <Field
+                label="Nome do responsável"
+                value={props.form.guardianName}
+                onChange={(value) => props.updateForm("guardianName", value)}
+              />
+              <Field
+                label="Telefone do responsável"
+                value={props.form.guardianPhone}
+                onChange={(value) => props.updateForm("guardianPhone", value)}
+              />
+              <Field
+                label="Email do responsável"
+                type="email"
+                value={props.form.guardianEmail}
+                onChange={(value) => props.updateForm("guardianEmail", value)}
+              />
+              <Field
+                label="Parentesco"
+                value={props.form.guardianRelationship}
+                onChange={(value) => props.updateForm("guardianRelationship", value)}
+              />
+            </div>
+          </div>
+
+          {props.error ? <p className="text-sm text-destructive">{props.error}</p> : null}
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+            <Button type="button" variant="secondary" onClick={props.onCancel}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={props.isSaving}>
+              {props.isSaving ? "Salvando..." : "Salvar aluno"}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
+
+function Field(
+  props: Omit<InputHTMLAttributes<HTMLInputElement>, "onChange"> & {
+    label: string;
+    onChange: (value: string) => void;
+  },
+) {
+  const { label, onChange, ...inputProps } = props;
+  return (
+    <label className="space-y-2 text-sm font-medium">
+      <span>{label}</span>
+      <input
+        {...inputProps}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-11 w-full rounded-2xl border border-border bg-background px-3 text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+      />
+    </label>
+  );
+}
+
+function SelectField(props: {
+  label: string;
+  value: string;
+  options: Array<{ value: string; label: string }>;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="space-y-2 text-sm font-medium">
+      <span>{props.label}</span>
+      <select
+        value={props.value}
+        onChange={(event) => props.onChange(event.target.value)}
+        className="h-11 w-full rounded-2xl border border-border bg-background px-3 text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+      >
+        {props.options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function StudentRow(props: { student: Student; onEdit: () => void; onToggleStatus: () => void }) {
+  const student = props.student;
+  return (
+    <div className="grid gap-3 px-4 py-4 md:grid-cols-[1.5fr_0.8fr_0.8fr_0.8fr_1fr_0.9fr] md:items-center">
+      <div>
+        <strong>{student.name}</strong>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {ageLabel(student.birthDate)} · {student.phone ?? "Sem telefone"}
+        </p>
+        {student.guardian ? (
+          <p className="text-xs text-muted-foreground">Resp.: {student.guardian.name}</p>
+        ) : null}
+      </div>
+      <div>
+        <Badge variant={student.status === "active" ? "default" : "muted"}>
+          {student.status === "active" ? "Ativo" : "Inativo"}
+        </Badge>
+      </div>
+      <span className="text-sm text-muted-foreground">{formatDate(student.enrollmentDate)}</span>
+      <span className="text-sm text-muted-foreground">
+        {beltLabel(student.currentBelt)} · {student.currentDegree}º
+      </span>
+      <span className="text-sm text-muted-foreground">{billingLabel(student)}</span>
+      <div className="flex flex-wrap gap-2">
+        <Button type="button" variant="secondary" size="sm" onClick={props.onEdit}>
+          Editar
+        </Button>
+        <Button type="button" variant="ghost" size="sm" onClick={props.onToggleStatus}>
+          {student.status === "active" ? "Inativar" : "Reativar"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function StudentsEmptyState(props: { onCreate: () => void }) {
+  return (
+    <div className="grid place-items-center rounded-3xl border border-dashed border-border p-10 text-center">
+      <div className="grid size-14 place-items-center rounded-3xl bg-muted text-primary">
+        <UserMultipleIcon className="size-7" />
+      </div>
+      <h2 className="mt-4 font-semibold">Nenhum aluno por aqui ainda</h2>
+      <p className="mt-2 max-w-md text-sm text-muted-foreground">
+        Comece cadastrando o primeiro aluno da academia.
+      </p>
+      <Button className="mt-5" onClick={props.onCreate}>
+        Cadastrar aluno
+      </Button>
+    </div>
+  );
+}
+
+function reaisToCents(value: string): number | null {
+  if (!value.trim()) return null;
+  const normalized = value.replace(".", "").replace(",", ".");
+  return Math.round(Number(normalized) * 100);
+}
+
+function centsToReais(value: number | null): string {
+  if (value === null) return "";
+  return (value / 100).toFixed(2).replace(".", ",");
+}
+
+function formatDate(value: string): string {
+  return new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC" }).format(
+    new Date(`${value}T00:00:00.000Z`),
+  );
+}
+
+function ageLabel(birthDate: string): string {
+  const birth = new Date(`${birthDate}T00:00:00.000Z`);
+  const today = new Date();
+  let age = today.getFullYear() - birth.getUTCFullYear();
+  const birthdayPassed =
+    today.getMonth() > birth.getUTCMonth() ||
+    (today.getMonth() === birth.getUTCMonth() && today.getDate() >= birth.getUTCDate());
+  if (!birthdayPassed) age -= 1;
+  return `${age} anos`;
+}
+
+function beltLabel(value: Student["currentBelt"]): string {
+  return belts.find(([belt]) => belt === value)?.[1] ?? value;
+}
+
+function billingLabel(student: Student): string {
+  if (student.monthlyAmountInCents === null && student.monthlyDueDay === null)
+    return "Sem mensalidade";
+  const amount =
+    student.monthlyAmountInCents === null
+      ? "valor livre"
+      : new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
+          student.monthlyAmountInCents / 100,
+        );
+  const dueDay = student.monthlyDueDay ? `dia ${student.monthlyDueDay}` : "sem vencimento";
+  return `${amount} · ${dueDay}`;
+}

@@ -16,7 +16,6 @@ import {
   GraduationScrollIcon,
   Money03Icon,
   Settings02Icon,
-  UserMultipleIcon,
 } from "hugeicons-react";
 import { useEffect } from "react";
 import { AppShell } from "./components/layout/app-shell";
@@ -29,6 +28,7 @@ import {
 } from "./features/auth/auth-pages";
 import { DashboardPage } from "./features/dashboard/dashboard-page";
 import { PlaceholderPage } from "./features/placeholder/placeholder-page";
+import { StudentsPage } from "./features/students/students-page";
 import "./index.css";
 import { authClient } from "./lib/auth-client";
 
@@ -79,13 +79,7 @@ const indexRoute = createRoute({
 const studentsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/students",
-  component: () => (
-    <PlaceholderPage
-      title="Alunos"
-      description="Cadastro, status, responsáveis, turmas vinculadas e histórico operacional dos alunos."
-      icon={UserMultipleIcon}
-    />
-  ),
+  component: StudentsPage,
 });
 
 const classGroupsRoute = createRoute({

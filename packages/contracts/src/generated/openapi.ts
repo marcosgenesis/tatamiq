@@ -20,6 +20,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/students": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["StudentsController_list"];
+        put?: never;
+        post: operations["StudentsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/students/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["StudentsController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["StudentsController_update"];
+        trace?: never;
+    };
+    "/students/{id}/inactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["StudentsController_inactivate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/students/{id}/reactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["StudentsController_reactivate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -29,6 +93,115 @@ export interface components {
             status: "ok";
             /** Format: date-time */
             timestamp: string;
+        };
+        ListStudentsResponseDto: {
+            students: {
+                id: string;
+                name: string;
+                birthDate: string;
+                enrollmentDate: string;
+                /** @enum {string} */
+                status: "active" | "inactive";
+                /** Format: date-time */
+                inactiveAt: string | null;
+                phone: string | null;
+                email: string | null;
+                monthlyAmountInCents: number | null;
+                monthlyDueDay: number | null;
+                /** @enum {string} */
+                currentBelt: "white" | "gray" | "yellow" | "orange" | "green" | "blue" | "purple" | "brown" | "black";
+                currentDegree: number;
+                /** @enum {string} */
+                graduationPath: "adult" | "child";
+                guardian: {
+                    id: string;
+                    name: string;
+                    phone: string;
+                    email: string | null;
+                    relationship: string | null;
+                } | null;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+            }[];
+            summary: {
+                active: number;
+                inactive: number;
+                total: number;
+            };
+        };
+        CreateStudentDto: {
+            name: string;
+            birthDate: string;
+            enrollmentDate: string;
+            phone?: string | "";
+            email?: string | "";
+            monthlyAmountInCents?: number | null;
+            monthlyDueDay?: number | null;
+            /** @enum {string} */
+            currentBelt: "white" | "gray" | "yellow" | "orange" | "green" | "blue" | "purple" | "brown" | "black";
+            currentDegree: number;
+            /** @enum {string} */
+            graduationPath: "adult" | "child";
+            guardian?: {
+                name: string;
+                phone: string;
+                email?: string | "";
+                relationship?: string | "";
+            } | null;
+        };
+        StudentDto: {
+            id: string;
+            name: string;
+            birthDate: string;
+            enrollmentDate: string;
+            /** @enum {string} */
+            status: "active" | "inactive";
+            /** Format: date-time */
+            inactiveAt: string | null;
+            phone: string | null;
+            email: string | null;
+            monthlyAmountInCents: number | null;
+            monthlyDueDay: number | null;
+            /** @enum {string} */
+            currentBelt: "white" | "gray" | "yellow" | "orange" | "green" | "blue" | "purple" | "brown" | "black";
+            currentDegree: number;
+            /** @enum {string} */
+            graduationPath: "adult" | "child";
+            guardian: {
+                id: string;
+                name: string;
+                phone: string;
+                email: string | null;
+                relationship: string | null;
+            } | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        UpdateStudentDto: {
+            name: string;
+            birthDate: string;
+            enrollmentDate: string;
+            phone?: string | "";
+            email?: string | "";
+            monthlyAmountInCents?: number | null;
+            monthlyDueDay?: number | null;
+            /** @enum {string} */
+            currentBelt: "white" | "gray" | "yellow" | "orange" | "green" | "blue" | "purple" | "brown" | "black";
+            currentDegree: number;
+            /** @enum {string} */
+            graduationPath: "adult" | "child";
+            guardian?: {
+                name: string;
+                phone: string;
+                email?: string | "";
+                relationship?: string | "";
+            } | null;
+            /** @enum {string} */
+            status?: "active" | "inactive";
         };
     };
     responses: never;
@@ -54,6 +227,138 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthResponseDto"];
+                };
+            };
+        };
+    };
+    StudentsController_list: {
+        parameters: {
+            query?: {
+                status?: "active" | "inactive" | "all";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListStudentsResponseDto"];
+                };
+            };
+        };
+    };
+    StudentsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateStudentDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentDto"];
+                };
+            };
+        };
+    };
+    StudentsController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentDto"];
+                };
+            };
+        };
+    };
+    StudentsController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateStudentDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentDto"];
+                };
+            };
+        };
+    };
+    StudentsController_inactivate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentDto"];
+                };
+            };
+        };
+    };
+    StudentsController_reactivate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentDto"];
                 };
             };
         };

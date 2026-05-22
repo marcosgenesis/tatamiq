@@ -4,6 +4,7 @@ import { LoggerModule } from "nestjs-pino";
 import { auth } from "./auth";
 import { DatabaseModule } from "./database/database.module";
 import { HealthController } from "./health/health.controller";
+import { StudentsModule } from "./students/students.module";
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { HealthController } from "./health/health.controller";
       },
     }),
     DatabaseModule,
+    StudentsModule,
   ],
   controllers: [HealthController],
 })

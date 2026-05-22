@@ -1,4 +1,4 @@
-import { boolean, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, date, index, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -89,6 +89,53 @@ export const invitation = pgTable("invitation", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const students = pgTable(
+  "students",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    birthDate: date("birth_date").notNull(),
+    enrollmentDate: date("enrollment_date").notNull(),
+    status: text("status").notNull().default("active"),
+    inactiveAt: timestamp("inactive_at", { withTimezone: true }),
+    phone: text("phone"),
+    email: text("email"),
+    monthlyAmountInCents: integer("monthly_amount_in_cents"),
+    monthlyDueDay: integer("monthly_due_day"),
+    currentBelt: text("current_belt").notNull(),
+    currentDegree: integer("current_degree").notNull().default(0),
+    graduationPath: text("graduation_path").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("students_organization_id_idx").on(table.organizationId),
+    index("students_status_idx").on(table.status),
+  ],
+);
+
+export const studentGuardians = pgTable(
+  "student_guardians",
+  {
+    id: text("id").primaryKey(),
+    studentId: text("student_id")
+      .notNull()
+      .references(() => students.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    phone: text("phone").notNull(),
+    email: text("email"),
+    relationship: text("relationship"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("student_guardians_student_id_idx").on(table.studentId)],
+);
+
 export type AuthUser = typeof user.$inferSelect;
 export type Organization = typeof organization.$inferSelect;
 export type Member = typeof member.$inferSelect;
+export type Student = typeof students.$inferSelect;
+export type StudentGuardian = typeof studentGuardians.$inferSelect;
