@@ -180,6 +180,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/schedule/ad-hoc-classes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ScheduleController_createAdHoc"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schedule/ad-hoc-classes/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ScheduleController_cancelAdHoc"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schedule/ad-hoc-classes/{id}/reactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ScheduleController_reactivateAdHoc"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schedule/recurring-cancellations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ScheduleController_cancelRecurring"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schedule/recurring-cancellations/{id}/revert": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ScheduleController_revertRecurring"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -385,8 +465,15 @@ export interface components {
                 weekday: number;
                 occurrences: {
                     id: string;
+                    /** @enum {string} */
+                    source: "recurring" | "ad_hoc";
+                    /** @enum {string} */
+                    status: "scheduled" | "cancelled";
                     classGroupId: string;
                     classGroupName: string;
+                    scheduleId: string | null;
+                    classSessionId: string | null;
+                    cancellationId: string | null;
                     scheduledDate: string;
                     /** Format: date-time */
                     scheduledStartAt: string;
@@ -401,8 +488,15 @@ export interface components {
             date: string;
             occurrences: {
                 id: string;
+                /** @enum {string} */
+                source: "recurring" | "ad_hoc";
+                /** @enum {string} */
+                status: "scheduled" | "cancelled";
                 classGroupId: string;
                 classGroupName: string;
+                scheduleId: string | null;
+                classSessionId: string | null;
+                cancellationId: string | null;
                 scheduledDate: string;
                 /** Format: date-time */
                 scheduledStartAt: string;
@@ -411,6 +505,36 @@ export interface components {
                 studentCount: number;
                 tags: string[];
             }[];
+        };
+        CreateAdHocClassDto: {
+            classGroupId: string;
+            /** Format: date-time */
+            scheduledStartAt?: string;
+            durationMinutes: number;
+        };
+        ScheduleOccurrenceDto: {
+            id: string;
+            /** @enum {string} */
+            source: "recurring" | "ad_hoc";
+            /** @enum {string} */
+            status: "scheduled" | "cancelled";
+            classGroupId: string;
+            classGroupName: string;
+            scheduleId: string | null;
+            classSessionId: string | null;
+            cancellationId: string | null;
+            scheduledDate: string;
+            /** Format: date-time */
+            scheduledStartAt: string;
+            startTime: string;
+            durationMinutes: number;
+            studentCount: number;
+            tags: string[];
+        };
+        CreateRecurringCancellationDto: {
+            classGroupId: string;
+            scheduleId: string;
+            occurrenceDate: string;
         };
     };
     responses: never;
@@ -740,6 +864,115 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TodayScheduleResponseDto"];
+                };
+            };
+        };
+    };
+    ScheduleController_createAdHoc: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAdHocClassDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleOccurrenceDto"];
+                };
+            };
+        };
+    };
+    ScheduleController_cancelAdHoc: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleOccurrenceDto"];
+                };
+            };
+        };
+    };
+    ScheduleController_reactivateAdHoc: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleOccurrenceDto"];
+                };
+            };
+        };
+    };
+    ScheduleController_cancelRecurring: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateRecurringCancellationDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleOccurrenceDto"];
+                };
+            };
+        };
+    };
+    ScheduleController_revertRecurring: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleOccurrenceDto"];
                 };
             };
         };

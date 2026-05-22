@@ -216,6 +216,69 @@ export const studentClassGroups = pgTable(
   ],
 );
 
+export const classSessions = pgTable(
+  "class_sessions",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    classGroupId: text("class_group_id")
+      .notNull()
+      .references(() => classGroups.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(),
+    scheduledStartAt: timestamp("scheduled_start_at", { withTimezone: true }).notNull(),
+    actualStartAt: timestamp("actual_start_at", { withTimezone: true }),
+    durationMinutes: integer("duration_minutes").notNull(),
+    endedAt: timestamp("ended_at", { withTimezone: true }),
+    status: text("status").notNull().default("scheduled"),
+    cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+    cancelledByUserId: text("cancelled_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    createdByUserId: text("created_by_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("class_sessions_organization_id_idx").on(table.organizationId),
+    index("class_sessions_class_group_id_idx").on(table.classGroupId),
+    index("class_sessions_scheduled_start_at_idx").on(table.scheduledStartAt),
+  ],
+);
+
+export const classCancellations = pgTable(
+  "class_cancellations",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    classGroupId: text("class_group_id")
+      .notNull()
+      .references(() => classGroups.id, { onDelete: "cascade" }),
+    classGroupScheduleId: text("class_group_schedule_id")
+      .notNull()
+      .references(() => classGroupSchedules.id, { onDelete: "cascade" }),
+    occurrenceDate: date("occurrence_date").notNull(),
+    createdByUserId: text("created_by_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    cancelledAt: timestamp("cancelled_at", { withTimezone: true }).notNull().defaultNow(),
+    revertedAt: timestamp("reverted_at", { withTimezone: true }),
+    revertedByUserId: text("reverted_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+  },
+  (table) => [
+    index("class_cancellations_organization_id_idx").on(table.organizationId),
+    index("class_cancellations_class_group_schedule_id_idx").on(table.classGroupScheduleId),
+    index("class_cancellations_occurrence_date_idx").on(table.occurrenceDate),
+  ],
+);
+
 export type AuthUser = typeof user.$inferSelect;
 export type Organization = typeof organization.$inferSelect;
 export type Member = typeof member.$inferSelect;
@@ -225,3 +288,5 @@ export type ClassGroup = typeof classGroups.$inferSelect;
 export type ClassGroupSchedule = typeof classGroupSchedules.$inferSelect;
 export type ClassGroupTag = typeof classGroupTags.$inferSelect;
 export type StudentClassGroup = typeof studentClassGroups.$inferSelect;
+export type ClassSession = typeof classSessions.$inferSelect;
+export type ClassCancellation = typeof classCancellations.$inferSelect;

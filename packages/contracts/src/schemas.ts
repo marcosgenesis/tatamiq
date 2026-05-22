@@ -149,8 +149,13 @@ export type UpdateClassGroupInput = z.infer<typeof updateClassGroupSchema>;
 
 export const scheduleOccurrenceSchema = z.object({
   id: z.string(),
+  source: z.enum(["recurring", "ad_hoc"]),
+  status: z.enum(["scheduled", "cancelled"]),
   classGroupId: z.string(),
   classGroupName: z.string(),
+  scheduleId: z.string().nullable(),
+  classSessionId: z.string().nullable(),
+  cancellationId: z.string().nullable(),
   scheduledDate: z.string(),
   scheduledStartAt: z.string().datetime(),
   startTime: z.string(),
@@ -175,6 +180,20 @@ export const todayScheduleResponseSchema = z.object({
   occurrences: z.array(scheduleOccurrenceSchema),
 });
 
+export const createAdHocClassSchema = z.object({
+  classGroupId: z.string(),
+  scheduledStartAt: z.string().datetime().optional(),
+  durationMinutes: z.number().int().min(15).max(300),
+});
+
+export const createRecurringCancellationSchema = z.object({
+  classGroupId: z.string(),
+  scheduleId: z.string(),
+  occurrenceDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+});
+
 export type ScheduleOccurrence = z.infer<typeof scheduleOccurrenceSchema>;
 export type WeeklyScheduleResponse = z.infer<typeof weeklyScheduleResponseSchema>;
 export type TodayScheduleResponse = z.infer<typeof todayScheduleResponseSchema>;
+export type CreateAdHocClassInput = z.infer<typeof createAdHocClassSchema>;
+export type CreateRecurringCancellationInput = z.infer<typeof createRecurringCancellationSchema>;
