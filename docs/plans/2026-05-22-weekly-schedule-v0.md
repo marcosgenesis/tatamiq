@@ -1,6 +1,12 @@
 # Weekly schedule V0 plan
 
-**Status:** Planned
+**Status:** Completed
+
+**Completed on:** 2026-05-22
+
+**Implementation commits:**
+
+- `88ca392 feat(schedule): add weekly schedule view`
 
 ## Goal
 
@@ -111,17 +117,17 @@ Run validation:
 
 ## Acceptance checklist
 
-- [ ] Schedule API module exists.
-- [ ] Contracts expose weekly schedule DTOs and endpoints.
-- [ ] API endpoints are protected with organization owner role.
-- [ ] API derives tenant from active organization session.
-- [ ] Weekly occurrences are derived from active class groups.
-- [ ] Archived class groups are excluded.
-- [ ] `/schedule` page replaces placeholder.
-- [ ] Weekly navigation works.
-- [ ] Dashboard shows today's recurring classes.
-- [ ] `pnpm lint` passes.
-- [ ] `pnpm typecheck` passes.
-- [ ] `pnpm test` passes.
-- [ ] `pnpm build` passes.
-- [ ] Flow validated with `agent-browser`.
+- [x] Schedule API module exists.
+- [x] Contracts expose weekly schedule DTOs and endpoints.
+- [x] API endpoints are protected with organization owner role.
+- [x] API derives tenant from active organization session.
+- [x] Weekly occurrences are derived from active class groups.
+- [x] Archived class groups are excluded.
+- [x] `/schedule` page replaces placeholder.
+- [x] Weekly navigation works.
+- [x] Dashboard shows today's recurring classes.
+- [x] `pnpm lint` passes.
+- [x] `pnpm typecheck` passes.
+- [x] `pnpm test` passes.
+- [x] `pnpm build` passes.
+- [x] Flow validated with `agent-browser`.
