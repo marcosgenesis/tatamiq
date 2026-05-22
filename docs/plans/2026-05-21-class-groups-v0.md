@@ -1,6 +1,12 @@
 # Class groups V0 plan
 
-**Status:** Planned
+**Status:** Completed
+
+**Completed on:** 2026-05-22
+
+**Implementation commits:**
+
+- `87a479c feat(class-groups): add v0 class group management`
 
 ## Goal
 
@@ -141,22 +147,22 @@ Run validation:
 
 ## Acceptance checklist
 
-- [ ] Database schema and migration exist.
-- [ ] Contracts expose class group DTOs and endpoints.
-- [ ] API endpoints are protected with organization owner role.
-- [ ] API derives tenant from active organization session.
-- [ ] Class group requires at least one schedule entry.
-- [ ] Class group can have free-form tags.
-- [ ] Active students can be linked to class groups.
-- [ ] Removed student links preserve history.
-- [ ] Class group can be edited.
-- [ ] Class group can be archived.
-- [ ] Class group can be reactivated.
-- [ ] `/class-groups` page replaces placeholder.
-- [ ] UI shows active academy class groups only.
-- [ ] Validation messages are in Portuguese.
-- [ ] `pnpm lint` passes.
-- [ ] `pnpm typecheck` passes.
-- [ ] `pnpm test` passes.
-- [ ] `pnpm build` passes.
-- [ ] Flow validated with `agent-browser`.
+- [x] Database schema and migration exist.
+- [x] Contracts expose class group DTOs and endpoints.
+- [x] API endpoints are protected with organization owner role.
+- [x] API derives tenant from active organization session.
+- [x] Class group requires at least one schedule entry.
+- [x] Class group can have free-form tags.
+- [x] Active students can be linked to class groups.
+- [x] Removed student links preserve history.
+- [x] Class group can be edited.
+- [x] Class group can be archived.
+- [x] Class group can be reactivated.
+- [x] `/class-groups` page replaces placeholder.
+- [x] UI shows active academy class groups only.
+- [x] Validation messages are in Portuguese.
+- [x] `pnpm lint` passes.
+- [x] `pnpm typecheck` passes.
+- [x] `pnpm test` passes.
+- [x] `pnpm build` passes.
+- [x] Flow validated with `agent-browser`.
