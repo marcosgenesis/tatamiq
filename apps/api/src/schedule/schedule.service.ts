@@ -7,6 +7,7 @@ import type {
   WeeklyScheduleResponse,
 } from "@tatamiq/contracts";
 import {
+  attendances,
   classCancellations,
   classGroupSchedules,
   classGroups,
@@ -72,6 +73,30 @@ export class ScheduleService {
       classGroupIds,
     );
 
+    const sessionIds = adHocRows
+      .filter((row) => row.status === "active" || row.status === "ended")
+      .map((row) => row.id);
+    const recurringSessionRows = await this.recurringSessionRows(
+      organizationId,
+      weekStart,
+      weekEndExclusive,
+    );
+    const allSessionIds = [...sessionIds, ...recurringSessionRows.map((row) => row.id)];
+    const attendanceCountBySession = await this.attendanceCountBySession(allSessionIds);
+
+    const recurringSessionMap = new Map<
+      string,
+      { id: string; status: string; attendanceCount: number }
+    >();
+    for (const row of recurringSessionRows) {
+      const key = `${row.classGroupId}:${row.scheduledStartAt.toISOString().slice(0, 10)}`;
+      recurringSessionMap.set(key, {
+        id: row.id,
+        status: row.status,
+        attendanceCount: attendanceCountBySession.get(row.id) ?? 0,
+      });
+    }
+
     return {
       weekStart,
       days: days.map((date) => ({
@@ -80,18 +105,28 @@ export class ScheduleService {
         occurrences: [
           ...scheduleRows
             .filter((row) => row.weekday === weekdayForDate(date))
-            .map((row) =>
-              toRecurringOccurrence(
+            .map((row) => {
+              const sessionKey = `${row.classGroupId}:${date}`;
+              const sessionInfo = recurringSessionMap.get(sessionKey);
+              return toRecurringOccurrence(
                 row,
                 date,
                 tagsByClassGroup,
                 studentCountByClassGroup,
                 findActiveRecurringCancellation(recurringCancellations, row.scheduleId, date),
-              ),
-            ),
+                sessionInfo ?? null,
+              );
+            }),
           ...adHocRows
             .filter((row) => row.scheduledStartAt.toISOString().slice(0, 10) === date)
-            .map((row) => toAdHocOccurrence(row, tagsByClassGroup, studentCountByClassGroup)),
+            .map((row) =>
+              toAdHocOccurrence(
+                row,
+                tagsByClassGroup,
+                studentCountByClassGroup,
+                attendanceCountBySession.get(row.id) ?? null,
+              ),
+            ),
         ].sort((a, b) => a.startTime.localeCompare(b.startTime)),
       })),
     };
@@ -217,6 +252,7 @@ export class ScheduleService {
       tagsByClassGroup,
       studentCountByClassGroup,
       cancellation,
+      null,
     );
   }
 
@@ -254,6 +290,7 @@ export class ScheduleService {
       tagsByClassGroup,
       studentCountByClassGroup,
       undefined,
+      null,
     );
   }
 
@@ -386,7 +423,48 @@ export class ScheduleService {
       },
       tagsByClassGroup,
       studentCountByClassGroup,
+      null,
     );
+  }
+
+  private async recurringSessionRows(
+    organizationId: string,
+    fromDate: string,
+    toDateExclusive: string,
+  ) {
+    return this.db
+      .select({
+        id: classSessions.id,
+        classGroupId: classSessions.classGroupId,
+        scheduledStartAt: classSessions.scheduledStartAt,
+        status: classSessions.status,
+      })
+      .from(classSessions)
+      .where(
+        and(
+          eq(classSessions.organizationId, organizationId),
+          eq(classSessions.kind, "recurring"),
+          gte(classSessions.scheduledStartAt, new Date(`${fromDate}T00:00:00.000Z`)),
+          lt(classSessions.scheduledStartAt, new Date(`${toDateExclusive}T00:00:00.000Z`)),
+        ),
+      );
+  }
+
+  private async attendanceCountBySession(sessionIds: string[]): Promise<Map<string, number>> {
+    if (sessionIds.length === 0) return new Map();
+    const rows = await this.db
+      .select({
+        classSessionId: attendances.classSessionId,
+      })
+      .from(attendances)
+      .where(
+        and(inArray(attendances.classSessionId, sessionIds), isNull(attendances.invalidatedAt)),
+      );
+    const map = new Map<string, number>();
+    for (const row of rows) {
+      map.set(row.classSessionId, (map.get(row.classSessionId) ?? 0) + 1);
+    }
+    return map;
   }
 
   private async tagsByClassGroup(classGroupIds: string[]): Promise<Map<string, string[]>> {
@@ -429,22 +507,29 @@ function toRecurringOccurrence(
   date: string,
   tagsByClassGroup: Map<string, string[]>,
   studentCountByClassGroup: Map<string, number>,
-  cancellation?: RecurringCancellationRow,
+  cancellation: RecurringCancellationRow | undefined,
+  sessionInfo: { id: string; status: string; attendanceCount: number } | null,
 ): ScheduleOccurrence {
+  const status = cancellation
+    ? "cancelled"
+    : sessionInfo
+      ? (sessionInfo.status as "active" | "ended")
+      : "scheduled";
   return {
     id: `${row.classGroupId}:${row.scheduleId}:${date}`,
     source: "recurring",
-    status: cancellation ? "cancelled" : "scheduled",
+    status,
     classGroupId: row.classGroupId,
     classGroupName: row.classGroupName,
     scheduleId: row.scheduleId,
-    classSessionId: null,
+    classSessionId: sessionInfo?.id ?? null,
     cancellationId: cancellation?.id ?? null,
     scheduledDate: date,
     scheduledStartAt: toScheduledStartAt(date, row.startTime),
     startTime: row.startTime,
     durationMinutes: row.durationMinutes,
     studentCount: studentCountByClassGroup.get(row.classGroupId) ?? 0,
+    attendanceCount: sessionInfo?.attendanceCount ?? null,
     tags: tagsByClassGroup.get(row.classGroupId) ?? [],
   };
 }
@@ -453,11 +538,12 @@ function toAdHocOccurrence(
   row: AdHocSessionJoin,
   tagsByClassGroup: Map<string, string[]>,
   studentCountByClassGroup: Map<string, number>,
+  attendanceCount: number | null,
 ): ScheduleOccurrence {
   return {
     id: row.id,
     source: "ad_hoc",
-    status: row.status === "cancelled" ? "cancelled" : "scheduled",
+    status: row.status as "scheduled" | "active" | "ended" | "cancelled",
     classGroupId: row.classGroupId,
     classGroupName: row.classGroupName,
     scheduleId: null,
@@ -468,6 +554,7 @@ function toAdHocOccurrence(
     startTime: row.scheduledStartAt.toISOString().slice(11, 16),
     durationMinutes: row.durationMinutes,
     studentCount: studentCountByClassGroup.get(row.classGroupId) ?? 0,
+    attendanceCount,
     tags: tagsByClassGroup.get(row.classGroupId) ?? [],
   };
 }
