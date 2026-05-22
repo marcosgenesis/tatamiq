@@ -134,8 +134,94 @@ export const studentGuardians = pgTable(
   (table) => [index("student_guardians_student_id_idx").on(table.studentId)],
 );
 
+export const classGroups = pgTable(
+  "class_groups",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    defaultDurationMinutes: integer("default_duration_minutes").notNull(),
+    status: text("status").notNull().default("active"),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("class_groups_organization_id_idx").on(table.organizationId),
+    index("class_groups_status_idx").on(table.status),
+  ],
+);
+
+export const classGroupSchedules = pgTable(
+  "class_group_schedules",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    classGroupId: text("class_group_id")
+      .notNull()
+      .references(() => classGroups.id, { onDelete: "cascade" }),
+    weekday: integer("weekday").notNull(),
+    startTime: text("start_time").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("class_group_schedules_organization_id_idx").on(table.organizationId),
+    index("class_group_schedules_class_group_id_idx").on(table.classGroupId),
+  ],
+);
+
+export const classGroupTags = pgTable(
+  "class_group_tags",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    classGroupId: text("class_group_id")
+      .notNull()
+      .references(() => classGroups.id, { onDelete: "cascade" }),
+    label: text("label").notNull(),
+  },
+  (table) => [
+    index("class_group_tags_organization_id_idx").on(table.organizationId),
+    index("class_group_tags_class_group_id_idx").on(table.classGroupId),
+  ],
+);
+
+export const studentClassGroups = pgTable(
+  "student_class_groups",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    studentId: text("student_id")
+      .notNull()
+      .references(() => students.id, { onDelete: "cascade" }),
+    classGroupId: text("class_group_id")
+      .notNull()
+      .references(() => classGroups.id, { onDelete: "cascade" }),
+    activeFrom: date("active_from").notNull(),
+    activeUntil: date("active_until"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("student_class_groups_organization_id_idx").on(table.organizationId),
+    index("student_class_groups_student_id_idx").on(table.studentId),
+    index("student_class_groups_class_group_id_idx").on(table.classGroupId),
+  ],
+);
+
 export type AuthUser = typeof user.$inferSelect;
 export type Organization = typeof organization.$inferSelect;
 export type Member = typeof member.$inferSelect;
 export type Student = typeof students.$inferSelect;
 export type StudentGuardian = typeof studentGuardians.$inferSelect;
+export type ClassGroup = typeof classGroups.$inferSelect;
+export type ClassGroupSchedule = typeof classGroupSchedules.$inferSelect;
+export type ClassGroupTag = typeof classGroupTags.$inferSelect;
+export type StudentClassGroup = typeof studentClassGroups.$inferSelect;

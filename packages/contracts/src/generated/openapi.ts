@@ -84,6 +84,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/class-groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ClassGroupsController_list"];
+        put?: never;
+        post: operations["ClassGroupsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/class-groups/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ClassGroupsController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["ClassGroupsController_update"];
+        trace?: never;
+    };
+    "/class-groups/{id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ClassGroupsController_archive"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/class-groups/{id}/reactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ClassGroupsController_reactivate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -202,6 +266,85 @@ export interface components {
             } | null;
             /** @enum {string} */
             status?: "active" | "inactive";
+        };
+        ListClassGroupsResponseDto: {
+            classGroups: {
+                id: string;
+                name: string;
+                defaultDurationMinutes: number;
+                /** @enum {string} */
+                status: "active" | "archived";
+                /** Format: date-time */
+                archivedAt: string | null;
+                schedules: {
+                    id: string;
+                    weekday: number;
+                    startTime: string;
+                }[];
+                tags: string[];
+                students: {
+                    id: string;
+                    name: string;
+                }[];
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+            }[];
+            summary: {
+                active: number;
+                archived: number;
+                total: number;
+            };
+        };
+        CreateClassGroupDto: {
+            name: string;
+            defaultDurationMinutes: number;
+            schedules: {
+                weekday: number;
+                startTime: string;
+            }[];
+            /** @default [] */
+            tags: string[];
+            /** @default [] */
+            studentIds: string[];
+        };
+        ClassGroupDto: {
+            id: string;
+            name: string;
+            defaultDurationMinutes: number;
+            /** @enum {string} */
+            status: "active" | "archived";
+            /** Format: date-time */
+            archivedAt: string | null;
+            schedules: {
+                id: string;
+                weekday: number;
+                startTime: string;
+            }[];
+            tags: string[];
+            students: {
+                id: string;
+                name: string;
+            }[];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        UpdateClassGroupDto: {
+            name: string;
+            defaultDurationMinutes: number;
+            schedules: {
+                weekday: number;
+                startTime: string;
+            }[];
+            /** @default [] */
+            tags: string[];
+            /** @default [] */
+            studentIds: string[];
+            /** @enum {string} */
+            status?: "active" | "archived";
         };
     };
     responses: never;
@@ -359,6 +502,138 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StudentDto"];
+                };
+            };
+        };
+    };
+    ClassGroupsController_list: {
+        parameters: {
+            query?: {
+                status?: "active" | "archived" | "all";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListClassGroupsResponseDto"];
+                };
+            };
+        };
+    };
+    ClassGroupsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateClassGroupDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClassGroupDto"];
+                };
+            };
+        };
+    };
+    ClassGroupsController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClassGroupDto"];
+                };
+            };
+        };
+    };
+    ClassGroupsController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateClassGroupDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClassGroupDto"];
+                };
+            };
+        };
+    };
+    ClassGroupsController_archive: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClassGroupDto"];
+                };
+            };
+        };
+    };
+    ClassGroupsController_reactivate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClassGroupDto"];
                 };
             };
         };

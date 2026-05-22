@@ -10,7 +10,6 @@ import {
   useRouterState,
 } from "@tanstack/react-router";
 import {
-  BeltIcon,
   Calendar03Icon,
   CheckmarkSquare03Icon,
   GraduationScrollIcon,
@@ -26,6 +25,7 @@ import {
   SignInPage,
   SignUpPage,
 } from "./features/auth/auth-pages";
+import { ClassGroupsPage } from "./features/class-groups/class-groups-page";
 import { DashboardPage } from "./features/dashboard/dashboard-page";
 import { PlaceholderPage } from "./features/placeholder/placeholder-page";
 import { StudentsPage } from "./features/students/students-page";
@@ -85,13 +85,7 @@ const studentsRoute = createRoute({
 const classGroupsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/class-groups",
-  component: () => (
-    <PlaceholderPage
-      title="Turmas"
-      description="Organização das turmas recorrentes, etiquetas, duração padrão e vínculos de alunos."
-      icon={BeltIcon}
-    />
-  ),
+  component: ClassGroupsPage,
 });
 
 const scheduleRoute = createRoute({

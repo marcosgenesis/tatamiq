@@ -89,3 +89,60 @@ export type Student = z.infer<typeof studentSchema>;
 export type ListStudentsResponse = z.infer<typeof listStudentsResponseSchema>;
 export type CreateStudentInput = z.infer<typeof createStudentSchema>;
 export type UpdateStudentInput = z.infer<typeof updateStudentSchema>;
+
+export const classGroupStatusSchema = z.enum(["active", "archived"]);
+
+export const classGroupScheduleSchema = z.object({
+  id: z.string(),
+  weekday: z.number().int().min(0).max(6),
+  startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+});
+
+export const classGroupLinkedStudentSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+});
+
+export const classGroupSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  defaultDurationMinutes: z.number().int().min(15).max(300),
+  status: classGroupStatusSchema,
+  archivedAt: z.string().datetime().nullable(),
+  schedules: z.array(classGroupScheduleSchema),
+  tags: z.array(z.string()),
+  students: z.array(classGroupLinkedStudentSchema),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
+
+export const listClassGroupsResponseSchema = z.object({
+  classGroups: z.array(classGroupSchema),
+  summary: z.object({
+    active: z.number().int().nonnegative(),
+    archived: z.number().int().nonnegative(),
+    total: z.number().int().nonnegative(),
+  }),
+});
+
+export const classGroupScheduleInputSchema = z.object({
+  weekday: z.number().int().min(0).max(6),
+  startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+});
+
+export const createClassGroupSchema = z.object({
+  name: z.string().trim().min(1),
+  defaultDurationMinutes: z.number().int().min(15).max(300),
+  schedules: z.array(classGroupScheduleInputSchema).min(1),
+  tags: z.array(z.string().trim()).optional().default([]),
+  studentIds: z.array(z.string()).optional().default([]),
+});
+
+export const updateClassGroupSchema = createClassGroupSchema.extend({
+  status: classGroupStatusSchema.optional(),
+});
+
+export type ClassGroup = z.infer<typeof classGroupSchema>;
+export type ListClassGroupsResponse = z.infer<typeof listClassGroupsResponseSchema>;
+export type CreateClassGroupInput = z.infer<typeof createClassGroupSchema>;
+export type UpdateClassGroupInput = z.infer<typeof updateClassGroupSchema>;
