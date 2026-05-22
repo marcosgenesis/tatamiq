@@ -12,6 +12,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@base-ui/react": "^1.5.0",
     "@radix-ui/react-dialog": "^1.1.15",
     "@tailwindcss/vite": "latest",
     "@tanstack/react-query": "latest",
@@ -21,6 +22,7 @@
     "better-auth": "^1.6.11",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "geist": "^1.7.1",
     "hugeicons-react": "^0.4.0",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.6",

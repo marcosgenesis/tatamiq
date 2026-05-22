@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import type { PropsWithChildren } from "react";
+import { LogoIcon } from "@/components/logo";
 
 export function AuthLayout({ children }: PropsWithChildren) {
   return (
@@ -12,9 +13,7 @@ export function AuthLayout({ children }: PropsWithChildren) {
 
       <section className="relative w-full max-w-md rounded-[2rem] border border-border bg-card/88 p-6 shadow-2xl backdrop-blur-xl md:p-8">
         <Link to="/" className="mb-8 flex items-center gap-3" aria-label="Tatamiq">
-          <div className="grid size-11 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-[0_0_32px_color-mix(in_oklch,var(--primary)_40%,transparent)]">
-            <span className="text-xl font-black tracking-tighter">T</span>
-          </div>
+          <LogoIcon className="size-11" />
           <div>
             <p className="text-lg font-semibold leading-none tracking-tight">Tatamiq</p>
             <p className="mt-1 text-xs text-muted-foreground">Gestão para o tatame</p>
