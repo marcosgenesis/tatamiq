@@ -10,7 +10,6 @@ import {
   useRouterState,
 } from "@tanstack/react-router";
 import {
-  Calendar03Icon,
   CheckmarkSquare03Icon,
   GraduationScrollIcon,
   Money03Icon,
@@ -28,6 +27,7 @@ import {
 import { ClassGroupsPage } from "./features/class-groups/class-groups-page";
 import { DashboardPage } from "./features/dashboard/dashboard-page";
 import { PlaceholderPage } from "./features/placeholder/placeholder-page";
+import { SchedulePage } from "./features/schedule/schedule-page";
 import { StudentsPage } from "./features/students/students-page";
 import "./index.css";
 import { authClient } from "./lib/auth-client";
@@ -91,13 +91,7 @@ const classGroupsRoute = createRoute({
 const scheduleRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/schedule",
-  component: () => (
-    <PlaceholderPage
-      title="Agenda"
-      description="Semana de aulas recorrentes, aulas avulsas, cancelamentos e próximas chamadas."
-      icon={Calendar03Icon}
-    />
-  ),
+  component: SchedulePage,
 });
 
 const attendancesRoute = createRoute({

@@ -5,6 +5,7 @@ import { auth } from "./auth";
 import { ClassGroupsModule } from "./class-groups/class-groups.module";
 import { DatabaseModule } from "./database/database.module";
 import { HealthController } from "./health/health.controller";
+import { ScheduleModule } from "./schedule/schedule.module";
 import { StudentsModule } from "./students/students.module";
 
 @Module({
@@ -24,6 +25,7 @@ import { StudentsModule } from "./students/students.module";
     DatabaseModule,
     StudentsModule,
     ClassGroupsModule,
+    ScheduleModule,
   ],
   controllers: [HealthController],
 })

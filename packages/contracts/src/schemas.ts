@@ -146,3 +146,35 @@ export type ClassGroup = z.infer<typeof classGroupSchema>;
 export type ListClassGroupsResponse = z.infer<typeof listClassGroupsResponseSchema>;
 export type CreateClassGroupInput = z.infer<typeof createClassGroupSchema>;
 export type UpdateClassGroupInput = z.infer<typeof updateClassGroupSchema>;
+
+export const scheduleOccurrenceSchema = z.object({
+  id: z.string(),
+  classGroupId: z.string(),
+  classGroupName: z.string(),
+  scheduledDate: z.string(),
+  scheduledStartAt: z.string().datetime(),
+  startTime: z.string(),
+  durationMinutes: z.number().int().positive(),
+  studentCount: z.number().int().nonnegative(),
+  tags: z.array(z.string()),
+});
+
+export const scheduleDaySchema = z.object({
+  date: z.string(),
+  weekday: z.number().int().min(0).max(6),
+  occurrences: z.array(scheduleOccurrenceSchema),
+});
+
+export const weeklyScheduleResponseSchema = z.object({
+  weekStart: z.string(),
+  days: z.array(scheduleDaySchema),
+});
+
+export const todayScheduleResponseSchema = z.object({
+  date: z.string(),
+  occurrences: z.array(scheduleOccurrenceSchema),
+});
+
+export type ScheduleOccurrence = z.infer<typeof scheduleOccurrenceSchema>;
+export type WeeklyScheduleResponse = z.infer<typeof weeklyScheduleResponseSchema>;
+export type TodayScheduleResponse = z.infer<typeof todayScheduleResponseSchema>;

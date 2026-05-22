@@ -389,6 +389,55 @@
           "class-groups"
         ]
       }
+    },
+    "/schedule/week": {
+      "get": {
+        "operationId": "ScheduleController_week",
+        "parameters": [
+          {
+            "name": "weekStart",
+            "required": false,
+            "in": "query",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeeklyScheduleResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "schedule"
+        ]
+      }
+    },
+    "/schedule/today": {
+      "get": {
+        "operationId": "ScheduleController_today",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodayScheduleResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "schedule"
+        ]
+      }
     }
   },
   "info": {
@@ -1359,6 +1408,163 @@
           "name",
           "defaultDurationMinutes",
           "schedules"
+        ]
+      },
+      "WeeklyScheduleResponseDto": {
+        "type": "object",
+        "properties": {
+          "weekStart": {
+            "type": "string"
+          },
+          "days": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "date": {
+                  "type": "string"
+                },
+                "weekday": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 6
+                },
+                "occurrences": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "classGroupId": {
+                        "type": "string"
+                      },
+                      "classGroupName": {
+                        "type": "string"
+                      },
+                      "scheduledDate": {
+                        "type": "string"
+                      },
+                      "scheduledStartAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                      },
+                      "startTime": {
+                        "type": "string"
+                      },
+                      "durationMinutes": {
+                        "type": "integer",
+                        "exclusiveMinimum": true,
+                        "maximum": 9007199254740991,
+                        "minimum": 0
+                      },
+                      "studentCount": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "tags": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "classGroupId",
+                      "classGroupName",
+                      "scheduledDate",
+                      "scheduledStartAt",
+                      "startTime",
+                      "durationMinutes",
+                      "studentCount",
+                      "tags"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "date",
+                "weekday",
+                "occurrences"
+              ]
+            }
+          }
+        },
+        "required": [
+          "weekStart",
+          "days"
+        ]
+      },
+      "TodayScheduleResponseDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string"
+          },
+          "occurrences": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "classGroupId": {
+                  "type": "string"
+                },
+                "classGroupName": {
+                  "type": "string"
+                },
+                "scheduledDate": {
+                  "type": "string"
+                },
+                "scheduledStartAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                },
+                "startTime": {
+                  "type": "string"
+                },
+                "durationMinutes": {
+                  "type": "integer",
+                  "exclusiveMinimum": true,
+                  "maximum": 9007199254740991,
+                  "minimum": 0
+                },
+                "studentCount": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "tags": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "classGroupId",
+                "classGroupName",
+                "scheduledDate",
+                "scheduledStartAt",
+                "startTime",
+                "durationMinutes",
+                "studentCount",
+                "tags"
+              ]
+            }
+          }
+        },
+        "required": [
+          "date",
+          "occurrences"
         ]
       }
     }

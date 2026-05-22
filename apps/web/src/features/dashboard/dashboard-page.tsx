@@ -1,6 +1,5 @@
 import {
   Alert02Icon,
-  Calendar03Icon,
   CheckmarkBadge02Icon,
   GraduationScrollIcon,
   Money03Icon,
@@ -14,15 +13,9 @@ import {
   CardHeader,
   CardTitle,
 } from "../../components/ui/card";
+import { TodayRoutineCard, TodayScheduleCard } from "../schedule/schedule-page";
 
 const cards = [
-  {
-    title: "Aulas de hoje",
-    value: "3",
-    description: "Próxima turma às 19:00",
-    icon: Calendar03Icon,
-    tone: "default" as const,
-  },
   {
     title: "Pagamentos em verificação",
     value: "4",
@@ -69,6 +62,7 @@ export function DashboardPage() {
       </section>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <TodayScheduleCard />
         {cards.map((card) => {
           const Icon = card.icon;
 
@@ -94,25 +88,7 @@ export function DashboardPage() {
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[1.4fr_0.6fr]">
-        <Card>
-          <CardHeader>
-            <CardDescription>Rotina de hoje</CardDescription>
-            <CardTitle>Chamada rápida preparada para o próximo treino</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="rounded-2xl border border-border bg-background/45 p-5">
-              <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                <Calendar03Icon className="size-5 text-primary" />
-                <span>19:00 · Adulto iniciante · duração 60min</span>
-              </div>
-              <p className="mt-3 text-lg font-medium">Jiu-Jitsu No-Gi — Turma noite</p>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Quando a aula começar, o instrutor poderá abrir a chamada e exibir o QR Code
-                dinâmico para os alunos.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <TodayRoutineCard />
 
         <Card>
           <CardHeader>
