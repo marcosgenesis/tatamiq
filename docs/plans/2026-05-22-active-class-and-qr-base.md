@@ -1,6 +1,6 @@
 # Active class and QR base plan
 
-**Status:** Planned
+**Status:** Complete
 
 ## Goal
 
