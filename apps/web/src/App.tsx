@@ -16,7 +16,8 @@ import {
   Settings02Icon,
 } from "hugeicons-react";
 import { useEffect } from "react";
-import { AppShell } from "./components/layout/app-shell";
+import { AppShell } from "./components/app-shell";
+import { LogoIcon } from "./components/logo";
 import {
   AcademyOnboardingPage,
   ForgotPasswordPage,
@@ -238,9 +239,27 @@ function RootLayout() {
     return <Outlet />;
   }
 
+  const allAcademies = (organizations.data ?? []).map((org: OrganizationSummary) => ({
+    id: org.id,
+    name: org.name,
+  }));
+
+  const currentAcademy = activeAcademy
+    ? { id: activeAcademy.id, name: activeAcademy.name }
+    : firstOrganization
+      ? { id: firstOrganization.id, name: firstOrganization.name }
+      : { id: "", name: "Academia" };
+
+  async function switchAcademy(orgId: string) {
+    await authClient.organization.setActive({ organizationId: orgId });
+    await activeOrganization.refetch();
+  }
+
   return (
     <AppShell
-      academyName={activeAcademy?.name ?? firstOrganization?.name ?? "Academia"}
+      activeAcademy={currentAcademy}
+      academies={allAcademies}
+      onSwitchAcademy={switchAcademy}
       onSignOut={signOut}
     >
       <Outlet />
@@ -251,8 +270,9 @@ function RootLayout() {
 function LoadingScreen() {
   return (
     <main className="grid min-h-screen place-items-center bg-background text-foreground">
-      <div className="rounded-3xl border border-border bg-card/80 px-6 py-5 text-sm text-muted-foreground shadow-2xl">
-        Carregando Tatamiq...
+      <div className="flex flex-col items-center gap-4">
+        <LogoIcon className="size-12" />
+        <p className="text-sm text-muted-foreground">Carregando...</p>
       </div>
     </main>
   );
