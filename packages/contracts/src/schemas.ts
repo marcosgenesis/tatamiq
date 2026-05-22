@@ -147,10 +147,43 @@ export type ListClassGroupsResponse = z.infer<typeof listClassGroupsResponseSche
 export type CreateClassGroupInput = z.infer<typeof createClassGroupSchema>;
 export type UpdateClassGroupInput = z.infer<typeof updateClassGroupSchema>;
 
+export const classSessionStatusSchema = z.enum(["scheduled", "active", "ended", "cancelled"]);
+
+export const classSessionSchema = z.object({
+  id: z.string(),
+  classGroupId: z.string(),
+  classGroupName: z.string(),
+  kind: z.enum(["recurring", "ad_hoc"]),
+  status: classSessionStatusSchema,
+  scheduledStartAt: z.string().datetime(),
+  actualStartAt: z.string().datetime().nullable(),
+  durationMinutes: z.number().int().positive(),
+  endedAt: z.string().datetime().nullable(),
+});
+
+export const startRecurringClassSchema = z.object({
+  classGroupId: z.string(),
+  scheduleId: z.string(),
+  scheduledDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+});
+
+export const qrTokenResponseSchema = z.object({
+  token: z.string(),
+  previousToken: z.string(),
+  issuedAt: z.string().datetime(),
+  expiresAt: z.string().datetime(),
+  windowSeconds: z.number().int().positive(),
+});
+
+export type ClassSessionStatus = z.infer<typeof classSessionStatusSchema>;
+export type ClassSession = z.infer<typeof classSessionSchema>;
+export type StartRecurringClassInput = z.infer<typeof startRecurringClassSchema>;
+export type QrTokenResponse = z.infer<typeof qrTokenResponseSchema>;
+
 export const scheduleOccurrenceSchema = z.object({
   id: z.string(),
   source: z.enum(["recurring", "ad_hoc"]),
-  status: z.enum(["scheduled", "cancelled"]),
+  status: z.enum(["scheduled", "active", "ended", "cancelled"]),
   classGroupId: z.string(),
   classGroupName: z.string(),
   scheduleId: z.string().nullable(),
@@ -161,6 +194,7 @@ export const scheduleOccurrenceSchema = z.object({
   startTime: z.string(),
   durationMinutes: z.number().int().positive(),
   studentCount: z.number().int().nonnegative(),
+  attendanceCount: z.number().int().nonnegative().nullable(),
   tags: z.array(z.string()),
 });
 
@@ -197,3 +231,47 @@ export type WeeklyScheduleResponse = z.infer<typeof weeklyScheduleResponseSchema
 export type TodayScheduleResponse = z.infer<typeof todayScheduleResponseSchema>;
 export type CreateAdHocClassInput = z.infer<typeof createAdHocClassSchema>;
 export type CreateRecurringCancellationInput = z.infer<typeof createRecurringCancellationSchema>;
+
+export const attendanceSourceSchema = z.enum(["qr", "manual"]);
+
+export const attendanceSchema = z.object({
+  id: z.string(),
+  studentId: z.string(),
+  studentName: z.string(),
+  source: attendanceSourceSchema,
+  isOutOfGroup: z.boolean(),
+  invalidatedAt: z.string().datetime().nullable(),
+  invalidationReason: z.string().nullable(),
+  createdAt: z.string().datetime(),
+});
+
+export const attendanceRosterStudentSchema = z.object({
+  studentId: z.string(),
+  studentName: z.string(),
+  isOutOfGroup: z.boolean(),
+  attendance: attendanceSchema.nullable(),
+});
+
+export const attendanceRosterResponseSchema = z.object({
+  classSessionId: z.string(),
+  roster: z.array(attendanceRosterStudentSchema),
+  summary: z.object({
+    present: z.number().int().nonnegative(),
+    total: z.number().int().nonnegative(),
+  }),
+});
+
+export const addManualAttendanceSchema = z.object({
+  studentId: z.string(),
+});
+
+export const invalidateAttendanceSchema = z.object({
+  reason: z.string().trim().min(1),
+});
+
+export type AttendanceSource = z.infer<typeof attendanceSourceSchema>;
+export type Attendance = z.infer<typeof attendanceSchema>;
+export type AttendanceRosterStudent = z.infer<typeof attendanceRosterStudentSchema>;
+export type AttendanceRosterResponse = z.infer<typeof attendanceRosterResponseSchema>;
+export type AddManualAttendanceInput = z.infer<typeof addManualAttendanceSchema>;
+export type InvalidateAttendanceInput = z.infer<typeof invalidateAttendanceSchema>;

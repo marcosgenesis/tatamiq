@@ -584,6 +584,286 @@
           "schedule"
         ]
       }
+    },
+    "/classes/start-recurring": {
+      "post": {
+        "operationId": "ClassesController_startRecurring",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartRecurringClassDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassSessionDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "classes"
+        ]
+      }
+    },
+    "/classes/{id}/start-ad-hoc": {
+      "post": {
+        "operationId": "ClassesController_startAdHoc",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassSessionDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "classes"
+        ]
+      }
+    },
+    "/classes/active": {
+      "get": {
+        "operationId": "ClassesController_getActive",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassSessionDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "classes"
+        ]
+      }
+    },
+    "/classes/{id}": {
+      "get": {
+        "operationId": "ClassesController_getById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassSessionDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "classes"
+        ]
+      }
+    },
+    "/classes/{id}/qr-token": {
+      "get": {
+        "operationId": "ClassesController_getQrToken",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QrTokenResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "classes"
+        ]
+      }
+    },
+    "/classes/{id}/end": {
+      "post": {
+        "operationId": "ClassesController_end",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassSessionDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "classes"
+        ]
+      }
+    },
+    "/classes/{classSessionId}/attendances": {
+      "get": {
+        "operationId": "AttendancesController_roster",
+        "parameters": [
+          {
+            "name": "classSessionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttendanceRosterResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "attendances"
+        ]
+      },
+      "post": {
+        "operationId": "AttendancesController_addManual",
+        "parameters": [
+          {
+            "name": "classSessionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddManualAttendanceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttendanceDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "attendances"
+        ]
+      }
+    },
+    "/classes/{classSessionId}/attendances/{attendanceId}/invalidate": {
+      "post": {
+        "operationId": "AttendancesController_invalidate",
+        "parameters": [
+          {
+            "name": "attendanceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "classSessionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvalidateAttendanceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttendanceDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "attendances"
+        ]
+      }
     }
   },
   "info": {
@@ -1594,6 +1874,8 @@
                         "type": "string",
                         "enum": [
                           "scheduled",
+                          "active",
+                          "ended",
                           "cancelled"
                         ]
                       },
@@ -1637,6 +1919,12 @@
                         "minimum": 0,
                         "maximum": 9007199254740991
                       },
+                      "attendanceCount": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991,
+                        "nullable": true
+                      },
                       "tags": {
                         "type": "array",
                         "items": {
@@ -1658,6 +1946,7 @@
                       "startTime",
                       "durationMinutes",
                       "studentCount",
+                      "attendanceCount",
                       "tags"
                     ]
                   }
@@ -1701,6 +1990,8 @@
                   "type": "string",
                   "enum": [
                     "scheduled",
+                    "active",
+                    "ended",
                     "cancelled"
                   ]
                 },
@@ -1744,6 +2035,12 @@
                   "minimum": 0,
                   "maximum": 9007199254740991
                 },
+                "attendanceCount": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991,
+                  "nullable": true
+                },
                 "tags": {
                   "type": "array",
                   "items": {
@@ -1765,6 +2062,7 @@
                 "startTime",
                 "durationMinutes",
                 "studentCount",
+                "attendanceCount",
                 "tags"
               ]
             }
@@ -1814,6 +2112,8 @@
             "type": "string",
             "enum": [
               "scheduled",
+              "active",
+              "ended",
               "cancelled"
             ]
           },
@@ -1857,6 +2157,12 @@
             "minimum": 0,
             "maximum": 9007199254740991
           },
+          "attendanceCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "nullable": true
+          },
           "tags": {
             "type": "array",
             "items": {
@@ -1878,6 +2184,7 @@
           "startTime",
           "durationMinutes",
           "studentCount",
+          "attendanceCount",
           "tags"
         ]
       },
@@ -1899,6 +2206,301 @@
           "classGroupId",
           "scheduleId",
           "occurrenceDate"
+        ]
+      },
+      "StartRecurringClassDto": {
+        "type": "object",
+        "properties": {
+          "classGroupId": {
+            "type": "string"
+          },
+          "scheduleId": {
+            "type": "string"
+          },
+          "scheduledDate": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          }
+        },
+        "required": [
+          "classGroupId",
+          "scheduleId",
+          "scheduledDate"
+        ]
+      },
+      "ClassSessionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "classGroupId": {
+            "type": "string"
+          },
+          "classGroupName": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "recurring",
+              "ad_hoc"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "scheduled",
+              "active",
+              "ended",
+              "cancelled"
+            ]
+          },
+          "scheduledStartAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          },
+          "actualStartAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "nullable": true
+          },
+          "durationMinutes": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991,
+            "minimum": 0
+          },
+          "endedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "classGroupId",
+          "classGroupName",
+          "kind",
+          "status",
+          "scheduledStartAt",
+          "actualStartAt",
+          "durationMinutes",
+          "endedAt"
+        ]
+      },
+      "QrTokenResponseDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "previousToken": {
+            "type": "string"
+          },
+          "issuedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          },
+          "windowSeconds": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991,
+            "minimum": 0
+          }
+        },
+        "required": [
+          "token",
+          "previousToken",
+          "issuedAt",
+          "expiresAt",
+          "windowSeconds"
+        ]
+      },
+      "AttendanceRosterResponseDto": {
+        "type": "object",
+        "properties": {
+          "classSessionId": {
+            "type": "string"
+          },
+          "roster": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "studentId": {
+                  "type": "string"
+                },
+                "studentName": {
+                  "type": "string"
+                },
+                "isOutOfGroup": {
+                  "type": "boolean"
+                },
+                "attendance": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "studentId": {
+                      "type": "string"
+                    },
+                    "studentName": {
+                      "type": "string"
+                    },
+                    "source": {
+                      "type": "string",
+                      "enum": [
+                        "qr",
+                        "manual"
+                      ]
+                    },
+                    "isOutOfGroup": {
+                      "type": "boolean"
+                    },
+                    "invalidatedAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+                      "nullable": true
+                    },
+                    "invalidationReason": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "studentId",
+                    "studentName",
+                    "source",
+                    "isOutOfGroup",
+                    "invalidatedAt",
+                    "invalidationReason",
+                    "createdAt"
+                  ],
+                  "nullable": true
+                }
+              },
+              "required": [
+                "studentId",
+                "studentName",
+                "isOutOfGroup",
+                "attendance"
+              ]
+            }
+          },
+          "summary": {
+            "type": "object",
+            "properties": {
+              "present": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "total": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "present",
+              "total"
+            ]
+          }
+        },
+        "required": [
+          "classSessionId",
+          "roster",
+          "summary"
+        ]
+      },
+      "AddManualAttendanceDto": {
+        "type": "object",
+        "properties": {
+          "studentId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "studentId"
+        ]
+      },
+      "AttendanceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "studentId": {
+            "type": "string"
+          },
+          "studentName": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "qr",
+              "manual"
+            ]
+          },
+          "isOutOfGroup": {
+            "type": "boolean"
+          },
+          "invalidatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "nullable": true
+          },
+          "invalidationReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "studentId",
+          "studentName",
+          "source",
+          "isOutOfGroup",
+          "invalidatedAt",
+          "invalidationReason",
+          "createdAt"
+        ]
+      },
+      "InvalidateAttendanceDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "reason"
         ]
       }
     }

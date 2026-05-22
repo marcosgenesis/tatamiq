@@ -260,6 +260,134 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/classes/start-recurring": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ClassesController_startRecurring"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/classes/{id}/start-ad-hoc": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ClassesController_startAdHoc"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/classes/active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ClassesController_getActive"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/classes/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ClassesController_getById"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/classes/{id}/qr-token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ClassesController_getQrToken"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/classes/{id}/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ClassesController_end"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/classes/{classSessionId}/attendances": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AttendancesController_roster"];
+        put?: never;
+        post: operations["AttendancesController_addManual"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/classes/{classSessionId}/attendances/{attendanceId}/invalidate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AttendancesController_invalidate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -468,7 +596,7 @@ export interface components {
                     /** @enum {string} */
                     source: "recurring" | "ad_hoc";
                     /** @enum {string} */
-                    status: "scheduled" | "cancelled";
+                    status: "scheduled" | "active" | "ended" | "cancelled";
                     classGroupId: string;
                     classGroupName: string;
                     scheduleId: string | null;
@@ -480,6 +608,7 @@ export interface components {
                     startTime: string;
                     durationMinutes: number;
                     studentCount: number;
+                    attendanceCount: number | null;
                     tags: string[];
                 }[];
             }[];
@@ -491,7 +620,7 @@ export interface components {
                 /** @enum {string} */
                 source: "recurring" | "ad_hoc";
                 /** @enum {string} */
-                status: "scheduled" | "cancelled";
+                status: "scheduled" | "active" | "ended" | "cancelled";
                 classGroupId: string;
                 classGroupName: string;
                 scheduleId: string | null;
@@ -503,6 +632,7 @@ export interface components {
                 startTime: string;
                 durationMinutes: number;
                 studentCount: number;
+                attendanceCount: number | null;
                 tags: string[];
             }[];
         };
@@ -517,7 +647,7 @@ export interface components {
             /** @enum {string} */
             source: "recurring" | "ad_hoc";
             /** @enum {string} */
-            status: "scheduled" | "cancelled";
+            status: "scheduled" | "active" | "ended" | "cancelled";
             classGroupId: string;
             classGroupName: string;
             scheduleId: string | null;
@@ -529,12 +659,87 @@ export interface components {
             startTime: string;
             durationMinutes: number;
             studentCount: number;
+            attendanceCount: number | null;
             tags: string[];
         };
         CreateRecurringCancellationDto: {
             classGroupId: string;
             scheduleId: string;
             occurrenceDate: string;
+        };
+        StartRecurringClassDto: {
+            classGroupId: string;
+            scheduleId: string;
+            scheduledDate: string;
+        };
+        ClassSessionDto: {
+            id: string;
+            classGroupId: string;
+            classGroupName: string;
+            /** @enum {string} */
+            kind: "recurring" | "ad_hoc";
+            /** @enum {string} */
+            status: "scheduled" | "active" | "ended" | "cancelled";
+            /** Format: date-time */
+            scheduledStartAt: string;
+            /** Format: date-time */
+            actualStartAt: string | null;
+            durationMinutes: number;
+            /** Format: date-time */
+            endedAt: string | null;
+        };
+        QrTokenResponseDto: {
+            token: string;
+            previousToken: string;
+            /** Format: date-time */
+            issuedAt: string;
+            /** Format: date-time */
+            expiresAt: string;
+            windowSeconds: number;
+        };
+        AttendanceRosterResponseDto: {
+            classSessionId: string;
+            roster: {
+                studentId: string;
+                studentName: string;
+                isOutOfGroup: boolean;
+                attendance: {
+                    id: string;
+                    studentId: string;
+                    studentName: string;
+                    /** @enum {string} */
+                    source: "qr" | "manual";
+                    isOutOfGroup: boolean;
+                    /** Format: date-time */
+                    invalidatedAt: string | null;
+                    invalidationReason: string | null;
+                    /** Format: date-time */
+                    createdAt: string;
+                } | null;
+            }[];
+            summary: {
+                present: number;
+                total: number;
+            };
+        };
+        AddManualAttendanceDto: {
+            studentId: string;
+        };
+        AttendanceDto: {
+            id: string;
+            studentId: string;
+            studentName: string;
+            /** @enum {string} */
+            source: "qr" | "manual";
+            isOutOfGroup: boolean;
+            /** Format: date-time */
+            invalidatedAt: string | null;
+            invalidationReason: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        InvalidateAttendanceDto: {
+            reason: string;
         };
     };
     responses: never;
@@ -973,6 +1178,204 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ScheduleOccurrenceDto"];
+                };
+            };
+        };
+    };
+    ClassesController_startRecurring: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartRecurringClassDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClassSessionDto"];
+                };
+            };
+        };
+    };
+    ClassesController_startAdHoc: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClassSessionDto"];
+                };
+            };
+        };
+    };
+    ClassesController_getActive: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClassSessionDto"];
+                };
+            };
+        };
+    };
+    ClassesController_getById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClassSessionDto"];
+                };
+            };
+        };
+    };
+    ClassesController_getQrToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QrTokenResponseDto"];
+                };
+            };
+        };
+    };
+    ClassesController_end: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClassSessionDto"];
+                };
+            };
+        };
+    };
+    AttendancesController_roster: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                classSessionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendanceRosterResponseDto"];
+                };
+            };
+        };
+    };
+    AttendancesController_addManual: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                classSessionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddManualAttendanceDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendanceDto"];
+                };
+            };
+        };
+    };
+    AttendancesController_invalidate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                attendanceId: string;
+                classSessionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InvalidateAttendanceDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendanceDto"];
                 };
             };
         };
