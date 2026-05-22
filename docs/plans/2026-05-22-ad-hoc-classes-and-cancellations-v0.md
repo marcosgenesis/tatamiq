@@ -1,6 +1,12 @@
 # Ad hoc classes and cancellations V0 plan
 
-**Status:** Planned
+**Status:** Completed
+
+**Completed on:** 2026-05-22
+
+**Implementation commits:**
+
+- `ecee94f feat(schedule): add ad hoc classes and cancellations`
 
 ## Goal
 
@@ -146,22 +152,22 @@ Run validation:
 
 ## Acceptance checklist
 
-- [ ] Database schema and migration exist.
-- [ ] Contracts expose updated schedule occurrence model and mutation DTOs.
-- [ ] API endpoints are protected with organization owner role.
-- [ ] API derives tenant from active organization session.
-- [ ] Ad hoc class can be created for now.
-- [ ] Ad hoc class can be created for a future time.
-- [ ] Ad hoc class appears in weekly schedule.
-- [ ] Ad hoc class can be cancelled.
-- [ ] Cancelled ad hoc class remains visible.
-- [ ] Ad hoc class can be reactivated.
-- [ ] Recurring occurrence can be cancelled.
-- [ ] Cancelled recurring occurrence remains visible.
-- [ ] Recurring cancellation can be reverted.
-- [ ] `/schedule` UI supports these flows.
-- [ ] `pnpm lint` passes.
-- [ ] `pnpm typecheck` passes.
-- [ ] `pnpm test` passes.
-- [ ] `pnpm build` passes.
-- [ ] Flow validated with `agent-browser`.
+- [x] Database schema and migration exist.
+- [x] Contracts expose updated schedule occurrence model and mutation DTOs.
+- [x] API endpoints are protected with organization owner role.
+- [x] API derives tenant from active organization session.
+- [x] Ad hoc class can be created for now.
+- [x] Ad hoc class can be created for a future time.
+- [x] Ad hoc class appears in weekly schedule.
+- [x] Ad hoc class can be cancelled.
+- [x] Cancelled ad hoc class remains visible.
+- [x] Ad hoc class can be reactivated.
+- [x] Recurring occurrence can be cancelled.
+- [x] Cancelled recurring occurrence remains visible.
+- [x] Recurring cancellation can be reverted.
+- [x] `/schedule` UI supports these flows.
+- [x] `pnpm lint` passes.
+- [x] `pnpm typecheck` passes.
+- [x] `pnpm test` passes.
+- [x] `pnpm build` passes.
+- [x] Flow validated with `agent-browser`.
