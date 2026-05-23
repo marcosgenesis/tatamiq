@@ -78,6 +78,10 @@ export class AttendancesService {
       }
     }
 
+    const outOfGroupStudentNameById = new Map(
+      outOfGroupStudents.map((student) => [student.studentId, student.studentName]),
+    );
+
     const roster = [
       ...rosterStudents.map((s) => {
         const att = latestAttendanceByStudent.get(s.studentId) ?? null;
@@ -88,13 +92,14 @@ export class AttendancesService {
           attendance: att ? toAttendanceDto(att, s.studentName, false) : null,
         };
       }),
-      ...outOfGroupStudents.map((s) => {
-        const att = latestAttendanceByStudent.get(s.studentId)!;
+      ...outOfGroupAttendances.map((att) => {
+        const studentName = outOfGroupStudentNameById.get(att.studentId);
+        if (!studentName) throw new NotFoundException("Aluno da presença não encontrado.");
         return {
-          studentId: s.studentId,
-          studentName: s.studentName,
+          studentId: att.studentId,
+          studentName,
           isOutOfGroup: true,
-          attendance: toAttendanceDto(att, s.studentName, true),
+          attendance: toAttendanceDto(att, studentName, true),
         };
       }),
     ];
