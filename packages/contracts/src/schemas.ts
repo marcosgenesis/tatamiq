@@ -457,6 +457,32 @@ export const rejectReceiptSchema = z.object({
 
 export type RejectReceiptInput = z.infer<typeof rejectReceiptSchema>;
 
+export const studentMonthlyFeeSchema = z.object({
+  id: z.string(),
+  referenceYear: z.number().int(),
+  referenceMonth: z.number().int(),
+  amountInCents: z.number().int(),
+  dueDate: z.string(),
+  status: monthlyFeeStatusSchema,
+  isOverdue: z.boolean(),
+  paidAt: z.string().datetime().nullable(),
+  lastReceipt: z
+    .object({
+      id: z.string(),
+      status: paymentReceiptStatusSchema,
+      rejectionReason: z.string().nullable(),
+      createdAt: z.string().datetime(),
+    })
+    .nullable(),
+});
+
+export const studentMonthlyFeesResponseSchema = z.object({
+  fees: z.array(studentMonthlyFeeSchema),
+});
+
+export type StudentMonthlyFee = z.infer<typeof studentMonthlyFeeSchema>;
+export type StudentMonthlyFeesResponse = z.infer<typeof studentMonthlyFeesResponseSchema>;
+
 export type MonthlyFeeStatus = z.infer<typeof monthlyFeeStatusSchema>;
 export type MonthlyFeeEventType = z.infer<typeof monthlyFeeEventTypeSchema>;
 export type PaymentReceiptStatus = z.infer<typeof paymentReceiptStatusSchema>;

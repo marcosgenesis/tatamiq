@@ -14,6 +14,7 @@ import type {
   MonthlyFeeDetail,
   PaymentReceipt,
   RejectReceiptInput,
+  StudentMonthlyFeesResponse,
   WaiveMonthlyFeeInput,
 } from "@tatamiq/contracts";
 import {
@@ -23,7 +24,7 @@ import {
   paymentReceipts,
   students,
 } from "@tatamiq/database";
-import { and, eq, sql } from "drizzle-orm";
+import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
 import {
   clampDueDay,
@@ -276,6 +277,79 @@ export class MonthlyFeesService {
     });
 
     return this.get(organizationId, id);
+  }
+
+  async studentFees(
+    studentId: string,
+    organizationId: string,
+  ): Promise<StudentMonthlyFeesResponse> {
+    const now = new Date();
+    const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+    const cutoffDate = `${twelveMonthsAgo.getFullYear()}-${String(twelveMonthsAgo.getMonth() + 1).padStart(2, "0")}-01`;
+
+    const rows = await this.db
+      .select()
+      .from(monthlyFees)
+      .where(
+        and(
+          eq(monthlyFees.studentId, studentId),
+          eq(monthlyFees.organizationId, organizationId),
+          gte(monthlyFees.dueDate, cutoffDate),
+        ),
+      )
+      .orderBy(desc(monthlyFees.dueDate));
+
+    const feeIds = rows.map((r) => r.id);
+    const allReceipts =
+      feeIds.length > 0
+        ? await this.db
+            .select()
+            .from(paymentReceipts)
+            .where(
+              sql`${paymentReceipts.monthlyFeeId} IN (${sql.join(
+                feeIds.map((id) => sql`${id}`),
+                sql`, `,
+              )})`,
+            )
+            .orderBy(desc(paymentReceipts.createdAt))
+        : [];
+
+    const receiptsByFee = new Map<string, ReceiptRow[]>();
+    for (const r of allReceipts) {
+      const list = receiptsByFee.get(r.monthlyFeeId) ?? [];
+      list.push(r);
+      receiptsByFee.set(r.monthlyFeeId, list);
+    }
+
+    return {
+      fees: rows.map((row) => {
+        const feeReceipts = receiptsByFee.get(row.id) ?? [];
+        const lastRelevant =
+          feeReceipts.find((r) => r.status === "pending") ??
+          feeReceipts.find((r) => r.status === "approved") ??
+          feeReceipts.find((r) => r.status === "rejected") ??
+          null;
+
+        return {
+          id: row.id,
+          referenceYear: row.referenceYear,
+          referenceMonth: row.referenceMonth,
+          amountInCents: row.amountInCents,
+          dueDate: row.dueDate,
+          status: parseStatus(row.status),
+          isOverdue: isOverdue(row.status, row.dueDate),
+          paidAt: row.paidAt?.toISOString() ?? null,
+          lastReceipt: lastRelevant
+            ? {
+                id: lastRelevant.id,
+                status: parseReceiptStatus(lastRelevant.status),
+                rejectionReason: lastRelevant.rejectionReason,
+                createdAt: lastRelevant.createdAt.toISOString(),
+              }
+            : null,
+        };
+      }),
+    };
   }
 
   async listReceipts(organizationId: string, feeId: string): Promise<PaymentReceipt[]> {

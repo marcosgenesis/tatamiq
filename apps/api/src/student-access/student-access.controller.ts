@@ -14,6 +14,7 @@ import { acceptStudentInviteSchema, confirmQrAttendanceSchema } from "@tatamiq/c
 import { AllowAnonymous, OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import type { z } from "zod";
 import type { auth } from "../auth";
+import { MonthlyFeesService } from "../monthly-fees/monthly-fees.service";
 import { QrAttendanceService } from "./qr-attendance.service";
 import {
   AcceptStudentInviteDto,
@@ -37,6 +38,7 @@ export class StudentAccessController {
   constructor(
     @Inject(StudentAccessService) private readonly studentAccessService: StudentAccessService,
     @Inject(QrAttendanceService) private readonly qrAttendanceService: QrAttendanceService,
+    @Inject(MonthlyFeesService) private readonly monthlyFeesService: MonthlyFeesService,
   ) {}
 
   @Post("students/:id/access-invites")
@@ -123,6 +125,12 @@ export class StudentAccessController {
   @ApiOkResponse({ type: StudentMeResponseDto })
   me(@Session() session: SessionWithUser): Promise<StudentMeResponseDto> {
     return this.studentAccessService.me(session.user.id);
+  }
+
+  @Get("student/monthly-fees")
+  async studentMonthlyFees(@Session() session: SessionWithUser) {
+    const meData = await this.studentAccessService.me(session.user.id);
+    return this.monthlyFeesService.studentFees(meData.student.id, meData.academy.id);
   }
 }
 
