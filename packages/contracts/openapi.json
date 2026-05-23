@@ -348,6 +348,37 @@
         ]
       }
     },
+    "/student/attendances/qr": {
+      "post": {
+        "operationId": "StudentAccessController_confirmQrAttendance",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmQrAttendanceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmQrAttendanceResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "student-access"
+        ]
+      }
+    },
     "/student/me": {
       "get": {
         "operationId": "StudentAccessController_me",
@@ -1828,6 +1859,140 @@
         "required": [
           "studentAccessId",
           "studentId"
+        ]
+      },
+      "ConfirmQrAttendanceDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
+      "ConfirmQrAttendanceResponseDto": {
+        "type": "object",
+        "properties": {
+          "attendance": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "studentId": {
+                "type": "string"
+              },
+              "studentName": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string",
+                "enum": [
+                  "qr",
+                  "manual"
+                ]
+              },
+              "isOutOfGroup": {
+                "type": "boolean"
+              },
+              "invalidatedAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+                "nullable": true
+              },
+              "invalidationReason": {
+                "type": "string",
+                "nullable": true
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+              }
+            },
+            "required": [
+              "id",
+              "studentId",
+              "studentName",
+              "source",
+              "isOutOfGroup",
+              "invalidatedAt",
+              "invalidationReason",
+              "createdAt"
+            ]
+          },
+          "classSession": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "classGroupId": {
+                "type": "string"
+              },
+              "classGroupName": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "recurring",
+                  "ad_hoc"
+                ]
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "scheduled",
+                  "active",
+                  "ended",
+                  "cancelled"
+                ]
+              },
+              "scheduledStartAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+              },
+              "actualStartAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+                "nullable": true
+              },
+              "durationMinutes": {
+                "type": "integer",
+                "exclusiveMinimum": true,
+                "maximum": 9007199254740991,
+                "minimum": 0
+              },
+              "endedAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+                "nullable": true
+              }
+            },
+            "required": [
+              "id",
+              "classGroupId",
+              "classGroupName",
+              "kind",
+              "status",
+              "scheduledStartAt",
+              "actualStartAt",
+              "durationMinutes",
+              "endedAt"
+            ]
+          }
+        },
+        "required": [
+          "attendance",
+          "classSession"
         ]
       },
       "StudentMeResponseDto": {

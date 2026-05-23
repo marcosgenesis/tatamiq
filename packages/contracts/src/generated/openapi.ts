@@ -164,6 +164,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/student/attendances/qr": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["StudentAccessController_confirmQrAttendance"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/student/me": {
         parameters: {
             query?: never;
@@ -648,6 +664,40 @@ export interface components {
         AcceptStudentInviteResponseDto: {
             studentAccessId: string;
             studentId: string;
+        };
+        ConfirmQrAttendanceDto: {
+            token: string;
+        };
+        ConfirmQrAttendanceResponseDto: {
+            attendance: {
+                id: string;
+                studentId: string;
+                studentName: string;
+                /** @enum {string} */
+                source: "qr" | "manual";
+                isOutOfGroup: boolean;
+                /** Format: date-time */
+                invalidatedAt: string | null;
+                invalidationReason: string | null;
+                /** Format: date-time */
+                createdAt: string;
+            };
+            classSession: {
+                id: string;
+                classGroupId: string;
+                classGroupName: string;
+                /** @enum {string} */
+                kind: "recurring" | "ad_hoc";
+                /** @enum {string} */
+                status: "scheduled" | "active" | "ended" | "cancelled";
+                /** Format: date-time */
+                scheduledStartAt: string;
+                /** Format: date-time */
+                actualStartAt: string | null;
+                durationMinutes: number;
+                /** Format: date-time */
+                endedAt: string | null;
+            };
         };
         StudentMeResponseDto: {
             academy: {
@@ -1175,6 +1225,29 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AcceptStudentInviteResponseDto"];
+                };
+            };
+        };
+    };
+    StudentAccessController_confirmQrAttendance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmQrAttendanceDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfirmQrAttendanceResponseDto"];
                 };
             };
         };
