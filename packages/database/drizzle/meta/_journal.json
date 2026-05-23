@@ -57,6 +57,13 @@
       "when": 1779553600000,
       "tag": "0007_student_access",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1779640000000,
+      "tag": "0008_attendance_unique_constraint",
+      "breakpoints": true
     }
   ]
 }

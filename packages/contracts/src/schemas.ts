@@ -338,9 +338,20 @@ export const invalidateAttendanceSchema = z.object({
   reason: z.string().trim().min(1),
 });
 
+export const confirmQrAttendanceSchema = z.object({
+  token: z.string().min(1),
+});
+
+export const confirmQrAttendanceResponseSchema = z.object({
+  attendance: attendanceSchema,
+  classSession: classSessionSchema,
+});
+
 export type AttendanceSource = z.infer<typeof attendanceSourceSchema>;
 export type Attendance = z.infer<typeof attendanceSchema>;
 export type AttendanceRosterStudent = z.infer<typeof attendanceRosterStudentSchema>;
 export type AttendanceRosterResponse = z.infer<typeof attendanceRosterResponseSchema>;
 export type AddManualAttendanceInput = z.infer<typeof addManualAttendanceSchema>;
 export type InvalidateAttendanceInput = z.infer<typeof invalidateAttendanceSchema>;
+export type ConfirmQrAttendanceInput = z.infer<typeof confirmQrAttendanceSchema>;
+export type ConfirmQrAttendanceResponse = z.infer<typeof confirmQrAttendanceResponseSchema>;

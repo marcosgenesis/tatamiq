@@ -113,7 +113,11 @@ export function ActiveClassPage(props: { classId: string }) {
                 role="img"
                 aria-label="QR Code da aula ativa"
               >
-                <QRCodeSVG value={qrToken.token} size={256} level="M" />
+                <QRCodeSVG
+                  value={`${window.location.origin}/student/check-in?token=${encodeURIComponent(qrToken.token)}`}
+                  size={256}
+                  level="M"
+                />
               </div>
               <QrRefreshCountdown expiresAt={qrToken.expiresAt} onExpired={qrQuery.refetch} />
             </div>

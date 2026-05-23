@@ -1,6 +1,8 @@
 import {
   acceptStudentInviteResponseSchema,
   acceptStudentInviteSchema,
+  confirmQrAttendanceResponseSchema,
+  confirmQrAttendanceSchema,
   createStudentInviteResponseSchema,
   studentInvitePreviewSchema,
   studentMeResponseSchema,
@@ -16,3 +18,7 @@ export class AcceptStudentInviteResponseDto extends createZodDto(
   acceptStudentInviteResponseSchema,
 ) {}
 export class StudentMeResponseDto extends createZodDto(studentMeResponseSchema) {}
+export class ConfirmQrAttendanceDto extends createZodDto(confirmQrAttendanceSchema) {}
+export class ConfirmQrAttendanceResponseDto extends createZodDto(
+  confirmQrAttendanceResponseSchema,
+) {}

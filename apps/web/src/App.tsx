@@ -7,7 +7,6 @@ import {
   Outlet,
   RouterProvider,
   useNavigate,
-  useRouterState,
 } from "@tanstack/react-router";
 import {
   CheckmarkSquare03Icon,
@@ -32,63 +31,81 @@ import { PlaceholderPage } from "./features/placeholder/placeholder-page";
 import { SchedulePage } from "./features/schedule/schedule-page";
 import { AcceptStudentInvitePage } from "./features/student-access/accept-student-invite-page";
 import { ChooseAreaPage } from "./features/student-access/choose-area-page";
+import { StudentCheckInPage } from "./features/student-access/student-check-in-page";
 import { StudentDashboardPage } from "./features/student-access/student-dashboard-page";
 import { StudentsPage } from "./features/students/students-page";
 import "./index.css";
 import { authClient } from "./lib/auth-client";
 
 const queryClient = new QueryClient();
-const publicPaths = new Set(["/sign-in", "/sign-up", "/forgot-password", "/reset-password"]);
-const onboardingPath = "/onboarding/academy";
+
+type OrganizationSummary = {
+  id: string;
+  name: string;
+};
+
+// --- Root ---
 
 const rootRoute = createRootRoute({
   component: RootLayout,
 });
 
-const signInRoute = createRoute({
+// --- Layout routes (pathless) ---
+
+const publicLayout = createRoute({
   getParentRoute: () => rootRoute,
+  id: "public",
+  component: PublicLayout,
+});
+
+const openLayout = createRoute({
+  getParentRoute: () => rootRoute,
+  id: "open",
+  component: Outlet,
+});
+
+const authBareLayout = createRoute({
+  getParentRoute: () => rootRoute,
+  id: "auth-bare",
+  component: AuthBareLayout,
+});
+
+const instructorLayout = createRoute({
+  getParentRoute: () => rootRoute,
+  id: "instructor",
+  component: InstructorLayout,
+});
+
+// --- Public routes (redirect to /choose-area if logged in) ---
+
+const signInRoute = createRoute({
+  getParentRoute: () => publicLayout,
   path: "/sign-in",
   component: SignInPage,
 });
 
 const signUpRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => publicLayout,
   path: "/sign-up",
   component: SignUpPage,
 });
 
 const forgotPasswordRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => publicLayout,
   path: "/forgot-password",
   component: ForgotPasswordPage,
 });
 
 const resetPasswordRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => publicLayout,
   path: "/reset-password",
   component: ResetPasswordPage,
 });
 
-const onboardingRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: onboardingPath,
-  component: AcademyOnboardingPage,
-});
-
-const chooseAreaRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/choose-area",
-  component: ChooseAreaPage,
-});
-
-const studentHomeRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/student",
-  component: StudentDashboardPage,
-});
+// --- Open routes (work with or without auth, no layout shell) ---
 
 const acceptStudentInviteRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => openLayout,
   path: "/accept-student-invite/$token",
   component: function AcceptStudentInviteRoute() {
     const { token } = acceptStudentInviteRoute.useParams();
@@ -96,32 +113,66 @@ const acceptStudentInviteRoute = createRoute({
   },
 });
 
+const studentCheckInRoute = createRoute({
+  getParentRoute: () => openLayout,
+  path: "/student/check-in",
+  component: StudentCheckInPage,
+});
+
+// --- Auth bare routes (require auth, no layout shell) ---
+
+const chooseAreaRoute = createRoute({
+  getParentRoute: () => authBareLayout,
+  path: "/choose-area",
+  component: ChooseAreaPage,
+});
+
+const studentHomeRoute = createRoute({
+  getParentRoute: () => authBareLayout,
+  path: "/student",
+  component: StudentDashboardPage,
+});
+
+const onboardingRoute = createRoute({
+  getParentRoute: () => authBareLayout,
+  path: "/onboarding/academy",
+  component: function OnboardingGuard() {
+    const organizations = authClient.useListOrganizations();
+    if (!organizations.isPending && (organizations.data?.length ?? 0) > 0) {
+      return <Navigate to="/" />;
+    }
+    return <AcademyOnboardingPage />;
+  },
+});
+
+// --- Instructor routes (require auth + org, AppShell) ---
+
 const indexRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => instructorLayout,
   path: "/",
   component: DashboardPage,
 });
 
 const studentsRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => instructorLayout,
   path: "/students",
   component: StudentsPage,
 });
 
 const classGroupsRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => instructorLayout,
   path: "/class-groups",
   component: ClassGroupsPage,
 });
 
 const scheduleRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => instructorLayout,
   path: "/schedule",
   component: SchedulePage,
 });
 
 const classRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => instructorLayout,
   path: "/classes/$classId",
   component: function ClassPageWrapper() {
     const { classId } = classRoute.useParams();
@@ -130,7 +181,7 @@ const classRoute = createRoute({
 });
 
 const attendancesRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => instructorLayout,
   path: "/attendances",
   component: () => (
     <PlaceholderPage
@@ -142,7 +193,7 @@ const attendancesRoute = createRoute({
 });
 
 const graduationRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => instructorLayout,
   path: "/graduation",
   component: () => (
     <PlaceholderPage
@@ -154,7 +205,7 @@ const graduationRoute = createRoute({
 });
 
 const monthlyFeesRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => instructorLayout,
   path: "/monthly-fees",
   component: () => (
     <PlaceholderPage
@@ -166,7 +217,7 @@ const monthlyFeesRoute = createRoute({
 });
 
 const settingsRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => instructorLayout,
   path: "/settings",
   component: () => (
     <PlaceholderPage
@@ -177,24 +228,23 @@ const settingsRoute = createRoute({
   ),
 });
 
+// --- Route tree ---
+
 const routeTree = rootRoute.addChildren([
-  signInRoute,
-  signUpRoute,
-  forgotPasswordRoute,
-  resetPasswordRoute,
-  onboardingRoute,
-  chooseAreaRoute,
-  studentHomeRoute,
-  acceptStudentInviteRoute,
-  indexRoute,
-  studentsRoute,
-  classGroupsRoute,
-  scheduleRoute,
-  classRoute,
-  attendancesRoute,
-  graduationRoute,
-  monthlyFeesRoute,
-  settingsRoute,
+  publicLayout.addChildren([signInRoute, signUpRoute, forgotPasswordRoute, resetPasswordRoute]),
+  openLayout.addChildren([acceptStudentInviteRoute, studentCheckInRoute]),
+  authBareLayout.addChildren([chooseAreaRoute, studentHomeRoute, onboardingRoute]),
+  instructorLayout.addChildren([
+    indexRoute,
+    studentsRoute,
+    classGroupsRoute,
+    scheduleRoute,
+    classRoute,
+    attendancesRoute,
+    graduationRoute,
+    monthlyFeesRoute,
+    settingsRoute,
+  ]),
 ]);
 
 const router = createRouter({ routeTree });
@@ -205,26 +255,34 @@ declare module "@tanstack/react-router" {
   }
 }
 
-type OrganizationSummary = {
-  id: string;
-  name: string;
-};
+// --- Layout components ---
 
 function RootLayout() {
-  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const session = authClient.useSession();
+  if (session.isPending) return <LoadingScreen />;
+  return <Outlet />;
+}
+
+function PublicLayout() {
+  const session = authClient.useSession();
+  if (session.data) return <Navigate to="/choose-area" />;
+  return <Outlet />;
+}
+
+function AuthBareLayout() {
+  const session = authClient.useSession();
+  if (!session.data) return <Navigate to="/sign-in" />;
+  return <Outlet />;
+}
+
+function InstructorLayout() {
   const navigate = useNavigate();
   const session = authClient.useSession();
   const organizations = authClient.useListOrganizations();
   const activeOrganization = authClient.useActiveOrganization();
-  const isInvitePath = pathname.startsWith("/accept-student-invite/");
-  const isStudentAreaPath = pathname === "/student" || pathname === "/choose-area";
-  const isPublicPath = publicPaths.has(pathname) || isInvitePath;
-  const isOnboardingPath = pathname === onboardingPath;
+
   const firstOrganization = organizations.data?.[0] as OrganizationSummary | undefined;
   const activeAcademy = activeOrganization.data as OrganizationSummary | null | undefined;
-  const isLoading =
-    session.isPending ||
-    (!!session.data && (organizations.isPending || activeOrganization.isPending));
 
   useEffect(() => {
     if (!session.data) return;
@@ -239,40 +297,9 @@ function RootLayout() {
     });
   }, [session.data, activeAcademy, firstOrganization, activeOrganization.refetch]);
 
-  async function signOut() {
-    await authClient.signOut();
-    await navigate({ to: "/sign-in" });
-  }
-
-  if (isLoading) {
-    return <LoadingScreen />;
-  }
-
-  if (!session.data && !isPublicPath) {
-    return <Navigate to="/sign-in" />;
-  }
-
-  if (session.data && publicPaths.has(pathname)) {
-    return <Navigate to="/choose-area" />;
-  }
-
-  if (
-    session.data &&
-    !firstOrganization &&
-    !isOnboardingPath &&
-    !isStudentAreaPath &&
-    !isInvitePath
-  ) {
-    return <Navigate to={onboardingPath} />;
-  }
-
-  if (session.data && firstOrganization && isOnboardingPath) {
-    return <Navigate to="/" />;
-  }
-
-  if (isPublicPath || isOnboardingPath || isStudentAreaPath) {
-    return <Outlet />;
-  }
+  if (!session.data) return <Navigate to="/sign-in" />;
+  if (organizations.isPending || activeOrganization.isPending) return <LoadingScreen />;
+  if (!firstOrganization) return <Navigate to="/onboarding/academy" />;
 
   const allAcademies = (organizations.data ?? []).map((org: OrganizationSummary) => ({
     id: org.id,
@@ -281,13 +308,16 @@ function RootLayout() {
 
   const currentAcademy = activeAcademy
     ? { id: activeAcademy.id, name: activeAcademy.name }
-    : firstOrganization
-      ? { id: firstOrganization.id, name: firstOrganization.name }
-      : { id: "", name: "Academia" };
+    : { id: firstOrganization.id, name: firstOrganization.name };
 
   async function switchAcademy(orgId: string) {
     await authClient.organization.setActive({ organizationId: orgId });
     await activeOrganization.refetch();
+  }
+
+  async function signOut() {
+    await authClient.signOut();
+    await navigate({ to: "/sign-in" });
   }
 
   return (
