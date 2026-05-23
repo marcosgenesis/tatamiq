@@ -4,6 +4,7 @@ import {
   date,
   index,
   integer,
+  jsonb,
   pgTable,
   text,
   timestamp,
@@ -425,9 +426,100 @@ export const studentAcceptances = pgTable(
   ],
 );
 
+export const monthlyFees = pgTable(
+  "monthly_fees",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    studentId: text("student_id")
+      .notNull()
+      .references(() => students.id, { onDelete: "cascade" }),
+    referenceYear: integer("reference_year").notNull(),
+    referenceMonth: integer("reference_month").notNull(),
+    amountInCents: integer("amount_in_cents").notNull(),
+    originalAmountInCents: integer("original_amount_in_cents"),
+    dueDate: date("due_date").notNull(),
+    status: text("status").notNull().default("open"),
+    paidAt: timestamp("paid_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("monthly_fees_organization_id_idx").on(table.organizationId),
+    index("monthly_fees_student_id_idx").on(table.studentId),
+    index("monthly_fees_status_idx").on(table.status),
+    index("monthly_fees_due_date_idx").on(table.dueDate),
+    uniqueIndex("monthly_fees_student_month_uniq").on(
+      table.studentId,
+      table.referenceYear,
+      table.referenceMonth,
+    ),
+  ],
+);
+
+export const monthlyFeeEvents = pgTable(
+  "monthly_fee_events",
+  {
+    id: text("id").primaryKey(),
+    monthlyFeeId: text("monthly_fee_id")
+      .notNull()
+      .references(() => monthlyFees.id, { onDelete: "cascade" }),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    type: text("type").notNull(),
+    reason: text("reason"),
+    metadata: jsonb("metadata"),
+    createdByUserId: text("created_by_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("monthly_fee_events_monthly_fee_id_idx").on(table.monthlyFeeId),
+    index("monthly_fee_events_organization_id_idx").on(table.organizationId),
+  ],
+);
+
+export const paymentReceipts = pgTable(
+  "payment_receipts",
+  {
+    id: text("id").primaryKey(),
+    monthlyFeeId: text("monthly_fee_id")
+      .notNull()
+      .references(() => monthlyFees.id, { onDelete: "cascade" }),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    studentId: text("student_id")
+      .notNull()
+      .references(() => students.id, { onDelete: "cascade" }),
+    fileUrl: text("file_url").notNull(),
+    fileType: text("file_type").notNull(),
+    fileSizeBytes: integer("file_size_bytes").notNull(),
+    status: text("status").notNull().default("pending"),
+    rejectionReason: text("rejection_reason"),
+    createdByUserId: text("created_by_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("payment_receipts_monthly_fee_id_idx").on(table.monthlyFeeId),
+    index("payment_receipts_organization_id_idx").on(table.organizationId),
+    index("payment_receipts_student_id_idx").on(table.studentId),
+    index("payment_receipts_status_idx").on(table.status),
+  ],
+);
+
 export type ClassSession = typeof classSessions.$inferSelect;
 export type ClassCancellation = typeof classCancellations.$inferSelect;
 export type Attendance = typeof attendances.$inferSelect;
 export type StudentAccessInvite = typeof studentAccessInvites.$inferSelect;
 export type StudentAccess = typeof studentAccess.$inferSelect;
 export type StudentAcceptance = typeof studentAcceptances.$inferSelect;
+export type MonthlyFee = typeof monthlyFees.$inferSelect;
+export type MonthlyFeeEvent = typeof monthlyFeeEvents.$inferSelect;
+export type PaymentReceipt = typeof paymentReceipts.$inferSelect;

@@ -355,3 +355,158 @@ export type AddManualAttendanceInput = z.infer<typeof addManualAttendanceSchema>
 export type InvalidateAttendanceInput = z.infer<typeof invalidateAttendanceSchema>;
 export type ConfirmQrAttendanceInput = z.infer<typeof confirmQrAttendanceSchema>;
 export type ConfirmQrAttendanceResponse = z.infer<typeof confirmQrAttendanceResponseSchema>;
+
+// --- Monthly Fees ---
+
+export const monthlyFeeStatusSchema = z.enum(["open", "under_review", "paid", "waived"]);
+
+export const monthlyFeeEventTypeSchema = z.enum([
+  "waived",
+  "adjusted",
+  "receipt_approved",
+  "receipt_rejected",
+  "manual_payment",
+]);
+
+export const paymentReceiptStatusSchema = z.enum(["pending", "approved", "rejected"]);
+
+export const monthlyFeeEventSchema = z.object({
+  id: z.string(),
+  monthlyFeeId: z.string(),
+  type: monthlyFeeEventTypeSchema,
+  reason: z.string().nullable(),
+  metadata: z.record(z.string(), z.unknown()).nullable(),
+  createdByUserId: z.string(),
+  createdAt: z.string().datetime(),
+});
+
+export const paymentReceiptSchema = z.object({
+  id: z.string(),
+  monthlyFeeId: z.string(),
+  studentId: z.string(),
+  fileUrl: z.string(),
+  fileType: z.string(),
+  fileSizeBytes: z.number().int(),
+  status: paymentReceiptStatusSchema,
+  rejectionReason: z.string().nullable(),
+  createdByUserId: z.string(),
+  createdAt: z.string().datetime(),
+});
+
+export const monthlyFeeSchema = z.object({
+  id: z.string(),
+  studentId: z.string(),
+  studentName: z.string(),
+  referenceYear: z.number().int(),
+  referenceMonth: z.number().int(),
+  amountInCents: z.number().int(),
+  originalAmountInCents: z.number().int().nullable(),
+  dueDate: z.string(),
+  status: monthlyFeeStatusSchema,
+  isOverdue: z.boolean(),
+  paidAt: z.string().datetime().nullable(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
+
+export const monthlyFeeDetailSchema = monthlyFeeSchema.extend({
+  events: z.array(monthlyFeeEventSchema),
+  receipts: z.array(paymentReceiptSchema),
+});
+
+export const listMonthlyFeesResponseSchema = z.object({
+  fees: z.array(monthlyFeeSchema),
+  summary: z.object({
+    open: z.number().int().nonnegative(),
+    overdue: z.number().int().nonnegative(),
+    underReview: z.number().int().nonnegative(),
+    paid: z.number().int().nonnegative(),
+    waived: z.number().int().nonnegative(),
+    total: z.number().int().nonnegative(),
+  }),
+});
+
+export const createMonthlyFeeSchema = z.object({
+  studentId: z.string().min(1),
+  referenceYear: z.number().int().min(2000).max(2100),
+  referenceMonth: z.number().int().min(1).max(12),
+  amountInCents: z.number().int().positive(),
+  dueDay: z.number().int().min(1).max(31),
+});
+
+export const adjustMonthlyFeeSchema = z.object({
+  amountInCents: z.number().int().positive(),
+  reason: z.string().trim().min(1),
+});
+
+export const waiveMonthlyFeeSchema = z.object({
+  reason: z.string().trim().min(1),
+});
+
+export const manualPaymentSchema = z.object({
+  note: z.string().trim().optional().or(z.literal("")),
+});
+
+export type AdjustMonthlyFeeInput = z.infer<typeof adjustMonthlyFeeSchema>;
+export type WaiveMonthlyFeeInput = z.infer<typeof waiveMonthlyFeeSchema>;
+export type ManualPaymentInput = z.infer<typeof manualPaymentSchema>;
+
+export const uploadUrlResponseSchema = z.object({
+  uploadUrl: z.string().url(),
+  fileKey: z.string(),
+});
+
+export const confirmReceiptSchema = z.object({
+  fileKey: z.string().min(1),
+  fileType: z.string().min(1),
+  fileSizeBytes: z
+    .number()
+    .int()
+    .positive()
+    .max(10 * 1024 * 1024),
+});
+
+export type UploadUrlResponse = z.infer<typeof uploadUrlResponseSchema>;
+export type ConfirmReceiptInput = z.infer<typeof confirmReceiptSchema>;
+
+export const rejectReceiptSchema = z.object({
+  reason: z.string().trim().min(1),
+});
+
+export type RejectReceiptInput = z.infer<typeof rejectReceiptSchema>;
+
+export const studentMonthlyFeeSchema = z.object({
+  id: z.string(),
+  referenceYear: z.number().int(),
+  referenceMonth: z.number().int(),
+  amountInCents: z.number().int(),
+  dueDate: z.string(),
+  status: monthlyFeeStatusSchema,
+  isOverdue: z.boolean(),
+  paidAt: z.string().datetime().nullable(),
+  lastReceipt: z
+    .object({
+      id: z.string(),
+      status: paymentReceiptStatusSchema,
+      rejectionReason: z.string().nullable(),
+      createdAt: z.string().datetime(),
+    })
+    .nullable(),
+});
+
+export const studentMonthlyFeesResponseSchema = z.object({
+  fees: z.array(studentMonthlyFeeSchema),
+});
+
+export type StudentMonthlyFee = z.infer<typeof studentMonthlyFeeSchema>;
+export type StudentMonthlyFeesResponse = z.infer<typeof studentMonthlyFeesResponseSchema>;
+
+export type MonthlyFeeStatus = z.infer<typeof monthlyFeeStatusSchema>;
+export type MonthlyFeeEventType = z.infer<typeof monthlyFeeEventTypeSchema>;
+export type PaymentReceiptStatus = z.infer<typeof paymentReceiptStatusSchema>;
+export type MonthlyFee = z.infer<typeof monthlyFeeSchema>;
+export type MonthlyFeeDetail = z.infer<typeof monthlyFeeDetailSchema>;
+export type MonthlyFeeEvent = z.infer<typeof monthlyFeeEventSchema>;
+export type PaymentReceipt = z.infer<typeof paymentReceiptSchema>;
+export type ListMonthlyFeesResponse = z.infer<typeof listMonthlyFeesResponseSchema>;
+export type CreateMonthlyFeeInput = z.infer<typeof createMonthlyFeeSchema>;

@@ -64,6 +64,13 @@
       "when": 1779640000000,
       "tag": "0008_attendance_unique_constraint",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1779726400000,
+      "tag": "0009_monthly_fees",
+      "breakpoints": true
     }
   ]
 }
