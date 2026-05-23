@@ -2,6 +2,7 @@ import { useRouterState } from "@tanstack/react-router";
 import { AppBreadcrumbs } from "@/components/app-breadcrumbs";
 import { navLinks } from "@/components/app-shared";
 import { CustomSidebarTrigger } from "@/components/custom-sidebar-trigger";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +30,9 @@ export function AppHeader() {
           orientation="vertical"
         />
         <AppBreadcrumbs page={breadcrumbPage} />
+      </div>
+      <div className="ml-auto">
+        <ThemeToggle />
       </div>
     </header>
   );

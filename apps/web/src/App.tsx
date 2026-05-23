@@ -34,6 +34,7 @@ import { AcceptStudentInvitePage } from "./features/student-access/accept-studen
 import { ChooseAreaPage } from "./features/student-access/choose-area-page";
 import { StudentDashboardPage } from "./features/student-access/student-dashboard-page";
 import { StudentsPage } from "./features/students/students-page";
+import { ThemeProvider } from "./hooks/use-theme";
 import "./index.css";
 import { authClient } from "./lib/auth-client";
 
@@ -315,8 +316,10 @@ function LoadingScreen() {
 
 export function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
