@@ -5,6 +5,7 @@ import { api } from "../../api";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { formatAttendanceSummary } from "./attendance-summary";
 
 export function AttendanceList(props: {
   classSessionId: string;
@@ -106,7 +107,7 @@ export function AttendanceList(props: {
             Presenças{" "}
             {summary ? (
               <span className="text-muted-foreground font-normal">
-                {summary.present}/{summary.total}
+                {formatAttendanceSummary(summary.present, summary.total)}
               </span>
             ) : null}
           </CardTitle>
@@ -132,9 +133,10 @@ export function AttendanceList(props: {
               <p className="text-sm text-muted-foreground">Nenhum aluno encontrado.</p>
             ) : null}
             {searchResults.slice(0, 10).map((student) => (
-              <div
+              <article
                 key={student.id}
                 className="flex items-center justify-between rounded-2xl border border-border bg-background/50 p-3"
+                data-testid="attendance-search-result"
               >
                 <div>
                   <p className="text-sm font-medium">{student.name}</p>
@@ -151,7 +153,7 @@ export function AttendanceList(props: {
                 >
                   Marcar presença
                 </Button>
-              </div>
+              </article>
             ))}
           </div>
         ) : null}
@@ -213,7 +215,7 @@ function RosterRow(props: {
   const isInvalidatingThis = props.invalidatingId === attendance?.id;
 
   return (
-    <div
+    <article
       className={`rounded-2xl border p-3 ${
         isPresent
           ? "border-primary/30 bg-primary/5"
@@ -221,6 +223,7 @@ function RosterRow(props: {
             ? "border-destructive/30 bg-destructive/5"
             : "border-border bg-background/50"
       }`}
+      data-testid="attendance-roster-row"
     >
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
@@ -282,6 +285,6 @@ function RosterRow(props: {
           </div>
         </div>
       ) : null}
-    </div>
+    </article>
   );
 }

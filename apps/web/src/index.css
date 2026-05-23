@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "geist/font/sans.css";
 
 @theme inline {
   --color-background: var(--background);

@@ -8,6 +8,7 @@ import { api } from "../../api";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { formatAttendanceSummary } from "../classes/attendance-summary";
 
 const weekdays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 type CreateAdHocPayload = components["schemas"]["CreateAdHocClassDto"];
@@ -479,8 +480,9 @@ function OccurrenceCard(props: {
   const isEnded = occurrence.status === "ended";
   const canStart = occurrence.status === "scheduled";
   return (
-    <div
+    <article
       className={`rounded-2xl border p-3 ${isCancelled ? "border-destructive/40 bg-destructive/5 opacity-75" : isActive ? "border-primary/40 bg-primary/5" : "border-border bg-card"}`}
+      data-testid="schedule-occurrence-card"
     >
       <div className="flex items-start justify-between gap-2">
         <div>
@@ -514,8 +516,8 @@ function OccurrenceCard(props: {
       <p className="mt-1 text-xs text-muted-foreground">
         {occurrence.durationMinutes}min ·{" "}
         {occurrence.attendanceCount != null
-          ? `${occurrence.attendanceCount}/${occurrence.studentCount} presença(s)`
-          : `${occurrence.studentCount} aluno(s)`}
+          ? formatAttendanceSummary(occurrence.attendanceCount, occurrence.studentCount)
+          : `${occurrence.studentCount} aluno(s) da turma`}
       </p>
       {occurrence.tags.length > 0 ? (
         <p className="mt-2 text-xs text-primary">
@@ -551,7 +553,7 @@ function OccurrenceCard(props: {
           </Button>
         ) : null}
       </div>
-    </div>
+    </article>
   );
 }
 

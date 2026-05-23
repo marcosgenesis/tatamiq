@@ -107,7 +107,12 @@ export function ActiveClassPage(props: { classId: string }) {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex justify-center rounded-2xl border border-primary/30 bg-white p-6">
+              <div
+                className="flex justify-center rounded-2xl border border-primary/30 bg-white p-6"
+                data-testid="active-class-qr-code"
+                role="img"
+                aria-label="QR Code da aula ativa"
+              >
                 <QRCodeSVG value={qrToken.token} size={256} level="M" />
               </div>
               <QrRefreshCountdown expiresAt={qrToken.expiresAt} onExpired={qrQuery.refetch} />

@@ -79,10 +79,10 @@ function MobileTopbar({ academyName, onSignOut }: { academyName: string; onSignO
     <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-background/88 px-4 py-3 backdrop-blur-xl md:hidden">
       <BrandMark academyName={academyName} />
       <Sheet>
-        <SheetTrigger asChild>
-          <Button variant="secondary" size="icon" aria-label="Abrir navegação">
-            <Menu02Icon className="size-5" />
-          </Button>
+        <SheetTrigger
+          render={<Button variant="secondary" size="icon" aria-label="Abrir navegação" />}
+        >
+          <Menu02Icon className="size-5" />
         </SheetTrigger>
         <SheetContent>
           <SheetTitle className="sr-only">Navegação do instrutor</SheetTitle>
