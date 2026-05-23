@@ -1,17 +1,16 @@
 import { Link, useNavigate } from "@tanstack/react-router";
+import { AtIcon, LockIcon, UserIcon } from "hugeicons-react";
 import { useState } from "react";
-import { Button } from "../../components/ui/button";
-import { createAcademySlug } from "../../lib/academy-slug";
-import { authClient } from "../../lib/auth-client";
+import { Button } from "@/components/ui/button";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { createAcademySlug } from "@/lib/academy-slug";
+import { authClient } from "@/lib/auth-client";
 import { AuthLayout } from "./auth-layout";
-
-const inputClass =
-  "h-12 w-full rounded-2xl border border-input bg-background/70 px-4 text-sm text-foreground outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/15";
 
 function AuthError({ message }: { message: string | null }) {
   if (!message) return null;
   return (
-    <p className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+    <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
       {message}
     </p>
   );
@@ -41,37 +40,43 @@ export function SignInPage() {
 
   return (
     <AuthLayout>
-      <div className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Entrar no Tatamiq</h1>
-        <p className="text-sm text-muted-foreground">Acesse sua área de instrutor.</p>
+      <div className="flex flex-col space-y-1">
+        <h1 className="font-bold text-2xl tracking-wide">Entrar no Tatamiq</h1>
+        <p className="text-base text-muted-foreground">Acesse sua área de instrutor.</p>
       </div>
-      <form className="mt-6 space-y-4" onSubmit={submit}>
+      <form className="space-y-2" onSubmit={submit}>
         <AuthError message={error} />
-        <label className="block space-y-2 text-sm font-medium">
-          <span>Email</span>
-          <input
-            className={inputClass}
+        <InputGroup>
+          <InputGroupInput
+            aria-label="Email"
+            placeholder="seu@email.com"
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             required
           />
-        </label>
-        <label className="block space-y-2 text-sm font-medium">
-          <span>Senha</span>
-          <input
-            className={inputClass}
+          <InputGroupAddon align="inline-start">
+            <AtIcon />
+          </InputGroupAddon>
+        </InputGroup>
+        <InputGroup>
+          <InputGroupInput
+            aria-label="Senha"
+            placeholder="Senha"
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             required
           />
-        </label>
-        <Button className="w-full" type="submit" disabled={isSubmitting}>
+          <InputGroupAddon align="inline-start">
+            <LockIcon />
+          </InputGroupAddon>
+        </InputGroup>
+        <Button className="w-full" size="sm" type="submit" disabled={isSubmitting}>
           {isSubmitting ? "Entrando..." : "Entrar"}
         </Button>
       </form>
-      <div className="mt-6 flex flex-col gap-2 text-sm text-muted-foreground">
+      <div className="flex flex-col gap-2 text-sm text-muted-foreground">
         <Link to="/forgot-password" className="text-primary hover:underline">
           Esqueci minha senha
         </Link>
@@ -111,48 +116,57 @@ export function SignUpPage() {
 
   return (
     <AuthLayout>
-      <div className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Criar sua conta</h1>
-        <p className="text-sm text-muted-foreground">
+      <div className="flex flex-col space-y-1">
+        <h1 className="font-bold text-2xl tracking-wide">Criar sua conta</h1>
+        <p className="text-base text-muted-foreground">
           Comece com seu login de Dono/Instrutor Solo.
         </p>
       </div>
-      <form className="mt-6 space-y-4" onSubmit={submit}>
+      <form className="space-y-2" onSubmit={submit}>
         <AuthError message={error} />
-        <label className="block space-y-2 text-sm font-medium">
-          <span>Nome</span>
-          <input
-            className={inputClass}
+        <InputGroup>
+          <InputGroupInput
+            aria-label="Nome"
+            placeholder="Seu nome"
             value={name}
             onChange={(event) => setName(event.target.value)}
             required
           />
-        </label>
-        <label className="block space-y-2 text-sm font-medium">
-          <span>Email</span>
-          <input
-            className={inputClass}
+          <InputGroupAddon align="inline-start">
+            <UserIcon />
+          </InputGroupAddon>
+        </InputGroup>
+        <InputGroup>
+          <InputGroupInput
+            aria-label="Email"
+            placeholder="seu@email.com"
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             required
           />
-        </label>
-        <label className="block space-y-2 text-sm font-medium">
-          <span>Senha</span>
-          <input
-            className={inputClass}
+          <InputGroupAddon align="inline-start">
+            <AtIcon />
+          </InputGroupAddon>
+        </InputGroup>
+        <InputGroup>
+          <InputGroupInput
+            aria-label="Senha"
+            placeholder="Senha"
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             required
           />
-        </label>
-        <Button className="w-full" type="submit" disabled={isSubmitting}>
+          <InputGroupAddon align="inline-start">
+            <LockIcon />
+          </InputGroupAddon>
+        </InputGroup>
+        <Button className="w-full" size="sm" type="submit" disabled={isSubmitting}>
           {isSubmitting ? "Criando..." : "Criar conta"}
         </Button>
       </form>
-      <p className="mt-6 text-sm text-muted-foreground">
+      <p className="text-sm text-muted-foreground">
         Já tem conta?{" "}
         <Link to="/sign-in" className="text-primary hover:underline">
           Entrar
@@ -188,34 +202,37 @@ export function ForgotPasswordPage() {
 
   return (
     <AuthLayout>
-      <div className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Recuperar senha</h1>
-        <p className="text-sm text-muted-foreground">
+      <div className="flex flex-col space-y-1">
+        <h1 className="font-bold text-2xl tracking-wide">Recuperar senha</h1>
+        <p className="text-base text-muted-foreground">
           Enviaremos um link para definir uma nova senha.
         </p>
       </div>
-      <form className="mt-6 space-y-4" onSubmit={submit}>
+      <form className="space-y-2" onSubmit={submit}>
         <AuthError message={error} />
         {sent && (
-          <p className="rounded-2xl border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-primary">
+          <p className="rounded-lg border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-primary">
             Se o email existir, o link de recuperação será enviado.
           </p>
         )}
-        <label className="block space-y-2 text-sm font-medium">
-          <span>Email</span>
-          <input
-            className={inputClass}
+        <InputGroup>
+          <InputGroupInput
+            aria-label="Email"
+            placeholder="seu@email.com"
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             required
           />
-        </label>
-        <Button className="w-full" type="submit" disabled={isSubmitting}>
+          <InputGroupAddon align="inline-start">
+            <AtIcon />
+          </InputGroupAddon>
+        </InputGroup>
+        <Button className="w-full" size="sm" type="submit" disabled={isSubmitting}>
           {isSubmitting ? "Enviando..." : "Enviar link"}
         </Button>
       </form>
-      <p className="mt-6 text-sm text-muted-foreground">
+      <p className="text-sm text-muted-foreground">
         Lembrou a senha?{" "}
         <Link to="/sign-in" className="text-primary hover:underline">
           Entrar
@@ -249,24 +266,27 @@ export function ResetPasswordPage() {
 
   return (
     <AuthLayout>
-      <div className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Definir nova senha</h1>
-        <p className="text-sm text-muted-foreground">Escolha uma nova senha para sua conta.</p>
+      <div className="flex flex-col space-y-1">
+        <h1 className="font-bold text-2xl tracking-wide">Definir nova senha</h1>
+        <p className="text-base text-muted-foreground">Escolha uma nova senha para sua conta.</p>
       </div>
-      <form className="mt-6 space-y-4" onSubmit={submit}>
+      <form className="space-y-2" onSubmit={submit}>
         <AuthError message={error} />
-        <label className="block space-y-2 text-sm font-medium">
-          <span>Nova senha</span>
-          <input
-            className={inputClass}
+        <InputGroup>
+          <InputGroupInput
+            aria-label="Nova senha"
+            placeholder="Nova senha"
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             required
             disabled={!token}
           />
-        </label>
-        <Button className="w-full" type="submit" disabled={isSubmitting || !token}>
+          <InputGroupAddon align="inline-start">
+            <LockIcon />
+          </InputGroupAddon>
+        </InputGroup>
+        <Button className="w-full" size="sm" type="submit" disabled={isSubmitting || !token}>
           {isSubmitting ? "Salvando..." : "Definir senha"}
         </Button>
       </form>
@@ -310,24 +330,27 @@ export function AcademyOnboardingPage() {
 
   return (
     <AuthLayout>
-      <div className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Crie sua academia</h1>
-        <p className="text-sm text-muted-foreground">
+      <div className="flex flex-col space-y-1">
+        <h1 className="font-bold text-2xl tracking-wide">Crie sua academia</h1>
+        <p className="text-base text-muted-foreground">
           Informe o nome do tatame que você vai organizar no Tatamiq.
         </p>
       </div>
-      <form className="mt-6 space-y-4" onSubmit={submit}>
+      <form className="space-y-2" onSubmit={submit}>
         <AuthError message={error} />
-        <label className="block space-y-2 text-sm font-medium">
-          <span>Nome da academia</span>
-          <input
-            className={inputClass}
+        <InputGroup>
+          <InputGroupInput
+            aria-label="Nome da academia"
+            placeholder="Nome da academia"
             value={academyName}
             onChange={(event) => setAcademyName(event.target.value)}
             required
           />
-        </label>
-        <Button className="w-full" type="submit" disabled={isSubmitting}>
+          <InputGroupAddon align="inline-start">
+            <UserIcon />
+          </InputGroupAddon>
+        </InputGroup>
+        <Button className="w-full" size="sm" type="submit" disabled={isSubmitting}>
           {isSubmitting ? "Criando..." : "Começar a organizar minha academia"}
         </Button>
       </form>
