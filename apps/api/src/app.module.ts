@@ -10,6 +10,7 @@ import { HealthController } from "./health/health.controller";
 import { MonthlyFeesModule } from "./monthly-fees/monthly-fees.module";
 import { ScheduleModule } from "./schedule/schedule.module";
 import { StudentAccessModule } from "./student-access/student-access.module";
+import { StudentNotesModule } from "./student-notes/student-notes.module";
 import { StudentsModule } from "./students/students.module";
 
 @Module({
@@ -33,6 +34,7 @@ import { StudentsModule } from "./students/students.module";
     ClassesModule,
     AttendancesModule,
     StudentAccessModule,
+    StudentNotesModule,
     MonthlyFeesModule,
   ],
   controllers: [HealthController],

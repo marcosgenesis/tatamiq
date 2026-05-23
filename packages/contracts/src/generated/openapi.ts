@@ -84,6 +84,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/student-access/invites/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["StudentAccessController_inviteSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/students/{id}/access-invites": {
         parameters: {
             query?: never;
@@ -204,6 +220,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["StudentAccessController_studentMonthlyFees"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/student/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["StudentAccessController_studentNotes"];
         put?: never;
         post?: never;
         delete?: never;
@@ -350,6 +382,54 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["MonthlyFeesController_rejectReceipt"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/students/{id}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["StudentNotesController_list"];
+        put?: never;
+        post: operations["StudentNotesController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/students/{id}/notes/{noteId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["StudentNotesController_update"];
+        trace?: never;
+    };
+    "/students/{id}/notes/{noteId}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["StudentNotesController_archive"];
         delete?: never;
         options?: never;
         head?: never;
@@ -795,6 +875,10 @@ export interface components {
             /** @enum {string} */
             status?: "active" | "inactive";
         };
+        InviteSummaryResponseDto: {
+            pending: number;
+            expired: number;
+        };
         CreateStudentInviteResponseDto: {
             invite: {
                 /** @enum {string} */
@@ -993,6 +1077,43 @@ export interface components {
         };
         RejectReceiptDto: {
             reason: string;
+        };
+        ListStudentNotesResponseDto: {
+            notes: {
+                id: string;
+                studentId: string;
+                content: string;
+                isVisible: boolean;
+                /** Format: date-time */
+                archivedAt: string | null;
+                createdByUserId: string;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+            }[];
+        };
+        CreateStudentNoteDto: {
+            content: string;
+            /** @default true */
+            isVisible: boolean;
+        };
+        StudentNoteDto: {
+            id: string;
+            studentId: string;
+            content: string;
+            isVisible: boolean;
+            /** Format: date-time */
+            archivedAt: string | null;
+            createdByUserId: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        UpdateStudentNoteDto: {
+            content?: string;
+            isVisible?: boolean;
         };
         ListClassGroupsResponseDto: {
             classGroups: {
@@ -1388,6 +1509,25 @@ export interface operations {
             };
         };
     };
+    StudentAccessController_inviteSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InviteSummaryResponseDto"];
+                };
+            };
+        };
+    };
     StudentAccessController_createInvite: {
         parameters: {
             query?: never;
@@ -1537,6 +1677,23 @@ export interface operations {
         };
     };
     StudentAccessController_studentMonthlyFees: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    StudentAccessController_studentNotes: {
         parameters: {
             query?: never;
             header?: never;
@@ -1807,6 +1964,100 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MonthlyFeeDetailDto"];
+                };
+            };
+        };
+    };
+    StudentNotesController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListStudentNotesResponseDto"];
+                };
+            };
+        };
+    };
+    StudentNotesController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateStudentNoteDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentNoteDto"];
+                };
+            };
+        };
+    };
+    StudentNotesController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                noteId: unknown;
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateStudentNoteDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentNoteDto"];
+                };
+            };
+        };
+    };
+    StudentNotesController_archive: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                noteId: unknown;
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentNoteDto"];
                 };
             };
         };

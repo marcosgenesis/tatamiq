@@ -514,6 +514,31 @@ export const paymentReceipts = pgTable(
   ],
 );
 
+export const studentNotes = pgTable(
+  "student_notes",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    studentId: text("student_id")
+      .notNull()
+      .references(() => students.id, { onDelete: "cascade" }),
+    content: text("content").notNull(),
+    isVisible: boolean("is_visible").notNull().default(true),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
+    createdByUserId: text("created_by_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("student_notes_organization_id_idx").on(table.organizationId),
+    index("student_notes_student_id_idx").on(table.studentId),
+  ],
+);
+
 export type ClassSession = typeof classSessions.$inferSelect;
 export type ClassCancellation = typeof classCancellations.$inferSelect;
 export type Attendance = typeof attendances.$inferSelect;
@@ -523,3 +548,4 @@ export type StudentAcceptance = typeof studentAcceptances.$inferSelect;
 export type MonthlyFee = typeof monthlyFees.$inferSelect;
 export type MonthlyFeeEvent = typeof monthlyFeeEvents.$inferSelect;
 export type PaymentReceipt = typeof paymentReceipts.$inferSelect;
+export type StudentNote = typeof studentNotes.$inferSelect;

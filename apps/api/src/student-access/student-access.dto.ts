@@ -4,6 +4,7 @@ import {
   confirmQrAttendanceResponseSchema,
   confirmQrAttendanceSchema,
   createStudentInviteResponseSchema,
+  inviteSummaryResponseSchema,
   studentInvitePreviewSchema,
   studentMeResponseSchema,
 } from "@tatamiq/contracts";
@@ -22,3 +23,4 @@ export class ConfirmQrAttendanceDto extends createZodDto(confirmQrAttendanceSche
 export class ConfirmQrAttendanceResponseDto extends createZodDto(
   confirmQrAttendanceResponseSchema,
 ) {}
+export class InviteSummaryResponseDto extends createZodDto(inviteSummaryResponseSchema) {}

@@ -10,6 +10,7 @@ import type {
   AcceptStudentInviteInput,
   AcceptStudentInviteResponse,
   CreateStudentInviteResponse,
+  InviteSummaryResponse,
   StudentAccessState,
   StudentInvitePreview,
   StudentMeResponse,
@@ -84,6 +85,31 @@ export class StudentAccessService {
     }
 
     return result;
+  }
+
+  async inviteSummary(organizationId: string): Promise<InviteSummaryResponse> {
+    const rows = await this.db
+      .select({ expiresAt: studentAccessInvites.expiresAt })
+      .from(studentAccessInvites)
+      .where(
+        and(
+          eq(studentAccessInvites.organizationId, organizationId),
+          eq(studentAccessInvites.status, "pending"),
+        ),
+      );
+
+    const now = new Date();
+    let pending = 0;
+    let expired = 0;
+    for (const row of rows) {
+      if (row.expiresAt.getTime() < now.getTime()) {
+        expired++;
+      } else {
+        pending++;
+      }
+    }
+
+    return { pending, expired };
   }
 
   async createInvite(

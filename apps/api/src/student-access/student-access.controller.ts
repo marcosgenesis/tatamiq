@@ -15,6 +15,7 @@ import { AllowAnonymous, OrgRoles, Session, type UserSession } from "@thallesp/n
 import type { z } from "zod";
 import type { auth } from "../auth";
 import { MonthlyFeesService } from "../monthly-fees/monthly-fees.service";
+import { StudentNotesService } from "../student-notes/student-notes.service";
 import { QrAttendanceService } from "./qr-attendance.service";
 import {
   AcceptStudentInviteDto,
@@ -22,6 +23,7 @@ import {
   ConfirmQrAttendanceDto,
   ConfirmQrAttendanceResponseDto,
   CreateStudentInviteResponseDto,
+  InviteSummaryResponseDto,
   StudentInvitePreviewDto,
   StudentMeResponseDto,
 } from "./student-access.dto";
@@ -39,7 +41,15 @@ export class StudentAccessController {
     @Inject(StudentAccessService) private readonly studentAccessService: StudentAccessService,
     @Inject(QrAttendanceService) private readonly qrAttendanceService: QrAttendanceService,
     @Inject(MonthlyFeesService) private readonly monthlyFeesService: MonthlyFeesService,
+    @Inject(StudentNotesService) private readonly studentNotesService: StudentNotesService,
   ) {}
+
+  @Get("student-access/invites/summary")
+  @OrgRoles(["owner"])
+  @ApiOkResponse({ type: InviteSummaryResponseDto })
+  inviteSummary(@Session() session: SessionWithUser): Promise<InviteSummaryResponseDto> {
+    return this.studentAccessService.inviteSummary(activeOrganizationId(session));
+  }
 
   @Post("students/:id/access-invites")
   @HttpCode(200)
@@ -131,6 +141,12 @@ export class StudentAccessController {
   async studentMonthlyFees(@Session() session: SessionWithUser) {
     const meData = await this.studentAccessService.me(session.user.id);
     return this.monthlyFeesService.studentFees(meData.student.id, meData.academy.id);
+  }
+
+  @Get("student/notes")
+  async studentNotes(@Session() session: SessionWithUser) {
+    const meData = await this.studentAccessService.me(session.user.id);
+    return this.studentNotesService.listVisibleNotes(meData.student.id);
   }
 }
 

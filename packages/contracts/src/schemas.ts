@@ -153,11 +153,17 @@ export const studentMeResponseSchema = z.object({
   upcomingClasses: z.array(studentUpcomingClassSchema),
 });
 
+export const inviteSummaryResponseSchema = z.object({
+  pending: z.number().int().nonnegative(),
+  expired: z.number().int().nonnegative(),
+});
+
 export type CreateStudentInviteResponse = z.infer<typeof createStudentInviteResponseSchema>;
 export type StudentInvitePreview = z.infer<typeof studentInvitePreviewSchema>;
 export type AcceptStudentInviteInput = z.infer<typeof acceptStudentInviteSchema>;
 export type AcceptStudentInviteResponse = z.infer<typeof acceptStudentInviteResponseSchema>;
 export type StudentMeResponse = z.infer<typeof studentMeResponseSchema>;
+export type InviteSummaryResponse = z.infer<typeof inviteSummaryResponseSchema>;
 
 export const classGroupStatusSchema = z.enum(["active", "archived"]);
 
@@ -510,3 +516,35 @@ export type MonthlyFeeEvent = z.infer<typeof monthlyFeeEventSchema>;
 export type PaymentReceipt = z.infer<typeof paymentReceiptSchema>;
 export type ListMonthlyFeesResponse = z.infer<typeof listMonthlyFeesResponseSchema>;
 export type CreateMonthlyFeeInput = z.infer<typeof createMonthlyFeeSchema>;
+
+// --- Student Notes ---
+
+export const studentNoteSchema = z.object({
+  id: z.string(),
+  studentId: z.string(),
+  content: z.string(),
+  isVisible: z.boolean(),
+  archivedAt: z.string().datetime().nullable(),
+  createdByUserId: z.string(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
+
+export const createStudentNoteSchema = z.object({
+  content: z.string().trim().min(1),
+  isVisible: z.boolean().optional().default(true),
+});
+
+export const updateStudentNoteSchema = z.object({
+  content: z.string().trim().min(1).optional(),
+  isVisible: z.boolean().optional(),
+});
+
+export const listStudentNotesResponseSchema = z.object({
+  notes: z.array(studentNoteSchema),
+});
+
+export type StudentNoteDto = z.infer<typeof studentNoteSchema>;
+export type CreateStudentNoteInput = z.infer<typeof createStudentNoteSchema>;
+export type UpdateStudentNoteInput = z.infer<typeof updateStudentNoteSchema>;
+export type ListStudentNotesResponse = z.infer<typeof listStudentNotesResponseSchema>;
