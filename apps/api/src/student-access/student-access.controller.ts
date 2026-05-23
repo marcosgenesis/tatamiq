@@ -10,13 +10,16 @@ import {
   Post,
 } from "@nestjs/common";
 import { ApiBody, ApiOkResponse, ApiParam, ApiTags } from "@nestjs/swagger";
-import { acceptStudentInviteSchema } from "@tatamiq/contracts";
+import { acceptStudentInviteSchema, confirmQrAttendanceSchema } from "@tatamiq/contracts";
 import { AllowAnonymous, OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import type { z } from "zod";
 import type { auth } from "../auth";
+import { QrAttendanceService } from "./qr-attendance.service";
 import {
   AcceptStudentInviteDto,
   AcceptStudentInviteResponseDto,
+  ConfirmQrAttendanceDto,
+  ConfirmQrAttendanceResponseDto,
   CreateStudentInviteResponseDto,
   StudentInvitePreviewDto,
   StudentMeResponseDto,
@@ -33,6 +36,7 @@ type SessionWithUser = UserSession<typeof auth> & {
 export class StudentAccessController {
   constructor(
     @Inject(StudentAccessService) private readonly studentAccessService: StudentAccessService,
+    @Inject(QrAttendanceService) private readonly qrAttendanceService: QrAttendanceService,
   ) {}
 
   @Post("students/:id/access-invites")
@@ -98,6 +102,20 @@ export class StudentAccessController {
       token,
       session.user.id,
       parseBody(acceptStudentInviteSchema, body),
+    );
+  }
+
+  @Post("student/attendances/qr")
+  @HttpCode(200)
+  @ApiBody({ type: ConfirmQrAttendanceDto })
+  @ApiOkResponse({ type: ConfirmQrAttendanceResponseDto })
+  confirmQrAttendance(
+    @Session() session: SessionWithUser,
+    @Body() body: ConfirmQrAttendanceDto,
+  ): Promise<ConfirmQrAttendanceResponseDto> {
+    return this.qrAttendanceService.confirmQrAttendance(
+      session.user.id,
+      parseBody(confirmQrAttendanceSchema, body),
     );
   }
 
