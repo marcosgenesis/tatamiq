@@ -125,7 +125,7 @@ Mudança do caminho de graduação infantil para o adulto ao atingir uma idade c
 _Avoid_: conversão automática de faixa, promoção por idade
 
 **Mensalidade**:
-Cobrança recorrente mensal única por aluno e mês de referência, gerada por rotina automática diária para um **Aluno Ativo** alguns dias antes do vencimento, com padrão de 5 dias, ou criada manualmente pelo instrutor para casos excepcionais, com valor individual do aluno, dia de vencimento, pagamento por Pix exibido ao aluno e verificação manual pelo instrutor na V0, sem pagamento parcial, e status financeiro do mês; mudanças no valor individual afetam apenas mensalidades futuras por padrão.
+Cobrança recorrente mensal única por aluno e mês de referência (`referenceYear` + `referenceMonth`), gerada por rotina automática diária (cron + catch-up no dashboard) para um **Aluno Ativo** 5 dias antes do vencimento, ou criada manualmente pelo instrutor para casos excepcionais (mês passado, migração), com valor snapshot do aluno no momento da geração e data de vencimento persistida (clamp ao último dia do mês quando necessário); unique constraint `(student_id, reference_year, reference_month)` garante uma por aluno/mês; mudanças no valor individual ou dia de vencimento do aluno afetam apenas mensalidades futuras.
 _Avoid_: assinatura, invoice, pagamento, plano, taxa avulsa, produto
 
 **Pix da Academia**:
@@ -133,11 +133,11 @@ Chave Pix simples ou payload Pix copia-e-cola da **Academia** exibido ao aluno p
 _Avoid_: integração bancária, conciliação automática
 
 **Comprovante Pix**:
-Arquivo de imagem ou PDF de até 10 MB enviado pelo **Aluno** para solicitar verificação de pagamento de uma **Mensalidade**, preservado no histórico financeiro após aprovação ou rejeição.
-_Avoid_: confirmação automática, recibo emitido pelo app
+Arquivo de imagem ou PDF de até 10 MB enviado pelo **Aluno** via presigned URL direto ao R2 para solicitar verificação de pagamento de uma **Mensalidade**, preservado no histórico financeiro após aprovação ou rejeição; múltiplos comprovantes possíveis por mensalidade (rejeição → nova tentativa), mas aluno vê apenas o último relevante; rejeição tem motivo obrigatório inline no registro do comprovante, visível ao aluno.
+_Avoid_: confirmação automática, recibo emitido pelo app, upload via proxy do backend
 
 **Verificação de Pagamento**:
-Análise manual feita pelo instrutor sobre um **Comprovante Pix** obrigatório, aprovando a **Mensalidade** como paga ou rejeitando a solicitação com motivo obrigatório visível ao aluno; uma mensalidade pode ter novas tentativas após rejeição.
+Análise manual feita pelo instrutor sobre um **Comprovante Pix** obrigatório, aprovando a **Mensalidade** como paga ou rejeitando a solicitação com motivo obrigatório visível ao aluno; rejeição volta status pra `open` (atrasada calculada se vencimento passou); nova tentativa permitida após rejeição; fila de verificação acessível no dashboard (card) e via filtro `under_review` na listagem de mensalidades.
 _Avoid_: conciliação bancária, pagamento automático
 
 **Pagamento Manual**:
@@ -145,12 +145,16 @@ Marcação de uma **Mensalidade** como paga diretamente pelo instrutor, sem **Co
 _Avoid_: pagamento verificado, conciliação automática
 
 **Status Financeiro do Mês**:
-Situação visível para instrutor e aluno sobre a **Mensalidade** em um mês específico: em aberto, em verificação, paga, atrasada ou dispensada; uma mensalidade em aberto vira atrasada no dia seguinte ao vencimento, e uma mensalidade em verificação não é exibida como atrasada até ser rejeitada.
-_Avoid_: estado da assinatura, score financeiro
+Situação visível para instrutor e aluno sobre a **Mensalidade** em um mês específico; quatro status persistidos (`open`, `under_review`, `paid`, `waived`) e um calculado (`overdue` = `open` com vencimento passado, usando timezone `America/Sao_Paulo` na V0); uma mensalidade em verificação não é exibida como atrasada até ser rejeitada (ver ADR 0009).
+_Avoid_: estado da assinatura, score financeiro, status overdue persistido
 
 **Ajuste de Mensalidade**:
-Alteração pontual do valor de uma **Mensalidade** específica, com motivo obrigatório visível apenas ao instrutor, sem afetar o valor individual futuro do **Aluno**.
+Alteração pontual do valor de uma **Mensalidade** específica, registrada como evento em `monthly_fee_events` com motivo obrigatório visível apenas ao instrutor; `originalAmountInCents` preservado na mensalidade, `amountInCents` atualizado pro valor efetivo; sem afetar o valor individual futuro do **Aluno**.
 _Avoid_: mudança de plano, alteração retroativa geral
+
+**Evento de Mensalidade**:
+Registro de auditoria em tabela `monthly_fee_events` para ações sobre uma **Mensalidade**: `waived`, `adjusted`, `receipt_approved`, `receipt_rejected`, `manual_payment`; cada evento registra tipo, motivo, metadata (jsonb), autor e timestamp; origem do pagamento (`manual` vs `receipt_approved`) é derivada dos eventos, não persistida na mensalidade.
+_Avoid_: status da mensalidade, substituição do status persistido
 
 **Mensalidade Dispensada**:
 **Mensalidade** cancelada ou abonada pelo instrutor com motivo obrigatório visível apenas ao instrutor, sem ser tratada como paga.
@@ -171,9 +175,11 @@ _Avoid_: tarefa, lembrete, prontuário, workflow, comentário do aluno, exclusã
 - Uma **Academia** tem um **Dono/Instrutor Solo** no MVP
 - Uma **Academia** tem muitos **Alunos**
 - Uma **Academia** pode ter um **Pix da Academia** para orientar pagamentos de mensalidades
-- Uma **Mensalidade** pode ter uma **Verificação de Pagamento** baseada em **Comprovante Pix**
+- Uma **Mensalidade** pode ter múltiplos **Comprovantes Pix** (rejeição → nova tentativa)
 - Uma **Verificação de Pagamento** aprovada transforma a **Mensalidade** em paga
 - Um **Pagamento Manual** transforma a **Mensalidade** em paga sem exigir **Comprovante Pix**
+- Uma **Mensalidade** pode ter muitos **Eventos de Mensalidade** (auditoria)
+- Um **Ajuste de Mensalidade** preserva `originalAmountInCents` e registra **Evento de Mensalidade**
 - Um **Dono/Instrutor Solo** acompanha muitos **Alunos**
 - Um **Aluno** pode ter **Acesso do Aluno** para consultar os próprios dados, incluindo mensalidades mesmo quando for menor de idade
 - Um **Acesso do Aluno** vincula exatamente uma conta de autenticação a exatamente um **Aluno** na V0
