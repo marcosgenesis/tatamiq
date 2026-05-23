@@ -29,6 +29,13 @@ export const studentGuardianSchema = z.object({
   relationship: z.string().nullable(),
 });
 
+export const studentAccessStateSchema = z.object({
+  status: z.enum(["none", "pending", "expired", "active", "revoked"]),
+  inviteId: z.string().nullable(),
+  expiresAt: z.string().datetime().nullable(),
+  accessId: z.string().nullable(),
+});
+
 export const studentSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -44,6 +51,7 @@ export const studentSchema = z.object({
   currentDegree: z.number().int().min(0).max(4),
   graduationPath: graduationPathSchema,
   guardian: studentGuardianSchema.nullable(),
+  accessState: studentAccessStateSchema,
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
@@ -85,10 +93,71 @@ export const updateStudentSchema = createStudentSchema.extend({
   status: studentStatusSchema.optional(),
 });
 
+export type StudentAccessState = z.infer<typeof studentAccessStateSchema>;
 export type Student = z.infer<typeof studentSchema>;
 export type ListStudentsResponse = z.infer<typeof listStudentsResponseSchema>;
 export type CreateStudentInput = z.infer<typeof createStudentSchema>;
 export type UpdateStudentInput = z.infer<typeof updateStudentSchema>;
+
+export const createStudentInviteResponseSchema = z.object({
+  invite: studentAccessStateSchema.extend({
+    status: z.literal("pending"),
+    inviteId: z.string(),
+    expiresAt: z.string().datetime(),
+  }),
+  inviteLink: z.string().url(),
+});
+
+export const studentInvitePreviewSchema = z.object({
+  status: z.enum(["valid", "expired", "revoked", "accepted", "unavailable"]),
+  academyName: z.string().nullable(),
+  studentName: z.string().nullable(),
+  expiresAt: z.string().datetime().nullable(),
+});
+
+export const acceptStudentInviteSchema = z.object({
+  termsAccepted: z.literal(true),
+  termsVersion: z.literal("student-access-v1"),
+});
+
+export const acceptStudentInviteResponseSchema = z.object({
+  studentAccessId: z.string(),
+  studentId: z.string(),
+});
+
+export const studentMeClassGroupSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+});
+
+export const studentUpcomingClassSchema = z.object({
+  id: z.string(),
+  status: z.enum(["scheduled", "active", "ended", "cancelled"]),
+  source: z.enum(["recurring", "ad_hoc"]),
+  classGroupId: z.string(),
+  classGroupName: z.string(),
+  scheduledStartAt: z.string().datetime(),
+  durationMinutes: z.number().int().positive(),
+});
+
+export const studentMeResponseSchema = z.object({
+  academy: z.object({ id: z.string(), name: z.string() }),
+  student: z.object({
+    id: z.string(),
+    name: z.string(),
+    status: studentStatusSchema,
+    readOnly: z.boolean(),
+    blocked: z.boolean(),
+  }),
+  classGroups: z.array(studentMeClassGroupSchema),
+  upcomingClasses: z.array(studentUpcomingClassSchema),
+});
+
+export type CreateStudentInviteResponse = z.infer<typeof createStudentInviteResponseSchema>;
+export type StudentInvitePreview = z.infer<typeof studentInvitePreviewSchema>;
+export type AcceptStudentInviteInput = z.infer<typeof acceptStudentInviteSchema>;
+export type AcceptStudentInviteResponse = z.infer<typeof acceptStudentInviteResponseSchema>;
+export type StudentMeResponse = z.infer<typeof studentMeResponseSchema>;
 
 export const classGroupStatusSchema = z.enum(["active", "archived"]);
 

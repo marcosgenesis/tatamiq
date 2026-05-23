@@ -206,6 +206,169 @@
         ]
       }
     },
+    "/students/{id}/access-invites": {
+      "post": {
+        "operationId": "StudentAccessController_createInvite",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateStudentInviteResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "student-access"
+        ]
+      }
+    },
+    "/students/{id}/access-invites/{inviteId}/revoke": {
+      "post": {
+        "operationId": "StudentAccessController_revokeInvite",
+        "parameters": [
+          {
+            "name": "inviteId",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "student-access"
+        ]
+      }
+    },
+    "/students/{id}/access/revoke": {
+      "post": {
+        "operationId": "StudentAccessController_revokeAccess",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "student-access"
+        ]
+      }
+    },
+    "/student-invites/{token}": {
+      "get": {
+        "operationId": "StudentAccessController_preview",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentInvitePreviewDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "student-access"
+        ]
+      }
+    },
+    "/student-invites/{token}/accept": {
+      "post": {
+        "operationId": "StudentAccessController_accept",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptStudentInviteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcceptStudentInviteResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "student-access"
+        ]
+      }
+    },
+    "/student/me": {
+      "get": {
+        "operationId": "StudentAccessController_me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentMeResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "student-access"
+        ]
+      }
+    },
     "/class-groups": {
       "get": {
         "operationId": "ClassGroupsController_list",
@@ -1005,6 +1168,41 @@
                   ],
                   "nullable": true
                 },
+                "accessState": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "none",
+                        "pending",
+                        "expired",
+                        "active",
+                        "revoked"
+                      ]
+                    },
+                    "inviteId": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "expiresAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+                      "nullable": true
+                    },
+                    "accessId": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "inviteId",
+                    "expiresAt",
+                    "accessId"
+                  ]
+                },
                 "createdAt": {
                   "type": "string",
                   "format": "date-time",
@@ -1031,6 +1229,7 @@
                 "currentDegree",
                 "graduationPath",
                 "guardian",
+                "accessState",
                 "createdAt",
                 "updatedAt"
               ]
@@ -1308,6 +1507,41 @@
             ],
             "nullable": true
           },
+          "accessState": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "none",
+                  "pending",
+                  "expired",
+                  "active",
+                  "revoked"
+                ]
+              },
+              "inviteId": {
+                "type": "string",
+                "nullable": true
+              },
+              "expiresAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+                "nullable": true
+              },
+              "accessId": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "status",
+              "inviteId",
+              "expiresAt",
+              "accessId"
+            ]
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time",
@@ -1334,6 +1568,7 @@
           "currentDegree",
           "graduationPath",
           "guardian",
+          "accessState",
           "createdAt",
           "updatedAt"
         ]
@@ -1480,6 +1715,247 @@
           "currentBelt",
           "currentDegree",
           "graduationPath"
+        ]
+      },
+      "CreateStudentInviteResponseDto": {
+        "type": "object",
+        "properties": {
+          "invite": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "pending"
+                ]
+              },
+              "inviteId": {
+                "type": "string"
+              },
+              "expiresAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+              },
+              "accessId": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "status",
+              "inviteId",
+              "expiresAt",
+              "accessId"
+            ]
+          },
+          "inviteLink": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "invite",
+          "inviteLink"
+        ]
+      },
+      "StudentInvitePreviewDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "valid",
+              "expired",
+              "revoked",
+              "accepted",
+              "unavailable"
+            ]
+          },
+          "academyName": {
+            "type": "string",
+            "nullable": true
+          },
+          "studentName": {
+            "type": "string",
+            "nullable": true
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "nullable": true
+          }
+        },
+        "required": [
+          "status",
+          "academyName",
+          "studentName",
+          "expiresAt"
+        ]
+      },
+      "AcceptStudentInviteDto": {
+        "type": "object",
+        "properties": {
+          "termsAccepted": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "termsVersion": {
+            "type": "string",
+            "enum": [
+              "student-access-v1"
+            ]
+          }
+        },
+        "required": [
+          "termsAccepted",
+          "termsVersion"
+        ]
+      },
+      "AcceptStudentInviteResponseDto": {
+        "type": "object",
+        "properties": {
+          "studentAccessId": {
+            "type": "string"
+          },
+          "studentId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "studentAccessId",
+          "studentId"
+        ]
+      },
+      "StudentMeResponseDto": {
+        "type": "object",
+        "properties": {
+          "academy": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "student": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "inactive"
+                ]
+              },
+              "readOnly": {
+                "type": "boolean"
+              },
+              "blocked": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "status",
+              "readOnly",
+              "blocked"
+            ]
+          },
+          "classGroups": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "name"
+              ]
+            }
+          },
+          "upcomingClasses": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "scheduled",
+                    "active",
+                    "ended",
+                    "cancelled"
+                  ]
+                },
+                "source": {
+                  "type": "string",
+                  "enum": [
+                    "recurring",
+                    "ad_hoc"
+                  ]
+                },
+                "classGroupId": {
+                  "type": "string"
+                },
+                "classGroupName": {
+                  "type": "string"
+                },
+                "scheduledStartAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                },
+                "durationMinutes": {
+                  "type": "integer",
+                  "exclusiveMinimum": true,
+                  "maximum": 9007199254740991,
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "id",
+                "status",
+                "source",
+                "classGroupId",
+                "classGroupName",
+                "scheduledStartAt",
+                "durationMinutes"
+              ]
+            }
+          }
+        },
+        "required": [
+          "academy",
+          "student",
+          "classGroups",
+          "upcomingClasses"
         ]
       },
       "ListClassGroupsResponseDto": {

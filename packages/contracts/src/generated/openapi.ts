@@ -84,6 +84,102 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/students/{id}/access-invites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["StudentAccessController_createInvite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/students/{id}/access-invites/{inviteId}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["StudentAccessController_revokeInvite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/students/{id}/access/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["StudentAccessController_revokeAccess"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/student-invites/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["StudentAccessController_preview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/student-invites/{token}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["StudentAccessController_accept"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/student/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["StudentAccessController_me"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/class-groups": {
         parameters: {
             query?: never;
@@ -424,6 +520,14 @@ export interface components {
                     email: string | null;
                     relationship: string | null;
                 } | null;
+                accessState: {
+                    /** @enum {string} */
+                    status: "none" | "pending" | "expired" | "active" | "revoked";
+                    inviteId: string | null;
+                    /** Format: date-time */
+                    expiresAt: string | null;
+                    accessId: string | null;
+                };
                 /** Format: date-time */
                 createdAt: string;
                 /** Format: date-time */
@@ -480,6 +584,14 @@ export interface components {
                 email: string | null;
                 relationship: string | null;
             } | null;
+            accessState: {
+                /** @enum {string} */
+                status: "none" | "pending" | "expired" | "active" | "revoked";
+                inviteId: string | null;
+                /** Format: date-time */
+                expiresAt: string | null;
+                accessId: string | null;
+            };
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
@@ -506,6 +618,66 @@ export interface components {
             } | null;
             /** @enum {string} */
             status?: "active" | "inactive";
+        };
+        CreateStudentInviteResponseDto: {
+            invite: {
+                /** @enum {string} */
+                status: "pending";
+                inviteId: string;
+                /** Format: date-time */
+                expiresAt: string;
+                accessId: string | null;
+            };
+            /** Format: uri */
+            inviteLink: string;
+        };
+        StudentInvitePreviewDto: {
+            /** @enum {string} */
+            status: "valid" | "expired" | "revoked" | "accepted" | "unavailable";
+            academyName: string | null;
+            studentName: string | null;
+            /** Format: date-time */
+            expiresAt: string | null;
+        };
+        AcceptStudentInviteDto: {
+            /** @enum {boolean} */
+            termsAccepted: true;
+            /** @enum {string} */
+            termsVersion: "student-access-v1";
+        };
+        AcceptStudentInviteResponseDto: {
+            studentAccessId: string;
+            studentId: string;
+        };
+        StudentMeResponseDto: {
+            academy: {
+                id: string;
+                name: string;
+            };
+            student: {
+                id: string;
+                name: string;
+                /** @enum {string} */
+                status: "active" | "inactive";
+                readOnly: boolean;
+                blocked: boolean;
+            };
+            classGroups: {
+                id: string;
+                name: string;
+            }[];
+            upcomingClasses: {
+                id: string;
+                /** @enum {string} */
+                status: "scheduled" | "active" | "ended" | "cancelled";
+                /** @enum {string} */
+                source: "recurring" | "ad_hoc";
+                classGroupId: string;
+                classGroupName: string;
+                /** Format: date-time */
+                scheduledStartAt: string;
+                durationMinutes: number;
+            }[];
         };
         ListClassGroupsResponseDto: {
             classGroups: {
@@ -897,6 +1069,131 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StudentDto"];
+                };
+            };
+        };
+    };
+    StudentAccessController_createInvite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateStudentInviteResponseDto"];
+                };
+            };
+        };
+    };
+    StudentAccessController_revokeInvite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                inviteId: unknown;
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    StudentAccessController_revokeAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    StudentAccessController_preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentInvitePreviewDto"];
+                };
+            };
+        };
+    };
+    StudentAccessController_accept: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcceptStudentInviteDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcceptStudentInviteResponseDto"];
+                };
+            };
+        };
+    };
+    StudentAccessController_me: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentMeResponseDto"];
                 };
             };
         };

@@ -30,6 +30,9 @@ import { ActiveClassPage } from "./features/classes/active-class-page";
 import { DashboardPage } from "./features/dashboard/dashboard-page";
 import { PlaceholderPage } from "./features/placeholder/placeholder-page";
 import { SchedulePage } from "./features/schedule/schedule-page";
+import { AcceptStudentInvitePage } from "./features/student-access/accept-student-invite-page";
+import { ChooseAreaPage } from "./features/student-access/choose-area-page";
+import { StudentDashboardPage } from "./features/student-access/student-dashboard-page";
 import { StudentsPage } from "./features/students/students-page";
 import "./index.css";
 import { authClient } from "./lib/auth-client";
@@ -70,6 +73,27 @@ const onboardingRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: onboardingPath,
   component: AcademyOnboardingPage,
+});
+
+const chooseAreaRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/choose-area",
+  component: ChooseAreaPage,
+});
+
+const studentHomeRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/student",
+  component: StudentDashboardPage,
+});
+
+const acceptStudentInviteRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/accept-student-invite/$token",
+  component: function AcceptStudentInviteRoute() {
+    const { token } = acceptStudentInviteRoute.useParams();
+    return <AcceptStudentInvitePage token={token} />;
+  },
 });
 
 const indexRoute = createRoute({
@@ -159,6 +183,9 @@ const routeTree = rootRoute.addChildren([
   forgotPasswordRoute,
   resetPasswordRoute,
   onboardingRoute,
+  chooseAreaRoute,
+  studentHomeRoute,
+  acceptStudentInviteRoute,
   indexRoute,
   studentsRoute,
   classGroupsRoute,
@@ -189,7 +216,9 @@ function RootLayout() {
   const session = authClient.useSession();
   const organizations = authClient.useListOrganizations();
   const activeOrganization = authClient.useActiveOrganization();
-  const isPublicPath = publicPaths.has(pathname);
+  const isInvitePath = pathname.startsWith("/accept-student-invite/");
+  const isStudentAreaPath = pathname === "/student" || pathname === "/choose-area";
+  const isPublicPath = publicPaths.has(pathname) || isInvitePath;
   const isOnboardingPath = pathname === onboardingPath;
   const firstOrganization = organizations.data?.[0] as OrganizationSummary | undefined;
   const activeAcademy = activeOrganization.data as OrganizationSummary | null | undefined;
@@ -223,11 +252,17 @@ function RootLayout() {
     return <Navigate to="/sign-in" />;
   }
 
-  if (session.data && isPublicPath) {
-    return <Navigate to={firstOrganization ? "/" : onboardingPath} />;
+  if (session.data && publicPaths.has(pathname)) {
+    return <Navigate to="/choose-area" />;
   }
 
-  if (session.data && !firstOrganization && !isOnboardingPath) {
+  if (
+    session.data &&
+    !firstOrganization &&
+    !isOnboardingPath &&
+    !isStudentAreaPath &&
+    !isInvitePath
+  ) {
     return <Navigate to={onboardingPath} />;
   }
 
@@ -235,7 +270,7 @@ function RootLayout() {
     return <Navigate to="/" />;
   }
 
-  if (isPublicPath || isOnboardingPath) {
+  if (isPublicPath || isOnboardingPath || isStudentAreaPath) {
     return <Outlet />;
   }
 

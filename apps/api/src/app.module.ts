@@ -8,6 +8,7 @@ import { ClassesModule } from "./classes/classes.module";
 import { DatabaseModule } from "./database/database.module";
 import { HealthController } from "./health/health.controller";
 import { ScheduleModule } from "./schedule/schedule.module";
+import { StudentAccessModule } from "./student-access/student-access.module";
 import { StudentsModule } from "./students/students.module";
 
 @Module({
@@ -30,6 +31,7 @@ import { StudentsModule } from "./students/students.module";
     ScheduleModule,
     ClassesModule,
     AttendancesModule,
+    StudentAccessModule,
   ],
   controllers: [HealthController],
 })

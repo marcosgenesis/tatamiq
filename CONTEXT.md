@@ -13,20 +13,20 @@ Pessoa responsável por administrar e conduzir a maior parte da operação da **
 _Avoid_: administrador genérico, operador, gestor como papel separado
 
 **Acesso do Aluno**:
-Capacidade do **Aluno**, inclusive menor de idade quando convidado pelo instrutor, consultar as próximas aulas dos próximos 7 dias das suas turmas, as próprias presenças e mensalidades dos últimos 12 meses, evolução e turmas vinculadas, e alterar contato pessoal e foto, sem administrar a academia/tatame; pode ser revogado pelo instrutor sem inativar o aluno, e alterações de telefone e email mantêm auditoria simples.
-_Avoid_: portal completo, conta administrativa
+Capacidade do **Aluno**, inclusive menor de idade quando convidado pelo instrutor, consultar as próximas aulas dos próximos 7 dias das suas turmas, as próprias presenças e mensalidades dos últimos 12 meses, evolução e turmas vinculadas, e alterar contato pessoal e foto, sem administrar a academia/tatame; nasce somente a partir de um **Convite do Aluno** para uma ficha de **Aluno** já existente, pode coexistir com acesso de instrutor na mesma conta com escolha explícita de área ao entrar, pode ser revogado pelo instrutor sem inativar o aluno ou apagar a conta de autenticação, e alterações de telefone e email mantêm auditoria simples.
+_Avoid_: portal completo, conta administrativa, autovínculo por email
 
 **Onboarding da Academia**:
 Etapa inicial em que um **Dono/Instrutor Solo** autenticado, mas ainda sem **Academia**, informa o nome obrigatório da organização local que irá gerir.
 _Avoid_: app demo, academia implícita, tenant padrão, perfil completo obrigatório
 
 **Convite do Aluno**:
-Link ou código que o instrutor copia e envia por fora para vincular uma conta de acesso ao cadastro de um **Aluno** existente, expirando em 7 dias e podendo ser reenviado.
-_Avoid_: cadastro livre, conta solta, envio integrado obrigatório
+Link completo que o instrutor copia e envia por fora para vincular uma conta de acesso ao cadastro de um **Aluno** existente, expirando em 7 dias; reenviar convite na V0 significa invalidar qualquer convite pendente anterior para aquele aluno e criar um novo link com nova expiração de 7 dias, desde que ainda não exista **Acesso do Aluno** ativo para aquela ficha; quando já existe acesso ativo, o instrutor precisa revogar o acesso antes de recriar convite.
+_Avoid_: cadastro livre, conta solta, envio integrado obrigatório, múltiplos acessos ativos para o mesmo aluno, código curto digitado pelo aluno na V0, reutilizar link pendente antigo ao reenviar
 
 **Aceite do Aluno**:
-Registro do aceite simples de uso do app no primeiro acesso do **Aluno**, inclusive menor de idade quando convidado pelo instrutor, necessário por envolver dados pessoais, foto e comprovante Pix.
-_Avoid_: contrato jurídico complexo, consentimento implícito
+Registro do aceite simples de uso do app no primeiro acesso do **Aluno**, inclusive menor de idade quando convidado pelo instrutor, feito depois de autenticar a conta e antes de ativar o **Acesso do Aluno**, necessário por envolver dados pessoais, foto e comprovante Pix; a versão inicial do termo é `student-access-v1` e cobre consulta da própria ficha, confirmação de presença por QR, envio de foto e comprovante Pix, recebimento de informações internas da academia e solicitação de correções diretamente à academia/instrutor.
+_Avoid_: contrato jurídico complexo, consentimento implícito, aceite anônimo antes do login
 
 **Confirmação de Presença**:
 Ação do **Aluno** para registrar a própria **Presença** em uma **Aula** usando um QR Code dinâmico exibido pelo instrutor.
@@ -45,7 +45,7 @@ _Avoid_: cliente, usuário, membro
 _Avoid_: membro ativo, usuário ativo
 
 **Aluno Inativo**:
-**Aluno** mantido no histórico, removido de chamadas e da geração de mensalidades futuras, preservando mensalidades já existentes e acesso somente leitura por 12 meses; ao ser reativado, preserva o histórico e retoma a geração de mensalidades futuras.
+**Aluno** mantido no histórico, removido de chamadas e da geração de mensalidades futuras, preservando mensalidades já existentes e acesso somente leitura por 12 meses; nesse período pode consultar histórico e dados visíveis, mas não confirma presença por QR, não envia comprovante Pix, não altera contato/foto e não executa ações operacionais de aluno; ao ser reativado, preserva o histórico e retoma a geração de mensalidades futuras.
 _Avoid_: deletado, cancelado, excluído
 
 **Aula**:
@@ -176,6 +176,8 @@ _Avoid_: tarefa, lembrete, prontuário, workflow, comentário do aluno, exclusã
 - Um **Pagamento Manual** transforma a **Mensalidade** em paga sem exigir **Comprovante Pix**
 - Um **Dono/Instrutor Solo** acompanha muitos **Alunos**
 - Um **Aluno** pode ter **Acesso do Aluno** para consultar os próprios dados, incluindo mensalidades mesmo quando for menor de idade
+- Um **Acesso do Aluno** vincula exatamente uma conta de autenticação a exatamente um **Aluno** na V0
+- Uma conta com acesso de instrutor e **Acesso do Aluno** escolhe explicitamente a área ao entrar e pode trocar de área sem mudar os vínculos de domínio
 - Um **Convite do Aluno** pertence a um **Aluno** já cadastrado
 - O **Acesso do Aluno** exige **Aceite do Aluno** no primeiro acesso
 - Uma **Turma** gera muitas **Aulas**

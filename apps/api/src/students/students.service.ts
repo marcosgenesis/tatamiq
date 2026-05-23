@@ -3,6 +3,7 @@ import type { CreateStudentInput, Student, UpdateStudentInput } from "@tatamiq/c
 import { type Database, studentGuardians, students } from "@tatamiq/database";
 import { and, eq, inArray } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
+import { StudentAccessService } from "../student-access/student-access.service";
 import { validateStudentInput } from "./student-rules";
 
 type StudentRow = typeof students.$inferSelect;
@@ -12,7 +13,10 @@ type StudentStatusFilter = "active" | "inactive" | "all";
 
 @Injectable()
 export class StudentsService {
-  constructor(@Inject(DATABASE) private readonly db: Database) {}
+  constructor(
+    @Inject(DATABASE) private readonly db: Database,
+    @Inject(StudentAccessService) private readonly studentAccessService: StudentAccessService,
+  ) {}
 
   async list(organizationId: string, status: StudentStatusFilter = "active") {
     const conditions = [eq(students.organizationId, organizationId)];
@@ -26,7 +30,9 @@ export class StudentsService {
       .where(and(...conditions))
       .orderBy(students.name);
 
-    const guardians = await this.guardiansFor(rows.map((row) => row.id));
+    const studentIds = rows.map((row) => row.id);
+    const guardians = await this.guardiansFor(studentIds);
+    const accessStates = await this.studentAccessService.accessStatesForStudents(studentIds);
     const allRows = await this.db
       .select({ status: students.status })
       .from(students)
@@ -36,7 +42,9 @@ export class StudentsService {
     const inactive = allRows.filter((row) => row.status === "inactive").length;
 
     return {
-      students: rows.map((row) => toStudentDto(row, guardians.get(row.id) ?? null)),
+      students: rows.map((row) =>
+        toStudentDto(row, guardians.get(row.id) ?? null, accessStates.get(row.id)),
+      ),
       summary: {
         active,
         inactive,
@@ -80,7 +88,8 @@ export class StudentsService {
   async get(organizationId: string, id: string): Promise<Student> {
     const row = await this.findStudent(organizationId, id);
     const guardian = await this.findGuardian(id);
-    return toStudentDto(row, guardian);
+    const accessStates = await this.studentAccessService.accessStatesForStudents([id]);
+    return toStudentDto(row, guardian, accessStates.get(id));
   }
 
   async update(organizationId: string, id: string, input: UpdateStudentInput): Promise<Student> {
@@ -198,7 +207,16 @@ export class StudentsService {
   }
 }
 
-function toStudentDto(row: StudentRow, guardian: GuardianRow | null): Student {
+function toStudentDto(
+  row: StudentRow,
+  guardian: GuardianRow | null,
+  accessState: Student["accessState"] = {
+    status: "none",
+    inviteId: null,
+    expiresAt: null,
+    accessId: null,
+  },
+): Student {
   return {
     id: row.id,
     name: row.name,
@@ -222,6 +240,7 @@ function toStudentDto(row: StudentRow, guardian: GuardianRow | null): Student {
           relationship: guardian.relationship,
         }
       : null,
+    accessState,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };

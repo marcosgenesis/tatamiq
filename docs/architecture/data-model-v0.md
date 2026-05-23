@@ -94,7 +94,6 @@ Campos sugeridos:
 
 - `id`
 - `academy_id` / `organization_id`
-- `auth_user_id` nullable
 - `name`
 - `birth_date`
 - `enrollment_date`
@@ -171,12 +170,15 @@ Regras:
 
 - expira em 7 dias;
 - pode ser reenviado;
-- instrutor copia link/código e envia por fora;
+- instrutor copia link completo e envia por fora;
+- o token bruto aparece somente ao gerar ou reenviar o convite; o banco armazena apenas `token_hash`;
+- reenviar invalida convite pendente anterior e cria novo link com nova expiração de 7 dias;
+- não pode ser aceito se o aluno estiver inativo ou já tiver acesso ativo;
 - vincula conta nova ou existente à ficha do aluno.
 
-### StudentAcceptance
+### StudentAccess
 
-Aceite simples no primeiro acesso.
+Vínculo atual entre uma conta autenticada e a ficha de um aluno.
 
 Campos sugeridos:
 
@@ -184,8 +186,39 @@ Campos sugeridos:
 - `academy_id` / `organization_id`
 - `student_id`
 - `auth_user_id`
+- `status`: `active | revoked`
+- `revoked_at`
+- `revoked_by_user_id`
+- `created_at`
+- `updated_at`
+
+Regras:
+
+- nasce somente a partir de um **Convite do Aluno** aceito;
+- uma conta pode ter no máximo um acesso ativo de aluno na V0;
+- um aluno pode ter no máximo um acesso ativo na V0;
+- revogação desativa o vínculo, mas não apaga a conta de autenticação;
+- aluno inativo com acesso ativo fica em leitura por 12 meses por regra de autorização, sem mudar o status do vínculo.
+
+### StudentAcceptance
+
+Aceite simples no primeiro acesso, separado do vínculo de acesso.
+
+Campos sugeridos:
+
+- `id`
+- `academy_id` / `organization_id`
+- `student_access_id`
+- `student_id`
+- `auth_user_id`
 - `accepted_at`
 - `terms_version`
+
+Regras:
+
+- o aceite ocorre depois de autenticar e antes de ativar o acesso;
+- a versão inicial é `student-access-v1`;
+- revogar o acesso não apaga o histórico de aceite.
 
 ## Turmas e agenda
 

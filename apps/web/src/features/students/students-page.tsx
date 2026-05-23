@@ -65,6 +65,7 @@ export function StudentsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [form, setForm] = useState<StudentFormState>(emptyForm);
   const [error, setError] = useState<string | null>(null);
+  const [createdInviteLink, setCreatedInviteLink] = useState<string | null>(null);
 
   const studentsQuery = useQuery({
     queryKey: ["students", status],
@@ -99,6 +100,40 @@ export function StudentsPage() {
     onError: (mutationError) => {
       setError(mutationError instanceof Error ? mutationError.message : "Erro ao salvar aluno.");
     },
+  });
+
+  const inviteMutation = useMutation({
+    mutationFn: async (studentId: string) => {
+      const { data, error } = await api.POST("/students/{id}/access-invites", {
+        params: { path: { id: studentId } },
+      });
+      if (error) throw new Error("Não foi possível gerar convite.");
+      return data;
+    },
+    onSuccess: async (data) => {
+      setCreatedInviteLink(data.inviteLink);
+      await queryClient.invalidateQueries({ queryKey: ["students"] });
+    },
+  });
+
+  const revokeInviteMutation = useMutation({
+    mutationFn: async ({ studentId, inviteId }: { studentId: string; inviteId: string }) => {
+      const { error } = await api.POST("/students/{id}/access-invites/{inviteId}/revoke", {
+        params: { path: { id: studentId, inviteId } },
+      });
+      if (error) throw new Error("Não foi possível revogar convite.");
+    },
+    onSuccess: async () => queryClient.invalidateQueries({ queryKey: ["students"] }),
+  });
+
+  const revokeAccessMutation = useMutation({
+    mutationFn: async (studentId: string) => {
+      const { error } = await api.POST("/students/{id}/access/revoke", {
+        params: { path: { id: studentId } },
+      });
+      if (error) throw new Error("Não foi possível revogar acesso.");
+    },
+    onSuccess: async () => queryClient.invalidateQueries({ queryKey: ["students"] }),
   });
 
   const statusMutation = useMutation({
@@ -244,6 +279,23 @@ export function StudentsPage() {
         />
       </div>
 
+      {createdInviteLink ? (
+        <Card>
+          <CardContent className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <strong>Link de convite gerado</strong>
+              <p className="mt-1 break-all text-sm text-muted-foreground">{createdInviteLink}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Guarde este link agora. Por segurança, ele não será mostrado novamente.
+              </p>
+            </div>
+            <Button type="button" onClick={() => navigator.clipboard.writeText(createdInviteLink)}>
+              Copiar link
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
+
       {isFormOpen ? (
         <StudentForm
           editingStudent={editingStudent}
@@ -293,6 +345,11 @@ export function StudentsPage() {
                         action: student.status === "active" ? "inactivate" : "reactivate",
                       })
                     }
+                    onGenerateInvite={() => inviteMutation.mutate(student.id)}
+                    onRevokeInvite={(inviteId) =>
+                      revokeInviteMutation.mutate({ studentId: student.id, inviteId })
+                    }
+                    onRevokeAccess={() => revokeAccessMutation.mutate(student.id)}
                   />
                 ))}
               </div>
@@ -512,7 +569,14 @@ function SelectField(props: {
   );
 }
 
-function StudentRow(props: { student: Student; onEdit: () => void; onToggleStatus: () => void }) {
+function StudentRow(props: {
+  student: Student;
+  onEdit: () => void;
+  onToggleStatus: () => void;
+  onGenerateInvite: () => void;
+  onRevokeInvite: (inviteId: string) => void;
+  onRevokeAccess: () => void;
+}) {
   const student = props.student;
   return (
     <div className="grid gap-3 px-4 py-4 md:grid-cols-[1.5fr_0.8fr_0.8fr_0.8fr_1fr_0.9fr] md:items-center">
@@ -542,8 +606,59 @@ function StudentRow(props: { student: Student; onEdit: () => void; onToggleStatu
         <Button type="button" variant="ghost" size="sm" onClick={props.onToggleStatus}>
           {student.status === "active" ? "Inativar" : "Reativar"}
         </Button>
+        <AccessActions
+          student={student}
+          onGenerateInvite={props.onGenerateInvite}
+          onRevokeInvite={props.onRevokeInvite}
+          onRevokeAccess={props.onRevokeAccess}
+        />
       </div>
     </div>
+  );
+}
+
+function AccessActions(props: {
+  student: Student;
+  onGenerateInvite: () => void;
+  onRevokeInvite: (inviteId: string) => void;
+  onRevokeAccess: () => void;
+}) {
+  const access = props.student.accessState;
+
+  if (props.student.status === "inactive") {
+    return <span className="text-xs text-muted-foreground">Sem convite para inativo</span>;
+  }
+
+  if (access.status === "active") {
+    return (
+      <Button type="button" variant="destructive" size="sm" onClick={props.onRevokeAccess}>
+        Revogar acesso
+      </Button>
+    );
+  }
+
+  if (access.status === "pending" && access.inviteId) {
+    return (
+      <>
+        <Button type="button" variant="secondary" size="sm" onClick={props.onGenerateInvite}>
+          Gerar novo link
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => props.onRevokeInvite(access.inviteId as string)}
+        >
+          Revogar convite
+        </Button>
+      </>
+    );
+  }
+
+  return (
+    <Button type="button" variant="secondary" size="sm" onClick={props.onGenerateInvite}>
+      {access.status === "expired" ? "Gerar novo convite" : "Gerar convite"}
+    </Button>
   );
 }
 

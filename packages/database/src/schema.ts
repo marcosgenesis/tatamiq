@@ -1,4 +1,14 @@
-import { boolean, date, index, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import {
+  boolean,
+  date,
+  index,
+  integer,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -319,6 +329,102 @@ export const attendances = pgTable(
   ],
 );
 
+export const studentAccessInvites = pgTable(
+  "student_access_invites",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    studentId: text("student_id")
+      .notNull()
+      .references(() => students.id, { onDelete: "cascade" }),
+    tokenHash: text("token_hash").notNull().unique(),
+    status: text("status").notNull().default("pending"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    createdByUserId: text("created_by_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    acceptedByUserId: text("accepted_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("student_access_invites_organization_id_idx").on(table.organizationId),
+    index("student_access_invites_student_id_idx").on(table.studentId),
+    uniqueIndex("student_access_invites_one_pending_per_student")
+      .on(table.studentId)
+      .where(sql`${table.status} = 'pending'`),
+  ],
+);
+
+export const studentAccess = pgTable(
+  "student_access",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    studentId: text("student_id")
+      .notNull()
+      .references(() => students.id, { onDelete: "cascade" }),
+    authUserId: text("auth_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    status: text("status").notNull().default("active"),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    revokedByUserId: text("revoked_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("student_access_organization_id_idx").on(table.organizationId),
+    index("student_access_student_id_idx").on(table.studentId),
+    index("student_access_auth_user_id_idx").on(table.authUserId),
+    uniqueIndex("student_access_one_active_per_student")
+      .on(table.studentId)
+      .where(sql`${table.status} = 'active'`),
+    uniqueIndex("student_access_one_active_per_user")
+      .on(table.authUserId)
+      .where(sql`${table.status} = 'active'`),
+  ],
+);
+
+export const studentAcceptances = pgTable(
+  "student_acceptances",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    studentAccessId: text("student_access_id")
+      .notNull()
+      .references(() => studentAccess.id, { onDelete: "cascade" }),
+    studentId: text("student_id")
+      .notNull()
+      .references(() => students.id, { onDelete: "cascade" }),
+    authUserId: text("auth_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    termsVersion: text("terms_version").notNull(),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    index("student_acceptances_organization_id_idx").on(table.organizationId),
+    index("student_acceptances_student_access_id_idx").on(table.studentAccessId),
+    index("student_acceptances_student_id_idx").on(table.studentId),
+  ],
+);
+
 export type ClassSession = typeof classSessions.$inferSelect;
 export type ClassCancellation = typeof classCancellations.$inferSelect;
 export type Attendance = typeof attendances.$inferSelect;
+export type StudentAccessInvite = typeof studentAccessInvites.$inferSelect;
+export type StudentAccess = typeof studentAccess.$inferSelect;
+export type StudentAcceptance = typeof studentAcceptances.$inferSelect;

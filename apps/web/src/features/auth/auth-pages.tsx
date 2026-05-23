@@ -23,6 +23,7 @@ export function SignInPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const redirectTo = new URLSearchParams(window.location.search).get("redirect") ?? "/choose-area";
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -36,7 +37,7 @@ export function SignInPage() {
       return;
     }
 
-    await navigate({ to: "/" });
+    await navigate({ to: redirectTo });
   }
 
   return (
@@ -88,7 +89,9 @@ export function SignInPage() {
 
 export function SignUpPage() {
   const navigate = useNavigate();
-  const [name, setName] = useState("");
+  const params = new URLSearchParams(window.location.search);
+  const redirectTo = params.get("redirect") ?? "/onboarding/academy";
+  const [name, setName] = useState(params.get("name") ?? "");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -106,7 +109,7 @@ export function SignUpPage() {
       return;
     }
 
-    await navigate({ to: "/onboarding/academy" });
+    await navigate({ to: redirectTo });
   }
 
   return (
