@@ -81,19 +81,19 @@ Progresso marcial observável de um **Aluno**, inicialmente expresso por **Faixa
 _Avoid_: performance, analytics
 
 **Faixa**:
-Graduação principal de um **Aluno** dentro da hierarquia da arte marcial praticada.
-_Avoid_: nível, rank
+Graduação principal de um **Aluno** dentro da hierarquia da arte marcial praticada, modelada como tabela `belts` por academia (com `organizationId`) contendo nome, slug, caminho (adulto/infantil), posição na hierarquia, máximo de graus e regras de elegibilidade editáveis (tempo mínimo e presenças mínimas para próximo grau e próxima faixa); seed no onboarding popula defaults IBJJF; aluno referencia faixa atual via FK `currentBeltId`.
+_Avoid_: nível, rank, enum hardcoded
 
 **Grau**:
 Incremento dentro de uma **Faixa**, usado para indicar progressão antes da próxima faixa; ao trocar de **Faixa**, reinicia em 0 por padrão, com ajuste permitido pelo instrutor.
 _Avoid_: subnível, estrela
 
 **Promoção de Graduação**:
-Registro formal de mudança de **Faixa**, de **Grau**, ou de ambos, incluindo data, graduação anterior, nova graduação, instrutor responsável e observação opcional visível ao aluno.
-_Avoid_: atualização simples de faixa, edição sem histórico
+Registro formal de mudança de **Faixa**, de **Grau**, ou de ambos em tabela `promotions`, incluindo `previousBeltId`, `previousDegree`, `newBeltId`, `newDegree`, data, instrutor responsável e observação opcional visível ao aluno; cadastro inicial do aluno não gera promoção — estado inicial é setado direto no aluno; promoção é o único caminho pra alterar graduação do aluno após cadastro; ao trocar de faixa, grau pré-preenchido como 0 mas editável pelo instrutor; sem restrição de retrocesso (instrutor pode corrigir erros); acessível via tela `/graduation` e pelo perfil do aluno.
+_Avoid_: atualização simples de faixa, edição sem histórico, promoção inicial no cadastro
 
 **Elegibilidade de Graduação**:
-Sinal interno para o instrutor, baseado em regras editáveis de tempo e presenças válidas, incluindo presenças fora da turma, com defaults inspirados na IBJJF para Brazilian Jiu-Jitsu, separado entre grau e faixa e podendo ser adiado pelo instrutor por padrão por 30 dias, sem substituir a decisão do instrutor.
+Sinal interno para o instrutor, calculado a partir de regras editáveis na tabela `belts` (`minMonthsForNextDegree`, `minAttendancesForNextDegree`, `minMonthsForNextBelt`, `minAttendancesForNextBelt`) com defaults IBJJF (30 presenças/grau, proporcional pra faixa); tempo e presenças contados desde `lastPromotion.promotedAt` ou `student.enrollmentDate` quando sem promoção anterior; presenças fora da turma contam, invalidadas não; separado entre grau e faixa — se `currentDegree >= belt.maxDegrees`, elegibilidade de grau desaparece e só resta faixa; adiamento por 30 dias (default) via colunas no aluno (`degreeEligibilityDismissedUntil`, `beltEligibilityDismissedUntil`), motivo opcional; visível no dashboard (card) e tela `/graduation` com filtros, nunca visível ao aluno.
 _Avoid_: promoção automática, aprovação automática
 
 **Turma**:
@@ -121,7 +121,7 @@ Graduação de Brazilian Jiu-Jitsu para alunos adultos, distinta da sequência i
 _Avoid_: faixa única, nível adulto genérico
 
 **Transição Infantil-Adulto**:
-Mudança do caminho de graduação infantil para o adulto ao atingir uma idade configurável, com decisão final de faixa feita pelo instrutor.
+Mudança do caminho de graduação infantil para o adulto ao atingir `childToAdultAge` (int, default 16) configurado na `organization`; sistema sinaliza via mesmo mecanismo de elegibilidade (aparece na tela `/graduation` como tipo "transição"), mas nunca muda faixa automaticamente; instrutor promove pra faixa adulta adequada via promoção normal; adiamento via `transitionDismissedUntil` (date, nullable) no aluno.
 _Avoid_: conversão automática de faixa, promoção por idade
 
 **Mensalidade**:
@@ -197,11 +197,15 @@ _Avoid_: tarefa, lembrete, prontuário, workflow, comentário do aluno, exclusã
 - Uma **Presença Invalidada** permanece no histórico, mas não conta para frequência nem **Elegibilidade de Graduação**
 - Um **QR Code Dinâmico da Aula** pertence a uma única **Aula**
 - Um **Aluno** tem uma **Evolução** acompanhada ao longo do tempo
-- A **Evolução** de um **Aluno** é expressa por uma **Faixa** e, quando aplicável, um **Grau**
-- Uma **Faixa** de Brazilian Jiu-Jitsu pertence ao caminho adulto ou ao caminho infantil
-- A **Transição Infantil-Adulto** pode gerar alerta, mas não muda a **Faixa** automaticamente
+- A **Evolução** de um **Aluno** é expressa por uma **Faixa** (FK `currentBeltId` → `belts`) e um **Grau** (`currentDegree`)
+- Uma **Faixa** pertence a uma **Academia** e ao caminho adulto ou infantil
+- Uma **Academia** tem muitas **Faixas**, populadas via seed IBJJF no onboarding
+- A **Transição Infantil-Adulto** sinaliza via mecanismo de elegibilidade mas não muda a **Faixa** automaticamente
 - A **Evolução** de um **Aluno** é composta por uma graduação atual e um histórico de **Promoções de Graduação**
+- Uma **Promoção de Graduação** é o único caminho pra alterar graduação após cadastro
+- A **Elegibilidade de Graduação** é calculada a partir de regras na **Faixa** atual do aluno
 - A **Elegibilidade de Graduação** pode sugerir uma promoção, mas o instrutor decide e registra uma **Promoção de Graduação**
+- Um **Aluno** pode ter adiamentos ativos de elegibilidade (grau, faixa, transição) independentes entre si
 - Uma **Modalidade** contém muitas **Turmas**
 - Uma **Turma** pertence a uma única **Modalidade** no MVP
 - Um **Aluno** pode pertencer a muitas **Turmas**
