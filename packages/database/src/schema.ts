@@ -326,6 +326,9 @@ export const attendances = pgTable(
     index("attendances_organization_id_idx").on(table.organizationId),
     index("attendances_class_session_id_idx").on(table.classSessionId),
     index("attendances_student_id_idx").on(table.studentId),
+    uniqueIndex("attendances_one_valid_per_session_student")
+      .on(table.classSessionId, table.studentId)
+      .where(sql`invalidated_at IS NULL`),
   ],
 );
 
