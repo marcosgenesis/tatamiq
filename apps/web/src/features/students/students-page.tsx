@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { CreateStudentInput, Student } from "@tatamiq/contracts";
+import type { BeltDto, Student } from "@tatamiq/contracts";
 import type { components } from "@tatamiq/contracts/generated";
 import { PlusSignIcon, UserMultipleIcon } from "hugeicons-react";
 import { type FormEvent, type InputHTMLAttributes, useMemo, useState } from "react";
@@ -7,18 +7,6 @@ import { api } from "../../api";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
-
-const belts = [
-  ["white", "Branca"],
-  ["gray", "Cinza"],
-  ["yellow", "Amarela"],
-  ["orange", "Laranja"],
-  ["green", "Verde"],
-  ["blue", "Azul"],
-  ["purple", "Roxa"],
-  ["brown", "Marrom"],
-  ["black", "Preta"],
-] as const;
 
 type StudentStatusFilter = "active" | "inactive" | "all";
 type StudentPayload = components["schemas"]["UpdateStudentDto"];
@@ -30,9 +18,8 @@ type StudentFormState = {
   email: string;
   monthlyAmount: string;
   monthlyDueDay: string;
-  currentBelt: CreateStudentInput["currentBelt"];
+  currentBeltId: string;
   currentDegree: string;
-  graduationPath: CreateStudentInput["graduationPath"];
   status: Student["status"];
   guardianName: string;
   guardianPhone: string;
@@ -48,9 +35,8 @@ const emptyForm: StudentFormState = {
   email: "",
   monthlyAmount: "",
   monthlyDueDay: "",
-  currentBelt: "white",
+  currentBeltId: "",
   currentDegree: "0",
-  graduationPath: "adult",
   status: "active",
   guardianName: "",
   guardianPhone: "",
@@ -67,13 +53,22 @@ export function StudentsPage() {
   const [error, setError] = useState<string | null>(null);
   const [createdInviteLink, setCreatedInviteLink] = useState<string | null>(null);
 
+  const beltsQuery = useQuery({
+    queryKey: ["belts"],
+    queryFn: async () => {
+      const { data, error } = await api.GET("/belts");
+      if (error) throw new Error("Nao foi possivel carregar faixas.");
+      return data;
+    },
+  });
+
   const studentsQuery = useQuery({
     queryKey: ["students", status],
     queryFn: async () => {
       const { data, error } = await api.GET("/students", {
         params: { query: { status } },
       });
-      if (error) throw new Error("Não foi possível carregar alunos.");
+      if (error) throw new Error("Nao foi possivel carregar alunos.");
       return data;
     },
   });
@@ -183,9 +178,8 @@ export function StudentsPage() {
       email: student.email ?? "",
       monthlyAmount: centsToReais(student.monthlyAmountInCents),
       monthlyDueDay: student.monthlyDueDay?.toString() ?? "",
-      currentBelt: student.currentBelt,
+      currentBeltId: student.currentBeltId,
       currentDegree: student.currentDegree.toString(),
-      graduationPath: student.graduationPath,
       status: student.status,
       guardianName: student.guardian?.name ?? "",
       guardianPhone: student.guardian?.phone ?? "",
@@ -228,9 +222,8 @@ export function StudentsPage() {
       email: form.email,
       monthlyAmountInCents: reaisToCents(form.monthlyAmount),
       monthlyDueDay: form.monthlyDueDay ? Number(form.monthlyDueDay) : null,
-      currentBelt: form.currentBelt,
+      currentBeltId: form.currentBeltId,
       currentDegree: Number(form.currentDegree),
-      graduationPath: form.graduationPath,
       guardian,
     };
 
@@ -301,6 +294,7 @@ export function StudentsPage() {
           editingStudent={editingStudent}
           error={error}
           form={form}
+          belts={beltsQuery.data?.belts ?? []}
           isSaving={saveMutation.isPending}
           onCancel={closeForm}
           onSubmit={submitForm}
@@ -385,11 +379,15 @@ function StudentForm(props: {
   editingStudent: Student | null;
   error: string | null;
   form: StudentFormState;
+  belts: BeltDto[];
   isSaving: boolean;
   onCancel: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   updateForm: (field: keyof StudentFormState, value: string) => void;
 }) {
+  const adultBelts = props.belts.filter((b) => b.path === "adult");
+  const childBelts = props.belts.filter((b) => b.path === "child");
+
   return (
     <Card>
       <CardHeader>
@@ -412,7 +410,7 @@ function StudentForm(props: {
               onChange={(value) => props.updateForm("birthDate", value)}
             />
             <Field
-              label="Matrícula"
+              label="Matricula"
               required
               placeholder="AAAA-MM-DD"
               value={props.form.enrollmentDate}
@@ -443,29 +441,42 @@ function StudentForm(props: {
               value={props.form.monthlyDueDay}
               onChange={(value) => props.updateForm("monthlyDueDay", value)}
             />
-            <SelectField
-              label="Faixa"
-              value={props.form.currentBelt}
-              onChange={(value) => props.updateForm("currentBelt", value)}
-              options={belts.map(([value, label]) => ({ value, label }))}
-            />
+            <label className="space-y-2 text-sm font-medium">
+              <span>Faixa</span>
+              <select
+                value={props.form.currentBeltId}
+                onChange={(event) => props.updateForm("currentBeltId", event.target.value)}
+                className="h-11 w-full rounded-2xl border border-border bg-background px-3 text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+              >
+                <option value="">Selecione a faixa</option>
+                {adultBelts.length > 0 && (
+                  <optgroup label="Adulto">
+                    {adultBelts.map((belt) => (
+                      <option key={belt.id} value={belt.id}>
+                        {belt.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                {childBelts.length > 0 && (
+                  <optgroup label="Infantil">
+                    {childBelts.map((belt) => (
+                      <option key={belt.id} value={belt.id}>
+                        {belt.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+              </select>
+            </label>
             <SelectField
               label="Grau"
               value={props.form.currentDegree}
               onChange={(value) => props.updateForm("currentDegree", value)}
-              options={[0, 1, 2, 3, 4].map((value) => ({
+              options={[0, 1, 2, 3, 4, 5, 6].map((value) => ({
                 value: String(value),
                 label: `${value} grau(s)`,
               }))}
-            />
-            <SelectField
-              label="Trilha"
-              value={props.form.graduationPath}
-              onChange={(value) => props.updateForm("graduationPath", value)}
-              options={[
-                { value: "adult", label: "Adulto" },
-                { value: "child", label: "Infantil" },
-              ]}
             />
             {props.editingStudent ? (
               <SelectField
@@ -596,7 +607,7 @@ function StudentRow(props: {
       </div>
       <span className="text-sm text-muted-foreground">{formatDate(student.enrollmentDate)}</span>
       <span className="text-sm text-muted-foreground">
-        {beltLabel(student.currentBelt)} · {student.currentDegree}º
+        {student.belt?.name ?? "—"} · {student.currentDegree}º
       </span>
       <span className="text-sm text-muted-foreground">{billingLabel(student)}</span>
       <div className="flex flex-wrap gap-2">
@@ -705,10 +716,6 @@ function ageLabel(birthDate: string): string {
     (today.getMonth() === birth.getUTCMonth() && today.getDate() >= birth.getUTCDate());
   if (!birthdayPassed) age -= 1;
   return `${age} anos`;
-}
-
-function beltLabel(value: Student["currentBelt"]): string {
-  return belts.find(([belt]) => belt === value)?.[1] ?? value;
 }
 
 function billingLabel(student: Student): string {

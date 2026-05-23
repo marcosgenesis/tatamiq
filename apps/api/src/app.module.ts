@@ -3,6 +3,7 @@ import { AuthModule } from "@thallesp/nestjs-better-auth";
 import { LoggerModule } from "nestjs-pino";
 import { AttendancesModule } from "./attendances/attendances.module";
 import { auth } from "./auth";
+import { BeltsModule } from "./belts/belts.module";
 import { ClassGroupsModule } from "./class-groups/class-groups.module";
 import { ClassesModule } from "./classes/classes.module";
 import { DatabaseModule } from "./database/database.module";
@@ -28,6 +29,7 @@ import { StudentsModule } from "./students/students.module";
       },
     }),
     DatabaseModule,
+    BeltsModule,
     StudentsModule,
     ClassGroupsModule,
     ScheduleModule,

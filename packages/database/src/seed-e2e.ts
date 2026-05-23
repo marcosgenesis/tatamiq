@@ -2,6 +2,7 @@ import { eq, inArray } from "drizzle-orm";
 import { createDatabase } from "./client";
 import {
   attendances,
+  belts,
   classCancellations,
   classGroupSchedules,
   classGroups,
@@ -33,6 +34,8 @@ const FIXTURE = {
   recurringTagId: "e2e-tag-recurring",
   cancelledTagId: "e2e-tag-cancelled",
   adHocTagId: "e2e-tag-ad-hoc",
+  whiteBeltId: "e2e-belt-adult-white",
+  blueBeltId: "e2e-belt-adult-blue",
 };
 
 const fixtureClassGroupIds = [
@@ -108,9 +111,39 @@ async function resetFixture(database: SeedDatabase) {
     .where(inArray(classGroupSchedules.id, fixtureScheduleIds));
   await database.delete(classGroups).where(inArray(classGroups.id, fixtureClassGroupIds));
   await database.delete(students).where(inArray(students.id, fixtureStudentIds));
+  await database.delete(belts).where(inArray(belts.id, [FIXTURE.whiteBeltId, FIXTURE.blueBeltId]));
 }
 
 async function createFixture(database: SeedDatabase, organizationId: string, userId: string) {
+  await database.insert(belts).values([
+    {
+      id: FIXTURE.whiteBeltId,
+      organizationId,
+      name: "Branca",
+      slug: "adult-white",
+      path: "adult",
+      position: 0,
+      maxDegrees: 4,
+      minMonthsForNextDegree: 6,
+      minAttendancesForNextDegree: 30,
+      minMonthsForNextBelt: 24,
+      minAttendancesForNextBelt: 120,
+    },
+    {
+      id: FIXTURE.blueBeltId,
+      organizationId,
+      name: "Azul",
+      slug: "adult-blue",
+      path: "adult",
+      position: 1,
+      maxDegrees: 4,
+      minMonthsForNextDegree: 6,
+      minAttendancesForNextDegree: 30,
+      minMonthsForNextBelt: 24,
+      minAttendancesForNextBelt: 120,
+    },
+  ]);
+
   await database.insert(students).values([
     {
       id: FIXTURE.anaStudentId,
@@ -124,9 +157,8 @@ async function createFixture(database: SeedDatabase, organizationId: string, use
       email: "ana.e2e@tatamiq.local",
       monthlyAmountInCents: 25000,
       monthlyDueDay: 10,
-      currentBelt: "white",
+      currentBeltId: FIXTURE.whiteBeltId,
       currentDegree: 1,
-      graduationPath: "adult",
       createdAt: now,
       updatedAt: now,
     },
@@ -142,9 +174,8 @@ async function createFixture(database: SeedDatabase, organizationId: string, use
       email: "bruno.e2e@tatamiq.local",
       monthlyAmountInCents: 25000,
       monthlyDueDay: 10,
-      currentBelt: "blue",
+      currentBeltId: FIXTURE.blueBeltId,
       currentDegree: 0,
-      graduationPath: "adult",
       createdAt: now,
       updatedAt: now,
     },

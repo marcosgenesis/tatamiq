@@ -21,6 +21,26 @@ export const currentBeltSchema = z.enum([
   "black",
 ]);
 
+export const beltSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  slug: z.string(),
+  path: z.enum(["adult", "child"]),
+  position: z.number().int(),
+  maxDegrees: z.number().int(),
+  minMonthsForNextDegree: z.number().int(),
+  minAttendancesForNextDegree: z.number().int(),
+  minMonthsForNextBelt: z.number().int(),
+  minAttendancesForNextBelt: z.number().int(),
+});
+
+export const listBeltsResponseSchema = z.object({
+  belts: z.array(beltSchema),
+});
+
+export type BeltDto = z.infer<typeof beltSchema>;
+export type ListBeltsResponse = z.infer<typeof listBeltsResponseSchema>;
+
 export const studentGuardianSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -47,9 +67,9 @@ export const studentSchema = z.object({
   email: z.string().nullable(),
   monthlyAmountInCents: z.number().int().nonnegative().nullable(),
   monthlyDueDay: z.number().int().min(1).max(31).nullable(),
-  currentBelt: currentBeltSchema,
-  currentDegree: z.number().int().min(0).max(4),
-  graduationPath: graduationPathSchema,
+  currentBeltId: z.string(),
+  currentDegree: z.number().int().min(0).max(6),
+  belt: beltSchema.nullable(),
   guardian: studentGuardianSchema.nullable(),
   accessState: studentAccessStateSchema,
   createdAt: z.string().datetime(),
@@ -83,9 +103,8 @@ export const createStudentSchema = z.object({
   email: z.string().trim().email().optional().or(z.literal("")),
   monthlyAmountInCents: z.number().int().nonnegative().nullable().optional(),
   monthlyDueDay: z.number().int().min(1).max(31).nullable().optional(),
-  currentBelt: currentBeltSchema,
-  currentDegree: z.number().int().min(0).max(4),
-  graduationPath: graduationPathSchema,
+  currentBeltId: z.string(),
+  currentDegree: z.number().int().min(0).max(6),
   guardian: guardianInputSchema,
 });
 

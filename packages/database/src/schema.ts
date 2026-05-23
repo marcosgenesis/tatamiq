@@ -27,6 +27,7 @@ export const organization = pgTable("organization", {
   slug: text("slug").notNull().unique(),
   logo: text("logo"),
   metadata: text("metadata"),
+  childToAdultAge: integer("child_to_adult_age").notNull().default(16),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -100,6 +101,30 @@ export const invitation = pgTable("invitation", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const belts = pgTable(
+  "belts",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    slug: text("slug").notNull(),
+    path: text("path").notNull(), // "adult" | "child"
+    position: integer("position").notNull(),
+    maxDegrees: integer("max_degrees").notNull(),
+    minMonthsForNextDegree: integer("min_months_for_next_degree").notNull().default(0),
+    minAttendancesForNextDegree: integer("min_attendances_for_next_degree").notNull().default(0),
+    minMonthsForNextBelt: integer("min_months_for_next_belt").notNull().default(0),
+    minAttendancesForNextBelt: integer("min_attendances_for_next_belt").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("belts_organization_id_idx").on(table.organizationId),
+    uniqueIndex("belts_org_slug_uniq").on(table.organizationId, table.slug),
+  ],
+);
+
 export const students = pgTable(
   "students",
   {
@@ -116,9 +141,19 @@ export const students = pgTable(
     email: text("email"),
     monthlyAmountInCents: integer("monthly_amount_in_cents"),
     monthlyDueDay: integer("monthly_due_day"),
-    currentBelt: text("current_belt").notNull(),
+    currentBeltId: text("current_belt_id")
+      .notNull()
+      .references(() => belts.id, { onDelete: "restrict" }),
     currentDegree: integer("current_degree").notNull().default(0),
-    graduationPath: text("graduation_path").notNull(),
+    dismissedDegreeAt: timestamp("dismissed_degree_at", { withTimezone: true }),
+    dismissedBeltAt: timestamp("dismissed_belt_at", { withTimezone: true }),
+    dismissedTransitionAt: timestamp("dismissed_transition_at", { withTimezone: true }),
+    dismissedDegreeByUserId: text("dismissed_degree_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    dismissedBeltByUserId: text("dismissed_belt_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -293,6 +328,7 @@ export const classCancellations = pgTable(
 export type AuthUser = typeof user.$inferSelect;
 export type Organization = typeof organization.$inferSelect;
 export type Member = typeof member.$inferSelect;
+export type Belt = typeof belts.$inferSelect;
 export type Student = typeof students.$inferSelect;
 export type StudentGuardian = typeof studentGuardians.$inferSelect;
 export type ClassGroup = typeof classGroups.$inferSelect;
