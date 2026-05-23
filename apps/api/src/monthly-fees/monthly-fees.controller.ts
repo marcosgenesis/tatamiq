@@ -13,6 +13,7 @@ import {
 import { ApiBody, ApiOkResponse, ApiParam, ApiQuery, ApiTags } from "@nestjs/swagger";
 import {
   adjustMonthlyFeeSchema,
+  confirmReceiptSchema,
   createMonthlyFeeSchema,
   manualPaymentSchema,
   rejectReceiptSchema,
@@ -24,11 +25,13 @@ import type { auth } from "../auth";
 import { FeeGenerationService } from "./fee-generation.service";
 import {
   AdjustMonthlyFeeDto,
+  ConfirmReceiptDto,
   CreateMonthlyFeeDto,
   ListMonthlyFeesResponseDto,
   ManualPaymentDto,
   MonthlyFeeDetailDto,
   RejectReceiptDto,
+  UploadUrlResponseDto,
   WaiveMonthlyFeeDto,
 } from "./monthly-fees.dto";
 import { MonthlyFeesService } from "./monthly-fees.service";
@@ -95,6 +98,41 @@ export class MonthlyFeesController {
     @Param("id") id: string,
   ): Promise<MonthlyFeeDetailDto> {
     return this.monthlyFeesService.get(activeOrganizationId(session), id);
+  }
+
+  @Post(":id/upload-url")
+  @HttpCode(200)
+  @ApiParam({ name: "id" })
+  @ApiQuery({ name: "contentType", required: true })
+  @ApiOkResponse({ type: UploadUrlResponseDto })
+  uploadUrl(
+    @Session() session: SessionWithOrganization,
+    @Param("id") id: string,
+    @Query("contentType") contentType: string,
+  ): Promise<UploadUrlResponseDto> {
+    return this.monthlyFeesService.generateUploadUrl(
+      activeOrganizationId(session),
+      id,
+      contentType,
+    );
+  }
+
+  @Post(":id/receipts")
+  @HttpCode(200)
+  @ApiParam({ name: "id" })
+  @ApiBody({ type: ConfirmReceiptDto })
+  @ApiOkResponse({ type: MonthlyFeeDetailDto })
+  confirmReceipt(
+    @Session() session: SessionWithOrganization,
+    @Param("id") id: string,
+    @Body() body: ConfirmReceiptDto,
+  ): Promise<MonthlyFeeDetailDto> {
+    return this.monthlyFeesService.confirmReceipt(
+      activeOrganizationId(session),
+      id,
+      session.user.id,
+      parseBody(confirmReceiptSchema, body),
+    );
   }
 
   @Post(":id/adjust")

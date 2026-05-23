@@ -1,5 +1,6 @@
 import {
   adjustMonthlyFeeSchema,
+  confirmReceiptSchema,
   createMonthlyFeeSchema,
   listMonthlyFeesResponseSchema,
   manualPaymentSchema,
@@ -7,6 +8,7 @@ import {
   monthlyFeeSchema,
   paymentReceiptSchema,
   rejectReceiptSchema,
+  uploadUrlResponseSchema,
   waiveMonthlyFeeSchema,
 } from "@tatamiq/contracts";
 import { createZodDto } from "nestjs-zod";
@@ -20,3 +22,5 @@ export class WaiveMonthlyFeeDto extends createZodDto(waiveMonthlyFeeSchema) {}
 export class ManualPaymentDto extends createZodDto(manualPaymentSchema) {}
 export class PaymentReceiptDto extends createZodDto(paymentReceiptSchema) {}
 export class RejectReceiptDto extends createZodDto(rejectReceiptSchema) {}
+export class UploadUrlResponseDto extends createZodDto(uploadUrlResponseSchema) {}
+export class ConfirmReceiptDto extends createZodDto(confirmReceiptSchema) {}

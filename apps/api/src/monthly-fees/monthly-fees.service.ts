@@ -7,6 +7,7 @@ import {
 } from "@nestjs/common";
 import type {
   AdjustMonthlyFeeInput,
+  ConfirmReceiptInput,
   CreateMonthlyFeeInput,
   ListMonthlyFeesResponse,
   ManualPaymentInput,
@@ -15,6 +16,7 @@ import type {
   PaymentReceipt,
   RejectReceiptInput,
   StudentMonthlyFeesResponse,
+  UploadUrlResponse,
   WaiveMonthlyFeeInput,
 } from "@tatamiq/contracts";
 import {
@@ -33,6 +35,7 @@ import {
   validateCanCreateFee,
   validateStatusTransition,
 } from "./monthly-fee-rules";
+import { R2StorageService } from "./r2-storage.service";
 
 type FeeRow = typeof monthlyFees.$inferSelect;
 type EventRow = typeof monthlyFeeEvents.$inferSelect;
@@ -40,7 +43,10 @@ type ReceiptRow = typeof paymentReceipts.$inferSelect;
 
 @Injectable()
 export class MonthlyFeesService {
-  constructor(@Inject(DATABASE) private readonly db: Database) {}
+  constructor(
+    @Inject(DATABASE) private readonly db: Database,
+    @Inject(R2StorageService) private readonly r2: R2StorageService,
+  ) {}
 
   async list(
     organizationId: string,
@@ -350,6 +356,85 @@ export class MonthlyFeesService {
         };
       }),
     };
+  }
+
+  async generateUploadUrl(
+    organizationId: string,
+    feeId: string,
+    contentType: string,
+  ): Promise<UploadUrlResponse> {
+    const fee = await this.findFee(organizationId, feeId);
+    if (fee.status !== "open") {
+      throw new BadRequestException("Só é possível enviar comprovante para mensalidade em aberto.");
+    }
+
+    const hasPending = await this.db
+      .select({ id: paymentReceipts.id })
+      .from(paymentReceipts)
+      .where(and(eq(paymentReceipts.monthlyFeeId, feeId), eq(paymentReceipts.status, "pending")))
+      .limit(1);
+
+    if (hasPending.length > 0) {
+      throw new BadRequestException("Já existe um comprovante pendente para esta mensalidade.");
+    }
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"];
+    if (!allowedTypes.includes(contentType)) {
+      throw new BadRequestException("Tipo de arquivo não permitido. Use imagem ou PDF.");
+    }
+
+    const fileKey = `receipts/${organizationId}/${feeId}/${crypto.randomUUID()}`;
+    const uploadUrl = await this.r2.generatePresignedUrl(fileKey, contentType);
+
+    return { uploadUrl, fileKey };
+  }
+
+  async confirmReceipt(
+    organizationId: string,
+    feeId: string,
+    userId: string,
+    input: ConfirmReceiptInput,
+  ): Promise<MonthlyFeeDetail> {
+    const fee = await this.findFee(organizationId, feeId);
+    if (fee.status !== "open") {
+      throw new BadRequestException("Só é possível enviar comprovante para mensalidade em aberto.");
+    }
+
+    if (input.fileSizeBytes > 10 * 1024 * 1024) {
+      throw new BadRequestException("Arquivo excede o limite de 10 MB.");
+    }
+
+    const hasPending = await this.db
+      .select({ id: paymentReceipts.id })
+      .from(paymentReceipts)
+      .where(and(eq(paymentReceipts.monthlyFeeId, feeId), eq(paymentReceipts.status, "pending")))
+      .limit(1);
+
+    if (hasPending.length > 0) {
+      throw new BadRequestException("Já existe um comprovante pendente para esta mensalidade.");
+    }
+
+    const now = new Date();
+    await this.db.insert(paymentReceipts).values({
+      id: crypto.randomUUID(),
+      monthlyFeeId: feeId,
+      organizationId,
+      studentId: fee.studentId,
+      fileUrl: this.r2.getPublicUrl(input.fileKey),
+      fileType: input.fileType,
+      fileSizeBytes: input.fileSizeBytes,
+      status: "pending",
+      rejectionReason: null,
+      createdByUserId: userId,
+      createdAt: now,
+    });
+
+    await this.db
+      .update(monthlyFees)
+      .set({ status: "under_review", updatedAt: now })
+      .where(eq(monthlyFees.id, feeId));
+
+    return this.get(organizationId, feeId);
   }
 
   async listReceipts(organizationId: string, feeId: string): Promise<PaymentReceipt[]> {

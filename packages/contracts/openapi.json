@@ -527,6 +527,97 @@
         ]
       }
     },
+    "/monthly-fees/{id}/upload-url": {
+      "post": {
+        "operationId": "MonthlyFeesController_uploadUrl",
+        "parameters": [
+          {
+            "name": "contentType",
+            "required": true,
+            "in": "query",
+            "schema": {}
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadUrlResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "monthly-fees"
+        ]
+      }
+    },
+    "/monthly-fees/{id}/receipts": {
+      "post": {
+        "operationId": "MonthlyFeesController_confirmReceipt",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmReceiptDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonthlyFeeDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "monthly-fees"
+        ]
+      },
+      "get": {
+        "operationId": "MonthlyFeesController_listReceipts",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "monthly-fees"
+        ]
+      }
+    },
     "/monthly-fees/{id}/adjust": {
       "post": {
         "operationId": "MonthlyFeesController_adjust",
@@ -634,27 +725,6 @@
                 }
               }
             }
-          }
-        },
-        "tags": [
-          "monthly-fees"
-        ]
-      }
-    },
-    "/monthly-fees/{id}/receipts": {
-      "get": {
-        "operationId": "MonthlyFeesController_listReceipts",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {}
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
           }
         },
         "tags": [
@@ -2830,6 +2900,46 @@
           "updatedAt",
           "events",
           "receipts"
+        ]
+      },
+      "UploadUrlResponseDto": {
+        "type": "object",
+        "properties": {
+          "uploadUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "fileKey": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "uploadUrl",
+          "fileKey"
+        ]
+      },
+      "ConfirmReceiptDto": {
+        "type": "object",
+        "properties": {
+          "fileKey": {
+            "type": "string",
+            "minLength": 1
+          },
+          "fileType": {
+            "type": "string",
+            "minLength": 1
+          },
+          "fileSizeBytes": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "maximum": 10485760,
+            "minimum": 0
+          }
+        },
+        "required": [
+          "fileKey",
+          "fileType",
+          "fileSizeBytes"
         ]
       },
       "AdjustMonthlyFeeDto": {

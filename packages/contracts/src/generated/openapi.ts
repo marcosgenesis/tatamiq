@@ -244,6 +244,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/monthly-fees/{id}/upload-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["MonthlyFeesController_uploadUrl"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/monthly-fees/{id}/receipts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["MonthlyFeesController_listReceipts"];
+        put?: never;
+        post: operations["MonthlyFeesController_confirmReceipt"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/monthly-fees/{id}/adjust": {
         parameters: {
             query?: never;
@@ -286,22 +318,6 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["MonthlyFeesController_manualPayment"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/monthly-fees/{id}/receipts": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["MonthlyFeesController_listReceipts"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -955,6 +971,16 @@ export interface components {
                 createdAt: string;
             }[];
         };
+        UploadUrlResponseDto: {
+            /** Format: uri */
+            uploadUrl: string;
+            fileKey: string;
+        };
+        ConfirmReceiptDto: {
+            fileKey: string;
+            fileType: string;
+            fileSizeBytes: number;
+        };
         AdjustMonthlyFeeDto: {
             amountInCents: number;
             reason: string;
@@ -1595,6 +1621,73 @@ export interface operations {
             };
         };
     };
+    MonthlyFeesController_uploadUrl: {
+        parameters: {
+            query: {
+                contentType: unknown;
+            };
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadUrlResponseDto"];
+                };
+            };
+        };
+    };
+    MonthlyFeesController_listReceipts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    MonthlyFeesController_confirmReceipt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmReceiptDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonthlyFeeDetailDto"];
+                };
+            };
+        };
+    };
     MonthlyFeesController_adjust: {
         parameters: {
             query?: never;
@@ -1667,25 +1760,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["MonthlyFeeDetailDto"];
                 };
-            };
-        };
-    };
-    MonthlyFeesController_listReceipts: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: unknown;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };

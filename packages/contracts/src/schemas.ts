@@ -451,6 +451,24 @@ export type AdjustMonthlyFeeInput = z.infer<typeof adjustMonthlyFeeSchema>;
 export type WaiveMonthlyFeeInput = z.infer<typeof waiveMonthlyFeeSchema>;
 export type ManualPaymentInput = z.infer<typeof manualPaymentSchema>;
 
+export const uploadUrlResponseSchema = z.object({
+  uploadUrl: z.string().url(),
+  fileKey: z.string(),
+});
+
+export const confirmReceiptSchema = z.object({
+  fileKey: z.string().min(1),
+  fileType: z.string().min(1),
+  fileSizeBytes: z
+    .number()
+    .int()
+    .positive()
+    .max(10 * 1024 * 1024),
+});
+
+export type UploadUrlResponse = z.infer<typeof uploadUrlResponseSchema>;
+export type ConfirmReceiptInput = z.infer<typeof confirmReceiptSchema>;
+
 export const rejectReceiptSchema = z.object({
   reason: z.string().trim().min(1),
 });
