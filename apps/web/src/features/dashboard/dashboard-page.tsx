@@ -1,3 +1,5 @@
+import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import {
   Alert02Icon,
   CheckmarkBadge02Icon,
@@ -5,6 +7,7 @@ import {
   Money03Icon,
   UserAdd02Icon,
 } from "hugeicons-react";
+import { api } from "../../api";
 import { Badge } from "../../components/ui/badge";
 import {
   Card,
@@ -15,38 +18,55 @@ import {
 } from "../../components/ui/card";
 import { TodayRoutineCard, TodayScheduleCard } from "../schedule/schedule-page";
 
-const cards = [
-  {
-    title: "Pagamentos em verificação",
-    value: "4",
-    description: "Comprovantes aguardando revisão",
-    icon: CheckmarkBadge02Icon,
-    tone: "warning" as const,
-  },
-  {
-    title: "Mensalidades atrasadas",
-    value: "8",
-    description: "Alunos com pendência aberta",
-    icon: Alert02Icon,
-    tone: "muted" as const,
-  },
-  {
-    title: "Elegíveis para graduação",
-    value: "12",
-    description: "Separados por grau e faixa",
-    icon: GraduationScrollIcon,
-    tone: "default" as const,
-  },
-  {
-    title: "Convites pendentes",
-    value: "6",
-    description: "Inclui convites expirados",
-    icon: UserAdd02Icon,
-    tone: "muted" as const,
-  },
-];
-
 export function DashboardPage() {
+  const navigate = useNavigate();
+
+  const feesQuery = useQuery({
+    queryKey: ["monthly-fees", "dashboard-summary"],
+    queryFn: async () => {
+      const { data, error } = await api.GET("/monthly-fees", { params: { query: {} } });
+      if (error) return null;
+      return data;
+    },
+  });
+
+  const summary = feesQuery.data?.summary;
+
+  const cards = [
+    {
+      title: "Pagamentos em verificação",
+      value: String(summary?.underReview ?? 0),
+      description: "Comprovantes aguardando revisão",
+      icon: CheckmarkBadge02Icon,
+      tone: "warning" as const,
+      onClick: () => navigate({ to: "/monthly-fees", search: { status: "under_review" } }),
+    },
+    {
+      title: "Mensalidades atrasadas",
+      value: String(summary?.overdue ?? 0),
+      description: "Alunos com pendência aberta",
+      icon: Alert02Icon,
+      tone: "muted" as const,
+      onClick: () => navigate({ to: "/monthly-fees", search: { status: "overdue" } }),
+    },
+    {
+      title: "Elegíveis para graduação",
+      value: "—",
+      description: "Separados por grau e faixa",
+      icon: GraduationScrollIcon,
+      tone: "default" as const,
+      onClick: undefined,
+    },
+    {
+      title: "Convites pendentes",
+      value: "—",
+      description: "Inclui convites expirados",
+      icon: UserAdd02Icon,
+      tone: "muted" as const,
+      onClick: undefined,
+    },
+  ];
+
   return (
     <div className="space-y-8">
       <section className="relative overflow-hidden rounded-[2rem] border border-border bg-card p-6 shadow-2xl md:p-8">
@@ -67,7 +87,11 @@ export function DashboardPage() {
           const Icon = card.icon;
 
           return (
-            <Card key={card.title} className="group overflow-hidden">
+            <Card
+              key={card.title}
+              className={`group overflow-hidden ${card.onClick ? "cursor-pointer" : ""}`}
+              onClick={card.onClick}
+            >
               <CardHeader>
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-1">

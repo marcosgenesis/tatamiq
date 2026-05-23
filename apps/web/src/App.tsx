@@ -27,6 +27,7 @@ import {
 import { ClassGroupsPage } from "./features/class-groups/class-groups-page";
 import { ActiveClassPage } from "./features/classes/active-class-page";
 import { DashboardPage } from "./features/dashboard/dashboard-page";
+import { MonthlyFeesPage } from "./features/monthly-fees/monthly-fees-page";
 import { PlaceholderPage } from "./features/placeholder/placeholder-page";
 import { SchedulePage } from "./features/schedule/schedule-page";
 import { AcceptStudentInvitePage } from "./features/student-access/accept-student-invite-page";
@@ -208,13 +209,7 @@ const graduationRoute = createRoute({
 const monthlyFeesRoute = createRoute({
   getParentRoute: () => instructorLayout,
   path: "/monthly-fees",
-  component: () => (
-    <PlaceholderPage
-      title="Mensalidades"
-      description="Cobranças mensais, Pix, comprovantes em verificação, ajustes e mensalidades dispensadas."
-      icon={Money03Icon}
-    />
-  ),
+  component: MonthlyFeesPage,
 });
 
 const settingsRoute = createRoute({
