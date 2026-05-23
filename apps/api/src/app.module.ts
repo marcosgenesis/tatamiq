@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { AuthModule } from "@thallesp/nestjs-better-auth";
 import { LoggerModule } from "nestjs-pino";
+import { AcademyModule } from "./academy/academy.module";
 import { AttendancesModule } from "./attendances/attendances.module";
 import { auth } from "./auth";
 import { BeltsModule } from "./belts/belts.module";
@@ -29,6 +30,7 @@ import { StudentsModule } from "./students/students.module";
       },
     }),
     DatabaseModule,
+    AcademyModule,
     BeltsModule,
     StudentsModule,
     ClassGroupsModule,

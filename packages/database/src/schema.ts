@@ -28,6 +28,12 @@ export const organization = pgTable("organization", {
   logo: text("logo"),
   metadata: text("metadata"),
   childToAdultAge: integer("child_to_adult_age").notNull().default(16),
+  address: text("address"),
+  phone: text("phone"),
+  instagram: text("instagram"),
+  pixKeyType: text("pix_key_type"),
+  pixKey: text("pix_key"),
+  pixCopyPaste: text("pix_copy_paste"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

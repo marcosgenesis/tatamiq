@@ -20,6 +20,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/academy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AcademyController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["AcademyController_update"];
+        trace?: never;
+    };
+    "/academy/logo/upload-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AcademyController_logoUploadUrl"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/academy/logo/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AcademyController_confirmLogo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/belts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["BeltsController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/belts/seed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["BeltsController_seed"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/students": {
         parameters: {
             query?: never;
@@ -750,6 +830,49 @@ export interface components {
             /** Format: date-time */
             timestamp: string;
         };
+        AcademyProfileDto: {
+            id: string;
+            name: string;
+            slug: string;
+            logo: string | null;
+            address: string | null;
+            phone: string | null;
+            instagram: string | null;
+            /** @enum {string|null} */
+            pixKeyType: "cpf" | "email" | "phone" | "random" | null;
+            pixKey: string | null;
+            pixCopyPaste: string | null;
+        };
+        UpdateAcademyDto: {
+            name?: string;
+            address?: string | "";
+            phone?: string | "";
+            instagram?: string | "";
+            /** @enum {string|null} */
+            pixKeyType?: "cpf" | "email" | "phone" | "random" | null;
+            pixKey?: string | "";
+            pixCopyPaste?: string | "";
+        };
+        AcademyLogoUploadResponseDto: {
+            /** Format: uri */
+            uploadUrl: string;
+            fileKey: string;
+        };
+        ListBeltsResponseDto: {
+            belts: {
+                id: string;
+                name: string;
+                slug: string;
+                /** @enum {string} */
+                path: "adult" | "child";
+                position: number;
+                maxDegrees: number;
+                minMonthsForNextDegree: number;
+                minAttendancesForNextDegree: number;
+                minMonthsForNextBelt: number;
+                minAttendancesForNextBelt: number;
+            }[];
+        };
         ListStudentsResponseDto: {
             students: {
                 id: string;
@@ -764,11 +887,21 @@ export interface components {
                 email: string | null;
                 monthlyAmountInCents: number | null;
                 monthlyDueDay: number | null;
-                /** @enum {string} */
-                currentBelt: "white" | "gray" | "yellow" | "orange" | "green" | "blue" | "purple" | "brown" | "black";
+                currentBeltId: string;
                 currentDegree: number;
-                /** @enum {string} */
-                graduationPath: "adult" | "child";
+                belt: {
+                    id: string;
+                    name: string;
+                    slug: string;
+                    /** @enum {string} */
+                    path: "adult" | "child";
+                    position: number;
+                    maxDegrees: number;
+                    minMonthsForNextDegree: number;
+                    minAttendancesForNextDegree: number;
+                    minMonthsForNextBelt: number;
+                    minAttendancesForNextBelt: number;
+                } | null;
                 guardian: {
                     id: string;
                     name: string;
@@ -803,11 +936,8 @@ export interface components {
             email?: string | "";
             monthlyAmountInCents?: number | null;
             monthlyDueDay?: number | null;
-            /** @enum {string} */
-            currentBelt: "white" | "gray" | "yellow" | "orange" | "green" | "blue" | "purple" | "brown" | "black";
+            currentBeltId: string;
             currentDegree: number;
-            /** @enum {string} */
-            graduationPath: "adult" | "child";
             guardian?: {
                 name: string;
                 phone: string;
@@ -828,11 +958,21 @@ export interface components {
             email: string | null;
             monthlyAmountInCents: number | null;
             monthlyDueDay: number | null;
-            /** @enum {string} */
-            currentBelt: "white" | "gray" | "yellow" | "orange" | "green" | "blue" | "purple" | "brown" | "black";
+            currentBeltId: string;
             currentDegree: number;
-            /** @enum {string} */
-            graduationPath: "adult" | "child";
+            belt: {
+                id: string;
+                name: string;
+                slug: string;
+                /** @enum {string} */
+                path: "adult" | "child";
+                position: number;
+                maxDegrees: number;
+                minMonthsForNextDegree: number;
+                minAttendancesForNextDegree: number;
+                minMonthsForNextBelt: number;
+                minAttendancesForNextBelt: number;
+            } | null;
             guardian: {
                 id: string;
                 name: string;
@@ -861,11 +1001,8 @@ export interface components {
             email?: string | "";
             monthlyAmountInCents?: number | null;
             monthlyDueDay?: number | null;
-            /** @enum {string} */
-            currentBelt: "white" | "gray" | "yellow" | "orange" | "green" | "blue" | "purple" | "brown" | "black";
+            currentBeltId: string;
             currentDegree: number;
-            /** @enum {string} */
-            graduationPath: "adult" | "child";
             guardian?: {
                 name: string;
                 phone: string;
@@ -947,6 +1084,14 @@ export interface components {
             academy: {
                 id: string;
                 name: string;
+                logo: string | null;
+                phone: string | null;
+                instagram: string | null;
+                address: string | null;
+                /** @enum {string|null} */
+                pixKeyType: "cpf" | "email" | "phone" | "random" | null;
+                pixKey: string | null;
+                pixCopyPaste: string | null;
             };
             student: {
                 id: string;
@@ -1373,6 +1518,124 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthResponseDto"];
+                };
+            };
+        };
+    };
+    AcademyController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcademyProfileDto"];
+                };
+            };
+        };
+    };
+    AcademyController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAcademyDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcademyProfileDto"];
+                };
+            };
+        };
+    };
+    AcademyController_logoUploadUrl: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcademyLogoUploadResponseDto"];
+                };
+            };
+        };
+    };
+    AcademyController_confirmLogo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcademyProfileDto"];
+                };
+            };
+        };
+    };
+    BeltsController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListBeltsResponseDto"];
+                };
+            };
+        };
+    };
+    BeltsController_seed: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListBeltsResponseDto"];
                 };
             };
         };

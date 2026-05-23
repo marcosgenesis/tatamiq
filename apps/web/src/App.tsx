@@ -30,6 +30,7 @@ import { DashboardPage } from "./features/dashboard/dashboard-page";
 import { MonthlyFeesPage } from "./features/monthly-fees/monthly-fees-page";
 import { PlaceholderPage } from "./features/placeholder/placeholder-page";
 import { SchedulePage } from "./features/schedule/schedule-page";
+import { SettingsPage } from "./features/settings/settings-page";
 import { AcceptStudentInvitePage } from "./features/student-access/accept-student-invite-page";
 import { ChooseAreaPage } from "./features/student-access/choose-area-page";
 import { StudentCheckInPage } from "./features/student-access/student-check-in-page";
@@ -215,13 +216,7 @@ const monthlyFeesRoute = createRoute({
 const settingsRoute = createRoute({
   getParentRoute: () => instructorLayout,
   path: "/settings",
-  component: () => (
-    <PlaceholderPage
-      title="Configurações"
-      description="Dados da academia, Pix da academia, preferências e regras editáveis da operação."
-      icon={Settings02Icon}
-    />
-  ),
+  component: SettingsPage,
 });
 
 // --- Route tree ---

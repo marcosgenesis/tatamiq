@@ -353,7 +353,17 @@ export class StudentAccessService {
     );
 
     return {
-      academy: { id: academy.id, name: academy.name },
+      academy: {
+        id: academy.id,
+        name: academy.name,
+        logo: academy.logo ?? null,
+        phone: academy.phone ?? null,
+        instagram: academy.instagram ?? null,
+        address: academy.address ?? null,
+        pixKeyType: parsePixKeyType(academy.pixKeyType),
+        pixKey: academy.pixKey ?? null,
+        pixCopyPaste: academy.pixCopyPaste ?? null,
+      },
       student: {
         id: student.id,
         name: student.name,
@@ -561,4 +571,9 @@ function parseClassStatus(status: string): "scheduled" | "active" | "ended" | "c
   if (status === "scheduled" || status === "active" || status === "ended" || status === "cancelled")
     return status;
   return "scheduled";
+}
+
+function parsePixKeyType(value: string | null): "cpf" | "email" | "phone" | "random" | null {
+  if (value === "cpf" || value === "email" || value === "phone" || value === "random") return value;
+  return null;
 }

@@ -9,6 +9,7 @@ export type HealthResponse = z.infer<typeof healthResponseSchema>;
 
 export const studentStatusSchema = z.enum(["active", "inactive"]);
 export const graduationPathSchema = z.enum(["adult", "child"]);
+export const pixKeyTypeSchema = z.enum(["cpf", "email", "phone", "random"]);
 export const currentBeltSchema = z.enum([
   "white",
   "gray",
@@ -160,7 +161,17 @@ export const studentUpcomingClassSchema = z.object({
 });
 
 export const studentMeResponseSchema = z.object({
-  academy: z.object({ id: z.string(), name: z.string() }),
+  academy: z.object({
+    id: z.string(),
+    name: z.string(),
+    logo: z.string().nullable(),
+    phone: z.string().nullable(),
+    instagram: z.string().nullable(),
+    address: z.string().nullable(),
+    pixKeyType: pixKeyTypeSchema.nullable(),
+    pixKey: z.string().nullable(),
+    pixCopyPaste: z.string().nullable(),
+  }),
   student: z.object({
     id: z.string(),
     name: z.string(),
@@ -567,3 +578,37 @@ export type StudentNoteDto = z.infer<typeof studentNoteSchema>;
 export type CreateStudentNoteInput = z.infer<typeof createStudentNoteSchema>;
 export type UpdateStudentNoteInput = z.infer<typeof updateStudentNoteSchema>;
 export type ListStudentNotesResponse = z.infer<typeof listStudentNotesResponseSchema>;
+
+// --- Academy Settings ---
+
+export const academyProfileSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  slug: z.string(),
+  logo: z.string().nullable(),
+  address: z.string().nullable(),
+  phone: z.string().nullable(),
+  instagram: z.string().nullable(),
+  pixKeyType: pixKeyTypeSchema.nullable(),
+  pixKey: z.string().nullable(),
+  pixCopyPaste: z.string().nullable(),
+});
+
+export const updateAcademySchema = z.object({
+  name: z.string().trim().min(1).optional(),
+  address: z.string().trim().optional().or(z.literal("")),
+  phone: z.string().trim().optional().or(z.literal("")),
+  instagram: z.string().trim().optional().or(z.literal("")),
+  pixKeyType: pixKeyTypeSchema.nullable().optional(),
+  pixKey: z.string().trim().optional().or(z.literal("")),
+  pixCopyPaste: z.string().trim().optional().or(z.literal("")),
+});
+
+export const academyLogoUploadResponseSchema = z.object({
+  uploadUrl: z.string().url(),
+  fileKey: z.string(),
+});
+
+export type AcademyProfile = z.infer<typeof academyProfileSchema>;
+export type UpdateAcademyInput = z.infer<typeof updateAcademySchema>;
+export type AcademyLogoUploadResponse = z.infer<typeof academyLogoUploadResponseSchema>;
