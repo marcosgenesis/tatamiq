@@ -71,6 +71,34 @@
       "when": 1779726400000,
       "tag": "0009_monthly_fees",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1779812800000,
+      "tag": "0010_student_notes",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1779899200000,
+      "tag": "0011_belt_schema",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1779985600000,
+      "tag": "0012_academy_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1780072000000,
+      "tag": "0013_promotions_and_portal",
+      "breakpoints": true
     }
   ]
 }

@@ -8,12 +8,7 @@ import {
   RouterProvider,
   useNavigate,
 } from "@tanstack/react-router";
-import {
-  CheckmarkSquare03Icon,
-  GraduationScrollIcon,
-  Money03Icon,
-  Settings02Icon,
-} from "hugeicons-react";
+import { CheckmarkSquare03Icon } from "hugeicons-react";
 import { useEffect } from "react";
 import { AppShell } from "./components/app-shell";
 import { LogoIcon } from "./components/logo";
@@ -27,9 +22,11 @@ import {
 import { ClassGroupsPage } from "./features/class-groups/class-groups-page";
 import { ActiveClassPage } from "./features/classes/active-class-page";
 import { DashboardPage } from "./features/dashboard/dashboard-page";
+import { GraduationPage } from "./features/graduation/graduation-page";
 import { MonthlyFeesPage } from "./features/monthly-fees/monthly-fees-page";
 import { PlaceholderPage } from "./features/placeholder/placeholder-page";
 import { SchedulePage } from "./features/schedule/schedule-page";
+import { SettingsPage } from "./features/settings/settings-page";
 import { AcceptStudentInvitePage } from "./features/student-access/accept-student-invite-page";
 import { ChooseAreaPage } from "./features/student-access/choose-area-page";
 import { StudentCheckInPage } from "./features/student-access/student-check-in-page";
@@ -197,13 +194,7 @@ const attendancesRoute = createRoute({
 const graduationRoute = createRoute({
   getParentRoute: () => instructorLayout,
   path: "/graduation",
-  component: () => (
-    <PlaceholderPage
-      title="Graduação"
-      description="Faixas, graus, histórico formal de promoções e elegibilidade interna do instrutor."
-      icon={GraduationScrollIcon}
-    />
-  ),
+  component: GraduationPage,
 });
 
 const monthlyFeesRoute = createRoute({
@@ -215,13 +206,7 @@ const monthlyFeesRoute = createRoute({
 const settingsRoute = createRoute({
   getParentRoute: () => instructorLayout,
   path: "/settings",
-  component: () => (
-    <PlaceholderPage
-      title="Configurações"
-      description="Dados da academia, Pix da academia, preferências e regras editáveis da operação."
-      icon={Settings02Icon}
-    />
-  ),
+  component: SettingsPage,
 });
 
 // --- Route tree ---

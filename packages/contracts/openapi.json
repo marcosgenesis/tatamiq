@@ -22,6 +22,140 @@
         ]
       }
     },
+    "/academy": {
+      "get": {
+        "operationId": "AcademyController_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcademyProfileDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "academy"
+        ]
+      },
+      "patch": {
+        "operationId": "AcademyController_update",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAcademyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcademyProfileDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "academy"
+        ]
+      }
+    },
+    "/academy/logo/upload-url": {
+      "post": {
+        "operationId": "AcademyController_logoUploadUrl",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcademyLogoUploadResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "academy"
+        ]
+      }
+    },
+    "/academy/logo/confirm": {
+      "post": {
+        "operationId": "AcademyController_confirmLogo",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcademyProfileDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "academy"
+        ]
+      }
+    },
+    "/belts": {
+      "get": {
+        "operationId": "BeltsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListBeltsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "belts"
+        ]
+      }
+    },
+    "/belts/seed": {
+      "post": {
+        "operationId": "BeltsController_seed",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListBeltsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "belts"
+        ]
+      }
+    },
     "/students": {
       "get": {
         "operationId": "StudentsController_list",
@@ -203,6 +337,27 @@
         },
         "tags": [
           "students"
+        ]
+      }
+    },
+    "/student-access/invites/summary": {
+      "get": {
+        "operationId": "StudentAccessController_inviteSummary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteSummaryResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "student-access"
         ]
       }
     },
@@ -403,6 +558,20 @@
     "/student/monthly-fees": {
       "get": {
         "operationId": "StudentAccessController_studentMonthlyFees",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "student-access"
+        ]
+      }
+    },
+    "/student/notes": {
+      "get": {
+        "operationId": "StudentAccessController_studentNotes",
         "parameters": [],
         "responses": {
           "200": {
@@ -807,6 +976,148 @@
         },
         "tags": [
           "monthly-fees"
+        ]
+      }
+    },
+    "/students/{id}/notes": {
+      "get": {
+        "operationId": "StudentNotesController_list",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListStudentNotesResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "student-notes"
+        ]
+      },
+      "post": {
+        "operationId": "StudentNotesController_create",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateStudentNoteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentNoteDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "student-notes"
+        ]
+      }
+    },
+    "/students/{id}/notes/{noteId}": {
+      "patch": {
+        "operationId": "StudentNotesController_update",
+        "parameters": [
+          {
+            "name": "noteId",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStudentNoteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentNoteDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "student-notes"
+        ]
+      }
+    },
+    "/students/{id}/notes/{noteId}/archive": {
+      "post": {
+        "operationId": "StudentNotesController_archive",
+        "parameters": [
+          {
+            "name": "noteId",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentNoteDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "student-notes"
         ]
       }
     },
@@ -1500,6 +1811,242 @@
           "timestamp"
         ]
       },
+      "AcademyProfileDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "logo": {
+            "type": "string",
+            "nullable": true
+          },
+          "address": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true
+          },
+          "instagram": {
+            "type": "string",
+            "nullable": true
+          },
+          "pixKeyType": {
+            "type": "string",
+            "enum": [
+              "cpf",
+              "email",
+              "phone",
+              "random",
+              null
+            ],
+            "nullable": true
+          },
+          "pixKey": {
+            "type": "string",
+            "nullable": true
+          },
+          "pixCopyPaste": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "logo",
+          "address",
+          "phone",
+          "instagram",
+          "pixKeyType",
+          "pixKey",
+          "pixCopyPaste"
+        ]
+      },
+      "UpdateAcademyDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "enum": [
+                  ""
+                ]
+              }
+            ]
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "enum": [
+                  ""
+                ]
+              }
+            ]
+          },
+          "instagram": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "enum": [
+                  ""
+                ]
+              }
+            ]
+          },
+          "pixKeyType": {
+            "type": "string",
+            "enum": [
+              "cpf",
+              "email",
+              "phone",
+              "random",
+              null
+            ],
+            "nullable": true
+          },
+          "pixKey": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "enum": [
+                  ""
+                ]
+              }
+            ]
+          },
+          "pixCopyPaste": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "enum": [
+                  ""
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "AcademyLogoUploadResponseDto": {
+        "type": "object",
+        "properties": {
+          "uploadUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "fileKey": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "uploadUrl",
+          "fileKey"
+        ]
+      },
+      "ListBeltsResponseDto": {
+        "type": "object",
+        "properties": {
+          "belts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "slug": {
+                  "type": "string"
+                },
+                "path": {
+                  "type": "string",
+                  "enum": [
+                    "adult",
+                    "child"
+                  ]
+                },
+                "position": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "maxDegrees": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "minMonthsForNextDegree": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "minAttendancesForNextDegree": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "minMonthsForNextBelt": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "minAttendancesForNextBelt": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "slug",
+                "path",
+                "position",
+                "maxDegrees",
+                "minMonthsForNextDegree",
+                "minAttendancesForNextDegree",
+                "minMonthsForNextBelt",
+                "minAttendancesForNextBelt"
+              ]
+            }
+          }
+        },
+        "required": [
+          "belts"
+        ]
+      },
       "ListStudentsResponseDto": {
         "type": "object",
         "properties": {
@@ -1553,31 +2100,77 @@
                   "maximum": 31,
                   "nullable": true
                 },
-                "currentBelt": {
-                  "type": "string",
-                  "enum": [
-                    "white",
-                    "gray",
-                    "yellow",
-                    "orange",
-                    "green",
-                    "blue",
-                    "purple",
-                    "brown",
-                    "black"
-                  ]
+                "currentBeltId": {
+                  "type": "string"
                 },
                 "currentDegree": {
                   "type": "integer",
                   "minimum": 0,
-                  "maximum": 4
+                  "maximum": 6
                 },
-                "graduationPath": {
-                  "type": "string",
-                  "enum": [
-                    "adult",
-                    "child"
-                  ]
+                "belt": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "slug": {
+                      "type": "string"
+                    },
+                    "path": {
+                      "type": "string",
+                      "enum": [
+                        "adult",
+                        "child"
+                      ]
+                    },
+                    "position": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "maxDegrees": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "minMonthsForNextDegree": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "minAttendancesForNextDegree": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "minMonthsForNextBelt": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "minAttendancesForNextBelt": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "slug",
+                    "path",
+                    "position",
+                    "maxDegrees",
+                    "minMonthsForNextDegree",
+                    "minAttendancesForNextDegree",
+                    "minMonthsForNextBelt",
+                    "minAttendancesForNextBelt"
+                  ],
+                  "nullable": true
                 },
                 "guardian": {
                   "type": "object",
@@ -1666,9 +2259,9 @@
                 "email",
                 "monthlyAmountInCents",
                 "monthlyDueDay",
-                "currentBelt",
+                "currentBeltId",
                 "currentDegree",
-                "graduationPath",
+                "belt",
                 "guardian",
                 "accessState",
                 "createdAt",
@@ -1762,31 +2355,13 @@
             "maximum": 31,
             "nullable": true
           },
-          "currentBelt": {
-            "type": "string",
-            "enum": [
-              "white",
-              "gray",
-              "yellow",
-              "orange",
-              "green",
-              "blue",
-              "purple",
-              "brown",
-              "black"
-            ]
+          "currentBeltId": {
+            "type": "string"
           },
           "currentDegree": {
             "type": "integer",
             "minimum": 0,
-            "maximum": 4
-          },
-          "graduationPath": {
-            "type": "string",
-            "enum": [
-              "adult",
-              "child"
-            ]
+            "maximum": 6
           },
           "guardian": {
             "type": "object",
@@ -1839,9 +2414,8 @@
           "name",
           "birthDate",
           "enrollmentDate",
-          "currentBelt",
-          "currentDegree",
-          "graduationPath"
+          "currentBeltId",
+          "currentDegree"
         ]
       },
       "StudentDto": {
@@ -1892,31 +2466,77 @@
             "maximum": 31,
             "nullable": true
           },
-          "currentBelt": {
-            "type": "string",
-            "enum": [
-              "white",
-              "gray",
-              "yellow",
-              "orange",
-              "green",
-              "blue",
-              "purple",
-              "brown",
-              "black"
-            ]
+          "currentBeltId": {
+            "type": "string"
           },
           "currentDegree": {
             "type": "integer",
             "minimum": 0,
-            "maximum": 4
+            "maximum": 6
           },
-          "graduationPath": {
-            "type": "string",
-            "enum": [
-              "adult",
-              "child"
-            ]
+          "belt": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "slug": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string",
+                "enum": [
+                  "adult",
+                  "child"
+                ]
+              },
+              "position": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "maxDegrees": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "minMonthsForNextDegree": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "minAttendancesForNextDegree": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "minMonthsForNextBelt": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "minAttendancesForNextBelt": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "slug",
+              "path",
+              "position",
+              "maxDegrees",
+              "minMonthsForNextDegree",
+              "minAttendancesForNextDegree",
+              "minMonthsForNextBelt",
+              "minAttendancesForNextBelt"
+            ],
+            "nullable": true
           },
           "guardian": {
             "type": "object",
@@ -2005,9 +2625,9 @@
           "email",
           "monthlyAmountInCents",
           "monthlyDueDay",
-          "currentBelt",
+          "currentBeltId",
           "currentDegree",
-          "graduationPath",
+          "belt",
           "guardian",
           "accessState",
           "createdAt",
@@ -2069,31 +2689,13 @@
             "maximum": 31,
             "nullable": true
           },
-          "currentBelt": {
-            "type": "string",
-            "enum": [
-              "white",
-              "gray",
-              "yellow",
-              "orange",
-              "green",
-              "blue",
-              "purple",
-              "brown",
-              "black"
-            ]
+          "currentBeltId": {
+            "type": "string"
           },
           "currentDegree": {
             "type": "integer",
             "minimum": 0,
-            "maximum": 4
-          },
-          "graduationPath": {
-            "type": "string",
-            "enum": [
-              "adult",
-              "child"
-            ]
+            "maximum": 6
           },
           "guardian": {
             "type": "object",
@@ -2153,9 +2755,27 @@
           "name",
           "birthDate",
           "enrollmentDate",
-          "currentBelt",
-          "currentDegree",
-          "graduationPath"
+          "currentBeltId",
+          "currentDegree"
+        ]
+      },
+      "InviteSummaryResponseDto": {
+        "type": "object",
+        "properties": {
+          "pending": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "expired": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "pending",
+          "expired"
         ]
       },
       "CreateStudentInviteResponseDto": {
@@ -2416,11 +3036,53 @@
               },
               "name": {
                 "type": "string"
+              },
+              "logo": {
+                "type": "string",
+                "nullable": true
+              },
+              "phone": {
+                "type": "string",
+                "nullable": true
+              },
+              "instagram": {
+                "type": "string",
+                "nullable": true
+              },
+              "address": {
+                "type": "string",
+                "nullable": true
+              },
+              "pixKeyType": {
+                "type": "string",
+                "enum": [
+                  "cpf",
+                  "email",
+                  "phone",
+                  "random",
+                  null
+                ],
+                "nullable": true
+              },
+              "pixKey": {
+                "type": "string",
+                "nullable": true
+              },
+              "pixCopyPaste": {
+                "type": "string",
+                "nullable": true
               }
             },
             "required": [
               "id",
-              "name"
+              "name",
+              "logo",
+              "phone",
+              "instagram",
+              "address",
+              "pixKeyType",
+              "pixKey",
+              "pixCopyPaste"
             ]
           },
           "student": {
@@ -3000,6 +3662,137 @@
         "required": [
           "reason"
         ]
+      },
+      "ListStudentNotesResponseDto": {
+        "type": "object",
+        "properties": {
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "studentId": {
+                  "type": "string"
+                },
+                "content": {
+                  "type": "string"
+                },
+                "isVisible": {
+                  "type": "boolean"
+                },
+                "archivedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+                  "nullable": true
+                },
+                "createdByUserId": {
+                  "type": "string"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                },
+                "updatedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                }
+              },
+              "required": [
+                "id",
+                "studentId",
+                "content",
+                "isVisible",
+                "archivedAt",
+                "createdByUserId",
+                "createdAt",
+                "updatedAt"
+              ]
+            }
+          }
+        },
+        "required": [
+          "notes"
+        ]
+      },
+      "CreateStudentNoteDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "minLength": 1
+          },
+          "isVisible": {
+            "default": true,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "content"
+        ]
+      },
+      "StudentNoteDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "studentId": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "isVisible": {
+            "type": "boolean"
+          },
+          "archivedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "nullable": true
+          },
+          "createdByUserId": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "studentId",
+          "content",
+          "isVisible",
+          "archivedAt",
+          "createdByUserId",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "UpdateStudentNoteDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "minLength": 1
+          },
+          "isVisible": {
+            "type": "boolean"
+          }
+        }
       },
       "ListClassGroupsResponseDto": {
         "type": "object",

@@ -1,13 +1,15 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import type { CreateStudentInput, Student, UpdateStudentInput } from "@tatamiq/contracts";
-import { type Database, studentGuardians, students } from "@tatamiq/database";
+import type { BeltDto, CreateStudentInput, Student, UpdateStudentInput } from "@tatamiq/contracts";
+import { belts, type Database, studentGuardians, students } from "@tatamiq/database";
 import { and, eq, inArray } from "drizzle-orm";
+import { BeltsService } from "../belts/belts.service";
 import { DATABASE } from "../database/database.module";
 import { StudentAccessService } from "../student-access/student-access.service";
 import { validateStudentInput } from "./student-rules";
 
 type StudentRow = typeof students.$inferSelect;
 type GuardianRow = typeof studentGuardians.$inferSelect;
+type BeltRow = typeof belts.$inferSelect;
 
 type StudentStatusFilter = "active" | "inactive" | "all";
 
@@ -16,6 +18,7 @@ export class StudentsService {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
     @Inject(StudentAccessService) private readonly studentAccessService: StudentAccessService,
+    @Inject(BeltsService) private readonly beltsService: BeltsService,
   ) {}
 
   async list(organizationId: string, status: StudentStatusFilter = "active") {
@@ -25,12 +28,16 @@ export class StudentsService {
     }
 
     const rows = await this.db
-      .select()
+      .select({
+        student: students,
+        belt: belts,
+      })
       .from(students)
+      .leftJoin(belts, eq(students.currentBeltId, belts.id))
       .where(and(...conditions))
       .orderBy(students.name);
 
-    const studentIds = rows.map((row) => row.id);
+    const studentIds = rows.map((row) => row.student.id);
     const guardians = await this.guardiansFor(studentIds);
     const accessStates = await this.studentAccessService.accessStatesForStudents(studentIds);
     const allRows = await this.db
@@ -43,7 +50,12 @@ export class StudentsService {
 
     return {
       students: rows.map((row) =>
-        toStudentDto(row, guardians.get(row.id) ?? null, accessStates.get(row.id)),
+        toStudentDto(
+          row.student,
+          guardians.get(row.student.id) ?? null,
+          accessStates.get(row.student.id),
+          row.belt,
+        ),
       ),
       summary: {
         active,
@@ -55,6 +67,11 @@ export class StudentsService {
 
   async create(organizationId: string, input: CreateStudentInput): Promise<Student> {
     validateStudentInput(input);
+
+    const belt = await this.beltsService.findById(organizationId, input.currentBeltId);
+    if (!belt) {
+      throw new BadRequestException("Faixa nao encontrada.");
+    }
 
     const studentId = crypto.randomUUID();
     const now = new Date();
@@ -71,9 +88,8 @@ export class StudentsService {
       email: emptyToNull(input.email),
       monthlyAmountInCents: input.monthlyAmountInCents ?? null,
       monthlyDueDay: input.monthlyDueDay ?? null,
-      currentBelt: input.currentBelt,
+      currentBeltId: input.currentBeltId,
       currentDegree: input.currentDegree,
-      graduationPath: input.graduationPath,
       createdAt: now,
       updatedAt: now,
     });
@@ -86,15 +102,20 @@ export class StudentsService {
   }
 
   async get(organizationId: string, id: string): Promise<Student> {
-    const row = await this.findStudent(organizationId, id);
+    const row = await this.findStudentWithBelt(organizationId, id);
     const guardian = await this.findGuardian(id);
     const accessStates = await this.studentAccessService.accessStatesForStudents([id]);
-    return toStudentDto(row, guardian, accessStates.get(id));
+    return toStudentDto(row.student, guardian, accessStates.get(id), row.belt);
   }
 
   async update(organizationId: string, id: string, input: UpdateStudentInput): Promise<Student> {
     await this.findStudent(organizationId, id);
     validateStudentInput(input);
+
+    const belt = await this.beltsService.findById(organizationId, input.currentBeltId);
+    if (!belt) {
+      throw new BadRequestException("Faixa nao encontrada.");
+    }
 
     const status = input.status;
     const now = new Date();
@@ -111,9 +132,8 @@ export class StudentsService {
         email: emptyToNull(input.email),
         monthlyAmountInCents: input.monthlyAmountInCents ?? null,
         monthlyDueDay: input.monthlyDueDay ?? null,
-        currentBelt: input.currentBelt,
+        currentBeltId: input.currentBeltId,
         currentDegree: input.currentDegree,
-        graduationPath: input.graduationPath,
         updatedAt: now,
       })
       .where(and(eq(students.id, id), eq(students.organizationId, organizationId)));
@@ -151,7 +171,25 @@ export class StudentsService {
       .limit(1);
 
     if (!row) {
-      throw new NotFoundException("Aluno não encontrado.");
+      throw new NotFoundException("Aluno nao encontrado.");
+    }
+
+    return row;
+  }
+
+  private async findStudentWithBelt(
+    organizationId: string,
+    id: string,
+  ): Promise<{ student: StudentRow; belt: BeltRow | null }> {
+    const [row] = await this.db
+      .select({ student: students, belt: belts })
+      .from(students)
+      .leftJoin(belts, eq(students.currentBeltId, belts.id))
+      .where(and(eq(students.id, id), eq(students.organizationId, organizationId)))
+      .limit(1);
+
+    if (!row) {
+      throw new NotFoundException("Aluno nao encontrado.");
     }
 
     return row;
@@ -216,7 +254,23 @@ function toStudentDto(
     expiresAt: null,
     accessId: null,
   },
+  beltRow: BeltRow | null = null,
 ): Student {
+  const belt: BeltDto | null = beltRow
+    ? {
+        id: beltRow.id,
+        name: beltRow.name,
+        slug: beltRow.slug,
+        path: beltRow.path as "adult" | "child",
+        position: beltRow.position,
+        maxDegrees: beltRow.maxDegrees,
+        minMonthsForNextDegree: beltRow.minMonthsForNextDegree,
+        minAttendancesForNextDegree: beltRow.minAttendancesForNextDegree,
+        minMonthsForNextBelt: beltRow.minMonthsForNextBelt,
+        minAttendancesForNextBelt: beltRow.minAttendancesForNextBelt,
+      }
+    : null;
+
   return {
     id: row.id,
     name: row.name,
@@ -228,9 +282,9 @@ function toStudentDto(
     email: row.email,
     monthlyAmountInCents: row.monthlyAmountInCents,
     monthlyDueDay: row.monthlyDueDay,
-    currentBelt: parseBelt(row.currentBelt),
+    currentBeltId: row.currentBeltId,
     currentDegree: row.currentDegree,
-    graduationPath: parseGraduationPath(row.graduationPath),
+    belt,
     guardian: guardian
       ? {
           id: guardian.id,
@@ -253,26 +307,5 @@ function emptyToNull(value: string | null | undefined): string | null {
 
 function parseStatus(value: string): "active" | "inactive" {
   if (value === "active" || value === "inactive") return value;
-  throw new BadRequestException("Status de aluno inválido.");
-}
-
-function parseGraduationPath(value: string): "adult" | "child" {
-  if (value === "adult" || value === "child") return value;
-  throw new BadRequestException("Trilha de graduação inválida.");
-}
-
-function parseBelt(value: string): Student["currentBelt"] {
-  const validBelts = [
-    "white",
-    "gray",
-    "yellow",
-    "orange",
-    "green",
-    "blue",
-    "purple",
-    "brown",
-    "black",
-  ];
-  if (validBelts.includes(value)) return value as Student["currentBelt"];
-  throw new BadRequestException("Faixa inválida.");
+  throw new BadRequestException("Status de aluno invalido.");
 }

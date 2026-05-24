@@ -9,6 +9,7 @@ export type HealthResponse = z.infer<typeof healthResponseSchema>;
 
 export const studentStatusSchema = z.enum(["active", "inactive"]);
 export const graduationPathSchema = z.enum(["adult", "child"]);
+export const pixKeyTypeSchema = z.enum(["cpf", "email", "phone", "random"]);
 export const currentBeltSchema = z.enum([
   "white",
   "gray",
@@ -20,6 +21,26 @@ export const currentBeltSchema = z.enum([
   "brown",
   "black",
 ]);
+
+export const beltSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  slug: z.string(),
+  path: z.enum(["adult", "child"]),
+  position: z.number().int(),
+  maxDegrees: z.number().int(),
+  minMonthsForNextDegree: z.number().int(),
+  minAttendancesForNextDegree: z.number().int(),
+  minMonthsForNextBelt: z.number().int(),
+  minAttendancesForNextBelt: z.number().int(),
+});
+
+export const listBeltsResponseSchema = z.object({
+  belts: z.array(beltSchema),
+});
+
+export type BeltDto = z.infer<typeof beltSchema>;
+export type ListBeltsResponse = z.infer<typeof listBeltsResponseSchema>;
 
 export const studentGuardianSchema = z.object({
   id: z.string(),
@@ -47,9 +68,9 @@ export const studentSchema = z.object({
   email: z.string().nullable(),
   monthlyAmountInCents: z.number().int().nonnegative().nullable(),
   monthlyDueDay: z.number().int().min(1).max(31).nullable(),
-  currentBelt: currentBeltSchema,
-  currentDegree: z.number().int().min(0).max(4),
-  graduationPath: graduationPathSchema,
+  currentBeltId: z.string(),
+  currentDegree: z.number().int().min(0).max(6),
+  belt: beltSchema.nullable(),
   guardian: studentGuardianSchema.nullable(),
   accessState: studentAccessStateSchema,
   createdAt: z.string().datetime(),
@@ -83,9 +104,8 @@ export const createStudentSchema = z.object({
   email: z.string().trim().email().optional().or(z.literal("")),
   monthlyAmountInCents: z.number().int().nonnegative().nullable().optional(),
   monthlyDueDay: z.number().int().min(1).max(31).nullable().optional(),
-  currentBelt: currentBeltSchema,
-  currentDegree: z.number().int().min(0).max(4),
-  graduationPath: graduationPathSchema,
+  currentBeltId: z.string(),
+  currentDegree: z.number().int().min(0).max(6),
   guardian: guardianInputSchema,
 });
 
@@ -141,7 +161,17 @@ export const studentUpcomingClassSchema = z.object({
 });
 
 export const studentMeResponseSchema = z.object({
-  academy: z.object({ id: z.string(), name: z.string() }),
+  academy: z.object({
+    id: z.string(),
+    name: z.string(),
+    logo: z.string().nullable(),
+    phone: z.string().nullable(),
+    instagram: z.string().nullable(),
+    address: z.string().nullable(),
+    pixKeyType: pixKeyTypeSchema.nullable(),
+    pixKey: z.string().nullable(),
+    pixCopyPaste: z.string().nullable(),
+  }),
   student: z.object({
     id: z.string(),
     name: z.string(),
@@ -153,11 +183,17 @@ export const studentMeResponseSchema = z.object({
   upcomingClasses: z.array(studentUpcomingClassSchema),
 });
 
+export const inviteSummaryResponseSchema = z.object({
+  pending: z.number().int().nonnegative(),
+  expired: z.number().int().nonnegative(),
+});
+
 export type CreateStudentInviteResponse = z.infer<typeof createStudentInviteResponseSchema>;
 export type StudentInvitePreview = z.infer<typeof studentInvitePreviewSchema>;
 export type AcceptStudentInviteInput = z.infer<typeof acceptStudentInviteSchema>;
 export type AcceptStudentInviteResponse = z.infer<typeof acceptStudentInviteResponseSchema>;
 export type StudentMeResponse = z.infer<typeof studentMeResponseSchema>;
+export type InviteSummaryResponse = z.infer<typeof inviteSummaryResponseSchema>;
 
 export const classGroupStatusSchema = z.enum(["active", "archived"]);
 
@@ -510,3 +546,257 @@ export type MonthlyFeeEvent = z.infer<typeof monthlyFeeEventSchema>;
 export type PaymentReceipt = z.infer<typeof paymentReceiptSchema>;
 export type ListMonthlyFeesResponse = z.infer<typeof listMonthlyFeesResponseSchema>;
 export type CreateMonthlyFeeInput = z.infer<typeof createMonthlyFeeSchema>;
+
+// --- Student Notes ---
+
+export const studentNoteSchema = z.object({
+  id: z.string(),
+  studentId: z.string(),
+  content: z.string(),
+  isVisible: z.boolean(),
+  archivedAt: z.string().datetime().nullable(),
+  createdByUserId: z.string(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
+
+export const createStudentNoteSchema = z.object({
+  content: z.string().trim().min(1),
+  isVisible: z.boolean().optional().default(true),
+});
+
+export const updateStudentNoteSchema = z.object({
+  content: z.string().trim().min(1).optional(),
+  isVisible: z.boolean().optional(),
+});
+
+export const listStudentNotesResponseSchema = z.object({
+  notes: z.array(studentNoteSchema),
+});
+
+export type StudentNoteDto = z.infer<typeof studentNoteSchema>;
+export type CreateStudentNoteInput = z.infer<typeof createStudentNoteSchema>;
+export type UpdateStudentNoteInput = z.infer<typeof updateStudentNoteSchema>;
+export type ListStudentNotesResponse = z.infer<typeof listStudentNotesResponseSchema>;
+
+// --- Academy Settings ---
+
+export const academyProfileSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  slug: z.string(),
+  logo: z.string().nullable(),
+  address: z.string().nullable(),
+  phone: z.string().nullable(),
+  instagram: z.string().nullable(),
+  pixKeyType: pixKeyTypeSchema.nullable(),
+  pixKey: z.string().nullable(),
+  pixCopyPaste: z.string().nullable(),
+});
+
+export const updateAcademySchema = z.object({
+  name: z.string().trim().min(1).optional(),
+  address: z.string().trim().optional().or(z.literal("")),
+  phone: z.string().trim().optional().or(z.literal("")),
+  instagram: z.string().trim().optional().or(z.literal("")),
+  pixKeyType: pixKeyTypeSchema.nullable().optional(),
+  pixKey: z.string().trim().optional().or(z.literal("")),
+  pixCopyPaste: z.string().trim().optional().or(z.literal("")),
+});
+
+export const academyLogoUploadResponseSchema = z.object({
+  uploadUrl: z.string().url(),
+  fileKey: z.string(),
+});
+
+export type AcademyProfile = z.infer<typeof academyProfileSchema>;
+export type UpdateAcademyInput = z.infer<typeof updateAcademySchema>;
+export type AcademyLogoUploadResponse = z.infer<typeof academyLogoUploadResponseSchema>;
+
+// --- Belt Editing ---
+
+export const updateBeltSchema = z.object({
+  minMonthsForNextDegree: z.number().int().nonnegative().optional(),
+  minAttendancesForNextDegree: z.number().int().nonnegative().optional(),
+  minMonthsForNextBelt: z.number().int().nonnegative().optional(),
+  minAttendancesForNextBelt: z.number().int().nonnegative().optional(),
+  maxDegrees: z.number().int().nonnegative().optional(),
+});
+
+export type UpdateBeltInput = z.infer<typeof updateBeltSchema>;
+
+// --- Promotions ---
+
+export const promotionSchema = z.object({
+  id: z.string(),
+  studentId: z.string(),
+  previousBeltId: z.string().nullable(),
+  previousBeltName: z.string().nullable(),
+  previousDegree: z.number().int(),
+  newBeltId: z.string(),
+  newBeltName: z.string(),
+  newDegree: z.number().int(),
+  promotedAt: z.string(),
+  promotedByUserId: z.string(),
+  note: z.string().nullable(),
+  createdAt: z.string().datetime(),
+});
+
+export const createPromotionSchema = z.object({
+  newBeltId: z.string().min(1),
+  newDegree: z.number().int().min(0).max(6),
+  promotedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  note: z.string().trim().optional().or(z.literal("")),
+});
+
+export const listPromotionsResponseSchema = z.object({
+  promotions: z.array(promotionSchema),
+});
+
+export type PromotionDto = z.infer<typeof promotionSchema>;
+export type CreatePromotionInput = z.infer<typeof createPromotionSchema>;
+export type ListPromotionsResponse = z.infer<typeof listPromotionsResponseSchema>;
+
+// --- Eligibility ---
+
+export const eligibilityTypeSchema = z.enum(["degree", "belt", "transition"]);
+
+export const eligibleStudentSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  currentBeltId: z.string(),
+  currentBeltName: z.string(),
+  currentBeltPath: z.enum(["adult", "child"]),
+  currentDegree: z.number().int(),
+  eligibilityType: eligibilityTypeSchema,
+  monthsSinceReference: z.number().int(),
+  attendancesSinceReference: z.number().int(),
+  requiredMonths: z.number().int(),
+  requiredAttendances: z.number().int(),
+});
+
+export const listEligibleStudentsResponseSchema = z.object({
+  students: z.array(eligibleStudentSchema),
+});
+
+export const graduationSummaryResponseSchema = z.object({
+  degree: z.number().int().nonnegative(),
+  belt: z.number().int().nonnegative(),
+  transition: z.number().int().nonnegative(),
+});
+
+export const dismissEligibilitySchema = z.object({
+  type: eligibilityTypeSchema,
+  reason: z.string().trim().optional().or(z.literal("")),
+  days: z.number().int().positive().optional().default(30),
+});
+
+export type EligibilityType = z.infer<typeof eligibilityTypeSchema>;
+export type EligibleStudent = z.infer<typeof eligibleStudentSchema>;
+export type ListEligibleStudentsResponse = z.infer<typeof listEligibleStudentsResponseSchema>;
+export type GraduationSummaryResponse = z.infer<typeof graduationSummaryResponseSchema>;
+export type DismissEligibilityInput = z.infer<typeof dismissEligibilitySchema>;
+
+// --- Student Portal: Schedule ---
+
+export const studentScheduleClassSchema = z.object({
+  id: z.string(),
+  classGroupId: z.string(),
+  classGroupName: z.string(),
+  scheduledStartAt: z.string().datetime(),
+  durationMinutes: z.number().int().positive(),
+  status: z.enum(["scheduled", "cancelled"]),
+  source: z.enum(["recurring", "ad_hoc"]),
+});
+
+export const studentScheduleResponseSchema = z.object({
+  days: z.array(
+    z.object({
+      date: z.string(),
+      weekday: z.number().int().min(0).max(6),
+      classes: z.array(studentScheduleClassSchema),
+    }),
+  ),
+});
+
+export type StudentScheduleClass = z.infer<typeof studentScheduleClassSchema>;
+export type StudentScheduleResponse = z.infer<typeof studentScheduleResponseSchema>;
+
+// --- Student Portal: Attendance History ---
+
+export const studentAttendanceSchema = z.object({
+  id: z.string(),
+  classGroupName: z.string(),
+  source: attendanceSourceSchema,
+  isOutOfGroup: z.boolean(),
+  invalidatedAt: z.string().datetime().nullable(),
+  createdAt: z.string().datetime(),
+});
+
+export const studentAttendancesResponseSchema = z.object({
+  attendances: z.array(studentAttendanceSchema),
+});
+
+export type StudentAttendanceDto = z.infer<typeof studentAttendanceSchema>;
+export type StudentAttendancesResponse = z.infer<typeof studentAttendancesResponseSchema>;
+
+// --- Student Portal: Profile Editing ---
+
+export const updateStudentProfileSchema = z.object({
+  phone: z.string().trim().optional().or(z.literal("")),
+  email: z.string().trim().email().optional().or(z.literal("")),
+});
+
+export type UpdateStudentProfileInput = z.infer<typeof updateStudentProfileSchema>;
+
+// --- Student Portal: Graduation View ---
+
+export const studentGraduationResponseSchema = z.object({
+  currentBelt: beltSchema.pick({ id: true, name: true, path: true, position: true }),
+  currentDegree: z.number().int(),
+  promotions: z.array(promotionSchema),
+});
+
+export type StudentGraduationResponse = z.infer<typeof studentGraduationResponseSchema>;
+
+// --- Student Indicators ---
+
+export const studentIndicatorsResponseSchema = z.object({
+  hasNewFees: z.boolean(),
+  hasNewNotes: z.boolean(),
+  hasNewPromotion: z.boolean(),
+  hasCancelledClass: z.boolean(),
+});
+
+export const markSeenSchema = z.object({
+  type: z.enum(["fees", "notes", "graduation", "schedule"]),
+});
+
+export type StudentIndicatorsResponse = z.infer<typeof studentIndicatorsResponseSchema>;
+export type MarkSeenInput = z.infer<typeof markSeenSchema>;
+
+// --- CSV Import ---
+
+export const csvImportLineSchema = z.object({
+  line: z.number().int(),
+  name: z.string(),
+  errors: z.array(z.string()),
+  warnings: z.array(z.string()),
+});
+
+export const csvImportPreviewResponseSchema = z.object({
+  totalLines: z.number().int(),
+  validLines: z.number().int(),
+  errorLines: z.number().int(),
+  previewToken: z.string(),
+  lines: z.array(csvImportLineSchema),
+});
+
+export const csvImportConfirmResponseSchema = z.object({
+  imported: z.number().int(),
+  skipped: z.number().int(),
+});
+
+export type CsvImportLine = z.infer<typeof csvImportLineSchema>;
+export type CsvImportPreviewResponse = z.infer<typeof csvImportPreviewResponseSchema>;
+export type CsvImportConfirmResponse = z.infer<typeof csvImportConfirmResponseSchema>;

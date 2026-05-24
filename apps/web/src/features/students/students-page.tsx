@@ -1,24 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { CreateStudentInput, Student } from "@tatamiq/contracts";
+import type { BeltDto, Student } from "@tatamiq/contracts";
 import type { components } from "@tatamiq/contracts/generated";
-import { PlusSignIcon, UserMultipleIcon } from "hugeicons-react";
-import { type FormEvent, type InputHTMLAttributes, useMemo, useState } from "react";
+import { Download04Icon, PlusSignIcon, Upload04Icon, UserMultipleIcon } from "hugeicons-react";
+import { type FormEvent, type InputHTMLAttributes, useMemo, useRef, useState } from "react";
 import { api } from "../../api";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
-
-const belts = [
-  ["white", "Branca"],
-  ["gray", "Cinza"],
-  ["yellow", "Amarela"],
-  ["orange", "Laranja"],
-  ["green", "Verde"],
-  ["blue", "Azul"],
-  ["purple", "Roxa"],
-  ["brown", "Marrom"],
-  ["black", "Preta"],
-] as const;
 
 type StudentStatusFilter = "active" | "inactive" | "all";
 type StudentPayload = components["schemas"]["UpdateStudentDto"];
@@ -30,9 +18,8 @@ type StudentFormState = {
   email: string;
   monthlyAmount: string;
   monthlyDueDay: string;
-  currentBelt: CreateStudentInput["currentBelt"];
+  currentBeltId: string;
   currentDegree: string;
-  graduationPath: CreateStudentInput["graduationPath"];
   status: Student["status"];
   guardianName: string;
   guardianPhone: string;
@@ -48,9 +35,8 @@ const emptyForm: StudentFormState = {
   email: "",
   monthlyAmount: "",
   monthlyDueDay: "",
-  currentBelt: "white",
+  currentBeltId: "",
   currentDegree: "0",
-  graduationPath: "adult",
   status: "active",
   guardianName: "",
   guardianPhone: "",
@@ -67,13 +53,22 @@ export function StudentsPage() {
   const [error, setError] = useState<string | null>(null);
   const [createdInviteLink, setCreatedInviteLink] = useState<string | null>(null);
 
+  const beltsQuery = useQuery({
+    queryKey: ["belts"],
+    queryFn: async () => {
+      const { data, error } = await api.GET("/belts");
+      if (error) throw new Error("Nao foi possivel carregar faixas.");
+      return data;
+    },
+  });
+
   const studentsQuery = useQuery({
     queryKey: ["students", status],
     queryFn: async () => {
       const { data, error } = await api.GET("/students", {
         params: { query: { status } },
       });
-      if (error) throw new Error("Não foi possível carregar alunos.");
+      if (error) throw new Error("Nao foi possivel carregar alunos.");
       return data;
     },
   });
@@ -156,6 +151,71 @@ export function StudentsPage() {
     },
   });
 
+  // CSV import state
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [importPreview, setImportPreview] = useState<{
+    previewToken: string;
+    rows: Array<Record<string, string>>;
+    errors: Array<{ row: number; message: string }>;
+    warnings: Array<{ row: number; message: string }>;
+  } | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+  const csvFileInputRef = useRef<HTMLInputElement>(null);
+
+  const importPreviewMutation = useMutation({
+    mutationFn: async (csvContent: string) => {
+      const { data, error } = await (api.POST as never)("/students/import-csv", {
+        body: { csv: csvContent },
+      });
+      if (error) throw new Error("Falha ao processar CSV.");
+      return data;
+    },
+    onSuccess: (data: never) => {
+      setImportPreview(data);
+      setImportError(null);
+    },
+    onError: (err: Error) => {
+      setImportError(err.message);
+    },
+  });
+
+  const importConfirmMutation = useMutation({
+    mutationFn: async (previewToken: string) => {
+      const { data, error } = await (api.POST as never)("/students/import-csv/confirm", {
+        body: { previewToken },
+      });
+      if (error) throw new Error("Falha ao confirmar importação.");
+      return data;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["students"] });
+      setIsImportOpen(false);
+      setImportPreview(null);
+      setImportError(null);
+    },
+    onError: (err: Error) => {
+      setImportError(err.message);
+    },
+  });
+
+  function handleCsvFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      importPreviewMutation.mutate(text);
+    };
+    reader.readAsText(file);
+    // Reset so the same file can be selected again
+    event.target.value = "";
+  }
+
+  function handleExportCsv() {
+    const baseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3100";
+    window.open(`${baseUrl}/students/export.csv`, "_blank");
+  }
+
   const students = studentsQuery.data?.students ?? [];
   const summary = studentsQuery.data?.summary;
   const hasStudents = students.length > 0;
@@ -183,9 +243,8 @@ export function StudentsPage() {
       email: student.email ?? "",
       monthlyAmount: centsToReais(student.monthlyAmountInCents),
       monthlyDueDay: student.monthlyDueDay?.toString() ?? "",
-      currentBelt: student.currentBelt,
+      currentBeltId: student.currentBeltId,
       currentDegree: student.currentDegree.toString(),
-      graduationPath: student.graduationPath,
       status: student.status,
       guardianName: student.guardian?.name ?? "",
       guardianPhone: student.guardian?.phone ?? "",
@@ -228,9 +287,8 @@ export function StudentsPage() {
       email: form.email,
       monthlyAmountInCents: reaisToCents(form.monthlyAmount),
       monthlyDueDay: form.monthlyDueDay ? Number(form.monthlyDueDay) : null,
-      currentBelt: form.currentBelt,
+      currentBeltId: form.currentBeltId,
       currentDegree: Number(form.currentDegree),
-      graduationPath: form.graduationPath,
       guardian,
     };
 
@@ -252,11 +310,158 @@ export function StudentsPage() {
               Cadastre alunos, responsáveis, dados de mensalidade e graduação inicial da academia.
             </p>
           </div>
-          <Button onClick={openCreateForm}>
-            <PlusSignIcon className="size-4" /> Novo aluno
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={handleExportCsv}>
+              <Download04Icon className="size-4" /> Exportar CSV
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setIsImportOpen(true);
+                setImportPreview(null);
+                setImportError(null);
+              }}
+            >
+              <Upload04Icon className="size-4" /> Importar CSV
+            </Button>
+            <Button onClick={openCreateForm}>
+              <PlusSignIcon className="size-4" /> Novo aluno
+            </Button>
+          </div>
         </div>
       </section>
+
+      {isImportOpen ? (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Importar alunos via CSV</CardTitle>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setIsImportOpen(false);
+                setImportPreview(null);
+                setImportError(null);
+              }}
+            >
+              Fechar
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {!importPreview ? (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Selecione um arquivo CSV para importar alunos. O sistema mostrará uma
+                  pré-visualização antes de confirmar.
+                </p>
+                <input
+                  ref={csvFileInputRef}
+                  type="file"
+                  accept=".csv,text/csv"
+                  className="hidden"
+                  onChange={handleCsvFileChange}
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={importPreviewMutation.isPending}
+                  onClick={() => csvFileInputRef.current?.click()}
+                >
+                  {importPreviewMutation.isPending ? "Processando..." : "Selecionar arquivo CSV"}
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {importPreview.errors.length > 0 ? (
+                  <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4">
+                    <h4 className="font-medium text-destructive">
+                      Erros ({importPreview.errors.length})
+                    </h4>
+                    <ul className="mt-2 space-y-1 text-sm text-destructive">
+                      {importPreview.errors.map((err) => (
+                        <li key={`err-${err.row}`}>
+                          Linha {err.row}: {err.message}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+                {importPreview.warnings.length > 0 ? (
+                  <div className="rounded-2xl border border-yellow-500/30 bg-yellow-500/5 p-4">
+                    <h4 className="font-medium text-yellow-700 dark:text-yellow-400">
+                      Avisos ({importPreview.warnings.length})
+                    </h4>
+                    <ul className="mt-2 space-y-1 text-sm text-yellow-700 dark:text-yellow-400">
+                      {importPreview.warnings.map((warn) => (
+                        <li key={`err-${err.row}`}>
+                          Linha {warn.row}: {warn.message}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+                {importPreview.rows.length > 0 ? (
+                  <div className="overflow-auto rounded-2xl border border-border">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b bg-muted/50">
+                          {Object.keys(importPreview.rows[0] ?? {}).map((col) => (
+                            <th
+                              key={col}
+                              className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase"
+                            >
+                              {col}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {importPreview.rows.slice(0, 20).map((row, i) => (
+                          <tr key={`err-${err.row}`}>
+                            {Object.values(row).map((val, j) => (
+                              <td key={String(j)} className="px-3 py-2 text-muted-foreground">
+                                {val}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {importPreview.rows.length > 20 ? (
+                      <p className="px-3 py-2 text-xs text-muted-foreground">
+                        Mostrando 20 de {importPreview.rows.length} linhas.
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+                <div className="flex gap-3 justify-end">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => {
+                      setImportPreview(null);
+                      setImportError(null);
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="button"
+                    disabled={importConfirmMutation.isPending || importPreview.errors.length > 0}
+                    onClick={() => importConfirmMutation.mutate(importPreview.previewToken)}
+                  >
+                    {importConfirmMutation.isPending
+                      ? "Importando..."
+                      : `Confirmar importação (${importPreview.rows.length} alunos)`}
+                  </Button>
+                </div>
+              </div>
+            )}
+            {importError ? <p className="text-sm text-destructive">{importError}</p> : null}
+          </CardContent>
+        </Card>
+      ) : null}
 
       <div className="grid gap-3 md:grid-cols-3">
         <SummaryCard
@@ -301,6 +506,7 @@ export function StudentsPage() {
           editingStudent={editingStudent}
           error={error}
           form={form}
+          belts={beltsQuery.data?.belts ?? []}
           isSaving={saveMutation.isPending}
           onCancel={closeForm}
           onSubmit={submitForm}
@@ -385,11 +591,15 @@ function StudentForm(props: {
   editingStudent: Student | null;
   error: string | null;
   form: StudentFormState;
+  belts: BeltDto[];
   isSaving: boolean;
   onCancel: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   updateForm: (field: keyof StudentFormState, value: string) => void;
 }) {
+  const adultBelts = props.belts.filter((b) => b.path === "adult");
+  const childBelts = props.belts.filter((b) => b.path === "child");
+
   return (
     <Card>
       <CardHeader>
@@ -412,7 +622,7 @@ function StudentForm(props: {
               onChange={(value) => props.updateForm("birthDate", value)}
             />
             <Field
-              label="Matrícula"
+              label="Matricula"
               required
               placeholder="AAAA-MM-DD"
               value={props.form.enrollmentDate}
@@ -443,29 +653,42 @@ function StudentForm(props: {
               value={props.form.monthlyDueDay}
               onChange={(value) => props.updateForm("monthlyDueDay", value)}
             />
-            <SelectField
-              label="Faixa"
-              value={props.form.currentBelt}
-              onChange={(value) => props.updateForm("currentBelt", value)}
-              options={belts.map(([value, label]) => ({ value, label }))}
-            />
+            <label className="space-y-2 text-sm font-medium">
+              <span>Faixa</span>
+              <select
+                value={props.form.currentBeltId}
+                onChange={(event) => props.updateForm("currentBeltId", event.target.value)}
+                className="h-11 w-full rounded-2xl border border-border bg-background px-3 text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+              >
+                <option value="">Selecione a faixa</option>
+                {adultBelts.length > 0 && (
+                  <optgroup label="Adulto">
+                    {adultBelts.map((belt) => (
+                      <option key={belt.id} value={belt.id}>
+                        {belt.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                {childBelts.length > 0 && (
+                  <optgroup label="Infantil">
+                    {childBelts.map((belt) => (
+                      <option key={belt.id} value={belt.id}>
+                        {belt.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+              </select>
+            </label>
             <SelectField
               label="Grau"
               value={props.form.currentDegree}
               onChange={(value) => props.updateForm("currentDegree", value)}
-              options={[0, 1, 2, 3, 4].map((value) => ({
+              options={[0, 1, 2, 3, 4, 5, 6].map((value) => ({
                 value: String(value),
                 label: `${value} grau(s)`,
               }))}
-            />
-            <SelectField
-              label="Trilha"
-              value={props.form.graduationPath}
-              onChange={(value) => props.updateForm("graduationPath", value)}
-              options={[
-                { value: "adult", label: "Adulto" },
-                { value: "child", label: "Infantil" },
-              ]}
             />
             {props.editingStudent ? (
               <SelectField
@@ -596,7 +819,7 @@ function StudentRow(props: {
       </div>
       <span className="text-sm text-muted-foreground">{formatDate(student.enrollmentDate)}</span>
       <span className="text-sm text-muted-foreground">
-        {beltLabel(student.currentBelt)} · {student.currentDegree}º
+        {student.belt?.name ?? "—"} · {student.currentDegree}º
       </span>
       <span className="text-sm text-muted-foreground">{billingLabel(student)}</span>
       <div className="flex flex-wrap gap-2">
@@ -705,10 +928,6 @@ function ageLabel(birthDate: string): string {
     (today.getMonth() === birth.getUTCMonth() && today.getDate() >= birth.getUTCDate());
   if (!birthdayPassed) age -= 1;
   return `${age} anos`;
-}
-
-function beltLabel(value: Student["currentBelt"]): string {
-  return belts.find(([belt]) => belt === value)?.[1] ?? value;
 }
 
 function billingLabel(student: Student): string {

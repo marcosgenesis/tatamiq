@@ -30,7 +30,17 @@ export function DashboardPage() {
     },
   });
 
+  const invitesQuery = useQuery({
+    queryKey: ["invites", "dashboard-summary"],
+    queryFn: async () => {
+      const { data, error } = await api.GET("/student-access/invites/summary");
+      if (error) return null;
+      return data;
+    },
+  });
+
   const summary = feesQuery.data?.summary;
+  const inviteSummary = invitesQuery.data;
 
   const cards = [
     {
@@ -59,11 +69,11 @@ export function DashboardPage() {
     },
     {
       title: "Convites pendentes",
-      value: "—",
-      description: "Inclui convites expirados",
+      value: String((inviteSummary?.pending ?? 0) + (inviteSummary?.expired ?? 0)),
+      description: `${inviteSummary?.pending ?? 0} pendentes · ${inviteSummary?.expired ?? 0} expirados`,
       icon: UserAdd02Icon,
       tone: "muted" as const,
-      onClick: undefined,
+      onClick: () => navigate({ to: "/students" }),
     },
   ];
 

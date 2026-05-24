@@ -1,15 +1,20 @@
 import { Module } from "@nestjs/common";
 import { AuthModule } from "@thallesp/nestjs-better-auth";
 import { LoggerModule } from "nestjs-pino";
+import { AcademyModule } from "./academy/academy.module";
 import { AttendancesModule } from "./attendances/attendances.module";
 import { auth } from "./auth";
+import { BeltsModule } from "./belts/belts.module";
 import { ClassGroupsModule } from "./class-groups/class-groups.module";
 import { ClassesModule } from "./classes/classes.module";
+import { CsvModule } from "./csv/csv.module";
 import { DatabaseModule } from "./database/database.module";
+import { GraduationModule } from "./graduation/graduation.module";
 import { HealthController } from "./health/health.controller";
 import { MonthlyFeesModule } from "./monthly-fees/monthly-fees.module";
 import { ScheduleModule } from "./schedule/schedule.module";
 import { StudentAccessModule } from "./student-access/student-access.module";
+import { StudentNotesModule } from "./student-notes/student-notes.module";
 import { StudentsModule } from "./students/students.module";
 
 @Module({
@@ -27,13 +32,18 @@ import { StudentsModule } from "./students/students.module";
       },
     }),
     DatabaseModule,
+    AcademyModule,
+    BeltsModule,
     StudentsModule,
     ClassGroupsModule,
     ScheduleModule,
     ClassesModule,
     AttendancesModule,
     StudentAccessModule,
+    StudentNotesModule,
     MonthlyFeesModule,
+    GraduationModule,
+    CsvModule,
   ],
   controllers: [HealthController],
 })

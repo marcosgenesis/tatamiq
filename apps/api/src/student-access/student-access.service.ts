@@ -10,6 +10,7 @@ import type {
   AcceptStudentInviteInput,
   AcceptStudentInviteResponse,
   CreateStudentInviteResponse,
+  InviteSummaryResponse,
   StudentAccessState,
   StudentInvitePreview,
   StudentMeResponse,
@@ -84,6 +85,31 @@ export class StudentAccessService {
     }
 
     return result;
+  }
+
+  async inviteSummary(organizationId: string): Promise<InviteSummaryResponse> {
+    const rows = await this.db
+      .select({ expiresAt: studentAccessInvites.expiresAt })
+      .from(studentAccessInvites)
+      .where(
+        and(
+          eq(studentAccessInvites.organizationId, organizationId),
+          eq(studentAccessInvites.status, "pending"),
+        ),
+      );
+
+    const now = new Date();
+    let pending = 0;
+    let expired = 0;
+    for (const row of rows) {
+      if (row.expiresAt.getTime() < now.getTime()) {
+        expired++;
+      } else {
+        pending++;
+      }
+    }
+
+    return { pending, expired };
   }
 
   async createInvite(
@@ -327,7 +353,17 @@ export class StudentAccessService {
     );
 
     return {
-      academy: { id: academy.id, name: academy.name },
+      academy: {
+        id: academy.id,
+        name: academy.name,
+        logo: academy.logo ?? null,
+        phone: academy.phone ?? null,
+        instagram: academy.instagram ?? null,
+        address: academy.address ?? null,
+        pixKeyType: parsePixKeyType(academy.pixKeyType),
+        pixKey: academy.pixKey ?? null,
+        pixCopyPaste: academy.pixCopyPaste ?? null,
+      },
       student: {
         id: student.id,
         name: student.name,
@@ -535,4 +571,9 @@ function parseClassStatus(status: string): "scheduled" | "active" | "ended" | "c
   if (status === "scheduled" || status === "active" || status === "ended" || status === "cancelled")
     return status;
   return "scheduled";
+}
+
+function parsePixKeyType(value: string | null): "cpf" | "email" | "phone" | "random" | null {
+  if (value === "cpf" || value === "email" || value === "phone" || value === "random") return value;
+  return null;
 }
