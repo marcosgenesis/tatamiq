@@ -43,8 +43,8 @@ export function SettingsPage() {
   const academyQuery = useQuery({
     queryKey: ["academy"],
     queryFn: async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (api.GET as never)("/academy");
+      // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
+      const { data, error } = await (api.GET as any)("/academy");
       if (error) throw new Error("Não foi possível carregar dados da academia.");
       return data as {
         id: string;
@@ -87,8 +87,8 @@ export function SettingsPage() {
 
   const saveMutation = useMutation({
     mutationFn: async (input: Record<string, unknown>) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (api.PATCH as never)("/academy", { body: input });
+      // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
+      const { data, error } = await (api.PATCH as any)("/academy", { body: input });
       if (error) throw new Error("Não foi possível salvar as configurações.");
       return data;
     },
@@ -141,8 +141,8 @@ export function SettingsPage() {
     setIsUploading(true);
     setError(null);
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: uploadData, error: uploadError } = await (api.POST as never)(
+      // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
+      const { data: uploadData, error: uploadError } = await (api.POST as any)(
         "/academy/logo/upload-url",
       );
       if (uploadError || !uploadData) {
@@ -155,8 +155,8 @@ export function SettingsPage() {
         headers: { "Content-Type": file.type },
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: confirmError } = await (api.POST as never)("/academy/logo/confirm", {
+      // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
+      const { error: confirmError } = await (api.POST as any)("/academy/logo/confirm", {
         body: { fileKey: uploadData.fileKey },
       });
       if (confirmError) {
@@ -406,8 +406,8 @@ function BeltRulesSection() {
   const updateBeltMutation = useMutation({
     mutationFn: async ({ id, body }: { id: string; body: Partial<BeltRuleFields> }) => {
       setSavingBeltId(id);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (api.PATCH as never)("/belts/{id}", {
+      // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
+      const { error } = await (api.PATCH as any)("/belts/{id}", {
         params: { path: { id } },
         body,
       });
@@ -433,7 +433,8 @@ function BeltRulesSection() {
   function getBeltValue(belt: BeltDto, field: keyof BeltRuleFields): number | null {
     const override = editingBelts[belt.id]?.[field];
     if (override !== undefined) return override;
-    return (belt as never)[field] ?? null;
+    // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
+    return (belt as any)[field] ?? null;
   }
 
   function updateBeltField(beltId: string, field: keyof BeltRuleFields, value: string) {

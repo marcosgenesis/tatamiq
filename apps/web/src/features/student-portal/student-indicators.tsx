@@ -14,8 +14,8 @@ export function useStudentIndicators() {
   return useQuery({
     queryKey: ["student", "indicators"],
     queryFn: async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (api.GET as never)("/student/indicators");
+      // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
+      const { data, error } = await (api.GET as any)("/student/indicators");
       if (error) return null;
       return data as IndicatorData;
     },
@@ -27,8 +27,8 @@ export function useMarkIndicatorSeen() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (type: IndicatorType) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (api.POST as never)("/student/indicators/mark-seen", { body: { type } });
+      // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
+      await (api.POST as any)("/student/indicators/mark-seen", { body: { type } });
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["student", "indicators"] });
