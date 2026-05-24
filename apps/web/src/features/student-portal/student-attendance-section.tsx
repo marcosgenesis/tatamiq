@@ -6,8 +6,8 @@ export function StudentAttendanceSection() {
   const query = useQuery({
     queryKey: ["student", "attendances"],
     queryFn: async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (api.GET as never)("/student/attendances");
+      // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
+      const { data, error } = await (api.GET as any)("/student/attendances");
       if (error) throw new Error("Não foi possível carregar presenças.");
       return data as {
         attendances: Array<{

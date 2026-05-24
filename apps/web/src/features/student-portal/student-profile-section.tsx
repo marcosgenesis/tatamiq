@@ -31,8 +31,8 @@ export function StudentProfileSection() {
 
   const mutation = useMutation({
     mutationFn: async (body: { phone?: string; email?: string }) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (api.PATCH as never)("/student/profile", { body });
+      // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
+      const { error } = await (api.PATCH as any)("/student/profile", { body });
       if (error) throw new Error("Não foi possível salvar.");
     },
     onSuccess: () => {
