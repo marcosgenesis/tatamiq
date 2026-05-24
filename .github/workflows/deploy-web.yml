@@ -34,6 +34,23 @@ jobs:
         env:
           VITE_API_URL: ${{ vars.VITE_API_URL }}
 
+      - name: Debug - List Pages projects and verify token
+        run: |
+          echo "=== Account ID being used ==="
+          echo "${{ vars.CLOUDFLARE_ACCOUNT_ID }}"
+          echo ""
+          echo "=== Token permissions (verify token) ==="
+          curl -s -X GET "https://api.cloudflare.com/client/v4/user/tokens/verify" \
+            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" | jq .
+          echo ""
+          echo "=== List Pages projects ==="
+          curl -s -X GET "https://api.cloudflare.com/client/v4/accounts/${{ vars.CLOUDFLARE_ACCOUNT_ID }}/pages/projects" \
+            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" | jq '.result[] | {name, subdomain}'
+          echo ""
+          echo "=== Try fetching tatamiq-web directly ==="
+          curl -s -X GET "https://api.cloudflare.com/client/v4/accounts/${{ vars.CLOUDFLARE_ACCOUNT_ID }}/pages/projects/tatamiq-web" \
+            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" | jq '{success, errors}'
+
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
