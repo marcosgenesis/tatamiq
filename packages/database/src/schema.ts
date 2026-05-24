@@ -151,15 +151,15 @@ export const students = pgTable(
       .notNull()
       .references(() => belts.id, { onDelete: "restrict" }),
     currentDegree: integer("current_degree").notNull().default(0),
-    dismissedDegreeAt: timestamp("dismissed_degree_at", { withTimezone: true }),
-    dismissedBeltAt: timestamp("dismissed_belt_at", { withTimezone: true }),
-    dismissedTransitionAt: timestamp("dismissed_transition_at", { withTimezone: true }),
-    dismissedDegreeByUserId: text("dismissed_degree_by_user_id").references(() => user.id, {
-      onDelete: "set null",
+    degreeEligibilityDismissedUntil: timestamp("degree_eligibility_dismissed_until", {
+      withTimezone: true,
     }),
-    dismissedBeltByUserId: text("dismissed_belt_by_user_id").references(() => user.id, {
-      onDelete: "set null",
+    degreeEligibilityDismissalReason: text("degree_eligibility_dismissal_reason"),
+    beltEligibilityDismissedUntil: timestamp("belt_eligibility_dismissed_until", {
+      withTimezone: true,
     }),
+    beltEligibilityDismissalReason: text("belt_eligibility_dismissal_reason"),
+    transitionDismissedUntil: timestamp("transition_dismissed_until", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -426,6 +426,10 @@ export const studentAccess = pgTable(
     revokedByUserId: text("revoked_by_user_id").references(() => user.id, {
       onDelete: "set null",
     }),
+    lastSeenFeesAt: timestamp("last_seen_fees_at", { withTimezone: true }),
+    lastSeenNotesAt: timestamp("last_seen_notes_at", { withTimezone: true }),
+    lastSeenGraduationAt: timestamp("last_seen_graduation_at", { withTimezone: true }),
+    lastSeenScheduleAt: timestamp("last_seen_schedule_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -581,6 +585,55 @@ export const studentNotes = pgTable(
   ],
 );
 
+export const promotions = pgTable(
+  "promotions",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    studentId: text("student_id")
+      .notNull()
+      .references(() => students.id, { onDelete: "cascade" }),
+    previousBeltId: text("previous_belt_id").references(() => belts.id, {
+      onDelete: "set null",
+    }),
+    previousDegree: integer("previous_degree").notNull(),
+    newBeltId: text("new_belt_id")
+      .notNull()
+      .references(() => belts.id, { onDelete: "restrict" }),
+    newDegree: integer("new_degree").notNull(),
+    promotedAt: date("promoted_at").notNull(),
+    promotedByUserId: text("promoted_by_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    note: text("note"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("promotions_organization_id_idx").on(table.organizationId),
+    index("promotions_student_id_idx").on(table.studentId),
+  ],
+);
+
+export const studentContactChanges = pgTable(
+  "student_contact_changes",
+  {
+    id: text("id").primaryKey(),
+    studentId: text("student_id")
+      .notNull()
+      .references(() => students.id, { onDelete: "cascade" }),
+    field: text("field").notNull(), // "phone" | "email"
+    previousValue: text("previous_value"),
+    newValue: text("new_value"),
+    changedByUserId: text("changed_by_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("student_contact_changes_student_id_idx").on(table.studentId)],
+);
+
 export type ClassSession = typeof classSessions.$inferSelect;
 export type ClassCancellation = typeof classCancellations.$inferSelect;
 export type Attendance = typeof attendances.$inferSelect;
@@ -591,3 +644,5 @@ export type MonthlyFee = typeof monthlyFees.$inferSelect;
 export type MonthlyFeeEvent = typeof monthlyFeeEvents.$inferSelect;
 export type PaymentReceipt = typeof paymentReceipts.$inferSelect;
 export type StudentNote = typeof studentNotes.$inferSelect;
+export type Promotion = typeof promotions.$inferSelect;
+export type StudentContactChange = typeof studentContactChanges.$inferSelect;

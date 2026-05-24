@@ -5,8 +5,14 @@ import {
   confirmQrAttendanceSchema,
   createStudentInviteResponseSchema,
   inviteSummaryResponseSchema,
+  markSeenSchema,
+  studentAttendancesResponseSchema,
+  studentGraduationResponseSchema,
+  studentIndicatorsResponseSchema,
   studentInvitePreviewSchema,
   studentMeResponseSchema,
+  studentScheduleResponseSchema,
+  updateStudentProfileSchema,
 } from "@tatamiq/contracts";
 import { createZodDto } from "nestjs-zod";
 
@@ -24,3 +30,9 @@ export class ConfirmQrAttendanceResponseDto extends createZodDto(
   confirmQrAttendanceResponseSchema,
 ) {}
 export class InviteSummaryResponseDto extends createZodDto(inviteSummaryResponseSchema) {}
+export class StudentScheduleResponseDto extends createZodDto(studentScheduleResponseSchema) {}
+export class StudentAttendancesResponseDto extends createZodDto(studentAttendancesResponseSchema) {}
+export class UpdateStudentProfileDto extends createZodDto(updateStudentProfileSchema) {}
+export class StudentGraduationResponseDto extends createZodDto(studentGraduationResponseSchema) {}
+export class StudentIndicatorsResponseDto extends createZodDto(studentIndicatorsResponseSchema) {}
+export class MarkSeenDto extends createZodDto(markSeenSchema) {}

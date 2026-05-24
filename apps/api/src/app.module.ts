@@ -7,7 +7,9 @@ import { auth } from "./auth";
 import { BeltsModule } from "./belts/belts.module";
 import { ClassGroupsModule } from "./class-groups/class-groups.module";
 import { ClassesModule } from "./classes/classes.module";
+import { CsvModule } from "./csv/csv.module";
 import { DatabaseModule } from "./database/database.module";
+import { GraduationModule } from "./graduation/graduation.module";
 import { HealthController } from "./health/health.controller";
 import { MonthlyFeesModule } from "./monthly-fees/monthly-fees.module";
 import { ScheduleModule } from "./schedule/schedule.module";
@@ -40,6 +42,8 @@ import { StudentsModule } from "./students/students.module";
     StudentAccessModule,
     StudentNotesModule,
     MonthlyFeesModule,
+    GraduationModule,
+    CsvModule,
   ],
   controllers: [HealthController],
 })

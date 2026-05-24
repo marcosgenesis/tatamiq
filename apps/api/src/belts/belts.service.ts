@@ -1,4 +1,5 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, NotFoundException } from "@nestjs/common";
+import type { UpdateBeltInput } from "@tatamiq/contracts";
 import { belts, type Database } from "@tatamiq/database";
 import { and, eq } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
@@ -206,6 +207,35 @@ export class BeltsService {
       .limit(1);
 
     return row ? toBeltDto(row) : null;
+  }
+
+  async update(organizationId: string, beltId: string, input: UpdateBeltInput) {
+    const existing = await this.findById(organizationId, beltId);
+    if (!existing) {
+      throw new NotFoundException("Faixa não encontrada.");
+    }
+
+    const [updated] = await this.db
+      .update(belts)
+      .set({
+        ...(input.minMonthsForNextDegree !== undefined && {
+          minMonthsForNextDegree: input.minMonthsForNextDegree,
+        }),
+        ...(input.minAttendancesForNextDegree !== undefined && {
+          minAttendancesForNextDegree: input.minAttendancesForNextDegree,
+        }),
+        ...(input.minMonthsForNextBelt !== undefined && {
+          minMonthsForNextBelt: input.minMonthsForNextBelt,
+        }),
+        ...(input.minAttendancesForNextBelt !== undefined && {
+          minAttendancesForNextBelt: input.minAttendancesForNextBelt,
+        }),
+        ...(input.maxDegrees !== undefined && { maxDegrees: input.maxDegrees }),
+      })
+      .where(and(eq(belts.id, beltId), eq(belts.organizationId, organizationId)))
+      .returning();
+
+    return toBeltDto(updated);
   }
 }
 

@@ -1,8 +1,18 @@
-import { Controller, ForbiddenException, Get, HttpCode, Inject, Post } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  ForbiddenException,
+  Get,
+  HttpCode,
+  Inject,
+  Param,
+  Patch,
+  Post,
+} from "@nestjs/common";
 import { ApiOkResponse, ApiTags } from "@nestjs/swagger";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import type { auth } from "../auth";
-import { ListBeltsResponseDto } from "./belts.dto";
+import { BeltDto, ListBeltsResponseDto, type UpdateBeltDto } from "./belts.dto";
 import { BeltsService } from "./belts.service";
 
 type SessionWithOrganization = UserSession<typeof auth> & {
@@ -19,6 +29,16 @@ export class BeltsController {
   @ApiOkResponse({ type: ListBeltsResponseDto })
   list(@Session() session: SessionWithOrganization): Promise<ListBeltsResponseDto> {
     return this.beltsService.list(activeOrganizationId(session));
+  }
+
+  @Patch(":id")
+  @ApiOkResponse({ type: BeltDto })
+  update(
+    @Param("id") id: string,
+    @Body() body: UpdateBeltDto,
+    @Session() session: SessionWithOrganization,
+  ): Promise<BeltDto> {
+    return this.beltsService.update(activeOrganizationId(session), id, body);
   }
 
   @Post("seed")
