@@ -8,12 +8,7 @@ import {
   RouterProvider,
   useNavigate,
 } from "@tanstack/react-router";
-import {
-  CheckmarkSquare03Icon,
-  GraduationScrollIcon,
-  Money03Icon,
-  Settings02Icon,
-} from "hugeicons-react";
+import { CheckmarkSquare03Icon } from "hugeicons-react";
 import { useEffect } from "react";
 import { AppShell } from "./components/app-shell";
 import { LogoIcon } from "./components/logo";
@@ -27,6 +22,7 @@ import {
 import { ClassGroupsPage } from "./features/class-groups/class-groups-page";
 import { ActiveClassPage } from "./features/classes/active-class-page";
 import { DashboardPage } from "./features/dashboard/dashboard-page";
+import { GraduationPage } from "./features/graduation/graduation-page";
 import { MonthlyFeesPage } from "./features/monthly-fees/monthly-fees-page";
 import { PlaceholderPage } from "./features/placeholder/placeholder-page";
 import { SchedulePage } from "./features/schedule/schedule-page";
@@ -198,13 +194,7 @@ const attendancesRoute = createRoute({
 const graduationRoute = createRoute({
   getParentRoute: () => instructorLayout,
   path: "/graduation",
-  component: () => (
-    <PlaceholderPage
-      title="Graduação"
-      description="Faixas, graus, histórico formal de promoções e elegibilidade interna do instrutor."
-      icon={GraduationScrollIcon}
-    />
-  ),
+  component: GraduationPage,
 });
 
 const monthlyFeesRoute = createRoute({

@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { BeltDto, Student } from "@tatamiq/contracts";
 import type { components } from "@tatamiq/contracts/generated";
-import { PlusSignIcon, UserMultipleIcon } from "hugeicons-react";
-import { type FormEvent, type InputHTMLAttributes, useMemo, useState } from "react";
+import { Download04Icon, PlusSignIcon, Upload04Icon, UserMultipleIcon } from "hugeicons-react";
+import { type FormEvent, type InputHTMLAttributes, useMemo, useRef, useState } from "react";
 import { api } from "../../api";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
@@ -151,6 +151,71 @@ export function StudentsPage() {
     },
   });
 
+  // CSV import state
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [importPreview, setImportPreview] = useState<{
+    previewToken: string;
+    rows: Array<Record<string, string>>;
+    errors: Array<{ row: number; message: string }>;
+    warnings: Array<{ row: number; message: string }>;
+  } | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+  const csvFileInputRef = useRef<HTMLInputElement>(null);
+
+  const importPreviewMutation = useMutation({
+    mutationFn: async (csvContent: string) => {
+      const { data, error } = await (api.POST as never)("/students/import-csv", {
+        body: { csv: csvContent },
+      });
+      if (error) throw new Error("Falha ao processar CSV.");
+      return data;
+    },
+    onSuccess: (data: never) => {
+      setImportPreview(data);
+      setImportError(null);
+    },
+    onError: (err: Error) => {
+      setImportError(err.message);
+    },
+  });
+
+  const importConfirmMutation = useMutation({
+    mutationFn: async (previewToken: string) => {
+      const { data, error } = await (api.POST as never)("/students/import-csv/confirm", {
+        body: { previewToken },
+      });
+      if (error) throw new Error("Falha ao confirmar importação.");
+      return data;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["students"] });
+      setIsImportOpen(false);
+      setImportPreview(null);
+      setImportError(null);
+    },
+    onError: (err: Error) => {
+      setImportError(err.message);
+    },
+  });
+
+  function handleCsvFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      importPreviewMutation.mutate(text);
+    };
+    reader.readAsText(file);
+    // Reset so the same file can be selected again
+    event.target.value = "";
+  }
+
+  function handleExportCsv() {
+    const baseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3100";
+    window.open(`${baseUrl}/students/export.csv`, "_blank");
+  }
+
   const students = studentsQuery.data?.students ?? [];
   const summary = studentsQuery.data?.summary;
   const hasStudents = students.length > 0;
@@ -245,11 +310,158 @@ export function StudentsPage() {
               Cadastre alunos, responsáveis, dados de mensalidade e graduação inicial da academia.
             </p>
           </div>
-          <Button onClick={openCreateForm}>
-            <PlusSignIcon className="size-4" /> Novo aluno
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={handleExportCsv}>
+              <Download04Icon className="size-4" /> Exportar CSV
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setIsImportOpen(true);
+                setImportPreview(null);
+                setImportError(null);
+              }}
+            >
+              <Upload04Icon className="size-4" /> Importar CSV
+            </Button>
+            <Button onClick={openCreateForm}>
+              <PlusSignIcon className="size-4" /> Novo aluno
+            </Button>
+          </div>
         </div>
       </section>
+
+      {isImportOpen ? (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Importar alunos via CSV</CardTitle>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setIsImportOpen(false);
+                setImportPreview(null);
+                setImportError(null);
+              }}
+            >
+              Fechar
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {!importPreview ? (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Selecione um arquivo CSV para importar alunos. O sistema mostrará uma
+                  pré-visualização antes de confirmar.
+                </p>
+                <input
+                  ref={csvFileInputRef}
+                  type="file"
+                  accept=".csv,text/csv"
+                  className="hidden"
+                  onChange={handleCsvFileChange}
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={importPreviewMutation.isPending}
+                  onClick={() => csvFileInputRef.current?.click()}
+                >
+                  {importPreviewMutation.isPending ? "Processando..." : "Selecionar arquivo CSV"}
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {importPreview.errors.length > 0 ? (
+                  <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4">
+                    <h4 className="font-medium text-destructive">
+                      Erros ({importPreview.errors.length})
+                    </h4>
+                    <ul className="mt-2 space-y-1 text-sm text-destructive">
+                      {importPreview.errors.map((err) => (
+                        <li key={`err-${err.row}`}>
+                          Linha {err.row}: {err.message}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+                {importPreview.warnings.length > 0 ? (
+                  <div className="rounded-2xl border border-yellow-500/30 bg-yellow-500/5 p-4">
+                    <h4 className="font-medium text-yellow-700 dark:text-yellow-400">
+                      Avisos ({importPreview.warnings.length})
+                    </h4>
+                    <ul className="mt-2 space-y-1 text-sm text-yellow-700 dark:text-yellow-400">
+                      {importPreview.warnings.map((warn) => (
+                        <li key={`err-${err.row}`}>
+                          Linha {warn.row}: {warn.message}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+                {importPreview.rows.length > 0 ? (
+                  <div className="overflow-auto rounded-2xl border border-border">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b bg-muted/50">
+                          {Object.keys(importPreview.rows[0] ?? {}).map((col) => (
+                            <th
+                              key={col}
+                              className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase"
+                            >
+                              {col}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {importPreview.rows.slice(0, 20).map((row, i) => (
+                          <tr key={`err-${err.row}`}>
+                            {Object.values(row).map((val, j) => (
+                              <td key={String(j)} className="px-3 py-2 text-muted-foreground">
+                                {val}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {importPreview.rows.length > 20 ? (
+                      <p className="px-3 py-2 text-xs text-muted-foreground">
+                        Mostrando 20 de {importPreview.rows.length} linhas.
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+                <div className="flex gap-3 justify-end">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => {
+                      setImportPreview(null);
+                      setImportError(null);
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="button"
+                    disabled={importConfirmMutation.isPending || importPreview.errors.length > 0}
+                    onClick={() => importConfirmMutation.mutate(importPreview.previewToken)}
+                  >
+                    {importConfirmMutation.isPending
+                      ? "Importando..."
+                      : `Confirmar importação (${importPreview.rows.length} alunos)`}
+                  </Button>
+                </div>
+              </div>
+            )}
+            {importError ? <p className="text-sm text-destructive">{importError}</p> : null}
+          </CardContent>
+        </Card>
+      ) : null}
 
       <div className="grid gap-3 md:grid-cols-3">
         <SummaryCard

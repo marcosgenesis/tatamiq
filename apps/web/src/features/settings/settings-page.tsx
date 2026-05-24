@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { BeltDto } from "@tatamiq/contracts";
 import { Settings02Icon } from "hugeicons-react";
 import { type FormEvent, type InputHTMLAttributes, useEffect, useRef, useState } from "react";
 import { api } from "../../api";
@@ -43,7 +44,7 @@ export function SettingsPage() {
     queryKey: ["academy"],
     queryFn: async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (api.GET as any)("/academy");
+      const { data, error } = await (api.GET as never)("/academy");
       if (error) throw new Error("Não foi possível carregar dados da academia.");
       return data as {
         id: string;
@@ -87,7 +88,7 @@ export function SettingsPage() {
   const saveMutation = useMutation({
     mutationFn: async (input: Record<string, unknown>) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (api.PATCH as any)("/academy", { body: input });
+      const { data, error } = await (api.PATCH as never)("/academy", { body: input });
       if (error) throw new Error("Não foi possível salvar as configurações.");
       return data;
     },
@@ -141,7 +142,7 @@ export function SettingsPage() {
     setError(null);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: uploadData, error: uploadError } = await (api.POST as any)(
+      const { data: uploadData, error: uploadError } = await (api.POST as never)(
         "/academy/logo/upload-url",
       );
       if (uploadError || !uploadData) {
@@ -155,7 +156,7 @@ export function SettingsPage() {
       });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: confirmError } = await (api.POST as any)("/academy/logo/confirm", {
+      const { error: confirmError } = await (api.POST as never)("/academy/logo/confirm", {
         body: { fileKey: uploadData.fileKey },
       });
       if (confirmError) {
@@ -381,9 +382,231 @@ export function SettingsPage() {
           </Button>
         </div>
       </form>
+
+      <BeltRulesSection />
     </div>
   );
 }
+
+function BeltRulesSection() {
+  const queryClient = useQueryClient();
+  const [editingBelts, setEditingBelts] = useState<Record<string, Partial<BeltRuleFields>>>({});
+  const [savingBeltId, setSavingBeltId] = useState<string | null>(null);
+  const [beltSuccess, setBeltSuccess] = useState<string | null>(null);
+
+  const beltsQuery = useQuery({
+    queryKey: ["belts"],
+    queryFn: async () => {
+      const { data, error } = await api.GET("/belts");
+      if (error) throw new Error("Nao foi possivel carregar faixas.");
+      return data;
+    },
+  });
+
+  const updateBeltMutation = useMutation({
+    mutationFn: async ({ id, body }: { id: string; body: Partial<BeltRuleFields> }) => {
+      setSavingBeltId(id);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (api.PATCH as never)("/belts/{id}", {
+        params: { path: { id } },
+        body,
+      });
+      if (error) throw new Error("Não foi possível salvar regras da faixa.");
+    },
+    onSuccess: async (_data, variables) => {
+      await queryClient.invalidateQueries({ queryKey: ["belts"] });
+      setEditingBelts((current) => {
+        const next = { ...current };
+        delete next[variables.id];
+        return next;
+      });
+      setBeltSuccess("Regras salvas com sucesso.");
+      setTimeout(() => setBeltSuccess(null), 3000);
+    },
+    onSettled: () => setSavingBeltId(null),
+  });
+
+  const belts = beltsQuery.data?.belts ?? [];
+  const adultBelts = belts.filter((b) => b.path === "adult");
+  const childBelts = belts.filter((b) => b.path === "child");
+
+  function getBeltValue(belt: BeltDto, field: keyof BeltRuleFields): number | null {
+    const override = editingBelts[belt.id]?.[field];
+    if (override !== undefined) return override;
+    return (belt as never)[field] ?? null;
+  }
+
+  function updateBeltField(beltId: string, field: keyof BeltRuleFields, value: string) {
+    const numValue = value === "" ? null : Number(value);
+    setEditingBelts((current) => ({
+      ...current,
+      [beltId]: { ...current[beltId], [field]: numValue },
+    }));
+  }
+
+  function saveBelt(beltId: string) {
+    const changes = editingBelts[beltId];
+    if (!changes) return;
+    updateBeltMutation.mutate({ id: beltId, body: changes });
+  }
+
+  function renderBeltTable(groupBelts: BeltDto[], groupLabel: string) {
+    if (groupBelts.length === 0) return null;
+
+    return (
+      <div className="space-y-3">
+        <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+          {groupLabel}
+        </h4>
+        <div className="overflow-auto rounded-2xl border border-border">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-muted/50">
+                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">
+                  Faixa
+                </th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">
+                  Graus máx.
+                </th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">
+                  Meses p/ grau
+                </th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">
+                  Presenças p/ grau
+                </th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">
+                  Meses p/ faixa
+                </th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">
+                  Presenças p/ faixa
+                </th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">
+                  Ações
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {groupBelts.map((belt) => {
+                const hasChanges = !!editingBelts[belt.id];
+                const isSaving = savingBeltId === belt.id;
+                return (
+                  <tr key={belt.id}>
+                    <td className="px-3 py-2 font-medium">{belt.name}</td>
+                    <td className="px-3 py-2">
+                      <input
+                        type="number"
+                        min="0"
+                        className="h-9 w-20 rounded-xl border border-border bg-background px-2 text-foreground outline-none focus:border-primary"
+                        value={getBeltValue(belt, "maxDegrees") ?? ""}
+                        onChange={(e) => updateBeltField(belt.id, "maxDegrees", e.target.value)}
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input
+                        type="number"
+                        min="0"
+                        className="h-9 w-20 rounded-xl border border-border bg-background px-2 text-foreground outline-none focus:border-primary"
+                        value={getBeltValue(belt, "minMonthsForNextDegree") ?? ""}
+                        onChange={(e) =>
+                          updateBeltField(belt.id, "minMonthsForNextDegree", e.target.value)
+                        }
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input
+                        type="number"
+                        min="0"
+                        className="h-9 w-20 rounded-xl border border-border bg-background px-2 text-foreground outline-none focus:border-primary"
+                        value={getBeltValue(belt, "minAttendancesForNextDegree") ?? ""}
+                        onChange={(e) =>
+                          updateBeltField(belt.id, "minAttendancesForNextDegree", e.target.value)
+                        }
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input
+                        type="number"
+                        min="0"
+                        className="h-9 w-20 rounded-xl border border-border bg-background px-2 text-foreground outline-none focus:border-primary"
+                        value={getBeltValue(belt, "minMonthsForNextBelt") ?? ""}
+                        onChange={(e) =>
+                          updateBeltField(belt.id, "minMonthsForNextBelt", e.target.value)
+                        }
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input
+                        type="number"
+                        min="0"
+                        className="h-9 w-20 rounded-xl border border-border bg-background px-2 text-foreground outline-none focus:border-primary"
+                        value={getBeltValue(belt, "minAttendancesForNextBelt") ?? ""}
+                        onChange={(e) =>
+                          updateBeltField(belt.id, "minAttendancesForNextBelt", e.target.value)
+                        }
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      {hasChanges ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          disabled={isSaving}
+                          onClick={() => saveBelt(belt.id)}
+                        >
+                          {isSaving ? "Salvando..." : "Salvar"}
+                        </Button>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
+  if (beltsQuery.isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Regras de graduação</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">Carregando faixas...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Regras de graduação</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <p className="text-sm text-muted-foreground">
+          Configure os requisitos mínimos para promoção de grau e faixa. Deixe em branco para não
+          exigir critério.
+        </p>
+        {beltSuccess ? <p className="text-sm text-green-600">{beltSuccess}</p> : null}
+        {renderBeltTable(adultBelts, "Adulto")}
+        {renderBeltTable(childBelts, "Infantil")}
+      </CardContent>
+    </Card>
+  );
+}
+
+type BeltRuleFields = {
+  maxDegrees: number | null;
+  minMonthsForNextDegree: number | null;
+  minAttendancesForNextDegree: number | null;
+  minMonthsForNextBelt: number | null;
+  minAttendancesForNextBelt: number | null;
+};
 
 function Field(
   props: Omit<InputHTMLAttributes<HTMLInputElement>, "onChange"> & {

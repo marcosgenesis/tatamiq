@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { CreateMonthlyFeeInput, MonthlyFee } from "@tatamiq/contracts";
-import { Money03Icon, PlusSignIcon } from "hugeicons-react";
+import { Download04Icon, Money03Icon, PlusSignIcon } from "hugeicons-react";
 import { type FormEvent, type InputHTMLAttributes, useState } from "react";
 import { api } from "../../api";
 import { Badge } from "../../components/ui/badge";
@@ -244,9 +244,23 @@ export function MonthlyFeesPage() {
               dispensadas.
             </p>
           </div>
-          <Button onClick={openCreateForm}>
-            <PlusSignIcon className="size-4" /> Nova mensalidade
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                const baseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3100";
+                const params = new URLSearchParams();
+                if (statusFilter !== "all") params.set("status", statusFilter);
+                const qs = params.toString();
+                window.open(`${baseUrl}/monthly-fees/export.csv${qs ? `?${qs}` : ""}`, "_blank");
+              }}
+            >
+              <Download04Icon className="size-4" /> Exportar CSV
+            </Button>
+            <Button onClick={openCreateForm}>
+              <PlusSignIcon className="size-4" /> Nova mensalidade
+            </Button>
+          </div>
         </div>
       </section>
 
