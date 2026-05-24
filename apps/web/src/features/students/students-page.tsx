@@ -164,13 +164,15 @@ export function StudentsPage() {
 
   const importPreviewMutation = useMutation({
     mutationFn: async (csvContent: string) => {
-      const { data, error } = await (api.POST as never)("/students/import-csv", {
+      // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
+      const { data, error } = await (api.POST as any)("/students/import-csv", {
         body: { csv: csvContent },
       });
       if (error) throw new Error("Falha ao processar CSV.");
       return data;
     },
-    onSuccess: (data: never) => {
+    // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
+    onSuccess: (data: any) => {
       setImportPreview(data);
       setImportError(null);
     },
@@ -181,7 +183,8 @@ export function StudentsPage() {
 
   const importConfirmMutation = useMutation({
     mutationFn: async (previewToken: string) => {
-      const { data, error } = await (api.POST as never)("/students/import-csv/confirm", {
+      // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
+      const { data, error } = await (api.POST as any)("/students/import-csv/confirm", {
         body: { previewToken },
       });
       if (error) throw new Error("Falha ao confirmar importação.");
@@ -394,7 +397,7 @@ export function StudentsPage() {
                     </h4>
                     <ul className="mt-2 space-y-1 text-sm text-yellow-700 dark:text-yellow-400">
                       {importPreview.warnings.map((warn) => (
-                        <li key={`err-${err.row}`}>
+                        <li key={`warn-${warn.row}`}>
                           Linha {warn.row}: {warn.message}
                         </li>
                       ))}
@@ -418,7 +421,8 @@ export function StudentsPage() {
                       </thead>
                       <tbody className="divide-y divide-border">
                         {importPreview.rows.slice(0, 20).map((row, i) => (
-                          <tr key={`err-${err.row}`}>
+                          // biome-ignore lint/suspicious/noArrayIndexKey: preview rows have no stable id
+                          <tr key={`row-${i}`}>
                             {Object.values(row).map((val, j) => (
                               <td key={String(j)} className="px-3 py-2 text-muted-foreground">
                                 {val}

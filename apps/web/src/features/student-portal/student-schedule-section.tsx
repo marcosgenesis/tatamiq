@@ -7,8 +7,8 @@ export function StudentScheduleSection() {
   const query = useQuery({
     queryKey: ["student", "schedule"],
     queryFn: async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (api.GET as never)("/student/schedule");
+      // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
+      const { data, error } = await (api.GET as any)("/student/schedule");
       if (error) throw new Error("Não foi possível carregar a agenda.");
       return data as {
         days: Array<{

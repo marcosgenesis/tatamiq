@@ -21,8 +21,8 @@ export function StudentGraduationSection() {
   const query = useQuery({
     queryKey: ["student", "graduation"],
     queryFn: async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (api.GET as never)("/student/graduation");
+      // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
+      const { data, error } = await (api.GET as any)("/student/graduation");
       if (error) throw new Error("Não foi possível carregar graduação.");
       return data as GraduationData;
     },
