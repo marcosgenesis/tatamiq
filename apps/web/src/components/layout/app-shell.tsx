@@ -25,7 +25,7 @@ export function AppShell({ academyName, onSignOut, children }: AppShellProps) {
       <MobileTopbar academyName={academyName} onSignOut={onSignOut} />
 
       <main className="relative pb-24 pt-5 md:pb-8 md:pl-72 md:pt-8">
-        <div className="w-full px-4 md:px-8">{children}</div>
+        <div className="mx-auto w-full max-w-7xl px-4 md:px-8">{children}</div>
       </main>
 
       <MobileBottomNav />
