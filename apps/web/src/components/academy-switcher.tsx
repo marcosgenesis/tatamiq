@@ -16,7 +16,11 @@ export function AcademySwitcher() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="flex min-w-0 items-center gap-2 rounded-md px-1.5 py-1 text-sm font-medium outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring">
-        <AcademyAvatar name={activeAcademy.name} className="size-6 shrink-0 text-[10px]" />
+        <AcademyAvatar
+          name={activeAcademy.name}
+          logo={activeAcademy.logo}
+          className="size-6 shrink-0 text-[10px]"
+        />
         <span className="hidden truncate sm:inline">{activeAcademy.name}</span>
         <UnfoldMoreIcon className="hidden size-3.5 shrink-0 text-muted-foreground sm:block" />
       </DropdownMenuTrigger>
@@ -33,7 +37,7 @@ export function AcademySwitcher() {
               onClick={() => onSwitchAcademy(academy.id)}
             >
               <div className="flex items-center gap-3">
-                <AcademyAvatar name={academy.name} className="size-8 text-xs" />
+                <AcademyAvatar name={academy.name} logo={academy.logo} className="size-8 text-xs" />
                 <span className="truncate">{academy.name}</span>
               </div>
               {academy.id === activeAcademy.id && (
@@ -58,7 +62,21 @@ const AVATAR_COLORS = [
   "bg-sky-500",
 ];
 
-export function AcademyAvatar({ name, className }: { name: string; className?: string }) {
+export function AcademyAvatar({
+  name,
+  logo,
+  className,
+}: {
+  name: string;
+  logo?: string | null;
+  className?: string;
+}) {
+  if (logo) {
+    return (
+      <img src={logo} alt={name} className={cn("shrink-0 rounded-full object-cover", className)} />
+    );
+  }
+
   let hash = 0;
   for (const ch of name) hash = ch.charCodeAt(0) + ((hash << 5) - hash);
   const color = AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
