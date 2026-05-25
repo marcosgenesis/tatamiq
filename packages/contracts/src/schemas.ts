@@ -84,6 +84,12 @@ export const listStudentsResponseSchema = z.object({
     inactive: z.number().int().nonnegative(),
     total: z.number().int().nonnegative(),
   }),
+  pagination: z.object({
+    page: z.number().int().nonnegative(),
+    pageSize: z.number().int().positive(),
+    total: z.number().int().nonnegative(),
+    totalPages: z.number().int().nonnegative(),
+  }),
 });
 
 export const guardianInputSchema = z

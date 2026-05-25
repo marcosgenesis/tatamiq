@@ -1,7 +1,9 @@
 import { useRouterState } from "@tanstack/react-router";
+import { AcademySwitcher } from "@/components/academy-switcher";
 import { AppBreadcrumbs } from "@/components/app-breadcrumbs";
 import { navLinks } from "@/components/app-shared";
 import { CustomSidebarTrigger } from "@/components/custom-sidebar-trigger";
+import { NavUser } from "@/components/nav-user";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
@@ -31,8 +33,13 @@ export function AppHeader() {
         />
         <AppBreadcrumbs page={breadcrumbPage} />
       </div>
-      <div className="ml-auto">
-        <ThemeToggle />
+      <div className="ml-auto flex items-center gap-3">
+        <AcademySwitcher />
+        <Separator className="h-4 data-[orientation=vertical]:self-center" orientation="vertical" />
+        <div className="flex items-center gap-1">
+          <ThemeToggle />
+          <NavUser />
+        </div>
       </div>
     </header>
   );

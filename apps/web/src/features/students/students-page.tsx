@@ -1,13 +1,22 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  type ColumnDef,
+  getCoreRowModel,
+  type PaginationState,
+  useReactTable,
+} from "@tanstack/react-table";
 import type { BeltDto, Student } from "@tatamiq/contracts";
 import type { components } from "@tatamiq/contracts/generated";
 import { Download04Icon, PlusSignIcon, Upload04Icon, UserMultipleIcon } from "hugeicons-react";
-import { type FormEvent, useMemo, useRef, useState } from "react";
+import { type FormEvent, useCallback, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+import { Badge } from "@/components/reui/badge";
+import { DataGrid, DataGridContainer } from "@/components/reui/data-grid/data-grid";
+import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination";
+import { DataGridTable } from "@/components/reui/data-grid/data-grid-table";
 import { api } from "../../api";
 import { Field, SelectField } from "../../components/form-field";
-import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import {
   Drawer,
   DrawerClose,
@@ -65,15 +74,18 @@ const emptyForm: StudentFormState = {
 
 export function StudentsPage() {
   const queryClient = useQueryClient();
-  const [status, setStatus] = useState<StudentStatusFilter>("active");
+  const [status, _setStatus] = useState<StudentStatusFilter>("active");
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [form, setForm] = useState<StudentFormState>(emptyForm);
   const [error, setError] = useState<string | null>(null);
-  const [createdInviteLink, setCreatedInviteLink] = useState<string | null>(null);
+  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
 
   const beltsQuery = useBelts();
-  const studentsQuery = useStudents(status);
+  const studentsQuery = useStudents(status, {
+    page: pagination.pageIndex,
+    pageSize: pagination.pageSize,
+  });
 
   const saveMutation = useMutation({
     mutationFn: async (input: StudentPayload) => {
@@ -108,8 +120,15 @@ export function StudentsPage() {
       return data;
     },
     onSuccess: async (data) => {
-      setCreatedInviteLink(data.inviteLink);
       await queryClient.invalidateQueries({ queryKey: ["students"] });
+      toast("Link de convite gerado", {
+        description: data.inviteLink,
+        duration: Number.POSITIVE_INFINITY,
+        action: {
+          label: "Copiar",
+          onClick: () => navigator.clipboard.writeText(data.inviteLink),
+        },
+      });
     },
   });
 
@@ -222,23 +241,9 @@ export function StudentsPage() {
   }
 
   const students = studentsQuery.data?.students ?? [];
-  const summary = studentsQuery.data?.summary;
   const hasStudents = students.length > 0;
 
-  const title = useMemo(() => {
-    if (status === "active") return "Alunos ativos";
-    if (status === "inactive") return "Alunos inativos";
-    return "Todos os alunos";
-  }, [status]);
-
-  function openCreateForm() {
-    setEditingStudent(null);
-    setForm(emptyForm);
-    setError(null);
-    setIsFormOpen(true);
-  }
-
-  function openEditForm(student: Student) {
+  const openEditForm = useCallback((student: Student) => {
     setEditingStudent(student);
     setForm({
       name: student.name,
@@ -256,6 +261,124 @@ export function StudentsPage() {
       guardianEmail: student.guardian?.email ?? "",
       guardianRelationship: student.guardian?.relationship ?? "",
     });
+    setError(null);
+    setIsFormOpen(true);
+  }, []);
+
+  const columns = useMemo<ColumnDef<Student>[]>(
+    () => [
+      {
+        accessorKey: "name",
+        header: "Aluno",
+        size: 280,
+        cell: ({ row }) => {
+          const s = row.original;
+          return (
+            <div>
+              <strong>{s.name}</strong>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {ageLabel(s.birthDate)} · {s.phone ?? "Sem telefone"}
+              </p>
+              {s.guardian ? (
+                <p className="text-xs text-muted-foreground">Resp.: {s.guardian.name}</p>
+              ) : null}
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+        size: 100,
+        cell: ({ row }) => (
+          <Badge variant={row.original.status === "active" ? "success-light" : "destructive-light"}>
+            {row.original.status === "active" ? "Ativo" : "Inativo"}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "enrollmentDate",
+        header: "Matrícula",
+        size: 120,
+        cell: ({ row }) => (
+          <span className="text-sm text-muted-foreground">
+            {formatDate(row.original.enrollmentDate)}
+          </span>
+        ),
+      },
+      {
+        id: "graduation",
+        header: "Graduação",
+        size: 120,
+        cell: ({ row }) => (
+          <span className="text-sm text-muted-foreground">
+            {row.original.belt?.name ?? "—"} · {row.original.currentDegree}º
+          </span>
+        ),
+      },
+      {
+        id: "billing",
+        header: "Mensalidade",
+        size: 150,
+        cell: ({ row }) => (
+          <span className="text-sm text-muted-foreground">{billingLabel(row.original)}</span>
+        ),
+      },
+      {
+        id: "actions",
+        header: "Ações",
+        size: 200,
+        cell: ({ row }) => {
+          const s = row.original;
+          return (
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={() => openEditForm(s)}>
+                Editar
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={() =>
+                  statusMutation.mutate({
+                    id: s.id,
+                    action: s.status === "active" ? "inactivate" : "reactivate",
+                  })
+                }
+              >
+                {s.status === "active" ? "Inativar" : "Reativar"}
+              </Button>
+              <AccessActions
+                student={s}
+                onGenerateInvite={() => inviteMutation.mutate(s.id)}
+                onRevokeInvite={(inviteId) =>
+                  revokeInviteMutation.mutate({ studentId: s.id, inviteId })
+                }
+                onRevokeAccess={() => revokeAccessMutation.mutate(s.id)}
+              />
+            </div>
+          );
+        },
+      },
+    ],
+    [statusMutation, inviteMutation, revokeInviteMutation, revokeAccessMutation, openEditForm],
+  );
+
+  const serverPagination = studentsQuery.data?.pagination;
+
+  const table = useReactTable({
+    data: students,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    manualPagination: true,
+    pageCount: serverPagination?.totalPages ?? -1,
+    state: { pagination },
+    onPaginationChange: setPagination,
+  });
+
+  function openCreateForm() {
+    setEditingStudent(null);
+    setForm(emptyForm);
     setError(null);
     setIsFormOpen(true);
   }
@@ -305,36 +428,37 @@ export function StudentsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-[2rem] border border-border bg-card p-6 shadow-2xl md:p-8">
-        <Badge variant="muted">Cadastro V0</Badge>
-        <div className="mt-5 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight md:text-5xl">Alunos</h1>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
-              Cadastre alunos, responsáveis, dados de mensalidade e graduação inicial da academia.
-            </p>
+    <div className="space-y-6 p-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <div className="flex gap-1.5 items-center">
+            <h1 className="text-2xl">Alunos</h1>{" "}
+            <Badge variant={"primary-light"}>{students.length}</Badge>
           </div>
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={handleExportCsv}>
-              <Download04Icon className="size-4" /> Exportar CSV
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setIsImportOpen(true);
-                setImportPreview(null);
-                setImportError(null);
-              }}
-            >
-              <Upload04Icon className="size-4" /> Importar CSV
-            </Button>
-            <Button onClick={openCreateForm}>
-              <PlusSignIcon className="size-4" /> Novo aluno
-            </Button>
-          </div>
+
+          <p className="max-w-2xl text-base leading-7 text-muted-foreground">
+            Cadastre alunos, responsáveis, dados de mensalidade e graduação inicial da academia.
+          </p>
         </div>
-      </section>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExportCsv}>
+            <Download04Icon className="size-4" /> Exportar CSV
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setIsImportOpen(true);
+              setImportPreview(null);
+              setImportError(null);
+            }}
+          >
+            <Upload04Icon className="size-4" /> Importar CSV
+          </Button>
+          <Button onClick={openCreateForm}>
+            <PlusSignIcon className="size-4" /> Novo aluno
+          </Button>
+        </div>
+      </div>
 
       <Drawer
         direction="right"
@@ -475,44 +599,6 @@ export function StudentsPage() {
         </DrawerContent>
       </Drawer>
 
-      <div className="grid gap-3 md:grid-cols-3">
-        <SummaryCard
-          label="Ativos"
-          value={summary?.active ?? 0}
-          active={status === "active"}
-          onClick={() => setStatus("active")}
-        />
-        <SummaryCard
-          label="Inativos"
-          value={summary?.inactive ?? 0}
-          active={status === "inactive"}
-          onClick={() => setStatus("inactive")}
-        />
-        <SummaryCard
-          label="Total"
-          value={summary?.total ?? 0}
-          active={status === "all"}
-          onClick={() => setStatus("all")}
-        />
-      </div>
-
-      {createdInviteLink ? (
-        <Card>
-          <CardContent className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <strong>Link de convite gerado</strong>
-              <p className="mt-1 break-all text-sm text-muted-foreground">{createdInviteLink}</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Guarde este link agora. Por segurança, ele não será mostrado novamente.
-              </p>
-            </div>
-            <Button type="button" onClick={() => navigator.clipboard.writeText(createdInviteLink)}>
-              Copiar link
-            </Button>
-          </CardContent>
-        </Card>
-      ) : null}
-
       <Drawer
         direction="right"
         open={isFormOpen}
@@ -534,76 +620,35 @@ export function StudentsPage() {
         </DrawerContent>
       </Drawer>
 
-      <Card>
-        <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <CardTitle>{title}</CardTitle>
-          <span className="text-sm text-muted-foreground">{students.length} aluno(s)</span>
-        </CardHeader>
-        <CardContent>
-          {studentsQuery.isLoading ? (
-            <p className="text-sm text-muted-foreground">Carregando alunos...</p>
-          ) : null}
-          {studentsQuery.isError ? (
-            <p className="text-sm text-destructive">Não foi possível carregar alunos.</p>
-          ) : null}
-          {!studentsQuery.isLoading && !hasStudents ? (
-            <StudentsEmptyState onCreate={openCreateForm} />
-          ) : null}
-          {hasStudents ? (
-            <div className="overflow-hidden rounded-2xl border border-border">
-              <div className="hidden grid-cols-[1.5fr_0.8fr_0.8fr_0.8fr_1fr_0.9fr] gap-4 border-border border-b bg-muted/50 px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-[0.18em] md:grid">
-                <span>Aluno</span>
-                <span>Status</span>
-                <span>Matrícula</span>
-                <span>Graduação</span>
-                <span>Mensalidade</span>
-                <span>Ações</span>
-              </div>
-              <div className="divide-y divide-border">
-                {students.map((student) => (
-                  <StudentRow
-                    key={student.id}
-                    student={student}
-                    onEdit={() => openEditForm(student)}
-                    onToggleStatus={() =>
-                      statusMutation.mutate({
-                        id: student.id,
-                        action: student.status === "active" ? "inactivate" : "reactivate",
-                      })
-                    }
-                    onGenerateInvite={() => inviteMutation.mutate(student.id)}
-                    onRevokeInvite={(inviteId) =>
-                      revokeInviteMutation.mutate({ studentId: student.id, inviteId })
-                    }
-                    onRevokeAccess={() => revokeAccessMutation.mutate(student.id)}
-                  />
-                ))}
-              </div>
-            </div>
-          ) : null}
-        </CardContent>
-      </Card>
+      <div>
+        {studentsQuery.isError ? (
+          <p className="text-sm text-destructive">Não foi possível carregar alunos.</p>
+        ) : null}
+        {!studentsQuery.isLoading && !hasStudents ? (
+          <StudentsEmptyState onCreate={openCreateForm} />
+        ) : null}
+        {hasStudents || studentsQuery.isLoading ? (
+          <DataGridContainer>
+            <DataGrid
+              table={table}
+              recordCount={serverPagination?.total ?? students.length}
+              isLoading={studentsQuery.isLoading}
+              emptyMessage="Nenhum aluno encontrado."
+              tableLayout={{ headerSticky: true }}
+              tableClassNames={{ edgeCell: "px-4" }}
+            >
+              <DataGridTable />
+              <DataGridPagination
+                className="px-4 py-2"
+                rowsPerPageLabel="Linhas por página"
+                info="{from} - {to} de {count}"
+                sizes={[10, 25, 50, 100]}
+              />
+            </DataGrid>
+          </DataGridContainer>
+        ) : null}
+      </div>
     </div>
-  );
-}
-
-function SummaryCard(props: {
-  label: string;
-  value: number;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={props.onClick}
-      className={`rounded-3xl border p-5 text-left transition ${
-        props.active ? "border-primary bg-primary/10" : "border-border bg-card hover:bg-muted/70"
-      }`}
-    >
-      <span className="text-sm text-muted-foreground">{props.label}</span>
-      <strong className="mt-2 block text-3xl">{props.value}</strong>
-    </button>
   );
 }
 
@@ -770,54 +815,6 @@ function StudentForm(props: {
         </Button>
       </DrawerFooter>
     </form>
-  );
-}
-
-function StudentRow(props: {
-  student: Student;
-  onEdit: () => void;
-  onToggleStatus: () => void;
-  onGenerateInvite: () => void;
-  onRevokeInvite: (inviteId: string) => void;
-  onRevokeAccess: () => void;
-}) {
-  const student = props.student;
-  return (
-    <div className="grid gap-3 px-4 py-4 md:grid-cols-[1.5fr_0.8fr_0.8fr_0.8fr_1fr_0.9fr] md:items-center">
-      <div>
-        <strong>{student.name}</strong>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {ageLabel(student.birthDate)} · {student.phone ?? "Sem telefone"}
-        </p>
-        {student.guardian ? (
-          <p className="text-xs text-muted-foreground">Resp.: {student.guardian.name}</p>
-        ) : null}
-      </div>
-      <div>
-        <Badge variant={student.status === "active" ? "default" : "muted"}>
-          {student.status === "active" ? "Ativo" : "Inativo"}
-        </Badge>
-      </div>
-      <span className="text-sm text-muted-foreground">{formatDate(student.enrollmentDate)}</span>
-      <span className="text-sm text-muted-foreground">
-        {student.belt?.name ?? "—"} · {student.currentDegree}º
-      </span>
-      <span className="text-sm text-muted-foreground">{billingLabel(student)}</span>
-      <div className="flex flex-wrap gap-2">
-        <Button type="button" variant="secondary" size="sm" onClick={props.onEdit}>
-          Editar
-        </Button>
-        <Button type="button" variant="ghost" size="sm" onClick={props.onToggleStatus}>
-          {student.status === "active" ? "Inativar" : "Reativar"}
-        </Button>
-        <AccessActions
-          student={student}
-          onGenerateInvite={props.onGenerateInvite}
-          onRevokeInvite={props.onRevokeInvite}
-          onRevokeAccess={props.onRevokeAccess}
-        />
-      </div>
-    </div>
   );
 }
 

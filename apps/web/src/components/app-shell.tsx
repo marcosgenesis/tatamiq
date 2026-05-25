@@ -7,20 +7,31 @@ import { cn } from "@/lib/utils";
 export type Academy = {
   id: string;
   name: string;
+  logo?: string | null | undefined;
+};
+
+export type AppShellUser = {
+  name: string;
+  email: string;
+  image?: string | null | undefined;
 };
 
 type AppShellContext = {
   activeAcademy: Academy;
   academies: Academy[];
+  user: AppShellUser;
   onSwitchAcademy: (id: string) => void;
   onSignOut: () => void;
+  onRefreshAcademies: () => void;
 };
 
 const AppShellCtx = createContext<AppShellContext>({
   activeAcademy: { id: "", name: "" },
   academies: [],
+  user: { name: "", email: "" },
   onSwitchAcademy: () => {},
   onSignOut: () => {},
+  onRefreshAcademies: () => {},
 });
 
 export function useAppShell() {
@@ -30,24 +41,21 @@ export function useAppShell() {
 export function AppShell({
   activeAcademy,
   academies,
+  user,
   onSwitchAcademy,
   onSignOut,
+  onRefreshAcademies,
   children,
 }: AppShellContext & { children: React.ReactNode }) {
   return (
-    <AppShellCtx.Provider value={{ activeAcademy, academies, onSwitchAcademy, onSignOut }}>
+    <AppShellCtx.Provider
+      value={{ activeAcademy, academies, user, onSwitchAcademy, onSignOut, onRefreshAcademies }}
+    >
       <SidebarProvider className={cn("[--app-wrapper-max-width:80rem]")}>
         <AppSidebar />
         <SidebarInset>
           <AppHeader />
-          <div
-            className={cn(
-              "flex flex-1 flex-col p-4 md:p-6",
-              "mx-auto w-full max-w-(--app-wrapper-max-width)",
-            )}
-          >
-            {children}
-          </div>
+          <div className="flex flex-1 flex-col">{children}</div>
         </SidebarInset>
       </SidebarProvider>
     </AppShellCtx.Provider>

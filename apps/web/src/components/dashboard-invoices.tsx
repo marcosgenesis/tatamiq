@@ -73,7 +73,7 @@ export function DashboardInvoices() {
       </CardContent>
       <div className="mask-t-from-30% absolute inset-x-0 bottom-0 flex h-1/5 items-center justify-center bg-background">
         <Button className="relative" variant="ghost">
-          <Link to="/monthly-fees">
+          <Link to="/monthly-fees" className="inline-flex items-center gap-1">
             Ver todas
             <ArrowRight01Icon aria-hidden="true" />
           </Link>

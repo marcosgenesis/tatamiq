@@ -1,5 +1,7 @@
+"use client";
+
 import { Menu as MenuPrimitive } from "@base-ui/react/menu";
-import { ArrowRight01Icon, Tick01Icon } from "hugeicons-react";
+import { CheckIcon, ChevronRightIcon } from "lucide-react";
 import type * as React from "react";
 import { cn } from "@/lib/utils";
 
@@ -116,7 +118,7 @@ function DropdownMenuSubTrigger({
       {...props}
     >
       {children}
-      <ArrowRight01Icon className="ml-auto" />
+      <ChevronRightIcon className="ml-auto" />
     </MenuPrimitive.SubmenuTrigger>
   );
 }
@@ -170,7 +172,7 @@ function DropdownMenuCheckboxItem({
         data-slot="dropdown-menu-checkbox-item-indicator"
       >
         <MenuPrimitive.CheckboxItemIndicator>
-          <Tick01Icon />
+          <CheckIcon />
         </MenuPrimitive.CheckboxItemIndicator>
       </span>
       {children}
@@ -205,7 +207,7 @@ function DropdownMenuRadioItem({
         data-slot="dropdown-menu-radio-item-indicator"
       >
         <MenuPrimitive.RadioItemIndicator>
-          <Tick01Icon />
+          <CheckIcon />
         </MenuPrimitive.RadioItemIndicator>
       </span>
       {children}

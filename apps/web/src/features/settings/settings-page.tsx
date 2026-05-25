@@ -3,6 +3,7 @@ import type { BeltDto } from "@tatamiq/contracts";
 import { AlertCircleIcon, Cancel01Icon, UserIcon } from "hugeicons-react";
 import { type FormEvent, useEffect, useState } from "react";
 import { api } from "../../api";
+import { useAppShell } from "../../components/app-shell";
 import { Alert, AlertDescription, AlertTitle } from "../../components/reui/alert";
 import {
   NumberField,
@@ -166,6 +167,7 @@ function LogoUpload({
 
 export function SettingsPage() {
   const queryClient = useQueryClient();
+  const { onRefreshAcademies } = useAppShell();
   const [form, setForm] = useState<SettingsFormState>(emptyForm);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -279,11 +281,14 @@ export function SettingsPage() {
         throw new Error("Não foi possível gerar URL de upload.");
       }
 
-      await fetch(uploadData.uploadUrl, {
+      const uploadRes = await fetch(uploadData.uploadUrl, {
         method: "PUT",
         body: file,
         headers: { "Content-Type": file.type },
       });
+      if (!uploadRes.ok) {
+        throw new Error("Falha ao enviar arquivo.");
+      }
 
       // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
       const { error: confirmError } = await (api.POST as any)("/academy/logo/confirm", {
@@ -294,6 +299,7 @@ export function SettingsPage() {
       }
 
       await queryClient.invalidateQueries({ queryKey: ["academy"] });
+      onRefreshAcademies();
       setSuccess("Logo atualizado com sucesso.");
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {

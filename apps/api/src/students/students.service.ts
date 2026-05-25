@@ -1,7 +1,7 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { CreateStudentInput, Student, UpdateStudentInput } from "@tatamiq/contracts";
 import { belts, type Database, studentGuardians, students } from "@tatamiq/database";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, count, eq, inArray } from "drizzle-orm";
 import { BeltsService, toBeltDto } from "../belts/belts.service";
 import { DATABASE } from "../database/database.module";
 import { StudentAccessService } from "../student-access/student-access.service";
@@ -21,11 +21,21 @@ export class StudentsService {
     @Inject(BeltsService) private readonly beltsService: BeltsService,
   ) {}
 
-  async list(organizationId: string, status: StudentStatusFilter = "active") {
+  async list(
+    organizationId: string,
+    opts: { status?: StudentStatusFilter; page?: number; pageSize?: number } = {},
+  ) {
+    const { status = "active", page = 0, pageSize = 10 } = opts;
+
     const conditions = [eq(students.organizationId, organizationId)];
     if (status !== "all") {
       conditions.push(eq(students.status, status));
     }
+
+    const [{ total: filteredTotal }] = await this.db
+      .select({ total: count() })
+      .from(students)
+      .where(and(...conditions));
 
     const rows = await this.db
       .select({
@@ -35,11 +45,14 @@ export class StudentsService {
       .from(students)
       .leftJoin(belts, eq(students.currentBeltId, belts.id))
       .where(and(...conditions))
-      .orderBy(students.name);
+      .orderBy(students.name)
+      .limit(pageSize)
+      .offset(page * pageSize);
 
     const studentIds = rows.map((row) => row.student.id);
     const guardians = await this.guardiansFor(studentIds);
     const accessStates = await this.studentAccessService.accessStatesForStudents(studentIds);
+
     const allRows = await this.db
       .select({ status: students.status })
       .from(students)
@@ -61,6 +74,12 @@ export class StudentsService {
         active,
         inactive,
         total: active + inactive,
+      },
+      pagination: {
+        page,
+        pageSize,
+        total: filteredTotal,
+        totalPages: Math.ceil(filteredTotal / pageSize),
       },
     };
   }

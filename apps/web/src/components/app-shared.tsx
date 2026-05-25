@@ -5,7 +5,6 @@ import {
   DashboardSquare02Icon,
   GraduationScrollIcon,
   Money03Icon,
-  Settings02Icon,
   UserMultipleIcon,
 } from "hugeicons-react";
 import type { ComponentType } from "react";
@@ -43,13 +42,6 @@ export const navGroups: SidebarNavGroup[] = [
   },
 ];
 
-export const footerNavLinks: SidebarNavItem[] = [
-  { title: "Configurações", path: "/settings", icon: Settings02Icon },
-];
-
-export const navLinks: SidebarNavItem[] = [
-  ...navGroups.flatMap((group) =>
-    group.items.flatMap((item) => (item.subItems?.length ? [item, ...item.subItems] : [item])),
-  ),
-  ...footerNavLinks,
-];
+export const navLinks: SidebarNavItem[] = navGroups.flatMap((group) =>
+  group.items.flatMap((item) => (item.subItems?.length ? [item, ...item.subItems] : [item])),
+);
