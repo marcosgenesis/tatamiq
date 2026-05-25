@@ -7,6 +7,15 @@ import { api } from "../../api";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "../../components/ui/drawer";
 
 type StudentStatusFilter = "active" | "inactive" | "all";
 type StudentPayload = components["schemas"]["UpdateStudentDto"];
@@ -334,30 +343,28 @@ export function StudentsPage() {
         </div>
       </section>
 
-      {isImportOpen ? (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Importar alunos via CSV</CardTitle>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setIsImportOpen(false);
-                setImportPreview(null);
-                setImportError(null);
-              }}
-            >
-              Fechar
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-4">
+      <Drawer
+        direction="right"
+        open={isImportOpen}
+        onOpenChange={(open) => {
+          setIsImportOpen(open);
+          if (!open) {
+            setImportPreview(null);
+            setImportError(null);
+          }
+        }}
+      >
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Importar alunos via CSV</DrawerTitle>
+            <DrawerDescription>
+              Selecione um arquivo CSV para importar alunos. O sistema mostrará uma pré-visualização
+              antes de confirmar.
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="no-scrollbar flex-1 overflow-y-auto px-4">
             {!importPreview ? (
               <div className="space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  Selecione um arquivo CSV para importar alunos. O sistema mostrará uma
-                  pré-visualização antes de confirmar.
-                </p>
                 <input
                   ref={csvFileInputRef}
                   type="file"
@@ -439,33 +446,41 @@ export function StudentsPage() {
                     ) : null}
                   </div>
                 ) : null}
-                <div className="flex gap-3 justify-end">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => {
-                      setImportPreview(null);
-                      setImportError(null);
-                    }}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    type="button"
-                    disabled={importConfirmMutation.isPending || importPreview.errors.length > 0}
-                    onClick={() => importConfirmMutation.mutate(importPreview.previewToken)}
-                  >
-                    {importConfirmMutation.isPending
-                      ? "Importando..."
-                      : `Confirmar importação (${importPreview.rows.length} alunos)`}
-                  </Button>
-                </div>
               </div>
             )}
             {importError ? <p className="text-sm text-destructive">{importError}</p> : null}
-          </CardContent>
-        </Card>
-      ) : null}
+          </div>
+          {importPreview ? (
+            <DrawerFooter>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  setImportPreview(null);
+                  setImportError(null);
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                disabled={importConfirmMutation.isPending || importPreview.errors.length > 0}
+                onClick={() => importConfirmMutation.mutate(importPreview.previewToken)}
+              >
+                {importConfirmMutation.isPending
+                  ? "Importando..."
+                  : `Confirmar (${importPreview.rows.length} alunos)`}
+              </Button>
+            </DrawerFooter>
+          ) : (
+            <DrawerFooter>
+              <DrawerClose asChild>
+                <Button variant="secondary">Fechar</Button>
+              </DrawerClose>
+            </DrawerFooter>
+          )}
+        </DrawerContent>
+      </Drawer>
 
       <div className="grid gap-3 md:grid-cols-3">
         <SummaryCard
@@ -505,18 +520,26 @@ export function StudentsPage() {
         </Card>
       ) : null}
 
-      {isFormOpen ? (
-        <StudentForm
-          editingStudent={editingStudent}
-          error={error}
-          form={form}
-          belts={beltsQuery.data?.belts ?? []}
-          isSaving={saveMutation.isPending}
-          onCancel={closeForm}
-          onSubmit={submitForm}
-          updateForm={updateForm}
-        />
-      ) : null}
+      <Drawer
+        direction="right"
+        open={isFormOpen}
+        onOpenChange={(open) => {
+          if (!open) closeForm();
+        }}
+      >
+        <DrawerContent>
+          <StudentForm
+            editingStudent={editingStudent}
+            error={error}
+            form={form}
+            belts={beltsQuery.data?.belts ?? []}
+            isSaving={saveMutation.isPending}
+            onCancel={closeForm}
+            onSubmit={submitForm}
+            updateForm={updateForm}
+          />
+        </DrawerContent>
+      </Drawer>
 
       <Card>
         <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
@@ -605,151 +628,155 @@ function StudentForm(props: {
   const childBelts = props.belts.filter((b) => b.path === "child");
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{props.editingStudent ? "Editar aluno" : "Novo aluno"}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form className="space-y-6" onSubmit={props.onSubmit}>
-          <div className="grid gap-4 md:grid-cols-2">
-            <Field
-              label="Nome"
-              required
-              value={props.form.name}
-              onChange={(value) => props.updateForm("name", value)}
-            />
-            <Field
-              label="Nascimento"
-              required
-              placeholder="AAAA-MM-DD"
-              value={props.form.birthDate}
-              onChange={(value) => props.updateForm("birthDate", value)}
-            />
-            <Field
-              label="Matricula"
-              required
-              placeholder="AAAA-MM-DD"
-              value={props.form.enrollmentDate}
-              onChange={(value) => props.updateForm("enrollmentDate", value)}
-            />
-            <Field
-              label="Telefone"
-              value={props.form.phone}
-              onChange={(value) => props.updateForm("phone", value)}
-            />
-            <Field
-              label="Email"
-              type="email"
-              value={props.form.email}
-              onChange={(value) => props.updateForm("email", value)}
-            />
-            <Field
-              label="Valor mensal (R$)"
-              inputMode="decimal"
-              value={props.form.monthlyAmount}
-              onChange={(value) => props.updateForm("monthlyAmount", value)}
-            />
-            <Field
-              label="Dia de vencimento"
-              type="number"
-              min="1"
-              max="31"
-              value={props.form.monthlyDueDay}
-              onChange={(value) => props.updateForm("monthlyDueDay", value)}
-            />
-            <label className="space-y-2 text-sm font-medium">
-              <span>Faixa</span>
-              <select
-                value={props.form.currentBeltId}
-                onChange={(event) => props.updateForm("currentBeltId", event.target.value)}
-                className="h-11 w-full rounded-2xl border border-border bg-background px-3 text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-              >
-                <option value="">Selecione a faixa</option>
-                {adultBelts.length > 0 && (
-                  <optgroup label="Adulto">
-                    {adultBelts.map((belt) => (
-                      <option key={belt.id} value={belt.id}>
-                        {belt.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-                {childBelts.length > 0 && (
-                  <optgroup label="Infantil">
-                    {childBelts.map((belt) => (
-                      <option key={belt.id} value={belt.id}>
-                        {belt.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-              </select>
-            </label>
+    <form className="flex h-full flex-col" onSubmit={props.onSubmit}>
+      <DrawerHeader>
+        <DrawerTitle>{props.editingStudent ? "Editar aluno" : "Novo aluno"}</DrawerTitle>
+        <DrawerDescription>
+          {props.editingStudent
+            ? "Atualize os dados do aluno."
+            : "Preencha os dados para cadastrar um novo aluno."}
+        </DrawerDescription>
+      </DrawerHeader>
+      <div className="no-scrollbar flex-1 space-y-6 overflow-y-auto px-4">
+        <div className="grid gap-4">
+          <Field
+            label="Nome"
+            required
+            value={props.form.name}
+            onChange={(value) => props.updateForm("name", value)}
+          />
+          <Field
+            label="Nascimento"
+            required
+            placeholder="AAAA-MM-DD"
+            value={props.form.birthDate}
+            onChange={(value) => props.updateForm("birthDate", value)}
+          />
+          <Field
+            label="Matricula"
+            required
+            placeholder="AAAA-MM-DD"
+            value={props.form.enrollmentDate}
+            onChange={(value) => props.updateForm("enrollmentDate", value)}
+          />
+          <Field
+            label="Telefone"
+            value={props.form.phone}
+            onChange={(value) => props.updateForm("phone", value)}
+          />
+          <Field
+            label="Email"
+            type="email"
+            value={props.form.email}
+            onChange={(value) => props.updateForm("email", value)}
+          />
+          <Field
+            label="Valor mensal (R$)"
+            inputMode="decimal"
+            value={props.form.monthlyAmount}
+            onChange={(value) => props.updateForm("monthlyAmount", value)}
+          />
+          <Field
+            label="Dia de vencimento"
+            type="number"
+            min="1"
+            max="31"
+            value={props.form.monthlyDueDay}
+            onChange={(value) => props.updateForm("monthlyDueDay", value)}
+          />
+          <label className="space-y-2 text-sm font-medium">
+            <span>Faixa</span>
+            <select
+              value={props.form.currentBeltId}
+              onChange={(event) => props.updateForm("currentBeltId", event.target.value)}
+              className="h-11 w-full rounded-2xl border border-border bg-background px-3 text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+            >
+              <option value="">Selecione a faixa</option>
+              {adultBelts.length > 0 && (
+                <optgroup label="Adulto">
+                  {adultBelts.map((belt) => (
+                    <option key={belt.id} value={belt.id}>
+                      {belt.name}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              {childBelts.length > 0 && (
+                <optgroup label="Infantil">
+                  {childBelts.map((belt) => (
+                    <option key={belt.id} value={belt.id}>
+                      {belt.name}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+            </select>
+          </label>
+          <SelectField
+            label="Grau"
+            value={props.form.currentDegree}
+            onChange={(value) => props.updateForm("currentDegree", value)}
+            options={[0, 1, 2, 3, 4, 5, 6].map((value) => ({
+              value: String(value),
+              label: `${value} grau(s)`,
+            }))}
+          />
+          {props.editingStudent ? (
             <SelectField
-              label="Grau"
-              value={props.form.currentDegree}
-              onChange={(value) => props.updateForm("currentDegree", value)}
-              options={[0, 1, 2, 3, 4, 5, 6].map((value) => ({
-                value: String(value),
-                label: `${value} grau(s)`,
-              }))}
+              label="Status"
+              value={props.form.status}
+              onChange={(value) => props.updateForm("status", value)}
+              options={[
+                { value: "active", label: "Ativo" },
+                { value: "inactive", label: "Inativo" },
+              ]}
             />
-            {props.editingStudent ? (
-              <SelectField
-                label="Status"
-                value={props.form.status}
-                onChange={(value) => props.updateForm("status", value)}
-                options={[
-                  { value: "active", label: "Ativo" },
-                  { value: "inactive", label: "Inativo" },
-                ]}
-              />
-            ) : null}
-          </div>
+          ) : null}
+        </div>
 
-          <div className="rounded-3xl border border-border bg-muted/30 p-4">
-            <h3 className="font-medium">Responsável</h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Obrigatório para aluno menor de idade.
-            </p>
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <Field
-                label="Nome do responsável"
-                value={props.form.guardianName}
-                onChange={(value) => props.updateForm("guardianName", value)}
-              />
-              <Field
-                label="Telefone do responsável"
-                value={props.form.guardianPhone}
-                onChange={(value) => props.updateForm("guardianPhone", value)}
-              />
-              <Field
-                label="Email do responsável"
-                type="email"
-                value={props.form.guardianEmail}
-                onChange={(value) => props.updateForm("guardianEmail", value)}
-              />
-              <Field
-                label="Parentesco"
-                value={props.form.guardianRelationship}
-                onChange={(value) => props.updateForm("guardianRelationship", value)}
-              />
-            </div>
+        <div className="rounded-3xl border border-border bg-muted/30 p-4">
+          <h3 className="font-medium">Responsável</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Obrigatório para aluno menor de idade.
+          </p>
+          <div className="mt-4 grid gap-4">
+            <Field
+              label="Nome do responsável"
+              value={props.form.guardianName}
+              onChange={(value) => props.updateForm("guardianName", value)}
+            />
+            <Field
+              label="Telefone do responsável"
+              value={props.form.guardianPhone}
+              onChange={(value) => props.updateForm("guardianPhone", value)}
+            />
+            <Field
+              label="Email do responsável"
+              type="email"
+              value={props.form.guardianEmail}
+              onChange={(value) => props.updateForm("guardianEmail", value)}
+            />
+            <Field
+              label="Parentesco"
+              value={props.form.guardianRelationship}
+              onChange={(value) => props.updateForm("guardianRelationship", value)}
+            />
           </div>
+        </div>
 
-          {props.error ? <p className="text-sm text-destructive">{props.error}</p> : null}
-
-          <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-            <Button type="button" variant="secondary" onClick={props.onCancel}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={props.isSaving}>
-              {props.isSaving ? "Salvando..." : "Salvar aluno"}
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+        {props.error ? <p className="text-sm text-destructive">{props.error}</p> : null}
+      </div>
+      <DrawerFooter>
+        <DrawerClose asChild>
+          <Button type="button" variant="secondary">
+            Cancelar
+          </Button>
+        </DrawerClose>
+        <Button type="submit" disabled={props.isSaving}>
+          {props.isSaving ? "Salvando..." : "Salvar aluno"}
+        </Button>
+      </DrawerFooter>
+    </form>
   );
 }
 
