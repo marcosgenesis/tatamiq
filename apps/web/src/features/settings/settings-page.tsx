@@ -1,13 +1,33 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { BeltDto } from "@tatamiq/contracts";
-import { Settings02Icon } from "hugeicons-react";
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { AlertCircleIcon, Cancel01Icon, UserIcon } from "hugeicons-react";
+import { type FormEvent, useEffect, useState } from "react";
 import { api } from "../../api";
-import { Field, SelectField } from "../../components/form-field";
-import { Badge } from "../../components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "../../components/reui/alert";
+import {
+  NumberField,
+  NumberFieldDecrement,
+  NumberFieldGroup,
+  NumberFieldIncrement,
+  NumberFieldInput,
+  NumberFieldScrubArea,
+} from "../../components/reui/number-field";
 import { Button } from "../../components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { Field, FieldLabel } from "../../components/ui/field";
+import { Input } from "../../components/ui/input";
+import { RadioGroup, RadioGroupItem } from "../../components/ui/radio-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../components/ui/select";
+import { Separator } from "../../components/ui/separator";
+import { Textarea } from "../../components/ui/textarea";
 import { useBelts } from "../../hooks/use-belts";
+import { formatBytes, useFileUpload } from "../../hooks/use-file-upload";
+import { cn } from "../../lib/utils";
 
 type PixKeyType = "cpf" | "email" | "phone" | "random";
 
@@ -33,14 +53,123 @@ const emptyForm: SettingsFormState = {
   pixCopyPaste: "",
 };
 
+function LogoUpload({
+  defaultLogo,
+  onUpload,
+  isUploading,
+}: {
+  defaultLogo: string | null;
+  onUpload: (file: File) => void;
+  isUploading: boolean;
+}) {
+  const maxSize = 2 * 1024 * 1024;
+
+  const [
+    { files, isDragging, errors },
+    {
+      removeFile,
+      handleDragEnter,
+      handleDragLeave,
+      handleDragOver,
+      handleDrop,
+      openFileDialog,
+      getInputProps,
+    },
+  ] = useFileUpload({
+    maxFiles: 1,
+    maxSize,
+    accept: "image/*",
+    multiple: false,
+    onFilesAdded: (addedFiles) => {
+      const file = addedFiles[0]?.file;
+      if (file instanceof File) {
+        onUpload(file);
+      }
+    },
+  });
+
+  const currentFile = files[0];
+  const previewUrl = currentFile?.preview || defaultLogo;
+
+  const handleRemove = () => {
+    if (currentFile) {
+      removeFile(currentFile.id);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center gap-4">
+      <div className="relative">
+        <button
+          type="button"
+          className={cn(
+            "group/avatar relative h-24 w-24 cursor-pointer overflow-hidden rounded-full border border-dashed transition-colors",
+            isDragging
+              ? "border-primary bg-primary/5"
+              : "border-muted-foreground/25 hover:border-muted-foreground/20",
+            previewUrl && "border-solid",
+            isUploading && "opacity-50 pointer-events-none",
+          )}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+          onClick={openFileDialog}
+        >
+          <input {...getInputProps()} className="sr-only" />
+          {previewUrl ? (
+            <img src={previewUrl} alt="Logo" className="h-full w-full object-cover" />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center">
+              <UserIcon className="text-muted-foreground size-6" strokeWidth={2} />
+            </div>
+          )}
+        </button>
+
+        {currentFile && (
+          <Button
+            size="icon"
+            variant="outline"
+            type="button"
+            onClick={handleRemove}
+            className="absolute end-0.5 top-0.5 z-10 size-6 rounded-full"
+            aria-label="Remover logo"
+          >
+            <Cancel01Icon className="size-3.5" strokeWidth={2} />
+          </Button>
+        )}
+      </div>
+
+      <div className="space-y-0.5 text-center">
+        <p className="text-sm font-medium">
+          {isUploading ? "Enviando..." : currentFile ? "Logo atualizado" : "Enviar logo"}
+        </p>
+        <p className="text-muted-foreground text-xs">PNG, JPG ou WebP até {formatBytes(maxSize)}</p>
+      </div>
+
+      {errors.length > 0 && (
+        <Alert variant="destructive" className="mt-2">
+          <AlertCircleIcon strokeWidth={2} />
+          <AlertTitle>Erro no upload</AlertTitle>
+          <AlertDescription>
+            {errors.map((error) => (
+              <p key={error} className="last:mb-0">
+                {error}
+              </p>
+            ))}
+          </AlertDescription>
+        </Alert>
+      )}
+    </div>
+  );
+}
+
 export function SettingsPage() {
   const queryClient = useQueryClient();
   const [form, setForm] = useState<SettingsFormState>(emptyForm);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const academyQuery = useQuery({
     queryKey: ["academy"],
@@ -83,7 +212,6 @@ export function SettingsPage() {
         pixKey: data.pixKey ?? "",
         pixCopyPaste: data.pixCopyPaste ?? "",
       });
-      setLogoPreview(data.logo ?? null);
     }
   }, [academyQuery.data]);
 
@@ -175,15 +303,6 @@ export function SettingsPage() {
     }
   }
 
-  function onFileChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const previewUrl = URL.createObjectURL(file);
-    setLogoPreview(previewUrl);
-    void handleLogoUpload(file);
-  }
-
   if (academyQuery.isLoading) {
     return (
       <div className="space-y-6">
@@ -205,185 +324,182 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-[2rem] border border-border bg-card p-6 shadow-2xl md:p-8">
-        <Badge variant="muted">Configurações</Badge>
-        <div className="mt-5 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+    <div>
+      <form onSubmit={submitForm}>
+        {/* Logo */}
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight md:text-5xl">Configurações</h1>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
-              Dados da academia, logo, contato e configuração de Pix para recebimento.
+            <h2 className="text-balance font-semibold text-foreground">Logo da academia</h2>
+            <p className="text-pretty mt-1 text-sm leading-6 text-muted-foreground">
+              Envie o logo da sua academia. Ele será exibido no portal do aluno e nos relatórios.
             </p>
           </div>
-          <div className="grid size-14 place-items-center rounded-3xl border border-border bg-muted text-primary">
-            <Settings02Icon className="size-7" />
+          <div className="sm:max-w-3xl md:col-span-2">
+            <LogoUpload
+              defaultLogo={academyQuery.data?.logo ?? null}
+              onUpload={handleLogoUpload}
+              isUploading={isUploading}
+            />
           </div>
         </div>
-      </section>
 
-      <form className="space-y-6" onSubmit={submitForm}>
-        {/* Logo */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Logo da academia</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-6">
-              <div className="grid size-20 shrink-0 place-items-center overflow-hidden rounded-3xl border border-border bg-muted">
-                {logoPreview ? (
-                  <img src={logoPreview} alt="Logo" className="size-full object-cover" />
-                ) : (
-                  <span className="text-2xl font-bold text-muted-foreground">
-                    {form.name.charAt(0).toUpperCase() || "?"}
-                  </span>
-                )}
+        <Separator className="my-8" />
+
+        {/* Dados da academia */}
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
+          <div>
+            <h2 className="text-balance font-semibold text-foreground">Dados da academia</h2>
+            <p className="text-pretty mt-1 text-sm leading-6 text-muted-foreground">
+              Informações básicas como nome, endereço e contato.
+            </p>
+          </div>
+          <div className="sm:max-w-3xl md:col-span-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-6">
+              <div className="col-span-full sm:col-span-3">
+                <Field className="gap-2">
+                  <FieldLabel htmlFor="academy-name">Nome da academia</FieldLabel>
+                  <Input
+                    id="academy-name"
+                    required
+                    value={form.name}
+                    onChange={(e) => updateForm("name", e.target.value)}
+                  />
+                </Field>
               </div>
-              <div>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  disabled={isUploading}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  {isUploading ? "Enviando..." : "Alterar logo"}
-                </Button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={onFileChange}
-                />
-                <p className="mt-2 text-xs text-muted-foreground">
-                  JPG, PNG ou WebP. Tamanho recomendado: 256x256px.
-                </p>
+              <div className="col-span-full sm:col-span-3">
+                <Field className="gap-2">
+                  <FieldLabel htmlFor="academy-address">Endereço</FieldLabel>
+                  <Input
+                    id="academy-address"
+                    value={form.address}
+                    onChange={(e) => updateForm("address", e.target.value)}
+                  />
+                </Field>
+              </div>
+              <div className="col-span-full sm:col-span-3">
+                <Field className="gap-2">
+                  <FieldLabel htmlFor="academy-phone">Telefone / WhatsApp</FieldLabel>
+                  <Input
+                    id="academy-phone"
+                    value={form.phone}
+                    onChange={(e) => updateForm("phone", e.target.value)}
+                  />
+                </Field>
+              </div>
+              <div className="col-span-full sm:col-span-3">
+                <Field className="gap-2">
+                  <FieldLabel htmlFor="academy-instagram">Instagram</FieldLabel>
+                  <Input
+                    id="academy-instagram"
+                    placeholder="@suaacademia"
+                    value={form.instagram}
+                    onChange={(e) => updateForm("instagram", e.target.value)}
+                  />
+                </Field>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        {/* Profile */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Dados da academia</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-2">
-              <Field
-                label="Nome da academia"
-                required
-                value={form.name}
-                onChange={(value) => updateForm("name", value)}
-              />
-              <Field
-                label="Endereço"
-                value={form.address}
-                onChange={(value) => updateForm("address", value)}
-              />
-              <Field
-                label="Telefone / WhatsApp"
-                value={form.phone}
-                onChange={(value) => updateForm("phone", value)}
-              />
-              <Field
-                label="Instagram"
-                placeholder="@suaacademia"
-                value={form.instagram}
-                onChange={(value) => updateForm("instagram", value)}
-              />
-            </div>
-          </CardContent>
-        </Card>
+        <Separator className="my-8" />
 
         {/* Pix */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Configuração de Pix</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
+          <div>
+            <h2 className="text-balance font-semibold text-foreground">Configuração de Pix</h2>
+            <p className="text-pretty mt-1 text-sm leading-6 text-muted-foreground">
               Configure a chave ou código Pix que aparecerá para os alunos no portal de pagamento.
             </p>
+          </div>
+          <div className="sm:max-w-3xl md:col-span-2">
+            <div className="space-y-4">
+              <RadioGroup
+                value={form.pixMode}
+                onValueChange={(value) => updateForm("pixMode", value as string)}
+                className="flex flex-col gap-2 sm:flex-row sm:gap-4"
+              >
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="none" />
+                  <FieldLabel htmlFor="pix-none" className="font-normal">
+                    Sem Pix
+                  </FieldLabel>
+                </div>
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="key" />
+                  <FieldLabel htmlFor="pix-key" className="font-normal">
+                    Chave Pix
+                  </FieldLabel>
+                </div>
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="copy_paste" />
+                  <FieldLabel htmlFor="pix-copy-paste" className="font-normal">
+                    Copia e cola
+                  </FieldLabel>
+                </div>
+              </RadioGroup>
 
-            <div className="flex flex-col gap-2 sm:flex-row sm:gap-4">
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="radio"
-                  name="pixMode"
-                  checked={form.pixMode === "none"}
-                  onChange={() => updateForm("pixMode", "none")}
-                  className="accent-primary"
-                />
-                Sem Pix
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="radio"
-                  name="pixMode"
-                  checked={form.pixMode === "key"}
-                  onChange={() => updateForm("pixMode", "key")}
-                  className="accent-primary"
-                />
-                Chave Pix
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="radio"
-                  name="pixMode"
-                  checked={form.pixMode === "copy_paste"}
-                  onChange={() => updateForm("pixMode", "copy_paste")}
-                  className="accent-primary"
-                />
-                Copia e cola
-              </label>
-            </div>
+              {form.pixMode === "key" && (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-6">
+                  <div className="col-span-full sm:col-span-3">
+                    <Field className="gap-2">
+                      <FieldLabel htmlFor="pix-key-type">Tipo da chave</FieldLabel>
+                      <Select
+                        value={form.pixKeyType}
+                        onValueChange={(value) => updateForm("pixKeyType", value as string)}
+                      >
+                        <SelectTrigger id="pix-key-type" className="w-full">
+                          <SelectValue placeholder="Selecione o tipo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="cpf">CPF</SelectItem>
+                          <SelectItem value="email">Email</SelectItem>
+                          <SelectItem value="phone">Telefone</SelectItem>
+                          <SelectItem value="random">Aleatória</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                  </div>
+                  <div className="col-span-full sm:col-span-3">
+                    <Field className="gap-2">
+                      <FieldLabel htmlFor="pix-key-value">Chave Pix</FieldLabel>
+                      <Input
+                        id="pix-key-value"
+                        value={form.pixKey}
+                        onChange={(e) => updateForm("pixKey", e.target.value)}
+                      />
+                    </Field>
+                  </div>
+                </div>
+              )}
 
-            {form.pixMode === "key" ? (
-              <div className="grid gap-4 md:grid-cols-2">
-                <SelectField
-                  label="Tipo da chave"
-                  value={form.pixKeyType}
-                  onChange={(value) => updateForm("pixKeyType", value)}
-                  options={[
-                    { value: "cpf", label: "CPF" },
-                    { value: "email", label: "Email" },
-                    { value: "phone", label: "Telefone" },
-                    { value: "random", label: "Aleatória" },
-                  ]}
-                />
-                <Field
-                  label="Chave Pix"
-                  value={form.pixKey}
-                  onChange={(value) => updateForm("pixKey", value)}
-                />
-              </div>
-            ) : null}
-
-            {form.pixMode === "copy_paste" ? (
-              <div>
-                <label className="space-y-2 text-sm font-medium">
-                  <span>Código Pix copia e cola</span>
-                  <textarea
+              {form.pixMode === "copy_paste" && (
+                <Field className="gap-2">
+                  <FieldLabel htmlFor="pix-copy-paste-value">Código Pix copia e cola</FieldLabel>
+                  <Textarea
+                    id="pix-copy-paste-value"
                     value={form.pixCopyPaste}
-                    onChange={(event) => updateForm("pixCopyPaste", event.target.value)}
+                    onChange={(e) => updateForm("pixCopyPaste", e.target.value)}
                     rows={4}
-                    className="w-full rounded-2xl border border-border bg-background px-3 py-2 text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
-                </label>
-              </div>
-            ) : null}
-          </CardContent>
-        </Card>
+                </Field>
+              )}
+            </div>
+          </div>
+        </div>
 
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
-        {success ? <p className="text-sm text-green-600">{success}</p> : null}
+        <Separator className="my-8" />
 
-        <div className="flex justify-end">
+        {error && <p className="mb-4 text-sm text-destructive">{error}</p>}
+        {success && <p className="mb-4 text-sm text-green-600">{success}</p>}
+
+        <div className="flex items-center justify-end gap-4">
           <Button type="submit" disabled={saveMutation.isPending}>
             {saveMutation.isPending ? "Salvando..." : "Salvar configurações"}
           </Button>
         </div>
       </form>
+
+      <Separator className="my-2" />
 
       <BeltRulesSection />
     </div>
@@ -432,11 +548,10 @@ function BeltRulesSection() {
     return (belt as any)[field] ?? null;
   }
 
-  function updateBeltField(beltId: string, field: keyof BeltRuleFields, value: string) {
-    const numValue = value === "" ? null : Number(value);
+  function updateBeltField(beltId: string, field: keyof BeltRuleFields, value: number | null) {
     setEditingBelts((current) => ({
       ...current,
-      [beltId]: { ...current[beltId], [field]: numValue },
+      [beltId]: { ...current[beltId], [field]: value },
     }));
   }
 
@@ -446,120 +561,64 @@ function BeltRulesSection() {
     updateBeltMutation.mutate({ id: beltId, body: changes });
   }
 
-  function renderBeltTable(groupBelts: BeltDto[], groupLabel: string) {
+  const ruleColumns: { key: keyof BeltRuleFields; label: string }[] = [
+    { key: "maxDegrees", label: "Graus máx." },
+    { key: "minMonthsForNextDegree", label: "Meses p/ grau" },
+    { key: "minAttendancesForNextDegree", label: "Presenças p/ grau" },
+    { key: "minMonthsForNextBelt", label: "Meses p/ faixa" },
+    { key: "minAttendancesForNextBelt", label: "Presenças p/ faixa" },
+  ];
+
+  function renderBeltGroup(groupBelts: BeltDto[], groupLabel: string) {
     if (groupBelts.length === 0) return null;
 
     return (
-      <div className="space-y-3">
+      <div className="space-y-4">
         <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
           {groupLabel}
         </h4>
-        <div className="overflow-auto rounded-2xl border border-border">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">
-                  Faixa
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">
-                  Graus máx.
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">
-                  Meses p/ grau
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">
-                  Presenças p/ grau
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">
-                  Meses p/ faixa
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">
-                  Presenças p/ faixa
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">
-                  Ações
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {groupBelts.map((belt) => {
-                const hasChanges = !!editingBelts[belt.id];
-                const isSaving = savingBeltId === belt.id;
-                return (
-                  <tr key={belt.id}>
-                    <td className="px-3 py-2 font-medium">{belt.name}</td>
-                    <td className="px-3 py-2">
-                      <input
-                        type="number"
-                        min="0"
-                        className="h-9 w-20 rounded-xl border border-border bg-background px-2 text-foreground outline-none focus:border-primary"
-                        value={getBeltValue(belt, "maxDegrees") ?? ""}
-                        onChange={(e) => updateBeltField(belt.id, "maxDegrees", e.target.value)}
-                      />
-                    </td>
-                    <td className="px-3 py-2">
-                      <input
-                        type="number"
-                        min="0"
-                        className="h-9 w-20 rounded-xl border border-border bg-background px-2 text-foreground outline-none focus:border-primary"
-                        value={getBeltValue(belt, "minMonthsForNextDegree") ?? ""}
-                        onChange={(e) =>
-                          updateBeltField(belt.id, "minMonthsForNextDegree", e.target.value)
-                        }
-                      />
-                    </td>
-                    <td className="px-3 py-2">
-                      <input
-                        type="number"
-                        min="0"
-                        className="h-9 w-20 rounded-xl border border-border bg-background px-2 text-foreground outline-none focus:border-primary"
-                        value={getBeltValue(belt, "minAttendancesForNextDegree") ?? ""}
-                        onChange={(e) =>
-                          updateBeltField(belt.id, "minAttendancesForNextDegree", e.target.value)
-                        }
-                      />
-                    </td>
-                    <td className="px-3 py-2">
-                      <input
-                        type="number"
-                        min="0"
-                        className="h-9 w-20 rounded-xl border border-border bg-background px-2 text-foreground outline-none focus:border-primary"
-                        value={getBeltValue(belt, "minMonthsForNextBelt") ?? ""}
-                        onChange={(e) =>
-                          updateBeltField(belt.id, "minMonthsForNextBelt", e.target.value)
-                        }
-                      />
-                    </td>
-                    <td className="px-3 py-2">
-                      <input
-                        type="number"
-                        min="0"
-                        className="h-9 w-20 rounded-xl border border-border bg-background px-2 text-foreground outline-none focus:border-primary"
-                        value={getBeltValue(belt, "minAttendancesForNextBelt") ?? ""}
-                        onChange={(e) =>
-                          updateBeltField(belt.id, "minAttendancesForNextBelt", e.target.value)
-                        }
-                      />
-                    </td>
-                    <td className="px-3 py-2">
-                      {hasChanges ? (
-                        <Button
-                          type="button"
-                          size="sm"
-                          disabled={isSaving}
-                          onClick={() => saveBelt(belt.id)}
-                        >
-                          {isSaving ? "Salvando..." : "Salvar"}
-                        </Button>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <div className="space-y-6">
+          {groupBelts.map((belt) => {
+            const hasChanges = !!editingBelts[belt.id];
+            const isSaving = savingBeltId === belt.id;
+            return (
+              <div key={belt.id} className="space-y-3 rounded-lg border border-border p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">{belt.name}</span>
+                  {hasChanges && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={isSaving}
+                      onClick={() => saveBelt(belt.id)}
+                    >
+                      {isSaving ? "Salvando..." : "Salvar"}
+                    </Button>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+                  {ruleColumns.map((col) => (
+                    <NumberField
+                      key={col.key}
+                      value={getBeltValue(belt, col.key) ?? undefined}
+                      min={0}
+                      onValueChange={(val) => {
+                        updateBeltField(belt.id, col.key, val ?? null);
+                      }}
+                      size="sm"
+                    >
+                      <NumberFieldScrubArea label={col.label} />
+                      <NumberFieldGroup>
+                        <NumberFieldDecrement />
+                        <NumberFieldInput />
+                        <NumberFieldIncrement />
+                      </NumberFieldGroup>
+                    </NumberField>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     );
@@ -567,32 +626,32 @@ function BeltRulesSection() {
 
   if (beltsQuery.isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Regras de graduação</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
+        <div>
+          <h2 className="text-balance font-semibold text-foreground">Regras de graduação</h2>
+        </div>
+        <div className="md:col-span-2">
           <p className="text-sm text-muted-foreground">Carregando faixas...</p>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Regras de graduação</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <p className="text-sm text-muted-foreground">
+    <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
+      <div>
+        <h2 className="text-balance font-semibold text-foreground">Regras de graduação</h2>
+        <p className="text-pretty mt-1 text-sm leading-6 text-muted-foreground">
           Configure os requisitos mínimos para promoção de grau e faixa. Deixe em branco para não
           exigir critério.
         </p>
-        {beltSuccess ? <p className="text-sm text-green-600">{beltSuccess}</p> : null}
-        {renderBeltTable(adultBelts, "Adulto")}
-        {renderBeltTable(childBelts, "Infantil")}
-      </CardContent>
-    </Card>
+      </div>
+      <div className="sm:max-w-3xl md:col-span-2 space-y-6">
+        {beltSuccess && <p className="text-sm text-green-600">{beltSuccess}</p>}
+        {renderBeltGroup(adultBelts, "Adulto")}
+        {renderBeltGroup(childBelts, "Infantil")}
+      </div>
+    </div>
   );
 }
 
