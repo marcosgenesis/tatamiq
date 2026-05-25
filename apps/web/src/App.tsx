@@ -42,7 +42,7 @@ const queryClient = new QueryClient();
 type OrganizationSummary = {
   id: string;
   name: string;
-  logo?: string | null;
+  logo?: string | null | undefined;
 };
 
 // --- Root ---

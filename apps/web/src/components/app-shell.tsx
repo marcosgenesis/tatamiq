@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 export type Academy = {
   id: string;
   name: string;
-  logo?: string | null;
+  logo?: string | null | undefined;
 };
 
 export type AppShellUser = {

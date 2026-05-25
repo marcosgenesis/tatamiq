@@ -68,7 +68,7 @@ export function AcademyAvatar({
   className,
 }: {
   name: string;
-  logo?: string | null;
+  logo?: string | null | undefined;
   className?: string;
 }) {
   if (logo) {
