@@ -56,7 +56,7 @@ export function BillingHealth() {
           </EmptyHeader>
           <EmptyContent>
             <Button variant="ghost">
-              <Link to="/monthly-fees">
+              <Link to="/monthly-fees" className="inline-flex items-center gap-1">
                 Ver mensalidades
                 <ArrowRight01Icon aria-hidden="true" />
               </Link>

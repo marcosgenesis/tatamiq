@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { ArrowLeft01Icon, CreditCardIcon, Settings01Icon, UserMultipleIcon } from "hugeicons-react";
 import { useAppShell } from "@/components/app-shell";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -36,7 +37,7 @@ export function NavUser() {
             <UserMultipleIcon />
             Conta
           </DropdownMenuItem>
-          <DropdownMenuItem>
+          <DropdownMenuItem render={<Link to="/settings" />}>
             <Settings01Icon />
             Configurações
           </DropdownMenuItem>

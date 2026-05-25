@@ -49,14 +49,7 @@ export function AppShell({
         <AppSidebar />
         <SidebarInset>
           <AppHeader />
-          <div
-            className={cn(
-              "flex flex-1 flex-col p-4 md:p-6",
-              "mx-auto w-full max-w-(--app-wrapper-max-width)",
-            )}
-          >
-            {children}
-          </div>
+          <div className="flex flex-1 flex-col">{children}</div>
         </SidebarInset>
       </SidebarProvider>
     </AppShellCtx.Provider>
