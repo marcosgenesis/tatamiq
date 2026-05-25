@@ -3,6 +3,7 @@ import { api } from "@/api";
 import { DashboardCard } from "@/components/dashboard-card";
 import { formatCurrency } from "@/components/formater";
 import { CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "./reui/badge";
 
 export function DashboardStats() {
   const studentsQuery = useQuery({
@@ -75,7 +76,7 @@ export function DashboardStats() {
             <p className="font-semibold text-2xl tabular-nums">{s.value}</p>
           </CardContent>
           <CardFooter className="gap-1 rounded-none bg-background text-xs">
-            <span className="text-muted-foreground">{s.sub}</span>
+            <Badge variant={"primary-light"}>{s.sub}</Badge>
           </CardFooter>
         </DashboardCard>
       ))}
