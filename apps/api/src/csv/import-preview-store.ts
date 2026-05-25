@@ -1,5 +1,7 @@
 import { Injectable } from "@nestjs/common";
 
+export const IMPORT_PREVIEW_STORE = Symbol("IMPORT_PREVIEW_STORE");
+
 export type ImportPreviewData = {
   organizationId: string;
   rows: ParsedStudentRow[];
