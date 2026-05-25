@@ -189,6 +189,13 @@ export class ScheduleService {
     return this.findAdHocOccurrence(organizationId, id);
   }
 
+  async deleteAdHoc(organizationId: string, id: string): Promise<void> {
+    await this.findAdHocSession(organizationId, id);
+    await this.db
+      .delete(classSessions)
+      .where(and(eq(classSessions.id, id), eq(classSessions.organizationId, organizationId)));
+  }
+
   async reactivateAdHoc(organizationId: string, id: string): Promise<ScheduleOccurrence> {
     await this.findAdHocSession(organizationId, id);
     await this.db
