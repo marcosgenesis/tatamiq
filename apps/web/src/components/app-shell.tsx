@@ -9,9 +9,16 @@ export type Academy = {
   name: string;
 };
 
+export type AppShellUser = {
+  name: string;
+  email: string;
+  image?: string | null | undefined;
+};
+
 type AppShellContext = {
   activeAcademy: Academy;
   academies: Academy[];
+  user: AppShellUser;
   onSwitchAcademy: (id: string) => void;
   onSignOut: () => void;
 };
@@ -19,6 +26,7 @@ type AppShellContext = {
 const AppShellCtx = createContext<AppShellContext>({
   activeAcademy: { id: "", name: "" },
   academies: [],
+  user: { name: "", email: "" },
   onSwitchAcademy: () => {},
   onSignOut: () => {},
 });
@@ -30,12 +38,13 @@ export function useAppShell() {
 export function AppShell({
   activeAcademy,
   academies,
+  user,
   onSwitchAcademy,
   onSignOut,
   children,
 }: AppShellContext & { children: React.ReactNode }) {
   return (
-    <AppShellCtx.Provider value={{ activeAcademy, academies, onSwitchAcademy, onSignOut }}>
+    <AppShellCtx.Provider value={{ activeAcademy, academies, user, onSwitchAcademy, onSignOut }}>
       <SidebarProvider className={cn("[--app-wrapper-max-width:80rem]")}>
         <AppSidebar />
         <SidebarInset>

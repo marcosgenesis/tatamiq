@@ -301,10 +301,18 @@ function InstructorLayout() {
     await navigate({ to: "/sign-in" });
   }
 
+  const sessionUser = session.data.user;
+  const currentUser = {
+    name: sessionUser.name,
+    email: sessionUser.email,
+    image: sessionUser.image,
+  };
+
   return (
     <AppShell
       activeAcademy={currentAcademy}
       academies={allAcademies}
+      user={currentUser}
       onSwitchAcademy={switchAcademy}
       onSignOut={signOut}
     >
