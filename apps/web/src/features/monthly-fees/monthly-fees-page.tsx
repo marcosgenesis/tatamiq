@@ -1,11 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { CreateMonthlyFeeInput, MonthlyFee } from "@tatamiq/contracts";
 import { Download04Icon, Money03Icon, PlusSignIcon } from "hugeicons-react";
-import { type FormEvent, type InputHTMLAttributes, useState } from "react";
+import { type FormEvent, useState } from "react";
 import { api } from "../../api";
+import { Field, SelectField } from "../../components/form-field";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { useStudents } from "../../hooks/use-students";
+import {
+  centsToReais,
+  formatCurrency,
+  formatDate,
+  monthNames,
+  reaisToCents,
+} from "../../lib/formatting";
 
 type FeeStatusFilter = "all" | "open" | "under_review" | "paid" | "waived" | "overdue";
 
@@ -15,21 +24,6 @@ const statusLabels: Record<string, string> = {
   paid: "Pago",
   waived: "Dispensado",
 };
-
-const monthNames = [
-  "Janeiro",
-  "Fevereiro",
-  "Março",
-  "Abril",
-  "Maio",
-  "Junho",
-  "Julho",
-  "Agosto",
-  "Setembro",
-  "Outubro",
-  "Novembro",
-  "Dezembro",
-];
 
 type FeeFormState = {
   studentId: string;
@@ -66,17 +60,7 @@ export function MonthlyFeesPage() {
     },
   });
 
-  const studentsQuery = useQuery({
-    queryKey: ["students", "active"],
-    queryFn: async () => {
-      const { data, error } = await api.GET("/students", {
-        params: { query: { status: "active" } },
-      });
-      if (error) throw new Error("Não foi possível carregar alunos.");
-      return data;
-    },
-    enabled: isFormOpen,
-  });
+  const studentsQuery = useStudents("active", { enabled: isFormOpen });
 
   const createMutation = useMutation({
     mutationFn: async (input: CreateMonthlyFeeInput) => {
@@ -537,68 +521,5 @@ function EmptyState(props: { onCreate: () => void }) {
         Criar mensalidade
       </Button>
     </div>
-  );
-}
-
-function Field(
-  props: Omit<InputHTMLAttributes<HTMLInputElement>, "onChange"> & {
-    label: string;
-    onChange: (value: string) => void;
-  },
-) {
-  const { label, onChange, ...inputProps } = props;
-  return (
-    <label className="space-y-2 text-sm font-medium">
-      <span>{label}</span>
-      <input
-        {...inputProps}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-11 w-full rounded-2xl border border-border bg-background px-3 text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-      />
-    </label>
-  );
-}
-
-function SelectField(props: {
-  label: string;
-  value: string;
-  options: Array<{ value: string; label: string }>;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <label className="space-y-2 text-sm font-medium">
-      <span>{props.label}</span>
-      <select
-        value={props.value}
-        onChange={(event) => props.onChange(event.target.value)}
-        className="h-11 w-full rounded-2xl border border-border bg-background px-3 text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-      >
-        {props.options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
-
-function reaisToCents(value: string): number | null {
-  if (!value.trim()) return null;
-  const normalized = value.replace(".", "").replace(",", ".");
-  return Math.round(Number(normalized) * 100);
-}
-
-function centsToReais(value: number): string {
-  return (value / 100).toFixed(2).replace(".", ",");
-}
-
-function formatCurrency(cents: number): string {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
-}
-
-function formatDate(value: string): string {
-  return new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC" }).format(
-    new Date(`${value}T00:00:00.000Z`),
   );
 }

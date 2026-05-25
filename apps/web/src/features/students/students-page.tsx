@@ -1,12 +1,22 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { BeltDto, Student } from "@tatamiq/contracts";
 import type { components } from "@tatamiq/contracts/generated";
 import { Download04Icon, PlusSignIcon, Upload04Icon, UserMultipleIcon } from "hugeicons-react";
-import { type FormEvent, type InputHTMLAttributes, useMemo, useRef, useState } from "react";
+import { type FormEvent, useMemo, useRef, useState } from "react";
 import { api } from "../../api";
+import { Field, SelectField } from "../../components/form-field";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { useBelts } from "../../hooks/use-belts";
+import { useStudents } from "../../hooks/use-students";
+import {
+  ageLabel,
+  billingLabel,
+  centsToReais,
+  formatDate,
+  reaisToCents,
+} from "../../lib/formatting";
 
 type StudentStatusFilter = "active" | "inactive" | "all";
 type StudentPayload = components["schemas"]["UpdateStudentDto"];
@@ -53,25 +63,8 @@ export function StudentsPage() {
   const [error, setError] = useState<string | null>(null);
   const [createdInviteLink, setCreatedInviteLink] = useState<string | null>(null);
 
-  const beltsQuery = useQuery({
-    queryKey: ["belts"],
-    queryFn: async () => {
-      const { data, error } = await api.GET("/belts");
-      if (error) throw new Error("Nao foi possivel carregar faixas.");
-      return data;
-    },
-  });
-
-  const studentsQuery = useQuery({
-    queryKey: ["students", status],
-    queryFn: async () => {
-      const { data, error } = await api.GET("/students", {
-        params: { query: { status } },
-      });
-      if (error) throw new Error("Nao foi possivel carregar alunos.");
-      return data;
-    },
-  });
+  const beltsQuery = useBelts();
+  const studentsQuery = useStudents(status);
 
   const saveMutation = useMutation({
     mutationFn: async (input: StudentPayload) => {
@@ -753,49 +746,6 @@ function StudentForm(props: {
   );
 }
 
-function Field(
-  props: Omit<InputHTMLAttributes<HTMLInputElement>, "onChange"> & {
-    label: string;
-    onChange: (value: string) => void;
-  },
-) {
-  const { label, onChange, ...inputProps } = props;
-  return (
-    <label className="space-y-2 text-sm font-medium">
-      <span>{label}</span>
-      <input
-        {...inputProps}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-11 w-full rounded-2xl border border-border bg-background px-3 text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-      />
-    </label>
-  );
-}
-
-function SelectField(props: {
-  label: string;
-  value: string;
-  options: Array<{ value: string; label: string }>;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <label className="space-y-2 text-sm font-medium">
-      <span>{props.label}</span>
-      <select
-        value={props.value}
-        onChange={(event) => props.onChange(event.target.value)}
-        className="h-11 w-full rounded-2xl border border-border bg-background px-3 text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-      >
-        {props.options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
-
 function StudentRow(props: {
   student: Student;
   onEdit: () => void;
@@ -904,45 +854,4 @@ function StudentsEmptyState(props: { onCreate: () => void }) {
       </Button>
     </div>
   );
-}
-
-function reaisToCents(value: string): number | null {
-  if (!value.trim()) return null;
-  const normalized = value.replace(".", "").replace(",", ".");
-  return Math.round(Number(normalized) * 100);
-}
-
-function centsToReais(value: number | null): string {
-  if (value === null) return "";
-  return (value / 100).toFixed(2).replace(".", ",");
-}
-
-function formatDate(value: string): string {
-  return new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC" }).format(
-    new Date(`${value}T00:00:00.000Z`),
-  );
-}
-
-function ageLabel(birthDate: string): string {
-  const birth = new Date(`${birthDate}T00:00:00.000Z`);
-  const today = new Date();
-  let age = today.getFullYear() - birth.getUTCFullYear();
-  const birthdayPassed =
-    today.getMonth() > birth.getUTCMonth() ||
-    (today.getMonth() === birth.getUTCMonth() && today.getDate() >= birth.getUTCDate());
-  if (!birthdayPassed) age -= 1;
-  return `${age} anos`;
-}
-
-function billingLabel(student: Student): string {
-  if (student.monthlyAmountInCents === null && student.monthlyDueDay === null)
-    return "Sem mensalidade";
-  const amount =
-    student.monthlyAmountInCents === null
-      ? "valor livre"
-      : new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
-          student.monthlyAmountInCents / 100,
-        );
-  const dueDay = student.monthlyDueDay ? `dia ${student.monthlyDueDay}` : "sem vencimento";
-  return `${amount} · ${dueDay}`;
 }

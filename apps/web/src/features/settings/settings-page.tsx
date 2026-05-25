@@ -1,11 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { BeltDto } from "@tatamiq/contracts";
 import { Settings02Icon } from "hugeicons-react";
-import { type FormEvent, type InputHTMLAttributes, useEffect, useRef, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { api } from "../../api";
+import { Field, SelectField } from "../../components/form-field";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { useBelts } from "../../hooks/use-belts";
 
 type PixKeyType = "cpf" | "email" | "phone" | "random";
 
@@ -394,14 +396,7 @@ function BeltRulesSection() {
   const [savingBeltId, setSavingBeltId] = useState<string | null>(null);
   const [beltSuccess, setBeltSuccess] = useState<string | null>(null);
 
-  const beltsQuery = useQuery({
-    queryKey: ["belts"],
-    queryFn: async () => {
-      const { data, error } = await api.GET("/belts");
-      if (error) throw new Error("Nao foi possivel carregar faixas.");
-      return data;
-    },
-  });
+  const beltsQuery = useBelts();
 
   const updateBeltMutation = useMutation({
     mutationFn: async ({ id, body }: { id: string; body: Partial<BeltRuleFields> }) => {
@@ -608,46 +603,3 @@ type BeltRuleFields = {
   minMonthsForNextBelt: number | null;
   minAttendancesForNextBelt: number | null;
 };
-
-function Field(
-  props: Omit<InputHTMLAttributes<HTMLInputElement>, "onChange"> & {
-    label: string;
-    onChange: (value: string) => void;
-  },
-) {
-  const { label, onChange, ...inputProps } = props;
-  return (
-    <label className="space-y-2 text-sm font-medium">
-      <span>{label}</span>
-      <input
-        {...inputProps}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-11 w-full rounded-2xl border border-border bg-background px-3 text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-      />
-    </label>
-  );
-}
-
-function SelectField(props: {
-  label: string;
-  value: string;
-  options: Array<{ value: string; label: string }>;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <label className="space-y-2 text-sm font-medium">
-      <span>{props.label}</span>
-      <select
-        value={props.value}
-        onChange={(event) => props.onChange(event.target.value)}
-        className="h-11 w-full rounded-2xl border border-border bg-background px-3 text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-      >
-        {props.options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
