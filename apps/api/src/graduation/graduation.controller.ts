@@ -1,17 +1,8 @@
-import {
-  Body,
-  Controller,
-  ForbiddenException,
-  Get,
-  Inject,
-  Param,
-  Post,
-  Query,
-} from "@nestjs/common";
+import { Body, Controller, Get, Inject, Param, Post, Query } from "@nestjs/common";
 import { ApiOkResponse, ApiQuery, ApiTags } from "@nestjs/swagger";
 import type { EligibilityType } from "@tatamiq/contracts";
-import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
-import type { auth } from "../auth";
+import { OrgRoles, Session } from "@thallesp/nestjs-better-auth";
+import { activeOrganizationId, type SessionWithUser } from "../active-organization";
 import {
   type CreatePromotionDto,
   type DismissEligibilityDto,
@@ -21,11 +12,6 @@ import {
   PromotionDto,
 } from "./graduation.dto";
 import { GraduationService } from "./graduation.service";
-
-type SessionWithOrganization = UserSession<typeof auth> & {
-  session: { activeOrganizationId?: string | null };
-  user: { id: string };
-};
 
 @ApiTags("graduation")
 @OrgRoles(["owner"])
@@ -38,7 +24,7 @@ export class GraduationController {
   createPromotion(
     @Param("id") studentId: string,
     @Body() body: CreatePromotionDto,
-    @Session() session: SessionWithOrganization,
+    @Session() session: SessionWithUser,
   ): Promise<PromotionDto> {
     return this.graduationService.createPromotion(
       activeOrganizationId(session),
@@ -52,7 +38,7 @@ export class GraduationController {
   @ApiOkResponse({ type: ListPromotionsResponseDto })
   listPromotions(
     @Param("id") studentId: string,
-    @Session() session: SessionWithOrganization,
+    @Session() session: SessionWithUser,
   ): Promise<ListPromotionsResponseDto> {
     return this.graduationService.listPromotions(activeOrganizationId(session), studentId);
   }
@@ -61,7 +47,7 @@ export class GraduationController {
   @ApiQuery({ name: "type", required: false, enum: ["degree", "belt", "transition"] })
   @ApiOkResponse({ type: ListEligibleStudentsResponseDto })
   listEligible(
-    @Session() session: SessionWithOrganization,
+    @Session() session: SessionWithUser,
     @Query("type") type?: EligibilityType,
   ): Promise<ListEligibleStudentsResponseDto> {
     return this.graduationService.listEligibleStudents(activeOrganizationId(session), type);
@@ -69,7 +55,7 @@ export class GraduationController {
 
   @Get("graduation/summary")
   @ApiOkResponse({ type: GraduationSummaryResponseDto })
-  summary(@Session() session: SessionWithOrganization): Promise<GraduationSummaryResponseDto> {
+  summary(@Session() session: SessionWithUser): Promise<GraduationSummaryResponseDto> {
     return this.graduationService.summary(activeOrganizationId(session));
   }
 
@@ -77,7 +63,7 @@ export class GraduationController {
   dismissEligibility(
     @Param("id") studentId: string,
     @Body() body: DismissEligibilityDto,
-    @Session() session: SessionWithOrganization,
+    @Session() session: SessionWithUser,
   ): Promise<void> {
     return this.graduationService.dismissEligibility(
       activeOrganizationId(session),
@@ -85,12 +71,4 @@ export class GraduationController {
       body,
     );
   }
-}
-
-function activeOrganizationId(session: SessionWithOrganization): string {
-  const organizationId = session.session.activeOrganizationId;
-  if (!organizationId) {
-    throw new ForbiddenException("Sessao sem academia ativa.");
-  }
-  return organizationId;
 }

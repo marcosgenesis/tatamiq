@@ -1,10 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { GraduationScrollIcon } from "hugeicons-react";
-import { type FormEvent, type InputHTMLAttributes, useState } from "react";
-import { api } from "../../api";
+import { type FormEvent, useState } from "react";
+import { Field, SelectField } from "../../components/form-field";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "../../components/ui/drawer";
+import { useBelts } from "../../hooks/use-belts";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3100";
 
@@ -87,15 +97,7 @@ export function GraduationPage() {
     },
   });
 
-  const beltsQuery = useQuery({
-    queryKey: ["belts"],
-    queryFn: async () => {
-      const { data, error } = await api.GET("/belts");
-      if (error) throw new Error("Erro ao carregar faixas.");
-      return data as { belts: Belt[] };
-    },
-    enabled: promoteStudent !== null,
-  });
+  const beltsQuery = useBelts({ enabled: promoteStudent !== null });
 
   const promoteMutation = useMutation({
     mutationFn: async ({
@@ -245,93 +247,107 @@ export function GraduationPage() {
         />
       </div>
 
-      {/* Promote dialog */}
-      {promoteStudent ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Promover {promoteStudent.name}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form className="space-y-6" onSubmit={submitPromote}>
-              <div className="grid gap-4 md:grid-cols-2">
-                <SelectField
-                  label="Nova faixa"
-                  value={promoteForm.newBeltId}
-                  onChange={(v) => setPromoteForm((f) => ({ ...f, newBeltId: v }))}
-                  options={[
-                    { value: "", label: "Selecione uma faixa" },
-                    ...(beltsQuery.data?.belts ?? []).map((b) => ({
-                      value: b.id,
-                      label: b.name,
-                    })),
-                  ]}
-                />
-                <Field
-                  label="Novo grau"
-                  type="number"
-                  min="0"
-                  value={promoteForm.newDegree}
-                  onChange={(v) => setPromoteForm((f) => ({ ...f, newDegree: v }))}
-                />
-                <Field
-                  label="Data da promoção"
-                  type="date"
-                  value={promoteForm.promotedAt}
-                  onChange={(v) => setPromoteForm((f) => ({ ...f, promotedAt: v }))}
-                />
-                <Field
-                  label="Observação (opcional)"
-                  value={promoteForm.note}
-                  onChange={(v) => setPromoteForm((f) => ({ ...f, note: v }))}
-                />
-              </div>
-              <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-                <Button type="button" variant="secondary" onClick={closePromote}>
+      <Drawer
+        direction="right"
+        open={promoteStudent !== null}
+        onOpenChange={(open: boolean) => {
+          if (!open) closePromote();
+        }}
+      >
+        <DrawerContent>
+          <form className="flex h-full flex-col" onSubmit={submitPromote}>
+            <DrawerHeader>
+              <DrawerTitle>Promover {promoteStudent?.name}</DrawerTitle>
+              <DrawerDescription>
+                Selecione a nova faixa, grau e data da promoção.
+              </DrawerDescription>
+            </DrawerHeader>
+            <div className="no-scrollbar flex-1 space-y-4 overflow-y-auto px-4">
+              <SelectField
+                label="Nova faixa"
+                value={promoteForm.newBeltId}
+                onChange={(v) => setPromoteForm((f) => ({ ...f, newBeltId: v }))}
+                options={[
+                  { value: "", label: "Selecione uma faixa" },
+                  ...(beltsQuery.data?.belts ?? []).map((b) => ({
+                    value: b.id,
+                    label: b.name,
+                  })),
+                ]}
+              />
+              <Field
+                label="Novo grau"
+                type="number"
+                min="0"
+                value={promoteForm.newDegree}
+                onChange={(v) => setPromoteForm((f) => ({ ...f, newDegree: v }))}
+              />
+              <Field
+                label="Data da promoção"
+                type="date"
+                value={promoteForm.promotedAt}
+                onChange={(v) => setPromoteForm((f) => ({ ...f, promotedAt: v }))}
+              />
+              <Field
+                label="Observação (opcional)"
+                value={promoteForm.note}
+                onChange={(v) => setPromoteForm((f) => ({ ...f, note: v }))}
+              />
+            </div>
+            <DrawerFooter>
+              <DrawerClose asChild>
+                <Button type="button" variant="secondary">
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={promoteMutation.isPending}>
-                  {promoteMutation.isPending ? "Promovendo..." : "Confirmar promoção"}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      ) : null}
+              </DrawerClose>
+              <Button type="submit" disabled={promoteMutation.isPending}>
+                {promoteMutation.isPending ? "Promovendo..." : "Confirmar promoção"}
+              </Button>
+            </DrawerFooter>
+          </form>
+        </DrawerContent>
+      </Drawer>
 
-      {/* Dismiss dialog */}
-      {dismissStudent ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Adiar elegibilidade de {dismissStudent.name}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form className="space-y-6" onSubmit={submitDismiss}>
-              <div className="grid gap-4 md:grid-cols-2">
-                <Field
-                  label="Motivo (opcional)"
-                  value={dismissForm.reason}
-                  onChange={(v) => setDismissForm((f) => ({ ...f, reason: v }))}
-                />
-                <Field
-                  label="Adiar por quantos dias? (opcional)"
-                  type="number"
-                  min="1"
-                  value={dismissForm.days}
-                  onChange={(v) => setDismissForm((f) => ({ ...f, days: v }))}
-                />
-              </div>
-              <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-                <Button type="button" variant="secondary" onClick={closeDismiss}>
+      <Drawer
+        direction="right"
+        open={dismissStudent !== null}
+        onOpenChange={(open: boolean) => {
+          if (!open) closeDismiss();
+        }}
+      >
+        <DrawerContent>
+          <form className="flex h-full flex-col" onSubmit={submitDismiss}>
+            <DrawerHeader>
+              <DrawerTitle>Adiar elegibilidade de {dismissStudent?.name}</DrawerTitle>
+              <DrawerDescription>Informe o motivo e por quantos dias adiar.</DrawerDescription>
+            </DrawerHeader>
+            <div className="no-scrollbar flex-1 space-y-4 overflow-y-auto px-4">
+              <Field
+                label="Motivo (opcional)"
+                value={dismissForm.reason}
+                onChange={(v) => setDismissForm((f) => ({ ...f, reason: v }))}
+              />
+              <Field
+                label="Adiar por quantos dias? (opcional)"
+                type="number"
+                min="1"
+                value={dismissForm.days}
+                onChange={(v) => setDismissForm((f) => ({ ...f, days: v }))}
+              />
+            </div>
+            <DrawerFooter>
+              <DrawerClose asChild>
+                <Button type="button" variant="secondary">
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={dismissMutation.isPending}>
-                  {dismissMutation.isPending ? "Adiando..." : "Confirmar"}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      ) : null}
+              </DrawerClose>
+              <Button type="submit" disabled={dismissMutation.isPending}>
+                {dismissMutation.isPending ? "Adiando..." : "Confirmar"}
+              </Button>
+            </DrawerFooter>
+          </form>
+        </DrawerContent>
+      </Drawer>
 
       {/* Students table */}
       <Card>
@@ -452,48 +468,5 @@ function StudentRow(props: {
         </Button>
       </div>
     </div>
-  );
-}
-
-function Field(
-  props: Omit<InputHTMLAttributes<HTMLInputElement>, "onChange"> & {
-    label: string;
-    onChange: (value: string) => void;
-  },
-) {
-  const { label, onChange, ...inputProps } = props;
-  return (
-    <label className="space-y-2 text-sm font-medium">
-      <span>{label}</span>
-      <input
-        {...inputProps}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-11 w-full rounded-2xl border border-border bg-background px-3 text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-      />
-    </label>
-  );
-}
-
-function SelectField(props: {
-  label: string;
-  value: string;
-  options: Array<{ value: string; label: string }>;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <label className="space-y-2 text-sm font-medium">
-      <span>{props.label}</span>
-      <select
-        value={props.value}
-        onChange={(event) => props.onChange(event.target.value)}
-        className="h-11 w-full rounded-2xl border border-border bg-background px-3 text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-      >
-        {props.options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </label>
   );
 }

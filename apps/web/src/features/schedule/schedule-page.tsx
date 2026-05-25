@@ -8,6 +8,15 @@ import { api } from "../../api";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "../../components/ui/drawer";
 import { formatAttendanceSummary } from "../classes/attendance-summary";
 
 const weekdays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
@@ -128,17 +137,24 @@ export function SchedulePage() {
         </div>
       </section>
 
-      {isFormOpen ? (
-        <AdHocForm
-          classGroups={classGroupsQuery.data ?? []}
-          error={error}
-          form={form}
-          isSaving={createAdHocMutation.isPending}
-          setForm={setForm}
-          onCancel={() => setIsFormOpen(false)}
-          onSubmit={submitAdHoc}
-        />
-      ) : null}
+      <Drawer
+        direction="right"
+        open={isFormOpen}
+        onOpenChange={(open: boolean) => {
+          if (!open) setIsFormOpen(false);
+        }}
+      >
+        <DrawerContent>
+          <AdHocForm
+            classGroups={classGroupsQuery.data ?? []}
+            error={error}
+            form={form}
+            isSaving={createAdHocMutation.isPending}
+            setForm={setForm}
+            onSubmit={submitAdHoc}
+          />
+        </DrawerContent>
+      </Drawer>
 
       <Card>
         <CardHeader>
@@ -287,82 +303,80 @@ function AdHocForm(props: {
   form: AdHocFormState;
   isSaving: boolean;
   setForm: React.Dispatch<React.SetStateAction<AdHocFormState>>;
-  onCancel: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Nova aula avulsa</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form className="space-y-4" onSubmit={props.onSubmit}>
-          <div className="grid gap-4 md:grid-cols-3">
-            <label className="space-y-2 text-sm font-medium">
-              <span>Turma</span>
-              <select
-                value={props.form.classGroupId}
-                onChange={(event) =>
-                  props.setForm((current) => ({ ...current, classGroupId: event.target.value }))
-                }
-                className="h-11 w-full rounded-2xl border border-border bg-background px-3 text-foreground"
-              >
-                {props.classGroups.map((classGroup) => (
-                  <option key={classGroup.id} value={classGroup.id}>
-                    {classGroup.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="space-y-2 text-sm font-medium">
-              <span>Data e hora</span>
-              <input
-                type="datetime-local"
-                value={props.form.scheduledStartAt}
-                onChange={(event) =>
-                  props.setForm((current) => ({ ...current, scheduledStartAt: event.target.value }))
-                }
-                className="h-11 w-full rounded-2xl border border-border bg-background px-3 text-foreground"
-              />
-            </label>
-            <label className="space-y-2 text-sm font-medium">
-              <span>Duração (min)</span>
-              <input
-                type="number"
-                min="15"
-                max="300"
-                value={props.form.durationMinutes}
-                onChange={(event) =>
-                  props.setForm((current) => ({ ...current, durationMinutes: event.target.value }))
-                }
-                className="h-11 w-full rounded-2xl border border-border bg-background px-3 text-foreground"
-              />
-            </label>
-          </div>
-          {props.error ? <p className="text-sm text-destructive">{props.error}</p> : null}
-          <div className="flex flex-wrap justify-end gap-2">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() =>
-                props.setForm((current) => ({
-                  ...current,
-                  scheduledStartAt: toDatetimeLocal(new Date()),
-                }))
-              }
-            >
-              Usar agora
-            </Button>
-            <Button type="button" variant="secondary" onClick={props.onCancel}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={props.isSaving || props.classGroups.length === 0}>
-              {props.isSaving ? "Salvando..." : "Salvar aula"}
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+    <form className="flex h-full flex-col" onSubmit={props.onSubmit}>
+      <DrawerHeader>
+        <DrawerTitle>Nova aula avulsa</DrawerTitle>
+        <DrawerDescription>Selecione a turma, data e duração da aula.</DrawerDescription>
+      </DrawerHeader>
+      <div className="no-scrollbar flex-1 space-y-4 overflow-y-auto px-4">
+        <label className="space-y-2 text-sm font-medium">
+          <span>Turma</span>
+          <select
+            value={props.form.classGroupId}
+            onChange={(event) =>
+              props.setForm((current) => ({ ...current, classGroupId: event.target.value }))
+            }
+            className="h-11 w-full rounded-2xl border border-border bg-background px-3 text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+          >
+            {props.classGroups.map((classGroup) => (
+              <option key={classGroup.id} value={classGroup.id}>
+                {classGroup.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="space-y-2 text-sm font-medium">
+          <span>Data e hora</span>
+          <input
+            type="datetime-local"
+            value={props.form.scheduledStartAt}
+            onChange={(event) =>
+              props.setForm((current) => ({ ...current, scheduledStartAt: event.target.value }))
+            }
+            className="h-11 w-full rounded-2xl border border-border bg-background px-3 text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+          />
+        </label>
+        <label className="space-y-2 text-sm font-medium">
+          <span>Duração (min)</span>
+          <input
+            type="number"
+            min="15"
+            max="300"
+            value={props.form.durationMinutes}
+            onChange={(event) =>
+              props.setForm((current) => ({ ...current, durationMinutes: event.target.value }))
+            }
+            className="h-11 w-full rounded-2xl border border-border bg-background px-3 text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+          />
+        </label>
+        {props.error ? <p className="text-sm text-destructive">{props.error}</p> : null}
+      </div>
+      <DrawerFooter>
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() =>
+            props.setForm((current) => ({
+              ...current,
+              scheduledStartAt: toDatetimeLocal(new Date()),
+            }))
+          }
+        >
+          Usar agora
+        </Button>
+        <DrawerClose asChild>
+          <Button type="button" variant="secondary">
+            Cancelar
+          </Button>
+        </DrawerClose>
+        <Button type="submit" disabled={props.isSaving || props.classGroups.length === 0}>
+          {props.isSaving ? "Salvando..." : "Salvar aula"}
+        </Button>
+      </DrawerFooter>
+    </form>
   );
 }
 

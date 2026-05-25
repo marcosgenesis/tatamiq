@@ -16,6 +16,7 @@ import {
   students,
 } from "@tatamiq/database";
 import { and, eq, isNull } from "drizzle-orm";
+import { parseClassStatus } from "../class-status";
 import { verifyQrToken } from "../classes/qr-token";
 import { DATABASE } from "../database/database.module";
 
@@ -191,10 +192,4 @@ function toClassSessionDto(row: {
     durationMinutes: row.durationMinutes,
     endedAt: row.endedAt?.toISOString() ?? null,
   };
-}
-
-function parseClassStatus(status: string): "scheduled" | "active" | "ended" | "cancelled" {
-  if (status === "scheduled" || status === "active" || status === "ended" || status === "cancelled")
-    return status;
-  return "scheduled";
 }
