@@ -216,11 +216,15 @@ export const useFileUpload = (
         if (error) {
           errors.push(error);
         } else {
-          validFiles.push({
+          const preview = createPreview(file);
+          const entry: FileWithPreview = {
             file,
             id: generateUniqueId(file),
-            preview: createPreview(file),
-          });
+          };
+          if (preview !== undefined) {
+            entry.preview = preview;
+          }
+          validFiles.push(entry);
         }
       }
 
@@ -334,7 +338,7 @@ export const useFileUpload = (
       if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
         // In single file mode, only use the first file
         if (!multiple) {
-          const file = e.dataTransfer.files[0];
+          const file = e.dataTransfer.files[0]!;
           addFiles([file]);
         } else {
           addFiles(e.dataTransfer.files);
@@ -401,5 +405,5 @@ export const formatBytes = (bytes: number, decimals = 2): string => {
 
   const i = Math.floor(Math.log(bytes) / Math.log(k));
 
-  return Number.parseFloat((bytes / k ** i).toFixed(dm)) + sizes[i];
+  return `${Number.parseFloat((bytes / k ** i).toFixed(dm))}${sizes[i] ?? "Bytes"}`;
 };
