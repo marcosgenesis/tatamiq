@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { BeltDto } from "@tatamiq/contracts";
 import { AlertCircleIcon, Cancel01Icon, UserIcon } from "hugeicons-react";
 import { type FormEvent, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { api } from "../../api";
 import { useAppShell } from "../../components/app-shell";
 import { Alert, AlertDescription, AlertTitle } from "../../components/reui/alert";
@@ -169,8 +170,6 @@ export function SettingsPage() {
   const queryClient = useQueryClient();
   const { onRefreshAcademies } = useAppShell();
   const [form, setForm] = useState<SettingsFormState>(emptyForm);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
   const academyQuery = useQuery({
@@ -225,14 +224,11 @@ export function SettingsPage() {
       return data;
     },
     onSuccess: async () => {
-      setSuccess("Configurações salvas com sucesso.");
-      setError(null);
+      toast.success("Configurações salvas com sucesso.");
       await queryClient.invalidateQueries({ queryKey: ["academy"] });
-      setTimeout(() => setSuccess(null), 3000);
     },
     onError: (err) => {
-      setError(err instanceof Error ? err.message : "Erro ao salvar configurações.");
-      setSuccess(null);
+      toast.error(err instanceof Error ? err.message : "Erro ao salvar configurações.");
     },
   });
 
@@ -242,8 +238,6 @@ export function SettingsPage() {
 
   function submitForm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError(null);
-    setSuccess(null);
 
     const payload: Record<string, unknown> = {
       name: form.name,
@@ -271,7 +265,6 @@ export function SettingsPage() {
 
   async function handleLogoUpload(file: File) {
     setIsUploading(true);
-    setError(null);
     try {
       // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
       const { data: uploadData, error: uploadError } = await (api.POST as any)(
@@ -300,10 +293,9 @@ export function SettingsPage() {
 
       await queryClient.invalidateQueries({ queryKey: ["academy"] });
       onRefreshAcademies();
-      setSuccess("Logo atualizado com sucesso.");
-      setTimeout(() => setSuccess(null), 3000);
+      toast.success("Logo atualizado com sucesso.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao enviar logo.");
+      toast.error(err instanceof Error ? err.message : "Erro ao enviar logo.");
     } finally {
       setIsUploading(false);
     }
@@ -495,9 +487,6 @@ export function SettingsPage() {
 
         <Separator className="my-8" />
 
-        {error && <p className="mb-4 text-sm text-destructive">{error}</p>}
-        {success && <p className="mb-4 text-sm text-green-600">{success}</p>}
-
         <div className="flex items-center justify-end gap-4">
           <Button type="submit" disabled={saveMutation.isPending}>
             {saveMutation.isPending ? "Salvando..." : "Salvar configurações"}
@@ -516,7 +505,6 @@ function BeltRulesSection() {
   const queryClient = useQueryClient();
   const [editingBelts, setEditingBelts] = useState<Record<string, Partial<BeltRuleFields>>>({});
   const [savingBeltId, setSavingBeltId] = useState<string | null>(null);
-  const [beltSuccess, setBeltSuccess] = useState<string | null>(null);
 
   const beltsQuery = useBelts();
 
@@ -537,8 +525,7 @@ function BeltRulesSection() {
         delete next[variables.id];
         return next;
       });
-      setBeltSuccess("Regras salvas com sucesso.");
-      setTimeout(() => setBeltSuccess(null), 3000);
+      toast.success("Regras salvas com sucesso.");
     },
     onSettled: () => setSavingBeltId(null),
   });
@@ -653,7 +640,6 @@ function BeltRulesSection() {
         </p>
       </div>
       <div className="sm:max-w-3xl md:col-span-2 space-y-6">
-        {beltSuccess && <p className="text-sm text-green-600">{beltSuccess}</p>}
         {renderBeltGroup(adultBelts, "Adulto")}
         {renderBeltGroup(childBelts, "Infantil")}
       </div>
