@@ -239,7 +239,7 @@ export class BeltsService {
   }
 }
 
-function toBeltDto(row: typeof belts.$inferSelect) {
+export function toBeltDto(row: typeof belts.$inferSelect) {
   return {
     id: row.id,
     name: row.name,

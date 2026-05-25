@@ -9,37 +9,18 @@ import {
   monthlyFees,
   students,
 } from "@tatamiq/database";
-import { and, desc, eq, gte, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
+import type { ImportPreviewStore, ParsedStudentRow } from "./import-preview-store";
 
 const BOM = "﻿";
 
-type ImportPreviewData = {
-  organizationId: string;
-  rows: ParsedStudentRow[];
-};
-
-type ParsedStudentRow = {
-  line: number;
-  name: string;
-  birthDate: string;
-  enrollmentDate: string;
-  status: string;
-  email: string;
-  phone: string;
-  beltName: string;
-  degree: number;
-  monthlyAmount: number | null;
-  monthlyDueDay: number | null;
-  errors: string[];
-  warnings: string[];
-};
-
-const importPreviews = new Map<string, ImportPreviewData>();
-
 @Injectable()
 export class CsvService {
-  constructor(@Inject(DATABASE) private readonly db: Database) {}
+  constructor(
+    @Inject(DATABASE) private readonly db: Database,
+    private readonly previewStore: ImportPreviewStore,
+  ) {}
 
   async previewImport(
     organizationId: string,
@@ -130,9 +111,7 @@ export class CsvService {
     }
 
     const previewToken = crypto.randomUUID();
-    importPreviews.set(previewToken, { organizationId, rows });
-
-    setTimeout(() => importPreviews.delete(previewToken), 30 * 60 * 1000);
+    this.previewStore.save(previewToken, { organizationId, rows });
 
     return {
       totalLines: rows.length,
@@ -152,12 +131,12 @@ export class CsvService {
     organizationId: string,
     previewToken: string,
   ): Promise<CsvImportConfirmResponse> {
-    const preview = importPreviews.get(previewToken);
+    const preview = this.previewStore.get(previewToken);
     if (!preview || preview.organizationId !== organizationId) {
       throw new NotFoundException("Preview não encontrado ou expirado.");
     }
 
-    importPreviews.delete(previewToken);
+    this.previewStore.delete(previewToken);
 
     const academyBelts = await this.db
       .select()

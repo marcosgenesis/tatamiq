@@ -6,11 +6,12 @@ import { StudentNotesModule } from "../student-notes/student-notes.module";
 import { QrAttendanceService } from "./qr-attendance.service";
 import { StudentAccessController } from "./student-access.controller";
 import { StudentAccessService } from "./student-access.service";
+import { StudentPortalController } from "./student-portal.controller";
 import { StudentPortalService } from "./student-portal.service";
 
 @Module({
   imports: [DatabaseModule, MonthlyFeesModule, StudentNotesModule, GraduationModule],
-  controllers: [StudentAccessController],
+  controllers: [StudentAccessController, StudentPortalController],
   providers: [StudentAccessService, QrAttendanceService, StudentPortalService],
   exports: [StudentAccessService],
 })
