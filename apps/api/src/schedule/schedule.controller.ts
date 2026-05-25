@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   Inject,
@@ -69,6 +70,16 @@ export class ScheduleController {
     @Param("id") id: string,
   ): Promise<ScheduleOccurrenceDto> {
     return this.scheduleService.cancelAdHoc(activeOrganizationId(session), session.user.id, id);
+  }
+
+  @Delete("ad-hoc-classes/:id")
+  @HttpCode(204)
+  @ApiParam({ name: "id" })
+  async deleteAdHoc(
+    @Session() session: SessionWithOrganization,
+    @Param("id") id: string,
+  ): Promise<void> {
+    await this.scheduleService.deleteAdHoc(activeOrganizationId(session), id);
   }
 
   @Post("ad-hoc-classes/:id/reactivate")
