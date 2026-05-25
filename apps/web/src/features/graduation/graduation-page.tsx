@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { GraduationScrollIcon } from "hugeicons-react";
-import { type FormEvent, type InputHTMLAttributes, useState } from "react";
-import { api } from "../../api";
+import { type FormEvent, useState } from "react";
+import { Field, SelectField } from "../../components/form-field";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
@@ -14,6 +14,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "../../components/ui/drawer";
+import { useBelts } from "../../hooks/use-belts";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3100";
 
@@ -96,15 +97,7 @@ export function GraduationPage() {
     },
   });
 
-  const beltsQuery = useQuery({
-    queryKey: ["belts"],
-    queryFn: async () => {
-      const { data, error } = await api.GET("/belts");
-      if (error) throw new Error("Erro ao carregar faixas.");
-      return data as { belts: Belt[] };
-    },
-    enabled: promoteStudent !== null,
-  });
+  const beltsQuery = useBelts({ enabled: promoteStudent !== null });
 
   const promoteMutation = useMutation({
     mutationFn: async ({
@@ -257,7 +250,7 @@ export function GraduationPage() {
       <Drawer
         direction="right"
         open={promoteStudent !== null}
-        onOpenChange={(open) => {
+        onOpenChange={(open: boolean) => {
           if (!open) closePromote();
         }}
       >
@@ -318,7 +311,7 @@ export function GraduationPage() {
       <Drawer
         direction="right"
         open={dismissStudent !== null}
-        onOpenChange={(open) => {
+        onOpenChange={(open: boolean) => {
           if (!open) closeDismiss();
         }}
       >
@@ -475,48 +468,5 @@ function StudentRow(props: {
         </Button>
       </div>
     </div>
-  );
-}
-
-function Field(
-  props: Omit<InputHTMLAttributes<HTMLInputElement>, "onChange"> & {
-    label: string;
-    onChange: (value: string) => void;
-  },
-) {
-  const { label, onChange, ...inputProps } = props;
-  return (
-    <label className="space-y-2 text-sm font-medium">
-      <span>{label}</span>
-      <input
-        {...inputProps}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-11 w-full rounded-2xl border border-border bg-background px-3 text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-      />
-    </label>
-  );
-}
-
-function SelectField(props: {
-  label: string;
-  value: string;
-  options: Array<{ value: string; label: string }>;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <label className="space-y-2 text-sm font-medium">
-      <span>{props.label}</span>
-      <select
-        value={props.value}
-        onChange={(event) => props.onChange(event.target.value)}
-        className="h-11 w-full rounded-2xl border border-border bg-background px-3 text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-      >
-        {props.options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </label>
   );
 }

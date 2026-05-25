@@ -29,6 +29,7 @@ import {
   students,
 } from "@tatamiq/database";
 import { and, eq, gte, inArray, isNull, lt } from "drizzle-orm";
+import { parseClassStatus } from "../class-status";
 import { DATABASE } from "../database/database.module";
 import {
   invitePreviewStatus,
@@ -565,12 +566,6 @@ function webAppUrl(): string {
 
 function weekdayForDate(date: string): number {
   return new Date(`${date}T00:00:00.000Z`).getUTCDay();
-}
-
-function parseClassStatus(status: string): "scheduled" | "active" | "ended" | "cancelled" {
-  if (status === "scheduled" || status === "active" || status === "ended" || status === "cancelled")
-    return status;
-  return "scheduled";
 }
 
 function parsePixKeyType(value: string | null): "cpf" | "email" | "phone" | "random" | null {

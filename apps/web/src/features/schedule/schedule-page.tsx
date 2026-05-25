@@ -140,7 +140,7 @@ export function SchedulePage() {
       <Drawer
         direction="right"
         open={isFormOpen}
-        onOpenChange={(open) => {
+        onOpenChange={(open: boolean) => {
           if (!open) setIsFormOpen(false);
         }}
       >

@@ -228,7 +228,7 @@ export function ClassGroupsPage() {
       <Drawer
         direction="right"
         open={isFormOpen}
-        onOpenChange={(open) => {
+        onOpenChange={(open: boolean) => {
           if (!open) closeForm();
         }}
       >
