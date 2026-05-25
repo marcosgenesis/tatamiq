@@ -84,6 +84,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/belts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["BeltsController_update"];
+        trace?: never;
+    };
     "/belts/seed": {
         parameters: {
             query?: never;
@@ -269,7 +285,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["StudentAccessController_confirmQrAttendance"];
+        post: operations["StudentPortalController_confirmQrAttendance"];
         delete?: never;
         options?: never;
         head?: never;
@@ -283,7 +299,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["StudentAccessController_me"];
+        get: operations["StudentPortalController_me"];
         put?: never;
         post?: never;
         delete?: never;
@@ -299,7 +315,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["StudentAccessController_studentMonthlyFees"];
+        get: operations["StudentPortalController_studentMonthlyFees"];
         put?: never;
         post?: never;
         delete?: never;
@@ -315,9 +331,105 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["StudentAccessController_studentNotes"];
+        get: operations["StudentPortalController_studentNotes"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/student/schedule": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["StudentPortalController_studentSchedule"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/student/attendances": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["StudentPortalController_studentAttendances"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/student/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["StudentPortalController_updateStudentProfile"];
+        trace?: never;
+    };
+    "/student/graduation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["StudentPortalController_studentGraduation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/student/indicators": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["StudentPortalController_studentIndicators"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/student/indicators/mark-seen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["StudentPortalController_markSeen"];
         delete?: never;
         options?: never;
         head?: never;
@@ -516,6 +628,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/students/{id}/promotions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GraduationController_listPromotions"];
+        put?: never;
+        post: operations["GraduationController_createPromotion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/graduation/eligible": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GraduationController_listEligible"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/graduation/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GraduationController_summary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/students/{id}/dismiss-eligibility": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["GraduationController_dismissEligibility"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/class-groups": {
         parameters: {
             query?: never;
@@ -623,6 +799,22 @@ export interface paths {
         put?: never;
         post: operations["ScheduleController_createAdHoc"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schedule/ad-hoc-classes/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["ScheduleController_deleteAdHoc"];
         options?: never;
         head?: never;
         patch?: never;
@@ -820,6 +1012,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/students/import-csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["CsvController_importPreview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/students/import-csv/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["CsvController_importConfirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/students/export.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CsvController_exportStudents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attendances/export.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CsvController_exportAttendances"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/monthly-fees/export.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CsvController_exportMonthlyFees"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -872,6 +1144,19 @@ export interface components {
                 minMonthsForNextBelt: number;
                 minAttendancesForNextBelt: number;
             }[];
+        };
+        BeltDto: {
+            id: string;
+            name: string;
+            slug: string;
+            /** @enum {string} */
+            path: "adult" | "child";
+            position: number;
+            maxDegrees: number;
+            minMonthsForNextDegree: number;
+            minAttendancesForNextDegree: number;
+            minMonthsForNextBelt: number;
+            minAttendancesForNextBelt: number;
         };
         ListStudentsResponseDto: {
             students: {
@@ -926,6 +1211,12 @@ export interface components {
                 active: number;
                 inactive: number;
                 total: number;
+            };
+            pagination: {
+                page: number;
+                pageSize: number;
+                total: number;
+                totalPages: number;
             };
         };
         CreateStudentDto: {
@@ -1118,6 +1409,68 @@ export interface components {
                 durationMinutes: number;
             }[];
         };
+        StudentScheduleResponseDto: {
+            days: {
+                date: string;
+                weekday: number;
+                classes: {
+                    id: string;
+                    classGroupId: string;
+                    classGroupName: string;
+                    /** Format: date-time */
+                    scheduledStartAt: string;
+                    durationMinutes: number;
+                    /** @enum {string} */
+                    status: "scheduled" | "cancelled";
+                    /** @enum {string} */
+                    source: "recurring" | "ad_hoc";
+                }[];
+            }[];
+        };
+        StudentAttendancesResponseDto: {
+            attendances: {
+                id: string;
+                classGroupName: string;
+                /** @enum {string} */
+                source: "qr" | "manual";
+                isOutOfGroup: boolean;
+                /** Format: date-time */
+                invalidatedAt: string | null;
+                /** Format: date-time */
+                createdAt: string;
+            }[];
+        };
+        StudentGraduationResponseDto: {
+            currentBelt: {
+                id: string;
+                name: string;
+                /** @enum {string} */
+                path: "adult" | "child";
+                position: number;
+            };
+            currentDegree: number;
+            promotions: {
+                id: string;
+                studentId: string;
+                previousBeltId: string | null;
+                previousBeltName: string | null;
+                previousDegree: number;
+                newBeltId: string;
+                newBeltName: string;
+                newDegree: number;
+                promotedAt: string;
+                promotedByUserId: string;
+                note: string | null;
+                /** Format: date-time */
+                createdAt: string;
+            }[];
+        };
+        StudentIndicatorsResponseDto: {
+            hasNewFees: boolean;
+            hasNewNotes: boolean;
+            hasNewPromotion: boolean;
+            hasCancelledClass: boolean;
+        };
         ListMonthlyFeesResponseDto: {
             fees: {
                 id: string;
@@ -1259,6 +1612,60 @@ export interface components {
         UpdateStudentNoteDto: {
             content?: string;
             isVisible?: boolean;
+        };
+        PromotionDto: {
+            id: string;
+            studentId: string;
+            previousBeltId: string | null;
+            previousBeltName: string | null;
+            previousDegree: number;
+            newBeltId: string;
+            newBeltName: string;
+            newDegree: number;
+            promotedAt: string;
+            promotedByUserId: string;
+            note: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        ListPromotionsResponseDto: {
+            promotions: {
+                id: string;
+                studentId: string;
+                previousBeltId: string | null;
+                previousBeltName: string | null;
+                previousDegree: number;
+                newBeltId: string;
+                newBeltName: string;
+                newDegree: number;
+                promotedAt: string;
+                promotedByUserId: string;
+                note: string | null;
+                /** Format: date-time */
+                createdAt: string;
+            }[];
+        };
+        ListEligibleStudentsResponseDto: {
+            students: {
+                id: string;
+                name: string;
+                currentBeltId: string;
+                currentBeltName: string;
+                /** @enum {string} */
+                currentBeltPath: "adult" | "child";
+                currentDegree: number;
+                /** @enum {string} */
+                eligibilityType: "degree" | "belt" | "transition";
+                monthsSinceReference: number;
+                attendancesSinceReference: number;
+                requiredMonths: number;
+                requiredAttendances: number;
+            }[];
+        };
+        GraduationSummaryResponseDto: {
+            degree: number;
+            belt: number;
+            transition: number;
         };
         ListClassGroupsResponseDto: {
             classGroups: {
@@ -1621,6 +2028,25 @@ export interface operations {
             };
         };
     };
+    BeltsController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BeltDto"];
+                };
+            };
+        };
+    };
     BeltsController_seed: {
         parameters: {
             query?: never;
@@ -1643,6 +2069,8 @@ export interface operations {
     StudentsController_list: {
         parameters: {
             query?: {
+                pageSize?: number;
+                page?: number;
                 status?: "active" | "inactive" | "all";
             };
             header?: never;
@@ -1897,7 +2325,7 @@ export interface operations {
             };
         };
     };
-    StudentAccessController_confirmQrAttendance: {
+    StudentPortalController_confirmQrAttendance: {
         parameters: {
             query?: never;
             header?: never;
@@ -1920,7 +2348,7 @@ export interface operations {
             };
         };
     };
-    StudentAccessController_me: {
+    StudentPortalController_me: {
         parameters: {
             query?: never;
             header?: never;
@@ -1939,7 +2367,7 @@ export interface operations {
             };
         };
     };
-    StudentAccessController_studentMonthlyFees: {
+    StudentPortalController_studentMonthlyFees: {
         parameters: {
             query?: never;
             header?: never;
@@ -1956,7 +2384,117 @@ export interface operations {
             };
         };
     };
-    StudentAccessController_studentNotes: {
+    StudentPortalController_studentNotes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    StudentPortalController_studentSchedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentScheduleResponseDto"];
+                };
+            };
+        };
+    };
+    StudentPortalController_studentAttendances: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentAttendancesResponseDto"];
+                };
+            };
+        };
+    };
+    StudentPortalController_updateStudentProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    StudentPortalController_studentGraduation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentGraduationResponseDto"];
+                };
+            };
+        };
+    };
+    StudentPortalController_studentIndicators: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentIndicatorsResponseDto"];
+                };
+            };
+        };
+    };
+    StudentPortalController_markSeen: {
         parameters: {
             query?: never;
             header?: never;
@@ -2325,6 +2863,101 @@ export interface operations {
             };
         };
     };
+    GraduationController_listPromotions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListPromotionsResponseDto"];
+                };
+            };
+        };
+    };
+    GraduationController_createPromotion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromotionDto"];
+                };
+            };
+        };
+    };
+    GraduationController_listEligible: {
+        parameters: {
+            query?: {
+                type?: "degree" | "belt" | "transition";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListEligibleStudentsResponseDto"];
+                };
+            };
+        };
+    };
+    GraduationController_summary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GraduationSummaryResponseDto"];
+                };
+            };
+        };
+    };
+    GraduationController_dismissEligibility: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     ClassGroupsController_list: {
         parameters: {
             query?: {
@@ -2517,6 +3150,25 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ScheduleOccurrenceDto"];
                 };
+            };
+        };
+    };
+    ScheduleController_deleteAdHoc: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -2801,6 +3453,101 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AttendanceDto"];
                 };
+            };
+        };
+    };
+    CsvController_importPreview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CsvController_importConfirm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CsvController_exportStudents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CsvController_exportAttendances: {
+        parameters: {
+            query?: {
+                studentId?: unknown;
+                classGroupId?: unknown;
+                dateTo?: unknown;
+                dateFrom?: unknown;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CsvController_exportMonthlyFees: {
+        parameters: {
+            query?: {
+                studentId?: unknown;
+                referenceMonth?: unknown;
+                referenceYear?: unknown;
+                status?: unknown;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

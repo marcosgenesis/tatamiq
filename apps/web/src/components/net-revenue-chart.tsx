@@ -84,7 +84,7 @@ export function WeeklyAttendanceChart() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer className="aspect-auto h-60 w-full md:h-80" config={chartConfig}>
+        <ChartContainer className="aspect-auto h-40 w-full md:h-52" config={chartConfig}>
           <BarChart accessibilityLayer data={chartRows}>
             <XAxis
               axisLine={false}

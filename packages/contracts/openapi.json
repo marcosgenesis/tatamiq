@@ -135,6 +135,27 @@
         ]
       }
     },
+    "/belts/{id}": {
+      "patch": {
+        "operationId": "BeltsController_update",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BeltDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "belts"
+        ]
+      }
+    },
     "/belts/seed": {
       "post": {
         "operationId": "BeltsController_seed",
@@ -160,6 +181,22 @@
       "get": {
         "operationId": "StudentsController_list",
         "parameters": [
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
           {
             "name": "status",
             "required": false,
@@ -505,7 +542,7 @@
     },
     "/student/attendances/qr": {
       "post": {
-        "operationId": "StudentAccessController_confirmQrAttendance",
+        "operationId": "StudentPortalController_confirmQrAttendance",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -530,13 +567,13 @@
           }
         },
         "tags": [
-          "student-access"
+          "student-portal"
         ]
       }
     },
     "/student/me": {
       "get": {
-        "operationId": "StudentAccessController_me",
+        "operationId": "StudentPortalController_me",
         "parameters": [],
         "responses": {
           "200": {
@@ -551,13 +588,13 @@
           }
         },
         "tags": [
-          "student-access"
+          "student-portal"
         ]
       }
     },
     "/student/monthly-fees": {
       "get": {
-        "operationId": "StudentAccessController_studentMonthlyFees",
+        "operationId": "StudentPortalController_studentMonthlyFees",
         "parameters": [],
         "responses": {
           "200": {
@@ -565,13 +602,13 @@
           }
         },
         "tags": [
-          "student-access"
+          "student-portal"
         ]
       }
     },
     "/student/notes": {
       "get": {
-        "operationId": "StudentAccessController_studentNotes",
+        "operationId": "StudentPortalController_studentNotes",
         "parameters": [],
         "responses": {
           "200": {
@@ -579,7 +616,119 @@
           }
         },
         "tags": [
-          "student-access"
+          "student-portal"
+        ]
+      }
+    },
+    "/student/schedule": {
+      "get": {
+        "operationId": "StudentPortalController_studentSchedule",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentScheduleResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "student-portal"
+        ]
+      }
+    },
+    "/student/attendances": {
+      "get": {
+        "operationId": "StudentPortalController_studentAttendances",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentAttendancesResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "student-portal"
+        ]
+      }
+    },
+    "/student/profile": {
+      "patch": {
+        "operationId": "StudentPortalController_updateStudentProfile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "student-portal"
+        ]
+      }
+    },
+    "/student/graduation": {
+      "get": {
+        "operationId": "StudentPortalController_studentGraduation",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentGraduationResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "student-portal"
+        ]
+      }
+    },
+    "/student/indicators": {
+      "get": {
+        "operationId": "StudentPortalController_studentIndicators",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentIndicatorsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "student-portal"
+        ]
+      }
+    },
+    "/student/indicators/mark-seen": {
+      "post": {
+        "operationId": "StudentPortalController_markSeen",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "student-portal"
         ]
       }
     },
@@ -1118,6 +1267,116 @@
         },
         "tags": [
           "student-notes"
+        ]
+      }
+    },
+    "/students/{id}/promotions": {
+      "post": {
+        "operationId": "GraduationController_createPromotion",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromotionDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "graduation"
+        ]
+      },
+      "get": {
+        "operationId": "GraduationController_listPromotions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListPromotionsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "graduation"
+        ]
+      }
+    },
+    "/graduation/eligible": {
+      "get": {
+        "operationId": "GraduationController_listEligible",
+        "parameters": [
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "degree",
+                "belt",
+                "transition"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListEligibleStudentsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "graduation"
+        ]
+      }
+    },
+    "/graduation/summary": {
+      "get": {
+        "operationId": "GraduationController_summary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GraduationSummaryResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "graduation"
+        ]
+      }
+    },
+    "/students/{id}/dismiss-eligibility": {
+      "post": {
+        "operationId": "GraduationController_dismissEligibility",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "graduation"
         ]
       }
     },
@@ -1779,6 +2038,126 @@
           "attendances"
         ]
       }
+    },
+    "/students/import-csv": {
+      "post": {
+        "operationId": "CsvController_importPreview",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "csv"
+        ]
+      }
+    },
+    "/students/import-csv/confirm": {
+      "post": {
+        "operationId": "CsvController_importConfirm",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "csv"
+        ]
+      }
+    },
+    "/students/export.csv": {
+      "get": {
+        "operationId": "CsvController_exportStudents",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "csv"
+        ]
+      }
+    },
+    "/attendances/export.csv": {
+      "get": {
+        "operationId": "CsvController_exportAttendances",
+        "parameters": [
+          {
+            "name": "studentId",
+            "required": false,
+            "in": "query",
+            "schema": {}
+          },
+          {
+            "name": "classGroupId",
+            "required": false,
+            "in": "query",
+            "schema": {}
+          },
+          {
+            "name": "dateTo",
+            "required": false,
+            "in": "query",
+            "schema": {}
+          },
+          {
+            "name": "dateFrom",
+            "required": false,
+            "in": "query",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "csv"
+        ]
+      }
+    },
+    "/monthly-fees/export.csv": {
+      "get": {
+        "operationId": "CsvController_exportMonthlyFees",
+        "parameters": [
+          {
+            "name": "studentId",
+            "required": false,
+            "in": "query",
+            "schema": {}
+          },
+          {
+            "name": "referenceMonth",
+            "required": false,
+            "in": "query",
+            "schema": {}
+          },
+          {
+            "name": "referenceYear",
+            "required": false,
+            "in": "query",
+            "schema": {}
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "csv"
+        ]
+      }
     }
   },
   "info": {
@@ -2047,6 +2426,69 @@
           "belts"
         ]
       },
+      "BeltDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string",
+            "enum": [
+              "adult",
+              "child"
+            ]
+          },
+          "position": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "maxDegrees": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "minMonthsForNextDegree": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "minAttendancesForNextDegree": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "minMonthsForNextBelt": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "minAttendancesForNextBelt": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "path",
+          "position",
+          "maxDegrees",
+          "minMonthsForNextDegree",
+          "minAttendancesForNextDegree",
+          "minMonthsForNextBelt",
+          "minAttendancesForNextBelt"
+        ]
+      },
       "ListStudentsResponseDto": {
         "type": "object",
         "properties": {
@@ -2293,11 +2735,44 @@
               "inactive",
               "total"
             ]
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "page": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "pageSize": {
+                "type": "integer",
+                "exclusiveMinimum": true,
+                "maximum": 9007199254740991,
+                "minimum": 0
+              },
+              "total": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "totalPages": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "page",
+              "pageSize",
+              "total",
+              "totalPages"
+            ]
           }
         },
         "required": [
           "students",
-          "summary"
+          "summary",
+          "pagination"
         ]
       },
       "CreateStudentDto": {
@@ -3195,6 +3670,271 @@
           "upcomingClasses"
         ]
       },
+      "StudentScheduleResponseDto": {
+        "type": "object",
+        "properties": {
+          "days": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "date": {
+                  "type": "string"
+                },
+                "weekday": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 6
+                },
+                "classes": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "classGroupId": {
+                        "type": "string"
+                      },
+                      "classGroupName": {
+                        "type": "string"
+                      },
+                      "scheduledStartAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                      },
+                      "durationMinutes": {
+                        "type": "integer",
+                        "exclusiveMinimum": true,
+                        "maximum": 9007199254740991,
+                        "minimum": 0
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "scheduled",
+                          "cancelled"
+                        ]
+                      },
+                      "source": {
+                        "type": "string",
+                        "enum": [
+                          "recurring",
+                          "ad_hoc"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "classGroupId",
+                      "classGroupName",
+                      "scheduledStartAt",
+                      "durationMinutes",
+                      "status",
+                      "source"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "date",
+                "weekday",
+                "classes"
+              ]
+            }
+          }
+        },
+        "required": [
+          "days"
+        ]
+      },
+      "StudentAttendancesResponseDto": {
+        "type": "object",
+        "properties": {
+          "attendances": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "classGroupName": {
+                  "type": "string"
+                },
+                "source": {
+                  "type": "string",
+                  "enum": [
+                    "qr",
+                    "manual"
+                  ]
+                },
+                "isOutOfGroup": {
+                  "type": "boolean"
+                },
+                "invalidatedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+                  "nullable": true
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                }
+              },
+              "required": [
+                "id",
+                "classGroupName",
+                "source",
+                "isOutOfGroup",
+                "invalidatedAt",
+                "createdAt"
+              ]
+            }
+          }
+        },
+        "required": [
+          "attendances"
+        ]
+      },
+      "StudentGraduationResponseDto": {
+        "type": "object",
+        "properties": {
+          "currentBelt": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string",
+                "enum": [
+                  "adult",
+                  "child"
+                ]
+              },
+              "position": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "path",
+              "position"
+            ]
+          },
+          "currentDegree": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "promotions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "studentId": {
+                  "type": "string"
+                },
+                "previousBeltId": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "previousBeltName": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "previousDegree": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "newBeltId": {
+                  "type": "string"
+                },
+                "newBeltName": {
+                  "type": "string"
+                },
+                "newDegree": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "promotedAt": {
+                  "type": "string"
+                },
+                "promotedByUserId": {
+                  "type": "string"
+                },
+                "note": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                }
+              },
+              "required": [
+                "id",
+                "studentId",
+                "previousBeltId",
+                "previousBeltName",
+                "previousDegree",
+                "newBeltId",
+                "newBeltName",
+                "newDegree",
+                "promotedAt",
+                "promotedByUserId",
+                "note",
+                "createdAt"
+              ]
+            }
+          }
+        },
+        "required": [
+          "currentBelt",
+          "currentDegree",
+          "promotions"
+        ]
+      },
+      "StudentIndicatorsResponseDto": {
+        "type": "object",
+        "properties": {
+          "hasNewFees": {
+            "type": "boolean"
+          },
+          "hasNewNotes": {
+            "type": "boolean"
+          },
+          "hasNewPromotion": {
+            "type": "boolean"
+          },
+          "hasCancelledClass": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "hasNewFees",
+          "hasNewNotes",
+          "hasNewPromotion",
+          "hasCancelledClass"
+        ]
+      },
       "ListMonthlyFeesResponseDto": {
         "type": "object",
         "properties": {
@@ -3793,6 +4533,251 @@
             "type": "boolean"
           }
         }
+      },
+      "PromotionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "studentId": {
+            "type": "string"
+          },
+          "previousBeltId": {
+            "type": "string",
+            "nullable": true
+          },
+          "previousBeltName": {
+            "type": "string",
+            "nullable": true
+          },
+          "previousDegree": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "newBeltId": {
+            "type": "string"
+          },
+          "newBeltName": {
+            "type": "string"
+          },
+          "newDegree": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "promotedAt": {
+            "type": "string"
+          },
+          "promotedByUserId": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "studentId",
+          "previousBeltId",
+          "previousBeltName",
+          "previousDegree",
+          "newBeltId",
+          "newBeltName",
+          "newDegree",
+          "promotedAt",
+          "promotedByUserId",
+          "note",
+          "createdAt"
+        ]
+      },
+      "ListPromotionsResponseDto": {
+        "type": "object",
+        "properties": {
+          "promotions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "studentId": {
+                  "type": "string"
+                },
+                "previousBeltId": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "previousBeltName": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "previousDegree": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "newBeltId": {
+                  "type": "string"
+                },
+                "newBeltName": {
+                  "type": "string"
+                },
+                "newDegree": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "promotedAt": {
+                  "type": "string"
+                },
+                "promotedByUserId": {
+                  "type": "string"
+                },
+                "note": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                }
+              },
+              "required": [
+                "id",
+                "studentId",
+                "previousBeltId",
+                "previousBeltName",
+                "previousDegree",
+                "newBeltId",
+                "newBeltName",
+                "newDegree",
+                "promotedAt",
+                "promotedByUserId",
+                "note",
+                "createdAt"
+              ]
+            }
+          }
+        },
+        "required": [
+          "promotions"
+        ]
+      },
+      "ListEligibleStudentsResponseDto": {
+        "type": "object",
+        "properties": {
+          "students": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "currentBeltId": {
+                  "type": "string"
+                },
+                "currentBeltName": {
+                  "type": "string"
+                },
+                "currentBeltPath": {
+                  "type": "string",
+                  "enum": [
+                    "adult",
+                    "child"
+                  ]
+                },
+                "currentDegree": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "eligibilityType": {
+                  "type": "string",
+                  "enum": [
+                    "degree",
+                    "belt",
+                    "transition"
+                  ]
+                },
+                "monthsSinceReference": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "attendancesSinceReference": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "requiredMonths": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "requiredAttendances": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "currentBeltId",
+                "currentBeltName",
+                "currentBeltPath",
+                "currentDegree",
+                "eligibilityType",
+                "monthsSinceReference",
+                "attendancesSinceReference",
+                "requiredMonths",
+                "requiredAttendances"
+              ]
+            }
+          }
+        },
+        "required": [
+          "students"
+        ]
+      },
+      "GraduationSummaryResponseDto": {
+        "type": "object",
+        "properties": {
+          "degree": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "belt": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "transition": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "degree",
+          "belt",
+          "transition"
+        ]
       },
       "ListClassGroupsResponseDto": {
         "type": "object",

@@ -16,7 +16,8 @@
       "!pnpm-lock.yaml",
       "!packages/contracts/src/generated",
       "!packages/contracts/openapi.json",
-      "!packages/database/drizzle"
+      "!packages/database/drizzle",
+      "!**/components/reui"
     ]
   },
   "formatter": {

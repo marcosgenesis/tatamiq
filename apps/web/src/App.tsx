@@ -12,6 +12,7 @@ import { CheckmarkSquare03Icon } from "hugeicons-react";
 import { useEffect } from "react";
 import { AppShell } from "./components/app-shell";
 import { LogoIcon } from "./components/logo";
+import { Toaster } from "./components/ui/sonner";
 import {
   AcademyOnboardingPage,
   ForgotPasswordPage,
@@ -41,6 +42,7 @@ const queryClient = new QueryClient();
 type OrganizationSummary = {
   id: string;
   name: string;
+  logo?: string | null | undefined;
 };
 
 // --- Root ---
@@ -285,15 +287,21 @@ function InstructorLayout() {
   const allAcademies = (organizations.data ?? []).map((org: OrganizationSummary) => ({
     id: org.id,
     name: org.name,
+    logo: org.logo,
   }));
 
   const currentAcademy = activeAcademy
-    ? { id: activeAcademy.id, name: activeAcademy.name }
-    : { id: firstOrganization.id, name: firstOrganization.name };
+    ? { id: activeAcademy.id, name: activeAcademy.name, logo: activeAcademy.logo }
+    : { id: firstOrganization.id, name: firstOrganization.name, logo: firstOrganization.logo };
 
   async function switchAcademy(orgId: string) {
     await authClient.organization.setActive({ organizationId: orgId });
     await activeOrganization.refetch();
+  }
+
+  function refreshAcademies() {
+    void organizations.refetch();
+    void activeOrganization.refetch();
   }
 
   async function signOut() {
@@ -301,12 +309,21 @@ function InstructorLayout() {
     await navigate({ to: "/sign-in" });
   }
 
+  const sessionUser = session.data.user;
+  const currentUser = {
+    name: sessionUser.name,
+    email: sessionUser.email,
+    image: sessionUser.image,
+  };
+
   return (
     <AppShell
       activeAcademy={currentAcademy}
       academies={allAcademies}
+      user={currentUser}
       onSwitchAcademy={switchAcademy}
       onSignOut={signOut}
+      onRefreshAcademies={refreshAcademies}
     >
       <Outlet />
     </AppShell>
@@ -329,6 +346,7 @@ export function App() {
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
         <RouterProvider router={router} />
+        <Toaster />
       </QueryClientProvider>
     </ThemeProvider>
   );

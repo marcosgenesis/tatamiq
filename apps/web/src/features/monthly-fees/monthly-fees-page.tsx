@@ -69,7 +69,7 @@ export function MonthlyFeesPage() {
     },
   });
 
-  const studentsQuery = useStudents("active", { enabled: isFormOpen });
+  const studentsQuery = useStudents("active", undefined, { enabled: isFormOpen });
 
   const createMutation = useMutation({
     mutationFn: async (input: CreateMonthlyFeeInput) => {

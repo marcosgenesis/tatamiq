@@ -66,7 +66,7 @@ export function WeeklyClassesChart() {
         </div>
       </CardHeader>
       <CardContent>
-        <ChartContainer className="aspect-auto h-60 w-full p-0 md:h-80" config={chartConfig}>
+        <ChartContainer className="aspect-auto h-40 w-full p-0 md:h-52" config={chartConfig}>
           <LineChart accessibilityLayer data={chartRows} margin={{ left: 12, right: 12, top: 8 }}>
             <CartesianGrid className="stroke-border" vertical={false} />
             <XAxis

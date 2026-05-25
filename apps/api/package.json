@@ -4,7 +4,7 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "dev": "tsx watch src/main.ts",
+    "dev": "tsx watch --env-file=.env src/main.ts",
     "build": "nest build",
     "start": "node --import tsx dist/apps/api/src/main.js",
     "typecheck": "tsc --noEmit",

@@ -31,12 +31,20 @@ export class StudentsController {
 
   @Get()
   @ApiQuery({ name: "status", required: false, enum: ["active", "inactive", "all"] })
+  @ApiQuery({ name: "page", required: false, type: Number })
+  @ApiQuery({ name: "pageSize", required: false, type: Number })
   @ApiOkResponse({ type: ListStudentsResponseDto })
   list(
     @Session() session: SessionWithOrganization,
     @Query("status") status?: "active" | "inactive" | "all",
+    @Query("page") page?: string,
+    @Query("pageSize") pageSize?: string,
   ): Promise<ListStudentsResponseDto> {
-    return this.studentsService.list(activeOrganizationId(session), status ?? "active");
+    return this.studentsService.list(activeOrganizationId(session), {
+      status: status ?? "active",
+      page: page ? Number(page) : 0,
+      pageSize: pageSize ? Number(pageSize) : 10,
+    });
   }
 
   @Post()
