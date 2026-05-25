@@ -14,6 +14,15 @@ import { api } from "../../api";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "../../components/ui/drawer";
 
 type ClassGroupStatusFilter = "active" | "archived" | "all";
 type ClassGroupPayload = components["schemas"]["UpdateClassGroupDto"];
@@ -216,19 +225,27 @@ export function ClassGroupsPage() {
         />
       </div>
 
-      {isFormOpen ? (
-        <ClassGroupForm
-          editingClassGroup={editingClassGroup}
-          error={error}
-          form={form}
-          isSaving={saveMutation.isPending}
-          students={studentsQuery.data ?? []}
-          setForm={setForm}
-          onCancel={closeForm}
-          onSubmit={submitForm}
-          updateSchedule={updateSchedule}
-        />
-      ) : null}
+      <Drawer
+        direction="right"
+        open={isFormOpen}
+        onOpenChange={(open) => {
+          if (!open) closeForm();
+        }}
+      >
+        <DrawerContent>
+          <ClassGroupForm
+            editingClassGroup={editingClassGroup}
+            error={error}
+            form={form}
+            isSaving={saveMutation.isPending}
+            students={studentsQuery.data ?? []}
+            setForm={setForm}
+            onCancel={closeForm}
+            onSubmit={submitForm}
+            updateSchedule={updateSchedule}
+          />
+        </DrawerContent>
+      </Drawer>
 
       <Card>
         <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
@@ -298,169 +315,172 @@ function ClassGroupForm(props: {
   updateSchedule: (index: number, field: keyof ScheduleFormRow, value: string) => void;
 }) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{props.editingClassGroup ? "Editar turma" : "Nova turma"}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form className="space-y-6" onSubmit={props.onSubmit}>
-          <div className="grid gap-4 md:grid-cols-2">
-            <TextField
-              label="Nome"
-              required
-              value={props.form.name}
-              onChange={(value) => props.setForm((current) => ({ ...current, name: value }))}
-            />
-            <TextField
-              label="Duração padrão (min)"
-              required
-              type="number"
-              min="15"
-              max="300"
-              value={props.form.defaultDurationMinutes}
-              onChange={(value) =>
-                props.setForm((current) => ({ ...current, defaultDurationMinutes: value }))
+    <form className="flex h-full flex-col" onSubmit={props.onSubmit}>
+      <DrawerHeader>
+        <DrawerTitle>{props.editingClassGroup ? "Editar turma" : "Nova turma"}</DrawerTitle>
+        <DrawerDescription>
+          {props.editingClassGroup
+            ? "Atualize os dados da turma."
+            : "Preencha os dados para criar uma nova turma."}
+        </DrawerDescription>
+      </DrawerHeader>
+      <div className="no-scrollbar flex-1 space-y-6 overflow-y-auto px-4">
+        <div className="grid gap-4">
+          <TextField
+            label="Nome"
+            required
+            value={props.form.name}
+            onChange={(value) => props.setForm((current) => ({ ...current, name: value }))}
+          />
+          <TextField
+            label="Duração padrão (min)"
+            required
+            type="number"
+            min="15"
+            max="300"
+            value={props.form.defaultDurationMinutes}
+            onChange={(value) =>
+              props.setForm((current) => ({ ...current, defaultDurationMinutes: value }))
+            }
+          />
+          <TextField
+            label="Etiquetas"
+            placeholder="No Gi, Iniciante"
+            value={props.form.tags}
+            onChange={(value) => props.setForm((current) => ({ ...current, tags: value }))}
+          />
+          {props.editingClassGroup ? (
+            <label className="space-y-2 text-sm font-medium">
+              <span>Status</span>
+              <select
+                value={props.form.status}
+                onChange={(event) =>
+                  props.setForm((current) => ({
+                    ...current,
+                    status: event.target.value as ClassGroup["status"],
+                  }))
+                }
+                className="h-11 w-full rounded-2xl border border-border bg-background px-3 text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+              >
+                <option value="active">Ativa</option>
+                <option value="archived">Arquivada</option>
+              </select>
+            </label>
+          ) : null}
+        </div>
+
+        <div className="rounded-3xl border border-border bg-muted/30 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h3 className="font-medium">Horários semanais</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Informe pelo menos um dia e horário.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() =>
+                props.setForm((current) => ({
+                  ...current,
+                  schedules: [
+                    ...current.schedules,
+                    { id: crypto.randomUUID(), weekday: "1", startTime: "19:00" },
+                  ],
+                }))
               }
-            />
-            <TextField
-              label="Etiquetas"
-              placeholder="No Gi, Iniciante"
-              value={props.form.tags}
-              onChange={(value) => props.setForm((current) => ({ ...current, tags: value }))}
-            />
-            {props.editingClassGroup ? (
-              <label className="space-y-2 text-sm font-medium">
-                <span>Status</span>
-                <select
-                  value={props.form.status}
+            >
+              Adicionar horário
+            </Button>
+          </div>
+          <div className="mt-4 grid gap-3">
+            {props.form.schedules.map((schedule, index) => (
+              <div key={schedule.id} className="grid grid-cols-[1fr_1fr_auto] gap-3">
+                <label className="space-y-2 text-sm font-medium">
+                  <span>Dia</span>
+                  <select
+                    value={schedule.weekday}
+                    onChange={(event) => props.updateSchedule(index, "weekday", event.target.value)}
+                    className="h-11 w-full rounded-2xl border border-border bg-background px-3 text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  >
+                    {weekdays.map((weekday, weekdayIndex) => (
+                      <option key={weekday} value={weekdayIndex}>
+                        {weekday}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <TextField
+                  label="Horário"
+                  placeholder="HH:mm"
+                  value={schedule.startTime}
+                  onChange={(value) => props.updateSchedule(index, "startTime", value)}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="self-end"
+                  onClick={() =>
+                    props.setForm((current) => ({
+                      ...current,
+                      schedules: current.schedules.filter(
+                        (_, scheduleIndex) => scheduleIndex !== index,
+                      ),
+                    }))
+                  }
+                >
+                  Remover
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-border bg-muted/30 p-4">
+          <h3 className="font-medium">Alunos vinculados</h3>
+          <div className="mt-4 grid gap-2">
+            {props.students.map((student) => (
+              <label
+                key={student.id}
+                className="flex items-center gap-2 rounded-2xl border border-border bg-background p-3 text-sm"
+              >
+                <input
+                  type="checkbox"
+                  checked={props.form.studentIds.includes(student.id)}
                   onChange={(event) =>
                     props.setForm((current) => ({
                       ...current,
-                      status: event.target.value as ClassGroup["status"],
+                      studentIds: event.target.checked
+                        ? [...current.studentIds, student.id]
+                        : current.studentIds.filter((id) => id !== student.id),
                     }))
                   }
-                  className="h-11 w-full rounded-2xl border border-border bg-background px-3 text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-                >
-                  <option value="active">Ativa</option>
-                  <option value="archived">Arquivada</option>
-                </select>
+                />
+                {student.name}
               </label>
+            ))}
+            {props.students.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Cadastre alunos ativos antes de vinculá-los.
+              </p>
             ) : null}
           </div>
+        </div>
 
-          <div className="rounded-3xl border border-border bg-muted/30 p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h3 className="font-medium">Horários semanais</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Informe pelo menos um dia e horário.
-                </p>
-              </div>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() =>
-                  props.setForm((current) => ({
-                    ...current,
-                    schedules: [
-                      ...current.schedules,
-                      { id: crypto.randomUUID(), weekday: "1", startTime: "19:00" },
-                    ],
-                  }))
-                }
-              >
-                Adicionar horário
-              </Button>
-            </div>
-            <div className="mt-4 grid gap-3">
-              {props.form.schedules.map((schedule, index) => (
-                <div key={schedule.id} className="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
-                  <label className="space-y-2 text-sm font-medium">
-                    <span>Dia</span>
-                    <select
-                      value={schedule.weekday}
-                      onChange={(event) =>
-                        props.updateSchedule(index, "weekday", event.target.value)
-                      }
-                      className="h-11 w-full rounded-2xl border border-border bg-background px-3 text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-                    >
-                      {weekdays.map((weekday, weekdayIndex) => (
-                        <option key={weekday} value={weekdayIndex}>
-                          {weekday}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <TextField
-                    label="Horário"
-                    placeholder="HH:mm"
-                    value={schedule.startTime}
-                    onChange={(value) => props.updateSchedule(index, "startTime", value)}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="self-end"
-                    onClick={() =>
-                      props.setForm((current) => ({
-                        ...current,
-                        schedules: current.schedules.filter(
-                          (_, scheduleIndex) => scheduleIndex !== index,
-                        ),
-                      }))
-                    }
-                  >
-                    Remover
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-3xl border border-border bg-muted/30 p-4">
-            <h3 className="font-medium">Alunos vinculados</h3>
-            <div className="mt-4 grid gap-2 md:grid-cols-2">
-              {props.students.map((student) => (
-                <label
-                  key={student.id}
-                  className="flex items-center gap-2 rounded-2xl border border-border bg-background p-3 text-sm"
-                >
-                  <input
-                    type="checkbox"
-                    checked={props.form.studentIds.includes(student.id)}
-                    onChange={(event) =>
-                      props.setForm((current) => ({
-                        ...current,
-                        studentIds: event.target.checked
-                          ? [...current.studentIds, student.id]
-                          : current.studentIds.filter((id) => id !== student.id),
-                      }))
-                    }
-                  />
-                  {student.name}
-                </label>
-              ))}
-              {props.students.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  Cadastre alunos ativos antes de vinculá-los.
-                </p>
-              ) : null}
-            </div>
-          </div>
-
-          {props.error ? <p className="text-sm text-destructive">{props.error}</p> : null}
-          <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-            <Button type="button" variant="secondary" onClick={props.onCancel}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={props.isSaving}>
-              {props.isSaving ? "Salvando..." : "Salvar turma"}
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+        {props.error ? <p className="text-sm text-destructive">{props.error}</p> : null}
+      </div>
+      <DrawerFooter>
+        <DrawerClose asChild>
+          <Button type="button" variant="secondary">
+            Cancelar
+          </Button>
+        </DrawerClose>
+        <Button type="submit" disabled={props.isSaving}>
+          {props.isSaving ? "Salvando..." : "Salvar turma"}
+        </Button>
+      </DrawerFooter>
+    </form>
   );
 }
 
