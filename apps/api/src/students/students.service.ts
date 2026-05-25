@@ -1,8 +1,8 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import type { BeltDto, CreateStudentInput, Student, UpdateStudentInput } from "@tatamiq/contracts";
+import type { CreateStudentInput, Student, UpdateStudentInput } from "@tatamiq/contracts";
 import { belts, type Database, studentGuardians, students } from "@tatamiq/database";
 import { and, eq, inArray } from "drizzle-orm";
-import { BeltsService } from "../belts/belts.service";
+import { BeltsService, toBeltDto } from "../belts/belts.service";
 import { DATABASE } from "../database/database.module";
 import { StudentAccessService } from "../student-access/student-access.service";
 import { validateStudentInput } from "./student-rules";
@@ -256,21 +256,6 @@ function toStudentDto(
   },
   beltRow: BeltRow | null = null,
 ): Student {
-  const belt: BeltDto | null = beltRow
-    ? {
-        id: beltRow.id,
-        name: beltRow.name,
-        slug: beltRow.slug,
-        path: beltRow.path as "adult" | "child",
-        position: beltRow.position,
-        maxDegrees: beltRow.maxDegrees,
-        minMonthsForNextDegree: beltRow.minMonthsForNextDegree,
-        minAttendancesForNextDegree: beltRow.minAttendancesForNextDegree,
-        minMonthsForNextBelt: beltRow.minMonthsForNextBelt,
-        minAttendancesForNextBelt: beltRow.minAttendancesForNextBelt,
-      }
-    : null;
-
   return {
     id: row.id,
     name: row.name,
@@ -284,7 +269,7 @@ function toStudentDto(
     monthlyDueDay: row.monthlyDueDay,
     currentBeltId: row.currentBeltId,
     currentDegree: row.currentDegree,
-    belt,
+    belt: beltRow ? toBeltDto(beltRow) : null,
     guardian: guardian
       ? {
           id: guardian.id,
