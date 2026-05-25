@@ -295,12 +295,12 @@ await db.insert(belts).values(
   })),
 );
 
-const whiteBelt = beltData[0];
-const blueBelt = beltData[1];
-const purpleBelt = beltData[2];
-const brownBelt = beltData[3];
-const childWhiteBelt = beltChildData[0];
-const childGreyBelt = beltChildData[1];
+const whiteBelt = beltData[0]!;
+const blueBelt = beltData[1]!;
+const purpleBelt = beltData[2]!;
+const brownBelt = beltData[3]!;
+const childWhiteBelt = beltChildData[0]!;
+const childGreyBelt = beltChildData[1]!;
 
 // --- Students ---
 
@@ -542,7 +542,7 @@ await db.insert(students).values(
 await db.insert(studentGuardians).values([
   {
     id: randomUUID(),
-    studentId: studentList[14].id,
+    studentId: studentList[14]!.id,
     name: "Carlos Souza",
     phone: "(85) 98888-2001",
     email: "carlos.souza@email.com",
@@ -550,7 +550,7 @@ await db.insert(studentGuardians).values([
   },
   {
     id: randomUUID(),
-    studentId: studentList[15].id,
+    studentId: studentList[15]!.id,
     name: "Maria Pereira",
     phone: "(85) 98888-2002",
     email: "maria.pereira@email.com",
@@ -613,21 +613,21 @@ await db.insert(classGroupTags).values(
 
 const scheduleList = [
   // Fundamentos Manhã: Mon/Wed/Fri 07:00
-  { id: randomUUID(), groupId: classGroupList[0].id, weekday: 1, time: "07:00" },
-  { id: randomUUID(), groupId: classGroupList[0].id, weekday: 3, time: "07:00" },
-  { id: randomUUID(), groupId: classGroupList[0].id, weekday: 5, time: "07:00" },
+  { id: randomUUID(), groupId: classGroupList[0]!.id, weekday: 1, time: "07:00" },
+  { id: randomUUID(), groupId: classGroupList[0]!.id, weekday: 3, time: "07:00" },
+  { id: randomUUID(), groupId: classGroupList[0]!.id, weekday: 5, time: "07:00" },
   // No-Gi Noite: Mon/Wed/Fri 19:00
-  { id: randomUUID(), groupId: classGroupList[1].id, weekday: 1, time: "19:00" },
-  { id: randomUUID(), groupId: classGroupList[1].id, weekday: 3, time: "19:00" },
-  { id: randomUUID(), groupId: classGroupList[1].id, weekday: 5, time: "19:00" },
+  { id: randomUUID(), groupId: classGroupList[1]!.id, weekday: 1, time: "19:00" },
+  { id: randomUUID(), groupId: classGroupList[1]!.id, weekday: 3, time: "19:00" },
+  { id: randomUUID(), groupId: classGroupList[1]!.id, weekday: 5, time: "19:00" },
   // Avançado: Tue/Thu 19:00
-  { id: randomUUID(), groupId: classGroupList[2].id, weekday: 2, time: "19:00" },
-  { id: randomUUID(), groupId: classGroupList[2].id, weekday: 4, time: "19:00" },
+  { id: randomUUID(), groupId: classGroupList[2]!.id, weekday: 2, time: "19:00" },
+  { id: randomUUID(), groupId: classGroupList[2]!.id, weekday: 4, time: "19:00" },
   // Kids: Tue/Thu 17:00
-  { id: randomUUID(), groupId: classGroupList[3].id, weekday: 2, time: "17:00" },
-  { id: randomUUID(), groupId: classGroupList[3].id, weekday: 4, time: "17:00" },
+  { id: randomUUID(), groupId: classGroupList[3]!.id, weekday: 2, time: "17:00" },
+  { id: randomUUID(), groupId: classGroupList[3]!.id, weekday: 4, time: "17:00" },
   // Open Mat: Sat 10:00
-  { id: randomUUID(), groupId: classGroupList[4].id, weekday: 6, time: "10:00" },
+  { id: randomUUID(), groupId: classGroupList[4]!.id, weekday: 6, time: "10:00" },
 ];
 
 await db.insert(classGroupSchedules).values(
@@ -655,7 +655,7 @@ for (const s of adultActive) {
     enrollments.push({
       id: randomUUID(),
       studentId: s.id,
-      classGroupId: classGroupList[0].id,
+      classGroupId: classGroupList[0]!.id,
       from: s.enrolled,
     });
   }
@@ -664,7 +664,7 @@ for (const s of adultActive) {
     enrollments.push({
       id: randomUUID(),
       studentId: s.id,
-      classGroupId: classGroupList[2].id,
+      classGroupId: classGroupList[2]!.id,
       from: s.enrolled,
     });
   }
@@ -672,7 +672,7 @@ for (const s of adultActive) {
   enrollments.push({
     id: randomUUID(),
     studentId: s.id,
-    classGroupId: classGroupList[1].id,
+    classGroupId: classGroupList[1]!.id,
     from: s.enrolled,
   });
 }
@@ -681,7 +681,7 @@ for (const s of childActive) {
   enrollments.push({
     id: randomUUID(),
     studentId: s.id,
-    classGroupId: classGroupList[3].id,
+    classGroupId: classGroupList[3]!.id,
     from: s.enrolled,
   });
 }
@@ -923,7 +923,7 @@ if (feeInserts.length > 0) {
 const promotionInserts = [
   // Pedro: white -> blue (1 year ago)
   {
-    studentId: studentList[2].id,
+    studentId: studentList[2]!.id,
     prevBelt: whiteBelt,
     prevDegree: 4,
     newBelt: blueBelt,
@@ -933,7 +933,7 @@ const promotionInserts = [
   },
   // Rafael: blue -> purple (2 years ago)
   {
-    studentId: studentList[4].id,
+    studentId: studentList[4]!.id,
     prevBelt: blueBelt,
     prevDegree: 4,
     newBelt: purpleBelt,
@@ -943,7 +943,7 @@ const promotionInserts = [
   },
   // Ana Beatriz: white -> blue (6 months ago)
   {
-    studentId: studentList[5].id,
+    studentId: studentList[5]!.id,
     prevBelt: whiteBelt,
     prevDegree: 4,
     newBelt: blueBelt,
@@ -953,7 +953,7 @@ const promotionInserts = [
   },
   // Felipe: purple -> brown (1 year ago)
   {
-    studentId: studentList[6].id,
+    studentId: studentList[6]!.id,
     prevBelt: purpleBelt,
     prevDegree: 4,
     newBelt: brownBelt,
@@ -985,7 +985,7 @@ await db.insert(studentNotes).values([
   {
     id: randomUUID(),
     organizationId,
-    studentId: studentList[0].id,
+    studentId: studentList[0]!.id,
     content: "Muito dedicado, nunca falta aos treinos. Potencial para competir.",
     isVisible: true,
     archivedAt: null,
@@ -996,7 +996,7 @@ await db.insert(studentNotes).values([
   {
     id: randomUUID(),
     organizationId,
-    studentId: studentList[2].id,
+    studentId: studentList[2]!.id,
     content: "Precisa trabalhar mais o jogo por cima. Conversar sobre competição estadual.",
     isVisible: true,
     archivedAt: null,
@@ -1007,7 +1007,7 @@ await db.insert(studentNotes).values([
   {
     id: randomUUID(),
     organizationId,
-    studentId: studentList[4].id,
+    studentId: studentList[4]!.id,
     content: "Lesão no joelho, liberado para treinar com restrições. Acompanhar evolução.",
     isVisible: true,
     archivedAt: null,
@@ -1018,7 +1018,7 @@ await db.insert(studentNotes).values([
   {
     id: randomUUID(),
     organizationId,
-    studentId: studentList[7].id,
+    studentId: studentList[7]!.id,
     content: "Aluna nova, está se adaptando bem. Colocar para treinar com a Mariana.",
     isVisible: true,
     archivedAt: null,
@@ -1029,7 +1029,7 @@ await db.insert(studentNotes).values([
   {
     id: randomUUID(),
     organizationId,
-    studentId: studentList[12].id,
+    studentId: studentList[12]!.id,
     content: "Ficou inativo por questões financeiras. Manter contato para possível retorno.",
     isVisible: false,
     archivedAt: null,
