@@ -2,7 +2,6 @@ import {
   BadRequestException,
   Body,
   Controller,
-  ForbiddenException,
   Get,
   HttpCode,
   Inject,
@@ -13,9 +12,9 @@ import {
 } from "@nestjs/common";
 import { ApiBody, ApiOkResponse, ApiParam, ApiQuery, ApiTags } from "@nestjs/swagger";
 import { createStudentSchema, updateStudentSchema } from "@tatamiq/contracts";
-import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
+import { OrgRoles, Session } from "@thallesp/nestjs-better-auth";
 import type { z } from "zod";
-import type { auth } from "../auth";
+import { activeOrganizationId, type SessionWithOrganization } from "../active-organization";
 import {
   CreateStudentDto,
   ListStudentsResponseDto,
@@ -23,10 +22,6 @@ import {
   UpdateStudentDto,
 } from "./students.dto";
 import { StudentsService } from "./students.service";
-
-type SessionWithOrganization = UserSession<typeof auth> & {
-  session: { activeOrganizationId?: string | null };
-};
 
 @ApiTags("students")
 @OrgRoles(["owner"])
@@ -110,12 +105,4 @@ function parseBody<T>(schema: z.ZodType<T>, value: unknown): T {
     throw new BadRequestException("Dados do aluno inválidos.");
   }
   return result.data;
-}
-
-function activeOrganizationId(session: SessionWithOrganization): string {
-  const organizationId = session.session.activeOrganizationId;
-  if (!organizationId) {
-    throw new ForbiddenException("Sessão sem academia ativa.");
-  }
-  return organizationId;
 }

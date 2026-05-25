@@ -1,23 +1,9 @@
-import {
-  Body,
-  Controller,
-  ForbiddenException,
-  Get,
-  HttpCode,
-  Inject,
-  Param,
-  Patch,
-  Post,
-} from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Inject, Param, Patch, Post } from "@nestjs/common";
 import { ApiOkResponse, ApiTags } from "@nestjs/swagger";
-import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
-import type { auth } from "../auth";
+import { OrgRoles, Session } from "@thallesp/nestjs-better-auth";
+import { activeOrganizationId, type SessionWithOrganization } from "../active-organization";
 import { BeltDto, ListBeltsResponseDto, type UpdateBeltDto } from "./belts.dto";
 import { BeltsService } from "./belts.service";
-
-type SessionWithOrganization = UserSession<typeof auth> & {
-  session: { activeOrganizationId?: string | null };
-};
 
 @ApiTags("belts")
 @OrgRoles(["owner"])
@@ -47,12 +33,4 @@ export class BeltsController {
   seed(@Session() session: SessionWithOrganization): Promise<ListBeltsResponseDto> {
     return this.beltsService.seedIbjjfBelts(activeOrganizationId(session));
   }
-}
-
-function activeOrganizationId(session: SessionWithOrganization): string {
-  const organizationId = session.session.activeOrganizationId;
-  if (!organizationId) {
-    throw new ForbiddenException("Sessao sem academia ativa.");
-  }
-  return organizationId;
 }

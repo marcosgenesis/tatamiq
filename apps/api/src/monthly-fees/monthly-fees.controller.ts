@@ -2,7 +2,6 @@ import {
   BadRequestException,
   Body,
   Controller,
-  ForbiddenException,
   Get,
   HttpCode,
   Inject,
@@ -19,9 +18,9 @@ import {
   rejectReceiptSchema,
   waiveMonthlyFeeSchema,
 } from "@tatamiq/contracts";
-import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
+import { OrgRoles, Session } from "@thallesp/nestjs-better-auth";
 import type { z } from "zod";
-import type { auth } from "../auth";
+import { activeOrganizationId, type SessionWithOrganization } from "../active-organization";
 import { FeeGenerationService } from "./fee-generation.service";
 import {
   AdjustMonthlyFeeDto,
@@ -35,10 +34,6 @@ import {
   WaiveMonthlyFeeDto,
 } from "./monthly-fees.dto";
 import { MonthlyFeesService } from "./monthly-fees.service";
-
-type SessionWithOrganization = UserSession<typeof auth> & {
-  session: { activeOrganizationId?: string | null };
-};
 
 @ApiTags("monthly-fees")
 @OrgRoles(["owner"])
@@ -241,12 +236,4 @@ function parseBody<T>(schema: z.ZodType<T>, value: unknown): T {
     throw new BadRequestException("Dados da mensalidade inválidos.");
   }
   return result.data;
-}
-
-function activeOrganizationId(session: SessionWithOrganization): string {
-  const organizationId = session.session.activeOrganizationId;
-  if (!organizationId) {
-    throw new ForbiddenException("Sessão sem academia ativa.");
-  }
-  return organizationId;
 }

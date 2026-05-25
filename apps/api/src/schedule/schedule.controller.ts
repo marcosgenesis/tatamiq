@@ -2,7 +2,6 @@ import {
   BadRequestException,
   Body,
   Controller,
-  ForbiddenException,
   Get,
   HttpCode,
   Inject,
@@ -12,9 +11,9 @@ import {
 } from "@nestjs/common";
 import { ApiBody, ApiOkResponse, ApiParam, ApiQuery, ApiTags } from "@nestjs/swagger";
 import { createAdHocClassSchema, createRecurringCancellationSchema } from "@tatamiq/contracts";
-import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
+import { OrgRoles, Session } from "@thallesp/nestjs-better-auth";
 import type { z } from "zod";
-import type { auth } from "../auth";
+import { activeOrganizationId, type SessionWithOrganization } from "../active-organization";
 import {
   CreateAdHocClassDto,
   CreateRecurringCancellationDto,
@@ -23,11 +22,6 @@ import {
   WeeklyScheduleResponseDto,
 } from "./schedule.dto";
 import { ScheduleService } from "./schedule.service";
-
-type SessionWithOrganization = UserSession<typeof auth> & {
-  user: { id: string };
-  session: { activeOrganizationId?: string | null };
-};
 
 @ApiTags("schedule")
 @OrgRoles(["owner"])
@@ -119,10 +113,4 @@ function parseBody<T>(schema: z.ZodType<T>, value: unknown): T {
   const result = schema.safeParse(value);
   if (!result.success) throw new BadRequestException("Dados da agenda inválidos.");
   return result.data;
-}
-
-function activeOrganizationId(session: SessionWithOrganization): string {
-  const organizationId = session.session.activeOrganizationId;
-  if (!organizationId) throw new ForbiddenException("Sessão sem academia ativa.");
-  return organizationId;
 }

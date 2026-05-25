@@ -1,22 +1,8 @@
-import {
-  Body,
-  Controller,
-  ForbiddenException,
-  Get,
-  Header,
-  Inject,
-  Post,
-  Query,
-  Res,
-} from "@nestjs/common";
+import { Body, Controller, Get, Header, Inject, Post, Query, Res } from "@nestjs/common";
 import { ApiOkResponse, ApiQuery, ApiTags } from "@nestjs/swagger";
-import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
-import type { auth } from "../auth";
+import { OrgRoles, Session } from "@thallesp/nestjs-better-auth";
+import { activeOrganizationId, type SessionWithOrganization } from "../active-organization";
 import { CsvService } from "./csv.service";
-
-type SessionWithOrganization = UserSession<typeof auth> & {
-  session: { activeOrganizationId?: string | null };
-};
 
 @ApiTags("csv")
 @OrgRoles(["owner"])
@@ -92,10 +78,4 @@ export class CsvController {
     res.setHeader("Content-Disposition", "attachment; filename=mensalidades.csv");
     res.send(csv);
   }
-}
-
-function activeOrganizationId(session: SessionWithOrganization): string {
-  const organizationId = session.session.activeOrganizationId;
-  if (!organizationId) throw new ForbiddenException("Sessão sem academia ativa.");
-  return organizationId;
 }
