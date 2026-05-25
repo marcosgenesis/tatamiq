@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/main.ts",
     "build": "nest build",
-    "start": "node dist/apps/api/src/main.js",
+    "start": "node --import tsx dist/apps/api/src/main.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --environment node",
     "openapi:generate": "tsx src/openapi.ts"
@@ -30,6 +30,7 @@
     "pino": "latest",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "tsx": "latest",
     "zod": "latest"
   },
   "devDependencies": {
@@ -39,7 +40,6 @@
     "@types/node": "latest",
     "@types/supertest": "latest",
     "supertest": "latest",
-    "tsx": "latest",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"
   }
