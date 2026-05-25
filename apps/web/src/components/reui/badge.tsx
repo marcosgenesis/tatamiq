@@ -1,8 +1,8 @@
-import { mergeProps } from "@base-ui/react/merge-props";
-import { useRender } from "@base-ui/react/use-render";
-import { cva, type VariantProps } from "class-variance-authority";
+import { mergeProps } from "@base-ui/react/merge-props"
+import { useRender } from "@base-ui/react/use-render"
+import { cva, type VariantProps } from "class-variance-authority"
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils"
 
 const badgeVariants = cva(
   "relative inline-flex shrink-0 items-center justify-center w-fit border border-transparent font-medium whitespace-nowrap outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*=size-])]:size-3",
@@ -18,22 +18,34 @@ const badgeVariants = cva(
         destructive: "bg-destructive text-white",
         focus: "bg-focus text-focus-foreground",
         invert: "bg-invert text-invert-foreground",
-        "primary-light": "bg-primary/10 border-none text-primary dark:bg-primary/20",
-        "warning-light": "bg-warning/10 border-none text-warning-foreground dark:bg-warning/20",
-        "success-light": "bg-success/10 border-none text-success-foreground dark:bg-success/20",
-        "info-light": "bg-info/10 border-none text-info-foreground dark:bg-info/20",
+        "primary-light":
+          "bg-primary/10 border-none text-primary dark:bg-primary/20",
+        "warning-light":
+          "bg-warning/10 border-none text-warning-foreground dark:bg-warning/20",
+        "success-light":
+          "bg-success/10 border-none text-success-foreground dark:bg-success/20",
+        "info-light":
+          "bg-info/10 border-none text-info-foreground dark:bg-info/20",
         "destructive-light":
           "bg-destructive/10 border-none text-destructive-foreground dark:bg-destructive/20",
-        "invert-light": "bg-invert/10 border-none text-foreground dark:bg-invert/20",
-        "focus-light": "bg-focus/10 border-none text-focus-foreground dark:bg-focus/20",
-        "primary-outline": "bg-background border-border text-primary dark:bg-input/30",
-        "warning-outline": "bg-background border-border text-warning-foreground dark:bg-input/30",
-        "success-outline": "bg-background border-border text-success-foreground dark:bg-input/30",
-        "info-outline": "bg-background border-border text-info-foreground dark:bg-input/30",
+        "invert-light":
+          "bg-invert/10 border-none text-foreground dark:bg-invert/20",
+        "focus-light":
+          "bg-focus/10 border-none text-focus-foreground dark:bg-focus/20",
+        "primary-outline":
+          "bg-background border-border text-primary dark:bg-input/30",
+        "warning-outline":
+          "bg-background border-border text-warning-foreground dark:bg-input/30",
+        "success-outline":
+          "bg-background border-border text-success-foreground dark:bg-input/30",
+        "info-outline":
+          "bg-background border-border text-info-foreground dark:bg-input/30",
         "destructive-outline":
           "bg-background border-border text-destructive-foreground dark:bg-input/30",
-        "invert-outline": "bg-background border-border text-invert-foreground dark:bg-input/30",
-        "focus-outline": "bg-background border-border text-focus-foreground dark:bg-input/30",
+        "invert-outline":
+          "bg-background border-border text-invert-foreground dark:bg-input/30",
+        "focus-outline":
+          "bg-background border-border text-focus-foreground dark:bg-input/30",
       },
       size: {
         xs: "px-1 py-0.25 text-[0.6rem] leading-none h-4 min-w-4 gap-1",
@@ -44,7 +56,8 @@ const badgeVariants = cva(
       },
       /** `default`: per-theme radius. `full`: max radius per theme (Lyra stays `rounded-none`). */
       radius: {
-        default: "rounded-sm",
+        default:
+          "rounded-sm",
         full: "rounded-full",
       },
     },
@@ -53,26 +66,33 @@ const badgeVariants = cva(
       size: "default",
       radius: "default",
     },
-  },
-);
+  }
+)
 
 interface BadgeProps extends useRender.ComponentProps<"span"> {
-  variant?: VariantProps<typeof badgeVariants>["variant"];
-  size?: VariantProps<typeof badgeVariants>["size"];
-  radius?: VariantProps<typeof badgeVariants>["radius"];
+  variant?: VariantProps<typeof badgeVariants>["variant"]
+  size?: VariantProps<typeof badgeVariants>["size"]
+  radius?: VariantProps<typeof badgeVariants>["radius"]
 }
 
-function Badge({ className, variant, size, radius, render, ...props }: BadgeProps) {
+function Badge({
+  className,
+  variant,
+  size,
+  radius,
+  render,
+  ...props
+}: BadgeProps) {
   const defaultProps = {
     "data-slot": "badge",
     className: cn(badgeVariants({ variant, size, radius, className })),
-  };
+  }
 
   return useRender({
     defaultTagName: "span",
     render,
     props: mergeProps<"span">(defaultProps, props),
-  });
+  })
 }
 
-export { Badge, type BadgeProps, badgeVariants };
+export { Badge, badgeVariants, type BadgeProps }

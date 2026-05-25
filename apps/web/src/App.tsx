@@ -12,6 +12,7 @@ import { CheckmarkSquare03Icon } from "hugeicons-react";
 import { useEffect } from "react";
 import { AppShell } from "./components/app-shell";
 import { LogoIcon } from "./components/logo";
+import { Toaster } from "./components/ui/sonner";
 import {
   AcademyOnboardingPage,
   ForgotPasswordPage,
@@ -337,6 +338,7 @@ export function App() {
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
         <RouterProvider router={router} />
+        <Toaster />
       </QueryClientProvider>
     </ThemeProvider>
   );
