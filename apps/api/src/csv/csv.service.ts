@@ -12,6 +12,7 @@ import {
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
 import type { ImportPreviewStore, ParsedStudentRow } from "./import-preview-store";
+import { IMPORT_PREVIEW_STORE } from "./import-preview-store";
 
 const BOM = "﻿";
 
@@ -19,7 +20,7 @@ const BOM = "﻿";
 export class CsvService {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    private readonly previewStore: ImportPreviewStore,
+    @Inject(IMPORT_PREVIEW_STORE) private readonly previewStore: ImportPreviewStore,
   ) {}
 
   async previewImport(
