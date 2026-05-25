@@ -7,6 +7,15 @@ import { Field, SelectField } from "../../components/form-field";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "../../components/ui/drawer";
 import { useStudents } from "../../hooks/use-students";
 import {
   centsToReais,
@@ -287,71 +296,76 @@ export function MonthlyFeesPage() {
         />
       </div>
 
-      {isFormOpen ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Nova mensalidade</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form className="space-y-6" onSubmit={submitForm}>
-              <div className="grid gap-4 md:grid-cols-2">
-                <SelectField
-                  label="Aluno"
-                  value={form.studentId}
-                  onChange={onStudentSelect}
-                  options={[
-                    { value: "", label: "Selecione um aluno" },
-                    ...(studentsQuery.data?.students ?? []).map((s) => ({
-                      value: s.id,
-                      label: s.name,
-                    })),
-                  ]}
-                />
-                <SelectField
-                  label="Mês de referência"
-                  value={form.referenceMonth}
-                  onChange={(value) => updateForm("referenceMonth", value)}
-                  options={monthNames.map((name, i) => ({
-                    value: String(i + 1),
-                    label: name,
-                  }))}
-                />
-                <Field
-                  label="Ano de referência"
-                  type="number"
-                  value={form.referenceYear}
-                  onChange={(value) => updateForm("referenceYear", value)}
-                />
-                <Field
-                  label="Valor (R$)"
-                  inputMode="decimal"
-                  value={form.amountInCents}
-                  onChange={(value) => updateForm("amountInCents", value)}
-                />
-                <Field
-                  label="Dia de vencimento"
-                  type="number"
-                  min="1"
-                  max="31"
-                  value={form.dueDay}
-                  onChange={(value) => updateForm("dueDay", value)}
-                />
-              </div>
-
+      <Drawer
+        direction="right"
+        open={isFormOpen}
+        onOpenChange={(open: boolean) => {
+          if (!open) closeForm();
+        }}
+      >
+        <DrawerContent>
+          <form className="flex h-full flex-col" onSubmit={submitForm}>
+            <DrawerHeader>
+              <DrawerTitle>Nova mensalidade</DrawerTitle>
+              <DrawerDescription>Preencha os dados da cobrança.</DrawerDescription>
+            </DrawerHeader>
+            <div className="no-scrollbar flex-1 space-y-4 overflow-y-auto px-4">
+              <SelectField
+                label="Aluno"
+                value={form.studentId}
+                onChange={onStudentSelect}
+                options={[
+                  { value: "", label: "Selecione um aluno" },
+                  ...(studentsQuery.data?.students ?? []).map((s) => ({
+                    value: s.id,
+                    label: s.name,
+                  })),
+                ]}
+              />
+              <SelectField
+                label="Mês de referência"
+                value={form.referenceMonth}
+                onChange={(value) => updateForm("referenceMonth", value)}
+                options={monthNames.map((name, i) => ({
+                  value: String(i + 1),
+                  label: name,
+                }))}
+              />
+              <Field
+                label="Ano de referência"
+                type="number"
+                value={form.referenceYear}
+                onChange={(value) => updateForm("referenceYear", value)}
+              />
+              <Field
+                label="Valor (R$)"
+                inputMode="decimal"
+                value={form.amountInCents}
+                onChange={(value) => updateForm("amountInCents", value)}
+              />
+              <Field
+                label="Dia de vencimento"
+                type="number"
+                min="1"
+                max="31"
+                value={form.dueDay}
+                onChange={(value) => updateForm("dueDay", value)}
+              />
               {error ? <p className="text-sm text-destructive">{error}</p> : null}
-
-              <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-                <Button type="button" variant="secondary" onClick={closeForm}>
+            </div>
+            <DrawerFooter>
+              <DrawerClose asChild>
+                <Button type="button" variant="secondary">
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={createMutation.isPending}>
-                  {createMutation.isPending ? "Criando..." : "Criar mensalidade"}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      ) : null}
+              </DrawerClose>
+              <Button type="submit" disabled={createMutation.isPending}>
+                {createMutation.isPending ? "Criando..." : "Criar mensalidade"}
+              </Button>
+            </DrawerFooter>
+          </form>
+        </DrawerContent>
+      </Drawer>
 
       <Card>
         <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
@@ -391,42 +405,61 @@ export function MonthlyFeesPage() {
               </div>
             </div>
           ) : null}
-
-          {actionFeeId && actionType ? (
-            <div className="mt-4 rounded-2xl border border-border bg-muted/30 p-4">
-              <form onSubmit={submitAction} className="space-y-4">
-                <h4 className="font-medium">
-                  {actionType === "adjust"
-                    ? "Ajustar valor"
-                    : actionType === "waive"
-                      ? "Dispensar mensalidade"
-                      : "Marcar como pago manualmente"}
-                </h4>
-                {actionType === "adjust" ? (
-                  <Field
-                    label="Novo valor (R$)"
-                    inputMode="decimal"
-                    value={actionAmount}
-                    onChange={setActionAmount}
-                  />
-                ) : null}
-                <Field
-                  label={actionType === "manual_payment" ? "Observação (opcional)" : "Motivo"}
-                  required={actionType !== "manual_payment"}
-                  value={actionReason}
-                  onChange={setActionReason}
-                />
-                <div className="flex gap-3 justify-end">
-                  <Button type="button" variant="secondary" onClick={closeAction}>
-                    Cancelar
-                  </Button>
-                  <Button type="submit">Confirmar</Button>
-                </div>
-              </form>
-            </div>
-          ) : null}
         </CardContent>
       </Card>
+
+      <Drawer
+        direction="right"
+        open={actionFeeId !== null && actionType !== null}
+        onOpenChange={(open: boolean) => {
+          if (!open) closeAction();
+        }}
+      >
+        <DrawerContent>
+          <form className="flex h-full flex-col" onSubmit={submitAction}>
+            <DrawerHeader>
+              <DrawerTitle>
+                {actionType === "adjust"
+                  ? "Ajustar valor"
+                  : actionType === "waive"
+                    ? "Dispensar mensalidade"
+                    : "Marcar como pago"}
+              </DrawerTitle>
+              <DrawerDescription>
+                {actionType === "adjust"
+                  ? "Informe o novo valor e o motivo do ajuste."
+                  : actionType === "waive"
+                    ? "Informe o motivo da dispensa."
+                    : "Registre o pagamento manual."}
+              </DrawerDescription>
+            </DrawerHeader>
+            <div className="no-scrollbar flex-1 space-y-4 overflow-y-auto px-4">
+              {actionType === "adjust" ? (
+                <Field
+                  label="Novo valor (R$)"
+                  inputMode="decimal"
+                  value={actionAmount}
+                  onChange={setActionAmount}
+                />
+              ) : null}
+              <Field
+                label={actionType === "manual_payment" ? "Observação (opcional)" : "Motivo"}
+                required={actionType !== "manual_payment"}
+                value={actionReason}
+                onChange={setActionReason}
+              />
+            </div>
+            <DrawerFooter>
+              <DrawerClose asChild>
+                <Button type="button" variant="secondary">
+                  Cancelar
+                </Button>
+              </DrawerClose>
+              <Button type="submit">Confirmar</Button>
+            </DrawerFooter>
+          </form>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 }
