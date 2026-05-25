@@ -3,7 +3,6 @@ import { AtIcon, LockIcon, UserIcon } from "hugeicons-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
-import { createAcademySlug } from "@/lib/academy-slug";
 import { authClient } from "@/lib/auth-client";
 import { AuthLayout } from "./auth-layout";
 
@@ -291,70 +290,6 @@ export function ResetPasswordPage() {
         </InputGroup>
         <Button className="w-full" size="sm" type="submit" disabled={isSubmitting || !token}>
           {isSubmitting ? "Salvando..." : "Definir senha"}
-        </Button>
-      </form>
-    </AuthLayout>
-  );
-}
-
-export function AcademyOnboardingPage() {
-  const navigate = useNavigate();
-  const [academyName, setAcademyName] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  async function submit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(null);
-    setIsSubmitting(true);
-    const result = await authClient.organization.create({
-      name: academyName,
-      slug: createAcademySlug(academyName),
-    });
-
-    if (result.error || !result.data) {
-      setIsSubmitting(false);
-      setError("Não foi possível criar sua academia. Tente novamente.");
-      return;
-    }
-
-    const activeResult = await authClient.organization.setActive({
-      organizationId: result.data.id,
-    });
-    setIsSubmitting(false);
-
-    if (activeResult.error) {
-      setError("Academia criada, mas não foi possível ativá-la. Tente entrar novamente.");
-      return;
-    }
-
-    await navigate({ to: "/" });
-  }
-
-  return (
-    <AuthLayout>
-      <div className="flex flex-col space-y-1">
-        <h1 className="font-bold text-2xl tracking-wide">Crie sua academia</h1>
-        <p className="text-base text-muted-foreground">
-          Informe o nome do tatame que você vai organizar no Tatamiq.
-        </p>
-      </div>
-      <form className="space-y-2" onSubmit={submit}>
-        <AuthError message={error} />
-        <InputGroup>
-          <InputGroupInput
-            aria-label="Nome da academia"
-            placeholder="Nome da academia"
-            value={academyName}
-            onChange={(event) => setAcademyName(event.target.value)}
-            required
-          />
-          <InputGroupAddon align="inline-start">
-            <UserIcon />
-          </InputGroupAddon>
-        </InputGroup>
-        <Button className="w-full" size="sm" type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Criando..." : "Começar a organizar minha academia"}
         </Button>
       </form>
     </AuthLayout>

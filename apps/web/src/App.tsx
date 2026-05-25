@@ -13,8 +13,8 @@ import { useEffect } from "react";
 import { AppShell } from "./components/app-shell";
 import { LogoIcon } from "./components/logo";
 import { Toaster } from "./components/ui/sonner";
+import { AcademyOnboardingPage } from "./features/auth/academy-onboarding-page";
 import {
-  AcademyOnboardingPage,
   ForgotPasswordPage,
   ResetPasswordPage,
   SignInPage,
@@ -137,13 +137,7 @@ const studentHomeRoute = createRoute({
 const onboardingRoute = createRoute({
   getParentRoute: () => authBareLayout,
   path: "/onboarding/academy",
-  component: function OnboardingGuard() {
-    const organizations = authClient.useListOrganizations();
-    if (!organizations.isPending && (organizations.data?.length ?? 0) > 0) {
-      return <Navigate to="/" />;
-    }
-    return <AcademyOnboardingPage />;
-  },
+  component: AcademyOnboardingPage,
 });
 
 // --- Instructor routes (require auth + org, AppShell) ---
