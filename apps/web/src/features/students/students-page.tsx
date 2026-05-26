@@ -171,10 +171,11 @@ export function StudentsPage() {
   // CSV import state
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [importPreview, setImportPreview] = useState<{
+    totalLines: number;
+    validLines: number;
+    errorLines: number;
     previewToken: string;
-    rows: Array<Record<string, string>>;
-    errors: Array<{ row: number; message: string }>;
-    warnings: Array<{ row: number; message: string }>;
+    lines: Array<{ line: number; name: string; errors: string[]; warnings: string[] }>;
   } | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const csvFileInputRef = useRef<HTMLInputElement>(null);
@@ -234,6 +235,11 @@ export function StudentsPage() {
   function handleExportCsv() {
     const baseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3100";
     window.open(`${baseUrl}/students/export.csv`, "_blank");
+  }
+
+  function handleDownloadImportTemplate() {
+    const baseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3100";
+    window.open(`${baseUrl}/students/import-csv/template.csv`, "_blank");
   }
 
   const students = studentsQuery.data?.students ?? [];
@@ -478,6 +484,21 @@ export function StudentsPage() {
           <div className="no-scrollbar flex-1 overflow-y-auto px-4">
             {!importPreview ? (
               <div className="space-y-3">
+                <div className="rounded-2xl border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
+                  <p>
+                    Baixe o modelo, preencha os dados dos alunos e mantenha os cabeçalhos em
+                    português. Datas devem usar o formato AAAA-MM-DD e o valor mensal deve estar em
+                    reais, como 150.00 ou 150,00.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="mt-3"
+                    onClick={handleDownloadImportTemplate}
+                  >
+                    <Download04Icon className="size-4" /> Baixar modelo CSV
+                  </Button>
+                </div>
                 <input
                   ref={csvFileInputRef}
                   type="file"
@@ -496,65 +517,67 @@ export function StudentsPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {importPreview.errors.length > 0 ? (
+                {importPreview.errorLines > 0 ? (
                   <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4">
                     <h4 className="font-medium text-destructive">
-                      Erros ({importPreview.errors.length})
+                      Erros ({importPreview.errorLines})
                     </h4>
                     <ul className="mt-2 space-y-1 text-sm text-destructive">
-                      {importPreview.errors.map((err) => (
-                        <li key={`err-${err.row}`}>
-                          Linha {err.row}: {err.message}
-                        </li>
-                      ))}
+                      {importPreview.lines
+                        .filter((line) => line.errors.length > 0)
+                        .map((line) => (
+                          <li key={`err-${line.line}`}>
+                            Linha {line.line}: {line.errors.join("; ")}
+                          </li>
+                        ))}
                     </ul>
                   </div>
                 ) : null}
-                {importPreview.warnings.length > 0 ? (
+                {importPreview.lines.some((line) => line.warnings.length > 0) ? (
                   <div className="rounded-2xl border border-yellow-500/30 bg-yellow-500/5 p-4">
-                    <h4 className="font-medium text-yellow-700 dark:text-yellow-400">
-                      Avisos ({importPreview.warnings.length})
-                    </h4>
+                    <h4 className="font-medium text-yellow-700 dark:text-yellow-400">Avisos</h4>
                     <ul className="mt-2 space-y-1 text-sm text-yellow-700 dark:text-yellow-400">
-                      {importPreview.warnings.map((warn) => (
-                        <li key={`warn-${warn.row}`}>
-                          Linha {warn.row}: {warn.message}
-                        </li>
-                      ))}
+                      {importPreview.lines
+                        .filter((line) => line.warnings.length > 0)
+                        .map((line) => (
+                          <li key={`warn-${line.line}`}>
+                            Linha {line.line}: {line.warnings.join("; ")}
+                          </li>
+                        ))}
                     </ul>
                   </div>
                 ) : null}
-                {importPreview.rows.length > 0 ? (
+                {importPreview.lines.length > 0 ? (
                   <div className="overflow-auto rounded-2xl border border-border">
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b bg-muted/50">
-                          {Object.keys(importPreview.rows[0] ?? {}).map((col) => (
-                            <th
-                              key={col}
-                              className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase"
-                            >
-                              {col}
-                            </th>
-                          ))}
+                          <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">
+                            Linha
+                          </th>
+                          <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">
+                            Nome
+                          </th>
+                          <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">
+                            Status
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border">
-                        {importPreview.rows.slice(0, 20).map((row, i) => (
-                          // biome-ignore lint/suspicious/noArrayIndexKey: preview rows have no stable id
-                          <tr key={`row-${i}`}>
-                            {Object.values(row).map((val, j) => (
-                              <td key={String(j)} className="px-3 py-2 text-muted-foreground">
-                                {val}
-                              </td>
-                            ))}
+                        {importPreview.lines.slice(0, 20).map((line) => (
+                          <tr key={`row-${line.line}`}>
+                            <td className="px-3 py-2 text-muted-foreground">{line.line}</td>
+                            <td className="px-3 py-2 text-muted-foreground">{line.name}</td>
+                            <td className="px-3 py-2 text-muted-foreground">
+                              {line.errors.length > 0 ? "Com erro" : "Válida"}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
-                    {importPreview.rows.length > 20 ? (
+                    {importPreview.lines.length > 20 ? (
                       <p className="px-3 py-2 text-xs text-muted-foreground">
-                        Mostrando 20 de {importPreview.rows.length} linhas.
+                        Mostrando 20 de {importPreview.lines.length} linhas.
                       </p>
                     ) : null}
                   </div>
@@ -577,12 +600,12 @@ export function StudentsPage() {
               </Button>
               <Button
                 type="button"
-                disabled={importConfirmMutation.isPending || importPreview.errors.length > 0}
+                disabled={importConfirmMutation.isPending || importPreview.errorLines > 0}
                 onClick={() => importConfirmMutation.mutate(importPreview.previewToken)}
               >
                 {importConfirmMutation.isPending
                   ? "Importando..."
-                  : `Confirmar (${importPreview.rows.length} alunos)`}
+                  : `Confirmar (${importPreview.validLines} alunos)`}
               </Button>
             </DrawerFooter>
           ) : (

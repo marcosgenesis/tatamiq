@@ -804,22 +804,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/schedule/ad-hoc-classes/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: operations["ScheduleController_deleteAdHoc"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/schedule/ad-hoc-classes/{id}/cancel": {
         parameters: {
             query?: never;
@@ -831,6 +815,22 @@ export interface paths {
         put?: never;
         post: operations["ScheduleController_cancelAdHoc"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schedule/ad-hoc-classes/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["ScheduleController_deleteAdHoc"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1006,6 +1006,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["AttendancesController_invalidate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/students/import-csv/template.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CsvController_importTemplate"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3153,25 +3169,6 @@ export interface operations {
             };
         };
     };
-    ScheduleController_deleteAdHoc: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: unknown;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
     ScheduleController_cancelAdHoc: {
         parameters: {
             query?: never;
@@ -3190,6 +3187,25 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ScheduleOccurrenceDto"];
                 };
+            };
+        };
+    };
+    ScheduleController_deleteAdHoc: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -3453,6 +3469,23 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AttendanceDto"];
                 };
+            };
+        };
+    };
+    CsvController_importTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

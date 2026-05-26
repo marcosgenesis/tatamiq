@@ -1,14 +1,27 @@
-import { Body, Controller, Get, Header, Inject, Post, Query, Res } from "@nestjs/common";
-import { ApiOkResponse, ApiQuery, ApiTags } from "@nestjs/swagger";
+import { Body, Controller, Get, Inject, Post, Query, Res } from "@nestjs/common";
+import { ApiQuery, ApiTags } from "@nestjs/swagger";
 import { OrgRoles, Session } from "@thallesp/nestjs-better-auth";
 import { activeOrganizationId, type SessionWithOrganization } from "../active-organization";
 import { CsvService } from "./csv.service";
+
+type CsvResponse = {
+  setHeader(name: string, value: string): void;
+  send(body: string): void;
+};
 
 @ApiTags("csv")
 @OrgRoles(["owner"])
 @Controller()
 export class CsvController {
   constructor(@Inject(CsvService) private readonly csvService: CsvService) {}
+
+  @Get("students/import-csv/template.csv")
+  async importTemplate(@Res() res: CsvResponse) {
+    const csv = this.csvService.studentImportTemplate();
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", "attachment; filename=modelo-importacao-alunos.csv");
+    res.send(csv);
+  }
 
   @Post("students/import-csv")
   async importPreview(@Body() body: { csv: string }, @Session() session: SessionWithOrganization) {
@@ -24,7 +37,7 @@ export class CsvController {
   }
 
   @Get("students/export.csv")
-  async exportStudents(@Session() session: SessionWithOrganization, @Res() res: any) {
+  async exportStudents(@Session() session: SessionWithOrganization, @Res() res: CsvResponse) {
     const csv = await this.csvService.exportStudents(activeOrganizationId(session));
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
     res.setHeader("Content-Disposition", "attachment; filename=alunos.csv");
@@ -38,7 +51,7 @@ export class CsvController {
   @ApiQuery({ name: "studentId", required: false })
   async exportAttendances(
     @Session() session: SessionWithOrganization,
-    @Res() res: any,
+    @Res() res: CsvResponse,
     @Query("dateFrom") dateFrom?: string,
     @Query("dateTo") dateTo?: string,
     @Query("classGroupId") classGroupId?: string,
@@ -62,7 +75,7 @@ export class CsvController {
   @ApiQuery({ name: "studentId", required: false })
   async exportMonthlyFees(
     @Session() session: SessionWithOrganization,
-    @Res() res: any,
+    @Res() res: CsvResponse,
     @Query("status") status?: string,
     @Query("referenceYear") referenceYear?: string,
     @Query("referenceMonth") referenceMonth?: string,

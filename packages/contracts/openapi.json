@@ -1672,6 +1672,27 @@
         ]
       }
     },
+    "/schedule/ad-hoc-classes/{id}": {
+      "delete": {
+        "operationId": "ScheduleController_deleteAdHoc",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "schedule"
+        ]
+      }
+    },
     "/schedule/ad-hoc-classes/{id}/reactivate": {
       "post": {
         "operationId": "ScheduleController_reactivateAdHoc",
@@ -2036,6 +2057,20 @@
         },
         "tags": [
           "attendances"
+        ]
+      }
+    },
+    "/students/import-csv/template.csv": {
+      "get": {
+        "operationId": "CsvController_importTemplate",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "csv"
         ]
       }
     },
