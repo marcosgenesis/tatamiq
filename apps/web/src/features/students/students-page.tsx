@@ -14,6 +14,7 @@ import { Badge } from "@/components/reui/badge";
 import { DataGrid, DataGridContainer } from "@/components/reui/data-grid/data-grid";
 import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination";
 import { DataGridTable } from "@/components/reui/data-grid/data-grid-table";
+import { DatePicker } from "@/components/reui/date-picker";
 import { api } from "../../api";
 import { Field, SelectField } from "../../components/form-field";
 import { Button } from "../../components/ui/button";
@@ -28,13 +29,8 @@ import {
 } from "../../components/ui/drawer";
 import { useBelts } from "../../hooks/use-belts";
 import { useStudents } from "../../hooks/use-students";
-import {
-  ageLabel,
-  billingLabel,
-  centsToReais,
-  formatDate,
-  reaisToCents,
-} from "../../lib/formatting";
+import { ageLabel, billingLabel, formatDate } from "../../lib/formatting";
+import { maskCurrency, maskPhone } from "../../lib/masks";
 
 type StudentStatusFilter = "active" | "inactive" | "all";
 type StudentPayload = components["schemas"]["UpdateStudentDto"];
@@ -251,7 +247,7 @@ export function StudentsPage() {
       enrollmentDate: student.enrollmentDate,
       phone: student.phone ?? "",
       email: student.email ?? "",
-      monthlyAmount: centsToReais(student.monthlyAmountInCents),
+      monthlyAmount: student.monthlyAmountInCents?.toString() ?? "",
       monthlyDueDay: student.monthlyDueDay?.toString() ?? "",
       currentBeltId: student.currentBeltId,
       currentDegree: student.currentDegree.toString(),
@@ -413,7 +409,7 @@ export function StudentsPage() {
       enrollmentDate: form.enrollmentDate,
       phone: form.phone,
       email: form.email,
-      monthlyAmountInCents: reaisToCents(form.monthlyAmount),
+      monthlyAmountInCents: form.monthlyAmount ? Number(form.monthlyAmount) : null,
       monthlyDueDay: form.monthlyDueDay ? Number(form.monthlyDueDay) : null,
       currentBeltId: form.currentBeltId,
       currentDegree: Number(form.currentDegree),
@@ -683,24 +679,33 @@ function StudentForm(props: {
             value={props.form.name}
             onChange={(value) => props.updateForm("name", value)}
           />
-          <Field
-            label="Nascimento"
-            required
-            placeholder="AAAA-MM-DD"
-            value={props.form.birthDate}
-            onChange={(value) => props.updateForm("birthDate", value)}
-          />
-          <Field
-            label="Matricula"
-            required
-            placeholder="AAAA-MM-DD"
-            value={props.form.enrollmentDate}
-            onChange={(value) => props.updateForm("enrollmentDate", value)}
-          />
+          <div className="space-y-2 text-sm font-medium">
+            <span>
+              Nascimento
+              <span className="text-destructive ml-0.5">*</span>
+            </span>
+            <DatePicker
+              value={props.form.birthDate}
+              onChange={(value) => props.updateForm("birthDate", value)}
+              placeholder="Selecionar data de nascimento"
+            />
+          </div>
+          <div className="space-y-2 text-sm font-medium">
+            <span>
+              Matrícula
+              <span className="text-destructive ml-0.5">*</span>
+            </span>
+            <DatePicker
+              value={props.form.enrollmentDate}
+              onChange={(value) => props.updateForm("enrollmentDate", value)}
+              placeholder="Selecionar data de matrícula"
+            />
+          </div>
           <Field
             label="Telefone"
-            value={props.form.phone}
-            onChange={(value) => props.updateForm("phone", value)}
+            placeholder="(00) 00000-0000"
+            value={maskPhone(props.form.phone)}
+            onChange={(value) => props.updateForm("phone", value.replace(/\D/g, ""))}
           />
           <Field
             label="Email"
@@ -710,21 +715,30 @@ function StudentForm(props: {
           />
           <Field
             label="Valor mensal (R$)"
-            inputMode="decimal"
-            value={props.form.monthlyAmount}
-            onChange={(value) => props.updateForm("monthlyAmount", value)}
+            inputMode="numeric"
+            placeholder="0,00"
+            value={maskCurrency(props.form.monthlyAmount)}
+            onChange={(value) => {
+              const digits = value.replace(/\D/g, "");
+              props.updateForm("monthlyAmount", digits);
+            }}
           />
           <Field
             label="Dia de vencimento"
             type="number"
             min="1"
             max="31"
+            placeholder="Ex: 10"
             value={props.form.monthlyDueDay}
             onChange={(value) => props.updateForm("monthlyDueDay", value)}
           />
           <label className="space-y-2 text-sm font-medium">
-            <span>Faixa</span>
+            <span>
+              Faixa
+              <span className="text-destructive ml-0.5">*</span>
+            </span>
             <select
+              required
               value={props.form.currentBeltId}
               onChange={(event) => props.updateForm("currentBeltId", event.target.value)}
               className="h-11 w-full rounded-2xl border border-border bg-background px-3 text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
@@ -752,6 +766,7 @@ function StudentForm(props: {
           </label>
           <SelectField
             label="Grau"
+            required
             value={props.form.currentDegree}
             onChange={(value) => props.updateForm("currentDegree", value)}
             options={[0, 1, 2, 3, 4, 5, 6].map((value) => ({
@@ -785,8 +800,9 @@ function StudentForm(props: {
             />
             <Field
               label="Telefone do responsável"
-              value={props.form.guardianPhone}
-              onChange={(value) => props.updateForm("guardianPhone", value)}
+              placeholder="(00) 00000-0000"
+              value={maskPhone(props.form.guardianPhone)}
+              onChange={(value) => props.updateForm("guardianPhone", value.replace(/\D/g, ""))}
             />
             <Field
               label="Email do responsável"
