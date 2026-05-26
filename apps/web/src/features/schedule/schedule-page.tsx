@@ -162,11 +162,11 @@ export function SchedulePage() {
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="space-y-6 p-6">
       {/* ── header ── */}
       <div className="schedule-enter flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="font-heading text-4xl tracking-tight md:text-5xl">Agenda</h1>
+          <h1 className="font-heading text-2xl tracking-tight">Agenda</h1>
           <p className="mt-1 text-sm text-muted-foreground">{weekRangeLabel(weekStart)}</p>
         </div>
 

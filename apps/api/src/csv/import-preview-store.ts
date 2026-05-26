@@ -19,6 +19,10 @@ export type ParsedStudentRow = {
   degree: number;
   monthlyAmount: number | null;
   monthlyDueDay: number | null;
+  guardianName: string;
+  guardianPhone: string;
+  guardianEmail: string;
+  guardianRelationship: string;
   errors: string[];
   warnings: string[];
 };

@@ -226,74 +226,34 @@ export function MonthlyFeesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-[2rem] border border-border bg-card p-6 shadow-2xl md:p-8">
-        <Badge variant="muted">Financeiro V0</Badge>
-        <div className="mt-5 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight md:text-5xl">Mensalidades</h1>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
-              Cobranças mensais, Pix, comprovantes em verificação, ajustes e mensalidades
-              dispensadas.
-            </p>
+    <div className="space-y-6 p-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <div className="flex gap-1.5 items-center">
+            <h1 className="text-2xl">Mensalidades</h1>
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant="secondary"
-              onClick={() => {
-                const baseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3100";
-                const params = new URLSearchParams();
-                if (statusFilter !== "all") params.set("status", statusFilter);
-                const qs = params.toString();
-                window.open(`${baseUrl}/monthly-fees/export.csv${qs ? `?${qs}` : ""}`, "_blank");
-              }}
-            >
-              <Download04Icon className="size-4" /> Exportar CSV
-            </Button>
-            <Button onClick={openCreateForm}>
-              <PlusSignIcon className="size-4" /> Nova mensalidade
-            </Button>
-          </div>
-        </div>
-      </section>
 
-      <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
-        <SummaryCard
-          label="Em aberto"
-          value={summary?.open ?? 0}
-          active={statusFilter === "open"}
-          onClick={() => setStatusFilter("open")}
-        />
-        <SummaryCard
-          label="Atrasadas"
-          value={summary?.overdue ?? 0}
-          active={statusFilter === "overdue"}
-          onClick={() => setStatusFilter("overdue")}
-        />
-        <SummaryCard
-          label="Em verificação"
-          value={summary?.underReview ?? 0}
-          active={statusFilter === "under_review"}
-          onClick={() => setStatusFilter("under_review")}
-        />
-        <SummaryCard
-          label="Pagas"
-          value={summary?.paid ?? 0}
-          active={statusFilter === "paid"}
-          onClick={() => setStatusFilter("paid")}
-        />
-        <SummaryCard
-          label="Dispensadas"
-          value={summary?.waived ?? 0}
-          active={statusFilter === "waived"}
-          onClick={() => setStatusFilter("waived")}
-        />
-        <SummaryCard
-          label="Total"
-          value={summary?.total ?? 0}
-          active={statusFilter === "all"}
-          onClick={() => setStatusFilter("all")}
-        />
+          <p className="max-w-2xl text-base leading-7 text-muted-foreground">
+            Cobranças mensais, Pix, comprovantes em verificação, ajustes e mensalidades dispensadas.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="secondary"
+            onClick={() => {
+              const baseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3100";
+              const params = new URLSearchParams();
+              if (statusFilter !== "all") params.set("status", statusFilter);
+              const qs = params.toString();
+              window.open(`${baseUrl}/monthly-fees/export.csv${qs ? `?${qs}` : ""}`, "_blank");
+            }}
+          >
+            <Download04Icon className="size-4" /> Exportar CSV
+          </Button>
+          <Button onClick={openCreateForm}>
+            <PlusSignIcon className="size-4" /> Nova mensalidade
+          </Button>
+        </div>
       </div>
 
       <Drawer
@@ -366,48 +326,41 @@ export function MonthlyFeesPage() {
           </form>
         </DrawerContent>
       </Drawer>
-
-      <Card>
-        <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <CardTitle>Mensalidades</CardTitle>
-          <span className="text-sm text-muted-foreground">{fees.length} registro(s)</span>
-        </CardHeader>
-        <CardContent>
-          {feesQuery.isLoading ? (
-            <p className="text-sm text-muted-foreground">Carregando mensalidades...</p>
-          ) : null}
-          {feesQuery.isError ? (
-            <p className="text-sm text-destructive">Não foi possível carregar mensalidades.</p>
-          ) : null}
-          {!feesQuery.isLoading && fees.length === 0 ? (
-            <EmptyState onCreate={openCreateForm} />
-          ) : null}
-          {fees.length > 0 ? (
-            <div className="overflow-hidden rounded-2xl border border-border">
-              <div className="hidden grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr_0.8fr_1fr] gap-4 border-border border-b bg-muted/50 px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-[0.18em] md:grid">
-                <span>Aluno</span>
-                <span>Referência</span>
-                <span>Valor</span>
-                <span>Vencimento</span>
-                <span>Status</span>
-                <span>Ações</span>
-              </div>
-              <div className="divide-y divide-border">
-                {fees.map((fee) => (
-                  <FeeRow
-                    key={fee.id}
-                    fee={fee}
-                    onAdjust={() => openAction(fee.id, "adjust", fee)}
-                    onWaive={() => openAction(fee.id, "waive", fee)}
-                    onManualPay={() => openAction(fee.id, "manual_payment", fee)}
-                  />
-                ))}
-              </div>
+      <div>
+        {" "}
+        {feesQuery.isLoading ? (
+          <p className="text-sm text-muted-foreground">Carregando mensalidades...</p>
+        ) : null}
+        {feesQuery.isError ? (
+          <p className="text-sm text-destructive">Não foi possível carregar mensalidades.</p>
+        ) : null}
+        {!feesQuery.isLoading && fees.length === 0 ? (
+          <EmptyState onCreate={openCreateForm} />
+        ) : null}
+        {fees.length > 0 ? (
+          <div className="overflow-hidden rounded-2xl border border-border">
+            <div className="hidden grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr_0.8fr_1fr] gap-4 border-border border-b bg-muted/50 px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-[0.18em] md:grid">
+              <span>Aluno</span>
+              <span>Referência</span>
+              <span>Valor</span>
+              <span>Vencimento</span>
+              <span>Status</span>
+              <span>Ações</span>
             </div>
-          ) : null}
-        </CardContent>
-      </Card>
-
+            <div className="divide-y divide-border">
+              {fees.map((fee) => (
+                <FeeRow
+                  key={fee.id}
+                  fee={fee}
+                  onAdjust={() => openAction(fee.id, "adjust", fee)}
+                  onWaive={() => openAction(fee.id, "waive", fee)}
+                  onManualPay={() => openAction(fee.id, "manual_payment", fee)}
+                />
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </div>
       <Drawer
         direction="right"
         open={actionFeeId !== null && actionType !== null}

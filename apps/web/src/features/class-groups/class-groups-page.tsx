@@ -11,9 +11,8 @@ import {
   useState,
 } from "react";
 import { api } from "../../api";
-import { Badge } from "../../components/ui/badge";
+import { Badge } from "../../components/reui/badge";
 import { Button } from "../../components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import {
   Drawer,
   DrawerClose,
@@ -188,41 +187,22 @@ export function ClassGroupsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-[2rem] border border-border bg-card p-6 shadow-2xl md:p-8">
-        <Badge variant="muted">Turmas V0</Badge>
-        <div className="mt-5 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight md:text-5xl">Turmas</h1>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
-              Organize horários recorrentes, etiquetas e alunos vinculados a cada turma.
-            </p>
+    <div className="space-y-6 p-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <div className="flex gap-1.5 items-center">
+            <h1 className="text-2xl">Turmas</h1>
           </div>
+
+          <p className="max-w-2xl text-base leading-7 text-muted-foreground">
+            Organize horários recorrentes, etiquetas e alunos vinculados a cada turma.
+          </p>
+        </div>
+        <div className="flex gap-2">
           <Button onClick={openCreateForm}>
-            <PlusSignIcon className="size-4" /> Nova turma
+            <PlusSignIcon className="size-4" /> Nova Turma
           </Button>
         </div>
-      </section>
-
-      <div className="grid gap-3 md:grid-cols-3">
-        <SummaryCard
-          label="Ativas"
-          value={summary?.active ?? 0}
-          active={status === "active"}
-          onClick={() => setStatus("active")}
-        />
-        <SummaryCard
-          label="Arquivadas"
-          value={summary?.archived ?? 0}
-          active={status === "archived"}
-          onClick={() => setStatus("archived")}
-        />
-        <SummaryCard
-          label="Total"
-          value={summary?.total ?? 0}
-          active={status === "all"}
-          onClick={() => setStatus("all")}
-        />
       </div>
 
       <Drawer
@@ -247,59 +227,35 @@ export function ClassGroupsPage() {
         </DrawerContent>
       </Drawer>
 
-      <Card>
-        <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <CardTitle>{title}</CardTitle>
-          <span className="text-sm text-muted-foreground">{classGroups.length} turma(s)</span>
-        </CardHeader>
-        <CardContent>
-          {classGroupsQuery.isLoading ? (
-            <p className="text-sm text-muted-foreground">Carregando turmas...</p>
-          ) : null}
-          {classGroupsQuery.isError ? (
-            <p className="text-sm text-destructive">Não foi possível carregar turmas.</p>
-          ) : null}
-          {!classGroupsQuery.isLoading && classGroups.length === 0 ? (
-            <EmptyState onCreate={openCreateForm} />
-          ) : null}
-          {classGroups.length > 0 ? (
-            <div className="grid gap-3">
-              {classGroups.map((classGroup) => (
-                <ClassGroupCard
-                  key={classGroup.id}
-                  classGroup={classGroup}
-                  onEdit={() => openEditForm(classGroup)}
-                  onToggleStatus={() =>
-                    statusMutation.mutate({
-                      id: classGroup.id,
-                      action: classGroup.status === "active" ? "archive" : "reactivate",
-                    })
-                  }
-                />
-              ))}
-            </div>
-          ) : null}
-        </CardContent>
-      </Card>
+      <div>
+        {classGroupsQuery.isLoading ? (
+          <p className="text-sm text-muted-foreground">Carregando turmas...</p>
+        ) : null}
+        {classGroupsQuery.isError ? (
+          <p className="text-sm text-destructive">Não foi possível carregar turmas.</p>
+        ) : null}
+        {!classGroupsQuery.isLoading && classGroups.length === 0 ? (
+          <EmptyState onCreate={openCreateForm} />
+        ) : null}
+        {classGroups.length > 0 ? (
+          <div className="grid grid-cols-4 gap-3">
+            {classGroups.map((classGroup) => (
+              <ClassGroupCard
+                key={classGroup.id}
+                classGroup={classGroup}
+                onEdit={() => openEditForm(classGroup)}
+                onToggleStatus={() =>
+                  statusMutation.mutate({
+                    id: classGroup.id,
+                    action: classGroup.status === "active" ? "archive" : "reactivate",
+                  })
+                }
+              />
+            ))}
+          </div>
+        ) : null}
+      </div>
     </div>
-  );
-}
-
-function SummaryCard(props: {
-  label: string;
-  value: number;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={props.onClick}
-      className={`rounded-3xl border p-5 text-left transition ${props.active ? "border-primary bg-primary/10" : "border-border bg-card hover:bg-muted/70"}`}
-    >
-      <span className="text-sm text-muted-foreground">{props.label}</span>
-      <strong className="mt-2 block text-3xl">{props.value}</strong>
-    </button>
   );
 }
 
@@ -510,12 +466,12 @@ function ClassGroupCard(props: {
 }) {
   const classGroup = props.classGroup;
   return (
-    <div className="rounded-3xl border border-border bg-background/60 p-4">
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+    <div className="border border-border bg-background/60 p-4">
+      <div className="">
         <div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="font-semibold">{classGroup.name}</h3>
-            <Badge variant={classGroup.status === "active" ? "default" : "muted"}>
+            <Badge variant={classGroup.status === "active" ? "success" : "destructive"}>
               {classGroup.status === "active" ? "Ativa" : "Arquivada"}
             </Badge>
           </div>
@@ -523,17 +479,33 @@ function ClassGroupCard(props: {
             {classGroup.defaultDurationMinutes} min · {classGroup.students.length} aluno(s)
           </p>
           <p className="mt-1 text-sm text-muted-foreground">{scheduleSummary(classGroup)}</p>
-          {classGroup.tags.length > 0 ? (
-            <p className="mt-2 text-xs text-muted-foreground">
-              {classGroup.tags.map((tag) => `#${tag}`).join(" ")}
-            </p>
-          ) : null}
+          <div className="my-2">
+            {classGroup.tags.length > 0
+              ? classGroup.tags.map((tag) => (
+                  <Badge variant="primary-outline" key={tag}>
+                    {tag}
+                  </Badge>
+                ))
+              : null}
+          </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="secondary" size="sm" onClick={props.onEdit}>
+        <div className="flex w-full flex-wrap gap-2">
+          <Button
+            type="button"
+            className="w-full"
+            variant="secondary"
+            size="sm"
+            onClick={props.onEdit}
+          >
             Editar
           </Button>
-          <Button type="button" variant="ghost" size="sm" onClick={props.onToggleStatus}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="w-full"
+            onClick={props.onToggleStatus}
+          >
             {classGroup.status === "active" ? "Arquivar" : "Reativar"}
           </Button>
         </div>
