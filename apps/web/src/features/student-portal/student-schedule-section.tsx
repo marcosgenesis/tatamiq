@@ -59,12 +59,12 @@ export function StudentScheduleSection() {
               day.classes.map((cls) => (
                 <div
                   key={cls.id}
-                  className={`flex items-center justify-between rounded-2xl border border-border p-3 text-sm ${
+                  className={`flex min-h-16 items-start justify-between gap-3 rounded-2xl border border-border p-4 text-sm ${
                     cls.status === "cancelled" ? "opacity-60" : ""
                   }`}
                 >
-                  <div>
-                    <strong>{cls.classGroupName}</strong>
+                  <div className="min-w-0">
+                    <strong className="break-words">{cls.classGroupName}</strong>
                     <p className="text-muted-foreground">
                       {formatTime(cls.scheduledStartAt)} · {cls.durationMinutes} min
                     </p>

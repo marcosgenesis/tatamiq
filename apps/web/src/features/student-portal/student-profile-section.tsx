@@ -73,6 +73,9 @@ export function StudentProfileSection() {
             </label>
             <Input
               id="student-phone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="(00) 00000-0000"
@@ -85,6 +88,8 @@ export function StudentProfileSection() {
             <Input
               id="student-email"
               type="email"
+              inputMode="email"
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="aluno@email.com"
@@ -94,7 +99,7 @@ export function StudentProfileSection() {
           {error && <p className="text-sm text-destructive">{error}</p>}
           {success && <p className="text-sm text-emerald-600">{success}</p>}
 
-          <Button type="submit" disabled={mutation.isPending}>
+          <Button type="submit" disabled={mutation.isPending} className="min-h-11 w-full md:w-auto">
             {mutation.isPending ? "Salvando..." : "Salvar"}
           </Button>
         </form>

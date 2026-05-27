@@ -151,20 +151,33 @@ export function StudentMonthlyFeesSection({ me }: { me: StudentMeResponse }) {
               <input
                 type="file"
                 accept={ACCEPTED_TYPES}
+                capture="environment"
                 onChange={(event) => setFile(event.currentTarget.files?.[0] ?? null)}
-                className="block w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+                className="block min-h-11 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
               />
+              {file?.type.startsWith("image/") ? (
+                <img
+                  src={URL.createObjectURL(file)}
+                  alt="Prévia do comprovante"
+                  className="max-h-80 w-full rounded-2xl border border-border object-contain"
+                />
+              ) : null}
               <Textarea
                 value={note}
                 onChange={(event) => setNote(event.target.value)}
                 placeholder="Observação para o instrutor (opcional)"
               />
               {error ? <p className="text-sm text-destructive">{error}</p> : null}
-              <div className="flex gap-2">
-                <Button type="submit" disabled={uploadMutation.isPending}>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button type="submit" disabled={uploadMutation.isPending} className="min-h-11">
                   {uploadMutation.isPending ? "Enviando..." : "Confirmar envio"}
                 </Button>
-                <Button type="button" variant="secondary" onClick={() => setSelectedFee(null)}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setSelectedFee(null)}
+                  className="min-h-11"
+                >
                   Cancelar
                 </Button>
               </div>
@@ -217,14 +230,14 @@ function FeeCard({
           </p>
           {message ? <p className="mt-2 text-sm text-muted-foreground">{message}</p> : null}
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           {fee.lastReceipt ? (
-            <Button type="button" variant="secondary" onClick={onOpen}>
+            <Button type="button" variant="secondary" onClick={onOpen} className="min-h-11">
               Abrir comprovante
             </Button>
           ) : null}
           {cta ? (
-            <Button type="button" onClick={onUpload}>
+            <Button type="button" onClick={onUpload} className="min-h-11">
               {cta}
             </Button>
           ) : null}

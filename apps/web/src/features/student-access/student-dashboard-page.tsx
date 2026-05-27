@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { api } from "../../api";
 import { Badge } from "../../components/ui/badge";
@@ -13,8 +14,22 @@ import {
 import { StudentMonthlyFeesSection } from "../student-portal/student-monthly-fees-section";
 import { StudentProfileSection } from "../student-portal/student-profile-section";
 import { StudentScheduleSection } from "../student-portal/student-schedule-section";
+import { StudentMobileShell, type StudentMobileTab } from "./student-mobile-shell";
 
 type Tab = "home" | "fees" | "schedule" | "attendance" | "graduation" | "profile";
+
+type StudentDashboardData = {
+  student: { id: string; name: string; status: "active" | "inactive"; readOnly: boolean };
+  academy: { name: string };
+  classGroups: Array<{ id: string; name: string }>;
+  upcomingClasses: Array<{
+    id: string;
+    classGroupName: string;
+    status: string;
+    scheduledStartAt: string;
+    durationMinutes: number;
+  }>;
+};
 
 const tabs: Array<{ key: Tab; label: string }> = [
   { key: "home", label: "Início" },
@@ -67,8 +82,10 @@ export function StudentDashboardPage() {
   }
 
   const data = query.data;
-
-  return (
+  const hasUpcomingClass = data.upcomingClasses.some(
+    (item: { status: string }) => item.status !== "cancelled",
+  );
+  const desktop = (
     <main className="min-h-screen bg-background p-6 text-foreground">
       <div className="mx-auto max-w-5xl space-y-6">
         <section className="rounded-[2rem] border border-border bg-card p-6 shadow-2xl">
@@ -113,11 +130,38 @@ export function StudentDashboardPage() {
       </div>
     </main>
   );
+
+  const mobileActiveTab: StudentMobileTab =
+    activeTab === "fees" || activeTab === "schedule" || activeTab === "profile"
+      ? activeTab
+      : "home";
+
+  return (
+    <StudentMobileShell
+      student={data.student}
+      activeTab={mobileActiveTab}
+      indicators={indicators.data}
+      hasUpcomingClass={hasUpcomingClass}
+      onTabChange={handleTabChange}
+      desktop={desktop}
+    >
+      {activeTab === "home" && <HomeTab data={data} mobile />}
+      {activeTab === "fees" && <StudentMonthlyFeesSection me={data} />}
+      {activeTab === "schedule" && <StudentScheduleSection />}
+      {activeTab === "profile" && <StudentProfileSection />}
+    </StudentMobileShell>
+  );
 }
 
-function HomeTab({ data }: { data: any }) {
+function HomeTab({ data, mobile = false }: { data: StudentDashboardData; mobile?: boolean }) {
   return (
-    <div className="grid gap-6 md:grid-cols-[0.8fr_1.2fr]">
+    <div className="grid gap-4 md:gap-6 md:grid-cols-[0.8fr_1.2fr]">
+      {mobile ? (
+        <div className="grid gap-4 md:hidden">
+          <AttendanceSummaryCard />
+          <GraduationSummaryCard />
+        </div>
+      ) : null}
       <Card>
         <CardHeader>
           <CardTitle>Minhas turmas</CardTitle>
@@ -126,8 +170,8 @@ function HomeTab({ data }: { data: any }) {
           {data.classGroups.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nenhuma turma vinculada.</p>
           ) : (
-            data.classGroups.map((group: { id: string; name: string }) => (
-              <div key={group.id} className="rounded-2xl border border-border p-3 text-sm">
+            data.classGroups.map((group) => (
+              <div key={group.id} className="rounded-2xl border border-border p-4 text-sm md:p-3">
                 {group.name}
               </div>
             ))
@@ -143,29 +187,122 @@ function HomeTab({ data }: { data: any }) {
           {data.upcomingClasses.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nenhuma aula nos próximos 7 dias.</p>
           ) : (
-            data.upcomingClasses.map(
-              (item: {
-                id: string;
-                classGroupName: string;
-                status: string;
-                scheduledStartAt: string;
-                durationMinutes: number;
-              }) => (
-                <div key={item.id} className="rounded-2xl border border-border p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <strong>{item.classGroupName}</strong>
-                    {item.status === "cancelled" ? <Badge variant="muted">Cancelada</Badge> : null}
-                  </div>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {formatDateTime(item.scheduledStartAt)} · {item.durationMinutes} min
-                  </p>
+            data.upcomingClasses.map((item) => (
+              <div key={item.id} className="rounded-2xl border border-border p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <strong>{item.classGroupName}</strong>
+                  {item.status === "cancelled" ? <Badge variant="muted">Cancelada</Badge> : null}
                 </div>
-              ),
-            )
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {formatDateTime(item.scheduledStartAt)} · {item.durationMinutes} min
+                </p>
+              </div>
+            ))
           )}
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function AttendanceSummaryCard() {
+  const navigate = useNavigate();
+  const query = useQuery({
+    queryKey: ["student", "attendances"],
+    queryFn: async () => {
+      // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
+      const { data, error } = await (api.GET as any)("/student/attendances");
+      if (error) throw new Error("Não foi possível carregar presenças.");
+      return data as {
+        attendances: Array<{ id: string; createdAt: string; invalidatedAt: string | null }>;
+      };
+    },
+  });
+
+  const now = new Date();
+  const attendancesThisMonth = (query.data?.attendances ?? []).filter((attendance) => {
+    const date = new Date(attendance.createdAt);
+    return (
+      !attendance.invalidatedAt &&
+      date.getFullYear() === now.getFullYear() &&
+      date.getMonth() === now.getMonth()
+    );
+  });
+
+  return (
+    <button
+      type="button"
+      className="text-left"
+      onClick={() => navigate({ to: "/student/attendance" })}
+    >
+      <Card className="transition-colors active:bg-muted/60">
+        <CardHeader>
+          <CardTitle className="text-base">Presenças do mês</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {query.isLoading ? (
+            <p className="text-sm text-muted-foreground">Carregando resumo...</p>
+          ) : attendancesThisMonth.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhuma presença neste mês.</p>
+          ) : (
+            <p className="text-2xl font-semibold">{attendancesThisMonth.length} presenças</p>
+          )}
+          <p className="mt-2 text-xs text-muted-foreground">Toque para ver o histórico completo.</p>
+        </CardContent>
+      </Card>
+    </button>
+  );
+}
+
+function GraduationSummaryCard() {
+  const navigate = useNavigate();
+  const query = useQuery({
+    queryKey: ["student", "graduation"],
+    queryFn: async () => {
+      // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
+      const { data, error } = await (api.GET as any)("/student/graduation");
+      if (error) throw new Error("Não foi possível carregar graduação.");
+      return data as {
+        currentBelt: { name: string; path?: string | null } | null;
+        currentDegree: number;
+      };
+    },
+  });
+
+  return (
+    <button
+      type="button"
+      className="text-left"
+      onClick={() => navigate({ to: "/student/graduation" })}
+    >
+      <Card className="transition-colors active:bg-muted/60">
+        <CardHeader>
+          <CardTitle className="text-base">Graduação</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {query.isLoading ? (
+            <p className="text-sm text-muted-foreground">Carregando graduação...</p>
+          ) : query.data?.currentBelt ? (
+            <div className="flex items-center gap-3">
+              {query.data.currentBelt.path ? (
+                <img
+                  src={query.data.currentBelt.path}
+                  alt={query.data.currentBelt.name}
+                  className="h-7 w-auto"
+                />
+              ) : null}
+              <div>
+                <p className="text-lg font-semibold">{query.data.currentBelt.name}</p>
+                <p className="text-sm text-muted-foreground">{query.data.currentDegree}° grau</p>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Nenhuma faixa registrada.</p>
+          )}
+          <p className="mt-2 text-xs text-muted-foreground">Toque para ver promoções.</p>
+        </CardContent>
+      </Card>
+    </button>
   );
 }
 
