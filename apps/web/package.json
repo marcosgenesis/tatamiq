@@ -9,7 +9,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "lint": "biome check .",
-    "preview": "vite preview"
+    "preview": "vite preview --host 0.0.0.0 --port 3000"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
