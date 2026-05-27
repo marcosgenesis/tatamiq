@@ -22,7 +22,7 @@ import "./schedule-calendar.css";
 
 /* ── constants ── */
 
-const HOUR_PX = 68;
+const HOUR_PX = 72;
 const FIRST_HOUR = 6;
 const LAST_HOUR = 23;
 const TOTAL_HOURS = LAST_HOUR - FIRST_HOUR;
@@ -162,39 +162,30 @@ export function SchedulePage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-4 p-6">
       {/* ── header ── */}
-      <div className="schedule-enter flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h1 className="font-heading text-2xl tracking-tight">Agenda</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{weekRangeLabel(weekStart)}</p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <div
-            data-slot="button-group"
-            className="flex -space-x-px [&>*:first-child]:rounded-r-none [&>*:last-child]:rounded-l-none [&>*:not(:first-child):not(:last-child)]:rounded-none"
-          >
-            <Button variant="outline" size="icon" onClick={() => moveWeek(-1)}>
-              ‹
-            </Button>
-            <Button variant="outline" onClick={() => setWeekStart(getMondayWeekStart(new Date()))}>
-              Hoje
-            </Button>
-            <Button variant="outline" size="icon" onClick={() => moveWeek(1)}>
-              ›
-            </Button>
-          </div>
-
-          <Button onClick={openAdHocForm}>
-            <PlusSignIcon className="size-4" />
-            Aula avulsa
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Button variant="outline" onClick={() => setWeekStart(getMondayWeekStart(new Date()))}>
+            Hoje
           </Button>
+          <Button variant="ghost" size="icon" onClick={() => moveWeek(-1)}>
+            ‹
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => moveWeek(1)}>
+            ›
+          </Button>
+          <h1 className="font-heading text-xl font-semibold">{weekMonthLabel(weekStart)}</h1>
         </div>
+
+        <Button onClick={openAdHocForm}>
+          <PlusSignIcon className="size-4" />
+          Aula avulsa
+        </Button>
       </div>
 
       {/* ── calendar ── */}
-      <div className="schedule-enter schedule-enter-1 overflow-hidden rounded-2xl border border-border bg-card shadow-lg">
+      <div className="overflow-hidden rounded-xl border border-border">
         {scheduleQuery.isLoading ? (
           <div className="flex items-center justify-center py-32 text-sm text-muted-foreground">
             <div className="mr-3 size-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
@@ -206,33 +197,21 @@ export function SchedulePage() {
           </div>
         ) : (
           <>
-            {/* day headers (sticky) */}
-            <div className="flex border-b-2 border-border bg-card">
-              <div className="w-14 shrink-0" />
+            {/* day headers */}
+            <div className="flex border-b border-border">
+              <div className="w-16 shrink-0" />
               {days.map((day) => {
                 const isToday = day.date === todayStr;
-                const count = day.occurrences.length;
                 return (
                   <div
                     key={day.date}
-                    className={`flex flex-1 flex-col items-center gap-0.5 border-l border-border py-3 ${isToday ? "bg-primary/[0.04]" : ""}`}
+                    className="flex flex-1 items-center justify-center border-l border-border py-3"
                   >
-                    <span className="text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                      {WEEKDAYS_SHORT[day.weekday]}
-                    </span>
                     <span
-                      className={`flex size-8 items-center justify-center rounded-full text-sm font-semibold ${isToday ? "bg-primary text-primary-foreground" : ""}`}
+                      className={`text-sm ${isToday ? "font-bold text-foreground" : "text-muted-foreground"}`}
                     >
-                      {day.date.slice(-2)}
+                      {WEEKDAYS_SHORT[day.weekday]} {day.date.slice(-2)}
                     </span>
-                    {count > 0 ? (
-                      <span className="mt-0.5 flex gap-0.5">
-                        <span className="size-1 rounded-full bg-primary/50" />
-                        {count >= 2 ? <span className="size-1 rounded-full bg-primary/50" /> : null}
-                        {count >= 3 ? <span className="size-1 rounded-full bg-primary/50" /> : null}
-                        {count >= 4 ? <span className="size-1 rounded-full bg-primary/40" /> : null}
-                      </span>
-                    ) : null}
                   </div>
                 );
               })}
@@ -242,15 +221,15 @@ export function SchedulePage() {
             <div
               ref={gridRef}
               className="schedule-grid-scroll overflow-y-auto"
-              style={{ maxHeight: "calc(100vh - 18rem)" }}
+              style={{ maxHeight: "calc(100vh - 14rem)" }}
             >
               <div className="relative flex" style={{ height: `${GRID_HEIGHT}px` }}>
                 {/* time gutter */}
-                <div className="relative w-14 shrink-0">
-                  {HOURS.map((h) => (
+                <div className="relative w-16 shrink-0">
+                  {HOURS.slice(1).map((h) => (
                     <span
                       key={h}
-                      className="absolute right-3 -translate-y-1/2 select-none text-[0.625rem] font-medium tabular-nums text-muted-foreground"
+                      className="absolute right-4 -translate-y-1/2 select-none text-xs tabular-nums text-muted-foreground"
                       style={{ top: `${(h - FIRST_HOUR) * HOUR_PX}px` }}
                     >
                       {String(h).padStart(2, "0")}:00
@@ -261,12 +240,11 @@ export function SchedulePage() {
                 {/* day columns */}
                 <div className="relative flex flex-1">
                   {days.map((day) => {
-                    const isToday = day.date === todayStr;
                     const laid = layoutDayEvents(day.occurrences);
                     return (
                       <div
                         key={day.date}
-                        className={`relative flex-1 cursor-crosshair border-l border-border select-none ${isToday ? "bg-primary/[0.02]" : ""}`}
+                        className="relative flex-1 cursor-crosshair border-l border-border select-none"
                         onPointerDown={(e) => {
                           if (
                             e.button !== 0 ||
@@ -298,23 +276,15 @@ export function SchedulePage() {
                         {HOURS.map((h) => (
                           <div
                             key={h}
-                            className="absolute inset-x-0 border-t border-border/40"
+                            className="absolute inset-x-0 border-t border-border"
                             style={{ top: `${(h - FIRST_HOUR) * HOUR_PX}px` }}
-                          />
-                        ))}
-                        {/* half-hour lines */}
-                        {HOURS.map((h) => (
-                          <div
-                            key={`${h}h`}
-                            className="absolute inset-x-0 border-t border-border/[0.15]"
-                            style={{ top: `${(h - FIRST_HOUR) * HOUR_PX + HOUR_PX / 2}px` }}
                           />
                         ))}
 
                         {/* drag selection overlay */}
                         {selection && selection.date === day.date ? (
                           <div
-                            className="pointer-events-none absolute inset-x-1 z-[5] rounded-lg border-2 border-dashed border-primary bg-primary/10"
+                            className="pointer-events-none absolute inset-x-1 z-[5] rounded-md border-2 border-dashed border-primary bg-primary/10"
                             style={{
                               top: `${((selection.startMin - FIRST_HOUR * 60) / 60) * HOUR_PX}px`,
                               height: `${((selection.endMin - selection.startMin) / 60) * HOUR_PX}px`,
@@ -340,22 +310,22 @@ export function SchedulePage() {
                             <button
                               key={occ.id}
                               type="button"
-                              className={`schedule-event absolute z-[2] flex flex-col overflow-hidden rounded-lg border text-left ${eventColorClasses(occ)}`}
+                              className={`schedule-event absolute z-[2] flex flex-col overflow-hidden rounded-md text-left ${eventColorClasses(occ)}`}
                               style={{
                                 top: `${pos.top + 1}px`,
                                 height: `${pos.height - 2}px`,
-                                left: `calc(${l}% + 3px)`,
-                                width: `calc(${w}% - 6px)`,
+                                left: `calc(${l}% + 2px)`,
+                                width: `calc(${w}% - 4px)`,
                               }}
                               onClick={() => setSelectedOccurrence(occ)}
                             >
                               <span
-                                className={`truncate px-2 pt-1.5 text-[11px] font-semibold leading-tight ${occ.status === "cancelled" ? "line-through opacity-50" : ""}`}
+                                className={`truncate px-2 pt-1.5 text-[11px] font-semibold leading-tight ${occ.status === "cancelled" ? "line-through opacity-60" : ""}`}
                               >
                                 {occ.classGroupName}
                               </span>
-                              <span className="truncate px-2 pb-1.5 text-[10px] leading-tight opacity-60">
-                                {fmtMinutes(localStartMinutes(occ))} · {occ.durationMinutes}min
+                              <span className="truncate px-2 text-[10px] leading-tight opacity-70">
+                                {fmtMinutes(localStartMinutes(occ))} - {fmtEndTime(occ)}
                               </span>
                             </button>
                           );
@@ -370,8 +340,8 @@ export function SchedulePage() {
                       className="pointer-events-none absolute inset-x-0 z-10 flex items-center"
                       style={{ top: `${nowTop}px` }}
                     >
-                      <div className="schedule-now-dot size-2 shrink-0 rounded-full bg-primary" />
-                      <div className="h-[2px] flex-1 bg-primary/80" />
+                      <div className="size-2 shrink-0 rounded-full bg-red-500" />
+                      <div className="h-px flex-1 bg-red-500" />
                     </div>
                   ) : null}
                 </div>
@@ -379,26 +349,6 @@ export function SchedulePage() {
             </div>
           </>
         )}
-      </div>
-
-      {/* ── legend ── */}
-      <div className="schedule-enter schedule-enter-2 flex flex-wrap items-center gap-x-5 gap-y-1.5 px-1 text-[0.6875rem] text-muted-foreground">
-        <span className="flex items-center gap-1.5">
-          <span className="size-2 rounded-sm bg-primary/60" />
-          Recorrente
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="size-2 rounded-sm" style={{ background: "oklch(0.72 0.14 85)" }} />
-          Avulsa
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="size-2 rounded-sm bg-destructive/50" />
-          Cancelada
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="size-2 rounded-sm bg-muted-foreground/40" />
-          Encerrada
-        </span>
       </div>
 
       {/* ── ad-hoc drawer ── */}
@@ -460,15 +410,10 @@ export function SchedulePage() {
 /* ── event colours (tailwind classes) ── */
 
 function eventColorClasses(occ: ScheduleOccurrence): string {
-  if (occ.status === "cancelled")
-    return "border-destructive/30 bg-destructive/[0.06] text-muted-foreground opacity-55 hover:opacity-80";
-  if (occ.status === "active")
-    return "border-primary/40 bg-primary/10 text-foreground ring-1 ring-primary/20 shadow-sm shadow-primary/10";
-  if (occ.status === "ended")
-    return "border-border bg-muted/60 text-muted-foreground opacity-55 hover:opacity-80";
-  if (occ.source === "ad_hoc")
-    return "border-amber-400/40 bg-amber-50 text-foreground hover:bg-amber-50/80 dark:bg-amber-950/30 dark:border-amber-600/30";
-  return "border-primary/20 bg-primary/[0.07] text-foreground hover:bg-primary/[0.11]";
+  if (occ.status === "cancelled") return "bg-muted text-muted-foreground opacity-50";
+  if (occ.status === "active") return "bg-emerald-600 text-white";
+  if (occ.status === "ended") return "bg-muted text-muted-foreground opacity-60";
+  return "bg-primary text-primary-foreground";
 }
 
 /* ── event layout ── */
@@ -1007,16 +952,21 @@ function addDays(date: string, days: number): string {
   return v.toISOString().slice(0, 10);
 }
 
-function weekRangeLabel(ws: string): string {
-  return `${fmtDay(ws)} — ${fmtDay(addDays(ws, 6))}`;
+function weekMonthLabel(ws: string): string {
+  const start = new Date(`${ws}T00:00:00.000Z`);
+  const end = new Date(`${addDays(ws, 6)}T00:00:00.000Z`);
+  const fmt = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric", timeZone: "UTC" });
+  if (start.getUTCMonth() === end.getUTCMonth()) {
+    const s = fmt.format(start);
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+  const fmtShort = new Intl.DateTimeFormat("pt-BR", { month: "short", timeZone: "UTC" });
+  return `${fmtShort.format(start)} - ${fmt.format(end)}`;
 }
 
-function fmtDay(date: string): string {
-  return new Intl.DateTimeFormat("pt-BR", {
-    day: "2-digit",
-    month: "short",
-    timeZone: "UTC",
-  }).format(new Date(`${date}T00:00:00.000Z`));
+function fmtEndTime(occ: ScheduleOccurrence): string {
+  const startMin = localStartMinutes(occ);
+  return fmtMinutes(startMin + occ.durationMinutes);
 }
 
 function formatDayLong(date: string): string {
