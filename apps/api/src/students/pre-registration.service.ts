@@ -36,6 +36,7 @@ import {
 } from "@tatamiq/database";
 import { and, eq, sql } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
+import type { EmailService } from "./email.service";
 import { isMinor } from "./student-rules";
 
 const FIRST_ACCESS_DAYS = 7;
@@ -48,7 +49,10 @@ type DuplicateStudent = { id: string; name: string } | null;
 
 @Injectable()
 export class PreRegistrationService {
-  constructor(@Inject(DATABASE) private readonly db: Database) {}
+  constructor(
+    @Inject(DATABASE) private readonly db: Database,
+    private readonly emailService: EmailService,
+  ) {}
 
   // --- Link management ---
 
@@ -505,35 +509,12 @@ export class PreRegistrationService {
     if (!academy) throw new NotFoundException("Academia não encontrada.");
 
     const firstAccessUrl = `${webAppUrl()}/student/first-access/${rawToken}`;
-    const resendApiKey = process.env.RESEND_API_KEY;
-    const emailFrom = process.env.EMAIL_FROM ?? "Tatamiq <noreply@tatamiq.com.br>";
 
-    const emailPayload = {
-      from: emailFrom,
+    await this.emailService.send({
       to: request.email,
       subject: `Seu acesso ao ${academy.name} no Tatamiq`,
       html: buildFirstAccessEmailHtml(academy.name, request.name, firstAccessUrl),
-    };
-
-    if (!resendApiKey) {
-      console.log({ event: "first_access_email_dev_fallback", ...emailPayload });
-      return { sent: true };
-    }
-
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${resendApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(emailPayload),
     });
-
-    if (!response.ok) {
-      const text = await response.text();
-      console.error({ event: "resend_email_failed", status: response.status, body: text });
-      throw new BadRequestException("Não foi possível enviar o email.");
-    }
 
     return { sent: true };
   }

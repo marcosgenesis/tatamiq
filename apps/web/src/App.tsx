@@ -32,6 +32,10 @@ import { AcceptStudentInvitePage } from "./features/student-access/accept-studen
 import { ChooseAreaPage } from "./features/student-access/choose-area-page";
 import { StudentCheckInPage } from "./features/student-access/student-check-in-page";
 import { StudentDashboardPage } from "./features/student-access/student-dashboard-page";
+import {
+  StudentAttendancePage,
+  StudentGraduationPage,
+} from "./features/student-access/student-drilldown-pages";
 import { FirstAccessPage } from "./features/students/first-access-page";
 import { PreRegistrationPage } from "./features/students/pre-registration-page";
 import { StudentsPage } from "./features/students/students-page";
@@ -154,6 +158,18 @@ const studentHomeRoute = createRoute({
   component: StudentDashboardPage,
 });
 
+const studentAttendanceRoute = createRoute({
+  getParentRoute: () => authBareLayout,
+  path: "/student/attendance",
+  component: StudentAttendancePage,
+});
+
+const studentGraduationRoute = createRoute({
+  getParentRoute: () => authBareLayout,
+  path: "/student/graduation",
+  component: StudentGraduationPage,
+});
+
 const onboardingRoute = createRoute({
   getParentRoute: () => authBareLayout,
   path: "/onboarding/academy",
@@ -235,7 +251,13 @@ const routeTree = rootRoute.addChildren([
     preRegistrationRoute,
     firstAccessRoute,
   ]),
-  authBareLayout.addChildren([chooseAreaRoute, studentHomeRoute, onboardingRoute]),
+  authBareLayout.addChildren([
+    chooseAreaRoute,
+    studentHomeRoute,
+    studentAttendanceRoute,
+    studentGraduationRoute,
+    onboardingRoute,
+  ]),
   instructorLayout.addChildren([
     indexRoute,
     studentsRoute,

@@ -256,7 +256,7 @@ export function PreRegistrationsTab() {
   );
 }
 
-function RequestCard(props: {
+export function RequestCard(props: {
   request: PreRegistrationRequest;
   rejecting: boolean;
   rejectReason: string;
@@ -343,7 +343,11 @@ function RequestCard(props: {
               <Button
                 type="button"
                 variant="secondary"
-                onClick={() => props.onCopyFirstAccess(props.approvalResult!.firstAccessLink)}
+                onClick={() => {
+                  if (props.approvalResult) {
+                    props.onCopyFirstAccess(props.approvalResult.firstAccessLink);
+                  }
+                }}
               >
                 <Copy01Icon className="size-4" /> Copiar link de primeiro acesso
               </Button>
