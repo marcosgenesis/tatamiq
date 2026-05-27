@@ -24,8 +24,28 @@ _Avoid_: app demo, academia implícita, tenant padrão, perfil completo obrigat�
 Link completo que o instrutor copia e envia por fora para vincular uma conta de acesso ao cadastro de um **Aluno** existente, expirando em 7 dias; reenviar convite na V0 significa invalidar qualquer convite pendente anterior para aquele aluno e criar um novo link com nova expiração de 7 dias, desde que ainda não exista **Acesso do Aluno** ativo para aquela ficha; quando já existe acesso ativo, o instrutor precisa revogar o acesso antes de recriar convite.
 _Avoid_: cadastro livre, conta solta, envio integrado obrigatório, múltiplos acessos ativos para o mesmo aluno, código curto digitado pelo aluno na V0, reutilizar link pendente antigo ao reenviar
 
+**Link de Pré-Cadastro da Academia**:
+Link compartilhável único e sem expiração automática por **Academia**, copiado para canais externos como grupo de WhatsApp, que pode ser pausado, reativado ou regenerado pelo instrutor, mostrando apenas dados públicos da academia, com proteção mínima por limite de tentativas por IP/email na V0, para interessados preencherem uma **Solicitação de Pré-Cadastro** sem virar **Aluno** automaticamente.
+_Avoid_: convite do aluno, cadastro livre direto, matrícula automática, link de turma, link descartável por aluno, página pública com Pix ou dados internos, CAPTCHA obrigatório na V0
+
+**Solicitação de Pré-Cadastro**:
+Pedido criado por uma pessoa interessada a partir do **Link de Pré-Cadastro da Academia**, com estados em análise, aprovada ou rejeitada, contendo nome, data de nascimento, telefone/WhatsApp, email obrigatório não confirmado na V0, responsável quando menor e observação opcional, revisado pelo instrutor antes de virar ficha de **Aluno** e **Acesso do Aluno**; ao aprovar, o sistema cria automaticamente a conta/acesso para o email informado, mesmo sem confirmação prévia de posse do email na V0; para menor de idade, o email pode ser do aluno ou do responsável, mas será a conta que acessa a área do aluno após aprovação; enquanto em análise, fica somente leitura para o interessado; por **Academia**, não pode existir outra solicitação pendente ou aprovada com o mesmo email, nome e data de nascimento iguais a um **Aluno** existente sinalizam possível duplicidade que exige escolha explícita entre vincular ao aluno existente, criar novo aluno mesmo assim ou rejeitar como duplicado, uma solicitação rejeitada pode ser reenviada como nova tentativa, e a rejeição pode ter motivo opcional visível apenas ao instrutor.
+_Avoid_: aluno pendente, conta solta, lead genérico, matrícula confirmada, ficha completa de aluno, motivo público obrigatório, conta de responsável na V0, edição de solicitação pendente, confirmação de email obrigatória na V0
+
+**Link de Primeiro Acesso**:
+Link copiável com expiração de 7 dias gerado quando uma **Solicitação de Pré-Cadastro** é aprovada para que o instrutor envie por fora, normalmente WhatsApp, permitindo que a conta criada automaticamente, ainda sem login por senha antes do primeiro acesso, defina senha e acesse a área do aluno pela primeira vez; quando o email já pertence a uma conta existente, o acesso é vinculado a essa conta e o link leva ao login/área do aluno sem redefinir senha; é distinto de **Convite do Aluno** no domínio, embora possa reutilizar infraestrutura técnica de token de ativação.
+_Avoid_: senha temporária, email obrigatório de aprovação, convite do aluno para ficha pré-aprovada, duplicar conta por email
+
+**Notificação de Pré-Cadastro**:
+Email operacional opcional enviado via Resend no fluxo de pré-cadastro quando o instrutor escolhe enviar por email após aprovar uma solicitação, com fallback de log em desenvolvimento quando a chave de envio não estiver configurada, sem confirmar email no envio da solicitação, sem envio automático obrigatório na aprovação e sem expor motivo interno de rejeição na V0.
+_Avoid_: comunicação promocional, motivo público de rejeição, chat integrado, confirmação de email obrigatória na V0, email automático obrigatório
+
+**Consentimento de Pré-Cadastro**:
+Confirmação simples dada pela pessoa interessada ao enviar uma **Solicitação de Pré-Cadastro**, autorizando a **Academia** a analisar os dados informados para decidir sobre o cadastro.
+_Avoid_: aceite do aluno, contrato jurídico completo, autorização de uso do portal
+
 **Aceite do Aluno**:
-Registro do aceite simples de uso do app no primeiro acesso do **Aluno**, inclusive menor de idade quando convidado pelo instrutor, feito depois de autenticar a conta e antes de ativar o **Acesso do Aluno**, necessário por envolver dados pessoais, foto e comprovante Pix; a versão inicial do termo é `student-access-v1` e cobre consulta da própria ficha, confirmação de presença por QR, envio de foto e comprovante Pix, recebimento de informações internas da academia e solicitação de correções diretamente à academia/instrutor.
+Registro do aceite simples de uso do app no primeiro acesso do **Aluno**, inclusive menor de idade quando convidado pelo instrutor ou aprovado por pré-cadastro, feito depois de autenticar a conta e antes de ativar o **Acesso do Aluno**, necessário por envolver dados pessoais, foto e comprovante Pix; a versão inicial do termo é `student-access-v1` e cobre consulta da própria ficha, confirmação de presença por QR, envio de foto e comprovante Pix, recebimento de informações internas da academia e solicitação de correções diretamente à academia/instrutor.
 _Avoid_: contrato jurídico complexo, consentimento implícito, aceite anônimo antes do login
 
 **Confirmação de Presença**:
@@ -181,10 +201,18 @@ _Avoid_: tarefa, lembrete, prontuário, workflow, comentário do aluno, exclusã
 - Uma **Mensalidade** pode ter muitos **Eventos de Mensalidade** (auditoria)
 - Um **Ajuste de Mensalidade** preserva `originalAmountInCents` e registra **Evento de Mensalidade**
 - Um **Dono/Instrutor Solo** acompanha muitos **Alunos**
+- A fila de **Solicitações de Pré-Cadastro** é revisada pelo instrutor dentro da área de **Alunos**, separada da lista de fichas de **Aluno**
+- O **Link de Pré-Cadastro da Academia** é gerenciado no topo da fila de **Solicitações de Pré-Cadastro**
+- Uma **Solicitação de Pré-Cadastro** só pode ser vinculada a um **Aluno** existente se ele ainda não tiver **Acesso do Aluno** ativo
 - Um **Aluno** pode ter **Acesso do Aluno** para consultar os próprios dados, incluindo mensalidades mesmo quando for menor de idade
 - Um **Acesso do Aluno** vincula exatamente uma conta de autenticação a exatamente um **Aluno** na V0
 - Uma conta com acesso de instrutor e **Acesso do Aluno** escolhe explicitamente a área ao entrar e pode trocar de área sem mudar os vínculos de domínio
+- Uma **Solicitação de Pré-Cadastro** com email de uma conta que já atua como instrutor pode ser aprovada, mas deve alertar o instrutor antes de criar o **Acesso do Aluno**
 - Um **Convite do Aluno** pertence a um **Aluno** já cadastrado
+- Um **Link de Pré-Cadastro da Academia** pertence a uma **Academia** e pode gerar muitas **Solicitações de Pré-Cadastro**
+- Uma **Solicitação de Pré-Cadastro** só vira **Aluno** e **Acesso do Aluno** após aprovação do instrutor
+- Ao aprovar uma **Solicitação de Pré-Cadastro**, o sistema cria um **Aluno Ativo** com data de matrícula no dia da aprovação, faixa branca, grau 0, sem turma vinculada e sem mensalidade configurada, cria automaticamente conta/acesso para o email informado e gera um **Link de Primeiro Acesso** copiável pelo instrutor
+- Antes da aprovação, a pessoa pode ter conta autenticada e solicitação pendente, mas não tem ficha de **Aluno** nem **Acesso do Aluno** naquela **Academia**
 - O **Acesso do Aluno** exige **Aceite do Aluno** no primeiro acesso
 - Uma **Turma** gera muitas **Aulas**
 - Uma **Aula Avulsa** pertence a uma **Turma**, mas ocorre fora da agenda semanal configurada
@@ -232,3 +260,5 @@ _Avoid_: tarefa, lembrete, prontuário, workflow, comentário do aluno, exclusã
 - "gestor" pode aparecer como linguagem informal na UI, mas não é um papel separado; no domínio, significa **Dono/Instrutor Solo**.
 - Ficha de saúde e contato de emergência ficam fora da V0, apesar de serem comuns em academias.
 - Aluno menor pode aceitar o uso do app na V0; a autorização do responsável fica como responsabilidade operacional da academia/instrutor, pois responsável não tem acesso próprio.
+- "convite" agora tem duas intenções possíveis; resolvido: **Convite do Aluno** vincula acesso a **Aluno** existente, enquanto **Link de Pré-Cadastro da Academia** coleta **Solicitações de Pré-Cadastro** de interessados ainda não aprovados.
+- "usuário já tem conta" foi separado de **Aluno** e **Acesso do Aluno**; no pré-cadastro V0, a solicitação não exige confirmação de email antes da análise, e só a aprovação cria a ficha de **Aluno** e o **Acesso do Aluno**.
