@@ -407,10 +407,11 @@ export const monthlyFeeEventTypeSchema = z.enum([
   "adjusted",
   "receipt_approved",
   "receipt_rejected",
+  "receipt_replaced",
   "manual_payment",
 ]);
 
-export const paymentReceiptStatusSchema = z.enum(["pending", "approved", "rejected"]);
+export const paymentReceiptStatusSchema = z.enum(["pending", "approved", "rejected", "replaced"]);
 
 export const monthlyFeeEventSchema = z.object({
   id: z.string(),
@@ -426,11 +427,14 @@ export const paymentReceiptSchema = z.object({
   id: z.string(),
   monthlyFeeId: z.string(),
   studentId: z.string(),
-  fileUrl: z.string(),
+  fileKey: z.string(),
+  fileUrl: z.string().nullable(),
   fileType: z.string(),
   fileSizeBytes: z.number().int(),
+  note: z.string().nullable(),
   status: paymentReceiptStatusSchema,
   rejectionReason: z.string().nullable(),
+  replacedAt: z.string().datetime().nullable(),
   createdByUserId: z.string(),
   createdAt: z.string().datetime(),
 });
@@ -506,9 +510,16 @@ export const confirmReceiptSchema = z.object({
     .int()
     .positive()
     .max(10 * 1024 * 1024),
+  note: z.string().trim().optional().or(z.literal("")),
+});
+
+export const receiptViewUrlResponseSchema = z.object({
+  viewUrl: z.string().url(),
+  expiresAt: z.string().datetime(),
 });
 
 export type UploadUrlResponse = z.infer<typeof uploadUrlResponseSchema>;
+export type ReceiptViewUrlResponse = z.infer<typeof receiptViewUrlResponseSchema>;
 export type ConfirmReceiptInput = z.infer<typeof confirmReceiptSchema>;
 
 export const rejectReceiptSchema = z.object({
@@ -531,6 +542,7 @@ export const studentMonthlyFeeSchema = z.object({
       id: z.string(),
       status: paymentReceiptStatusSchema,
       rejectionReason: z.string().nullable(),
+      note: z.string().nullable(),
       createdAt: z.string().datetime(),
     })
     .nullable(),

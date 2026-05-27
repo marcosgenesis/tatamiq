@@ -324,6 +324,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/student/monthly-fees/{id}/upload-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["StudentPortalController_studentReceiptUploadUrl"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/student/monthly-fees/{id}/receipts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["StudentPortalController_studentConfirmReceipt"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/student/monthly-fees/{id}/receipts/{receiptId}/view-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["StudentPortalController_studentReceiptViewUrl"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/student/notes": {
         parameters: {
             query?: never;
@@ -542,6 +590,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["MonthlyFeesController_manualPayment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/monthly-fees/{id}/receipts/{receiptId}/view-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["MonthlyFeesController_receiptViewUrl"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1425,6 +1489,96 @@ export interface components {
                 durationMinutes: number;
             }[];
         };
+        StudentMonthlyFeesResponseDto: {
+            fees: {
+                id: string;
+                referenceYear: number;
+                referenceMonth: number;
+                amountInCents: number;
+                dueDate: string;
+                /** @enum {string} */
+                status: "open" | "under_review" | "paid" | "waived";
+                isOverdue: boolean;
+                /** Format: date-time */
+                paidAt: string | null;
+                lastReceipt: {
+                    id: string;
+                    /** @enum {string} */
+                    status: "pending" | "approved" | "rejected" | "replaced";
+                    rejectionReason: string | null;
+                    note: string | null;
+                    /** Format: date-time */
+                    createdAt: string;
+                } | null;
+            }[];
+        };
+        UploadUrlResponseDto: {
+            /** Format: uri */
+            uploadUrl: string;
+            fileKey: string;
+        };
+        ConfirmReceiptDto: {
+            fileKey: string;
+            fileType: string;
+            fileSizeBytes: number;
+            note?: string | "";
+        };
+        MonthlyFeeDetailDto: {
+            id: string;
+            studentId: string;
+            studentName: string;
+            referenceYear: number;
+            referenceMonth: number;
+            amountInCents: number;
+            originalAmountInCents: number | null;
+            dueDate: string;
+            /** @enum {string} */
+            status: "open" | "under_review" | "paid" | "waived";
+            isOverdue: boolean;
+            /** Format: date-time */
+            paidAt: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            events: {
+                id: string;
+                monthlyFeeId: string;
+                /** @enum {string} */
+                type: "waived" | "adjusted" | "receipt_approved" | "receipt_rejected" | "receipt_replaced" | "manual_payment";
+                reason: string | null;
+                metadata: {
+                    [key: string]: unknown;
+                } | null;
+                createdByUserId: string;
+                /** Format: date-time */
+                createdAt: string;
+            }[];
+            receipts: {
+                id: string;
+                monthlyFeeId: string;
+                studentId: string;
+                fileKey: string;
+                fileUrl: string | null;
+                fileType: string;
+                fileSizeBytes: number;
+                note: string | null;
+                /** @enum {string} */
+                status: "pending" | "approved" | "rejected" | "replaced";
+                rejectionReason: string | null;
+                /** Format: date-time */
+                replacedAt: string | null;
+                createdByUserId: string;
+                /** Format: date-time */
+                createdAt: string;
+            }[];
+        };
+        ReceiptViewUrlResponseDto: {
+            /** Format: uri */
+            viewUrl: string;
+            /** Format: date-time */
+            expiresAt: string;
+        };
         StudentScheduleResponseDto: {
             days: {
                 date: string;
@@ -1522,62 +1676,6 @@ export interface components {
             referenceMonth: number;
             amountInCents: number;
             dueDay: number;
-        };
-        MonthlyFeeDetailDto: {
-            id: string;
-            studentId: string;
-            studentName: string;
-            referenceYear: number;
-            referenceMonth: number;
-            amountInCents: number;
-            originalAmountInCents: number | null;
-            dueDate: string;
-            /** @enum {string} */
-            status: "open" | "under_review" | "paid" | "waived";
-            isOverdue: boolean;
-            /** Format: date-time */
-            paidAt: string | null;
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            updatedAt: string;
-            events: {
-                id: string;
-                monthlyFeeId: string;
-                /** @enum {string} */
-                type: "waived" | "adjusted" | "receipt_approved" | "receipt_rejected" | "manual_payment";
-                reason: string | null;
-                metadata: {
-                    [key: string]: unknown;
-                } | null;
-                createdByUserId: string;
-                /** Format: date-time */
-                createdAt: string;
-            }[];
-            receipts: {
-                id: string;
-                monthlyFeeId: string;
-                studentId: string;
-                fileUrl: string;
-                fileType: string;
-                fileSizeBytes: number;
-                /** @enum {string} */
-                status: "pending" | "approved" | "rejected";
-                rejectionReason: string | null;
-                createdByUserId: string;
-                /** Format: date-time */
-                createdAt: string;
-            }[];
-        };
-        UploadUrlResponseDto: {
-            /** Format: uri */
-            uploadUrl: string;
-            fileKey: string;
-        };
-        ConfirmReceiptDto: {
-            fileKey: string;
-            fileType: string;
-            fileSizeBytes: number;
         };
         AdjustMonthlyFeeDto: {
             amountInCents: number;
@@ -2396,7 +2494,79 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["StudentMonthlyFeesResponseDto"];
+                };
+            };
+        };
+    };
+    StudentPortalController_studentReceiptUploadUrl: {
+        parameters: {
+            query: {
+                contentType: unknown;
+            };
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadUrlResponseDto"];
+                };
+            };
+        };
+    };
+    StudentPortalController_studentConfirmReceipt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmReceiptDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonthlyFeeDetailDto"];
+                };
+            };
+        };
+    };
+    StudentPortalController_studentReceiptViewUrl: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receiptId: unknown;
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptViewUrlResponseDto"];
+                };
             };
         };
     };
@@ -2733,6 +2903,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MonthlyFeeDetailDto"];
+                };
+            };
+        };
+    };
+    MonthlyFeesController_receiptViewUrl: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receiptId: unknown;
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptViewUrlResponseDto"];
                 };
             };
         };

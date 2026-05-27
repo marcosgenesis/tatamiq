@@ -29,6 +29,7 @@ import {
   ListMonthlyFeesResponseDto,
   ManualPaymentDto,
   MonthlyFeeDetailDto,
+  ReceiptViewUrlResponseDto,
   RejectReceiptDto,
   UploadUrlResponseDto,
   WaiveMonthlyFeeDto,
@@ -188,6 +189,18 @@ export class MonthlyFeesController {
   @ApiParam({ name: "id" })
   listReceipts(@Session() session: SessionWithOrganization, @Param("id") id: string) {
     return this.monthlyFeesService.listReceipts(activeOrganizationId(session), id);
+  }
+
+  @Get(":id/receipts/:receiptId/view-url")
+  @ApiParam({ name: "id" })
+  @ApiParam({ name: "receiptId" })
+  @ApiOkResponse({ type: ReceiptViewUrlResponseDto })
+  receiptViewUrl(
+    @Session() session: SessionWithOrganization,
+    @Param("id") id: string,
+    @Param("receiptId") receiptId: string,
+  ): Promise<ReceiptViewUrlResponseDto> {
+    return this.monthlyFeesService.receiptViewUrl(activeOrganizationId(session), id, receiptId);
   }
 
   @Post(":id/receipts/:receiptId/approve")

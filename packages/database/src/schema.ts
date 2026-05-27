@@ -542,11 +542,14 @@ export const paymentReceipts = pgTable(
     studentId: text("student_id")
       .notNull()
       .references(() => students.id, { onDelete: "cascade" }),
-    fileUrl: text("file_url").notNull(),
+    fileKey: text("file_key").notNull(),
+    fileUrl: text("file_url"),
     fileType: text("file_type").notNull(),
     fileSizeBytes: integer("file_size_bytes").notNull(),
+    note: text("note"),
     status: text("status").notNull().default("pending"),
     rejectionReason: text("rejection_reason"),
+    replacedAt: timestamp("replaced_at", { withTimezone: true }),
     createdByUserId: text("created_by_user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),

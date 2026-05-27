@@ -133,7 +133,7 @@ Chave Pix simples ou payload Pix copia-e-cola da **Academia** exibido ao aluno p
 _Avoid_: integração bancária, conciliação automática
 
 **Comprovante Pix**:
-Arquivo de imagem ou PDF de até 10 MB enviado pelo **Aluno** via presigned URL direto ao R2 para solicitar verificação de pagamento de uma **Mensalidade**, preservado no histórico financeiro após aprovação ou rejeição; múltiplos comprovantes possíveis por mensalidade (rejeição → nova tentativa), mas aluno vê apenas o último relevante; rejeição tem motivo obrigatório inline no registro do comprovante, visível ao aluno.
+Arquivo de imagem ou PDF de até 10 MB enviado pelo **Aluno** via presigned URL direto ao R2 para solicitar verificação de pagamento de uma **Mensalidade**, podendo incluir observação opcional por comprovante para o instrutor, preservado no histórico financeiro após aprovação, rejeição ou substituição; pode ser enviado mesmo sem **Pix da Academia** configurado quando a orientação de pagamento foi passada por fora pelo instrutor; múltiplos comprovantes possíveis por mensalidade, inclusive substituição pelo aluno enquanto ainda está pendente de verificação e nova tentativa após rejeição, mas aluno vê apenas o último relevante; rejeição tem motivo obrigatório inline no registro do comprovante, visível ao aluno.
 _Avoid_: confirmação automática, recibo emitido pelo app, upload via proxy do backend
 
 **Verificação de Pagamento**:
@@ -153,7 +153,7 @@ Alteração pontual do valor de uma **Mensalidade** específica, registrada como
 _Avoid_: mudança de plano, alteração retroativa geral
 
 **Evento de Mensalidade**:
-Registro de auditoria em tabela `monthly_fee_events` para ações sobre uma **Mensalidade**: `waived`, `adjusted`, `receipt_approved`, `receipt_rejected`, `manual_payment`; cada evento registra tipo, motivo, metadata (jsonb), autor e timestamp; origem do pagamento (`manual` vs `receipt_approved`) é derivada dos eventos, não persistida na mensalidade.
+Registro de auditoria em tabela `monthly_fee_events` para ações sobre uma **Mensalidade**: dispensa, ajuste, aprovação/rejeição de comprovante, substituição de comprovante e pagamento manual; cada evento registra tipo, motivo quando aplicável, metadata, autor e timestamp; origem do pagamento é derivada dos eventos, não persistida na mensalidade.
 _Avoid_: status da mensalidade, substituição do status persistido
 
 **Mensalidade Dispensada**:

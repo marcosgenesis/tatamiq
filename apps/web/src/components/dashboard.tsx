@@ -3,6 +3,7 @@ import { WeeklyClassesChart } from "@/components/channel-sales-chart";
 import { DashboardActivity } from "@/components/dashboard-activity";
 import { DashboardInvoices } from "@/components/dashboard-invoices";
 import { WeeklyAttendanceChart } from "@/components/net-revenue-chart";
+import { PaymentsUnderReviewCard } from "@/components/payments-under-review-card";
 import { DashboardStats } from "@/components/stats";
 
 export function Dashboard() {
@@ -13,6 +14,7 @@ export function Dashboard() {
       <WeeklyClassesChart />
       <DashboardInvoices />
       <BillingHealth />
+      <PaymentsUnderReviewCard />
       <DashboardActivity />
     </div>
   );

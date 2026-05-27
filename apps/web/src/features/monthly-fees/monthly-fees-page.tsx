@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { CreateMonthlyFeeInput, MonthlyFee } from "@tatamiq/contracts";
+import type { CreateMonthlyFeeInput, MonthlyFee, MonthlyFeeDetail } from "@tatamiq/contracts";
 import { Download04Icon, Money03Icon, PlusSignIcon } from "hugeicons-react";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useMemo, useState } from "react";
 import { api } from "../../api";
 import { Field, SelectField } from "../../components/form-field";
 import { Badge } from "../../components/ui/badge";
@@ -24,6 +24,7 @@ import {
   monthNames,
   reaisToCents,
 } from "../../lib/formatting";
+import { activePendingReceipt, receiptHistory } from "./receipt-state";
 
 type FeeStatusFilter = "all" | "open" | "under_review" | "paid" | "waived" | "overdue";
 
@@ -52,10 +53,15 @@ const emptyForm: FeeFormState = {
 
 export function MonthlyFeesPage() {
   const queryClient = useQueryClient();
-  const [statusFilter, setStatusFilter] = useState<FeeStatusFilter>("all");
+  const [statusFilter, setStatusFilter] = useState<FeeStatusFilter>(() => {
+    const status = new URLSearchParams(window.location.search).get("status");
+    return isFeeStatusFilter(status) ? status : "all";
+  });
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [form, setForm] = useState<FeeFormState>(emptyForm);
   const [error, setError] = useState<string | null>(null);
+  const [detailFeeId, setDetailFeeId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
 
   const feesQuery = useQuery({
     queryKey: ["monthly-fees", statusFilter],
@@ -70,6 +76,19 @@ export function MonthlyFeesPage() {
   });
 
   const studentsQuery = useStudents("active", undefined, { enabled: isFormOpen });
+
+  const detailQuery = useQuery({
+    queryKey: ["monthly-fees", "detail", detailFeeId],
+    enabled: detailFeeId !== null,
+    queryFn: async () => {
+      if (!detailFeeId) throw new Error("Mensalidade inválida.");
+      const { data, error } = await api.GET("/monthly-fees/{id}", {
+        params: { path: { id: detailFeeId } },
+      });
+      if (error) throw new Error("Não foi possível carregar o detalhe.");
+      return data;
+    },
+  });
 
   const createMutation = useMutation({
     mutationFn: async (input: CreateMonthlyFeeInput) => {
@@ -129,6 +148,48 @@ export function MonthlyFeesPage() {
     },
   });
 
+  const approveReceiptMutation = useMutation({
+    mutationFn: async ({ feeId, receiptId }: { feeId: string; receiptId: string }) => {
+      const { error } = await api.POST("/monthly-fees/{id}/receipts/{receiptId}/approve", {
+        params: { path: { id: feeId, receiptId } },
+      });
+      if (error) throw new Error("Não foi possível aprovar.");
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["monthly-fees"] }),
+        queryClient.invalidateQueries({ queryKey: ["monthly-fees", "detail"] }),
+      ]);
+      setDetailFeeId(null);
+    },
+  });
+
+  const rejectReceiptMutation = useMutation({
+    mutationFn: async ({
+      feeId,
+      receiptId,
+      reason,
+    }: {
+      feeId: string;
+      receiptId: string;
+      reason: string;
+    }) => {
+      const { error } = await api.POST("/monthly-fees/{id}/receipts/{receiptId}/reject", {
+        params: { path: { id: feeId, receiptId } },
+        body: { reason },
+      });
+      if (error) throw new Error("Não foi possível rejeitar.");
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["monthly-fees"] }),
+        queryClient.invalidateQueries({ queryKey: ["monthly-fees", "detail"] }),
+      ]);
+      setDetailFeeId(null);
+      setRejectReason("");
+    },
+  });
+
   const manualPayMutation = useMutation({
     mutationFn: async ({ id, note }: { id: string; note: string }) => {
       const { error } = await api.POST("/monthly-fees/{id}/manual-payment", {
@@ -145,6 +206,8 @@ export function MonthlyFeesPage() {
 
   const fees = feesQuery.data?.fees ?? [];
   const summary = feesQuery.data?.summary;
+  const detail = detailQuery.data ?? null;
+  const pendingReceipt = useMemo(() => (detail ? activePendingReceipt(detail) : null), [detail]);
 
   function openAction(feeId: string, type: "adjust" | "waive" | "manual_payment", fee: MonthlyFee) {
     setActionFeeId(feeId);
@@ -355,12 +418,37 @@ export function MonthlyFeesPage() {
                   onAdjust={() => openAction(fee.id, "adjust", fee)}
                   onWaive={() => openAction(fee.id, "waive", fee)}
                   onManualPay={() => openAction(fee.id, "manual_payment", fee)}
+                  onReview={() => {
+                    setDetailFeeId(fee.id);
+                    setRejectReason("");
+                  }}
                 />
               ))}
             </div>
           </div>
         ) : null}
       </div>
+      <ReceiptReviewDrawer
+        detail={detail}
+        isLoading={detailQuery.isLoading}
+        pendingReceipt={pendingReceipt}
+        rejectReason={rejectReason}
+        onRejectReasonChange={setRejectReason}
+        onOpenChange={(open) => {
+          if (!open) setDetailFeeId(null);
+        }}
+        onOpenReceipt={async (feeId, receiptId) => {
+          const { data, error } = await api.GET(
+            "/monthly-fees/{id}/receipts/{receiptId}/view-url",
+            { params: { path: { id: feeId, receiptId } } },
+          );
+          if (!error && data) window.open(data.viewUrl, "_blank", "noopener,noreferrer");
+        }}
+        onApprove={(feeId, receiptId) => approveReceiptMutation.mutate({ feeId, receiptId })}
+        onReject={(feeId, receiptId, reason) =>
+          rejectReceiptMutation.mutate({ feeId, receiptId, reason })
+        }
+      />
       <Drawer
         direction="right"
         open={actionFeeId !== null && actionType !== null}
@@ -417,6 +505,10 @@ export function MonthlyFeesPage() {
   );
 }
 
+function isFeeStatusFilter(value: string | null): value is FeeStatusFilter {
+  return ["all", "open", "under_review", "paid", "waived", "overdue"].includes(value ?? "");
+}
+
 function SummaryCard(props: {
   label: string;
   value: number;
@@ -442,6 +534,7 @@ function FeeRow(props: {
   onAdjust: () => void;
   onWaive: () => void;
   onManualPay: () => void;
+  onReview: () => void;
 }) {
   const fee = props.fee;
   const displayStatus = fee.isOverdue ? "Atrasada" : (statusLabels[fee.status] ?? fee.status);
@@ -475,6 +568,11 @@ function FeeRow(props: {
         <Badge variant={badgeVariant as "default"}>{displayStatus}</Badge>
       </div>
       <div className="flex flex-wrap gap-2">
+        {fee.status === "under_review" ? (
+          <Button type="button" variant="secondary" size="sm" onClick={props.onReview}>
+            Revisar
+          </Button>
+        ) : null}
         {isOpen ? (
           <>
             <Button type="button" variant="secondary" size="sm" onClick={props.onAdjust}>
@@ -491,6 +589,125 @@ function FeeRow(props: {
       </div>
     </div>
   );
+}
+
+function ReceiptReviewDrawer(props: {
+  detail: MonthlyFeeDetail | null;
+  isLoading: boolean;
+  pendingReceipt: MonthlyFeeDetail["receipts"][number] | null;
+  rejectReason: string;
+  onRejectReasonChange: (value: string) => void;
+  onOpenChange: (open: boolean) => void;
+  onOpenReceipt: (feeId: string, receiptId: string) => void;
+  onApprove: (feeId: string, receiptId: string) => void;
+  onReject: (feeId: string, receiptId: string, reason: string) => void;
+}) {
+  const history = props.detail ? receiptHistory(props.detail) : [];
+
+  return (
+    <Drawer
+      direction="right"
+      open={props.detail !== null || props.isLoading}
+      onOpenChange={props.onOpenChange}
+    >
+      <DrawerContent>
+        <DrawerHeader>
+          <DrawerTitle>Verificação de pagamento</DrawerTitle>
+          <DrawerDescription>
+            Revise o comprovante ativo antes de aprovar ou rejeitar.
+          </DrawerDescription>
+        </DrawerHeader>
+        <div className="no-scrollbar flex-1 space-y-4 overflow-y-auto px-4">
+          {props.isLoading ? <p className="text-sm text-muted-foreground">Carregando...</p> : null}
+          {props.detail && props.pendingReceipt ? (
+            <div className="space-y-4 rounded-2xl border border-border p-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Aluno</p>
+                <strong>{props.detail.studentName}</strong>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Observação do aluno</p>
+                <p className="text-sm">{props.pendingReceipt.note || "Sem observação."}</p>
+              </div>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() =>
+                  props.onOpenReceipt(props.detail?.id ?? "", props.pendingReceipt?.id ?? "")
+                }
+              >
+                Abrir comprovante
+              </Button>
+              <div className="space-y-2">
+                <Field
+                  label="Motivo da rejeição"
+                  value={props.rejectReason}
+                  onChange={props.onRejectReasonChange}
+                />
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    onClick={() =>
+                      props.onApprove(props.detail?.id ?? "", props.pendingReceipt?.id ?? "")
+                    }
+                  >
+                    Aprovar
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    disabled={!props.rejectReason.trim()}
+                    onClick={() =>
+                      props.onReject(
+                        props.detail?.id ?? "",
+                        props.pendingReceipt?.id ?? "",
+                        props.rejectReason,
+                      )
+                    }
+                  >
+                    Rejeitar
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+          {props.detail && !props.pendingReceipt ? (
+            <p className="rounded-2xl border border-border p-4 text-sm text-muted-foreground">
+              Nenhum comprovante pendente ativo.
+            </p>
+          ) : null}
+          {history.length > 0 ? (
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">Histórico</h3>
+              {history.map((receipt) => (
+                <div
+                  key={receipt.id}
+                  className="rounded-2xl border border-border p-3 text-sm text-muted-foreground"
+                >
+                  {receipt.status} · {formatDateTime(receipt.createdAt)}
+                  {receipt.rejectionReason ? <span> · {receipt.rejectionReason}</span> : null}
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
+        <DrawerFooter>
+          <DrawerClose asChild>
+            <Button type="button" variant="secondary">
+              Fechar
+            </Button>
+          </DrawerClose>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
+  );
+}
+
+function formatDateTime(value: string): string {
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(new Date(value));
 }
 
 function EmptyState(props: { onCreate: () => void }) {

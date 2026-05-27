@@ -10,13 +10,15 @@ import {
   useMarkIndicatorSeen,
   useStudentIndicators,
 } from "../student-portal/student-indicators";
+import { StudentMonthlyFeesSection } from "../student-portal/student-monthly-fees-section";
 import { StudentProfileSection } from "../student-portal/student-profile-section";
 import { StudentScheduleSection } from "../student-portal/student-schedule-section";
 
-type Tab = "home" | "schedule" | "attendance" | "graduation" | "profile";
+type Tab = "home" | "fees" | "schedule" | "attendance" | "graduation" | "profile";
 
 const tabs: Array<{ key: Tab; label: string }> = [
   { key: "home", label: "Início" },
+  { key: "fees", label: "Mensalidades" },
   { key: "schedule", label: "Agenda" },
   { key: "attendance", label: "Presenças" },
   { key: "graduation", label: "Graduação" },
@@ -41,6 +43,7 @@ export function StudentDashboardPage() {
     setActiveTab(tab);
     const ind = indicators.data;
     if (!ind) return;
+    if (tab === "fees" && ind.hasNewFees) markSeen.mutate("fees");
     if (tab === "schedule" && ind.hasCancelledClass) markSeen.mutate("schedule");
     if (tab === "graduation" && ind.hasNewPromotion) markSeen.mutate("graduation");
   }
@@ -48,9 +51,10 @@ export function StudentDashboardPage() {
   function hasIndicator(tab: Tab): boolean {
     const ind = indicators.data;
     if (!ind) return false;
+    if (tab === "fees") return ind.hasNewFees;
     if (tab === "schedule") return ind.hasCancelledClass;
     if (tab === "graduation") return ind.hasNewPromotion;
-    if (tab === "home") return ind.hasNewFees || ind.hasNewNotes;
+    if (tab === "home") return ind.hasNewNotes;
     return false;
   }
 
@@ -101,6 +105,7 @@ export function StudentDashboardPage() {
 
         {/* Tab content */}
         {activeTab === "home" && <HomeTab data={data} />}
+        {activeTab === "fees" && <StudentMonthlyFeesSection me={data} />}
         {activeTab === "schedule" && <StudentScheduleSection />}
         {activeTab === "attendance" && <StudentAttendanceSection />}
         {activeTab === "graduation" && <StudentGraduationSection />}
