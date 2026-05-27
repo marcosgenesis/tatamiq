@@ -24,9 +24,7 @@ export function AppShell({ academyName, onSignOut, children }: AppShellProps) {
       <DesktopSidebar academyName={academyName} onSignOut={onSignOut} />
       <MobileTopbar academyName={academyName} onSignOut={onSignOut} />
 
-      <main className="relative pb-24 pt-5 md:pb-8 md:pl-72 md:pt-8">
-        <div className="mx-auto w-full max-w-7xl px-4 md:px-8">{children}</div>
-      </main>
+      <main className="relative pb-24 pt-5 md:pb-8 md:pl-72 md:pt-8">{children}</main>
 
       <MobileBottomNav />
     </div>
