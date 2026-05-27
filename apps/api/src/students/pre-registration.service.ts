@@ -1,0 +1,816 @@
+import { createHash, randomBytes } from "node:crypto";
+import {
+  BadRequestException,
+  ConflictException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
+import type {
+  ApprovePreRegistrationRequestInput,
+  ApprovePreRegistrationResponse,
+  CompleteFirstAccessInput,
+  CompleteFirstAccessResponse,
+  CreatePreRegistrationRequestInput,
+  FirstAccessPreview,
+  ListPreRegistrationRequestsResponse,
+  PreRegistrationLink,
+  PreRegistrationPublicProfile,
+  PreRegistrationRequest,
+  RejectPreRegistrationRequestInput,
+  SendFirstAccessEmailResponse,
+} from "@tatamiq/contracts";
+import {
+  academyPreRegistrationLinks,
+  account,
+  belts,
+  type Database,
+  member,
+  organization,
+  preRegistrationRequests,
+  studentAcceptances,
+  studentAccess,
+  studentGuardians,
+  students,
+  user,
+} from "@tatamiq/database";
+import { and, eq, sql } from "drizzle-orm";
+import { DATABASE } from "../database/database.module";
+import { isMinor } from "./student-rules";
+
+const FIRST_ACCESS_DAYS = 7;
+const STUDENT_ACCESS_TERMS_VERSION = "student-access-v1";
+
+type LinkRow = typeof academyPreRegistrationLinks.$inferSelect;
+type RequestRow = typeof preRegistrationRequests.$inferSelect;
+
+type DuplicateStudent = { id: string; name: string } | null;
+
+@Injectable()
+export class PreRegistrationService {
+  constructor(@Inject(DATABASE) private readonly db: Database) {}
+
+  // --- Link management ---
+
+  async getOrCreateLink(organizationId: string): Promise<PreRegistrationLink> {
+    const existing = await this.findLinkByOrganization(organizationId);
+    if (existing) return this.toLinkDto(existing);
+
+    const now = new Date();
+    const [created] = await this.db
+      .insert(academyPreRegistrationLinks)
+      .values({
+        id: crypto.randomUUID(),
+        organizationId,
+        token: createToken(),
+        status: "active",
+        regeneratedAt: null,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
+
+    return this.toLinkDto(created);
+  }
+
+  async pauseLink(organizationId: string): Promise<PreRegistrationLink> {
+    await this.getOrCreateLink(organizationId);
+    const [updated] = await this.db
+      .update(academyPreRegistrationLinks)
+      .set({ status: "paused", updatedAt: new Date() })
+      .where(eq(academyPreRegistrationLinks.organizationId, organizationId))
+      .returning();
+    return this.toLinkDto(updated);
+  }
+
+  async reactivateLink(organizationId: string): Promise<PreRegistrationLink> {
+    await this.getOrCreateLink(organizationId);
+    const [updated] = await this.db
+      .update(academyPreRegistrationLinks)
+      .set({ status: "active", updatedAt: new Date() })
+      .where(eq(academyPreRegistrationLinks.organizationId, organizationId))
+      .returning();
+    return this.toLinkDto(updated);
+  }
+
+  async regenerateLink(organizationId: string): Promise<PreRegistrationLink> {
+    await this.getOrCreateLink(organizationId);
+    const now = new Date();
+    const [updated] = await this.db
+      .update(academyPreRegistrationLinks)
+      .set({ token: createToken(), status: "active", regeneratedAt: now, updatedAt: now })
+      .where(eq(academyPreRegistrationLinks.organizationId, organizationId))
+      .returning();
+    return this.toLinkDto(updated);
+  }
+
+  // --- Public form ---
+
+  async publicProfile(token: string): Promise<PreRegistrationPublicProfile> {
+    const found = await this.findPublicLink(token);
+    if (!found) throw new NotFoundException("Link de pré-cadastro não encontrado.");
+
+    return {
+      academy: {
+        name: found.academy.name,
+        logo: found.academy.logo ?? null,
+        address: found.academy.address ?? null,
+        phone: found.academy.phone ?? null,
+        instagram: found.academy.instagram ?? null,
+      },
+      link: { status: parseLinkStatus(found.link.status) },
+    };
+  }
+
+  async createRequest(
+    token: string,
+    input: CreatePreRegistrationRequestInput,
+  ): Promise<PreRegistrationRequest> {
+    const found = await this.findPublicLink(token);
+    if (!found) throw new NotFoundException("Link de pré-cadastro não encontrado.");
+    if (found.link.status !== "active") {
+      throw new BadRequestException("Este link de pré-cadastro está pausado.");
+    }
+
+    this.validateRequest(input);
+
+    const normalizedEmail = input.email.trim().toLowerCase();
+    const duplicateEmail = await this.findOpenRequestByEmail(
+      found.link.organizationId,
+      normalizedEmail,
+    );
+    if (duplicateEmail) {
+      throw new ConflictException("Já existe uma solicitação em análise para este email.");
+    }
+
+    const duplicateStudent = await this.findDuplicateStudent(
+      found.link.organizationId,
+      input.name,
+      input.birthDate,
+    );
+
+    const now = new Date();
+    const [created] = await this.db
+      .insert(preRegistrationRequests)
+      .values({
+        id: crypto.randomUUID(),
+        organizationId: found.link.organizationId,
+        linkId: found.link.id,
+        status: "pending_review",
+        name: input.name.trim(),
+        birthDate: input.birthDate,
+        phone: input.phone.trim(),
+        email: normalizedEmail,
+        guardianName: emptyToNull(input.guardianName),
+        guardianPhone: emptyToNull(input.guardianPhone),
+        note: emptyToNull(input.note),
+        consentAcceptedAt: now,
+        reviewedByUserId: null,
+        reviewedAt: null,
+        rejectionReason: null,
+        approvedStudentId: null,
+        approvedStudentAccessId: null,
+        duplicateStudentId: duplicateStudent?.id ?? null,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
+
+    return this.toRequestDto(created, duplicateStudent);
+  }
+
+  // --- Instructor queue ---
+
+  async listRequests(organizationId: string): Promise<ListPreRegistrationRequestsResponse> {
+    const rows = await this.db
+      .select({ request: preRegistrationRequests, duplicateName: students.name })
+      .from(preRegistrationRequests)
+      .leftJoin(students, eq(preRegistrationRequests.duplicateStudentId, students.id))
+      .where(eq(preRegistrationRequests.organizationId, organizationId))
+      .orderBy(preRegistrationRequests.createdAt);
+
+    const enriched = await Promise.all(
+      rows.map(async ({ request, duplicateName }) => {
+        const dup =
+          request.duplicateStudentId && duplicateName
+            ? { id: request.duplicateStudentId, name: duplicateName }
+            : null;
+        return this.toRequestDto(request, dup);
+      }),
+    );
+
+    let pendingReview = 0;
+    let approved = 0;
+    let rejected = 0;
+    for (const { request } of rows) {
+      if (request.status === "approved") approved++;
+      else if (request.status === "rejected") rejected++;
+      else pendingReview++;
+    }
+
+    return {
+      requests: enriched,
+      summary: { pendingReview, approved, rejected },
+    };
+  }
+
+  async rejectRequest(
+    organizationId: string,
+    requestId: string,
+    userId: string,
+    input: RejectPreRegistrationRequestInput,
+  ): Promise<PreRegistrationRequest> {
+    const existing = await this.findRequest(organizationId, requestId);
+    if (existing.status !== "pending_review") {
+      throw new BadRequestException("Somente solicitações em análise podem ser rejeitadas.");
+    }
+
+    const now = new Date();
+    const [updated] = await this.db
+      .update(preRegistrationRequests)
+      .set({
+        status: "rejected",
+        reviewedByUserId: userId,
+        reviewedAt: now,
+        rejectionReason: input.reason?.trim() || null,
+        updatedAt: now,
+      })
+      .where(
+        and(
+          eq(preRegistrationRequests.id, requestId),
+          eq(preRegistrationRequests.organizationId, organizationId),
+        ),
+      )
+      .returning();
+
+    const duplicateStudent = updated.duplicateStudentId
+      ? await this.findStudentById(organizationId, updated.duplicateStudentId)
+      : null;
+    return this.toRequestDto(updated, duplicateStudent);
+  }
+
+  // --- Approval (#58, #60) ---
+
+  async approveRequest(
+    organizationId: string,
+    requestId: string,
+    userId: string,
+    input: ApprovePreRegistrationRequestInput,
+  ): Promise<ApprovePreRegistrationResponse> {
+    const existing = await this.findRequest(organizationId, requestId);
+    if (existing.status !== "pending_review") {
+      throw new BadRequestException("Somente solicitações em análise podem ser aprovadas.");
+    }
+
+    if (existing.duplicateStudentId && input.duplicateDecision === "reject_as_duplicate") {
+      return this.rejectAsDuplicate(organizationId, requestId, userId, existing);
+    }
+
+    const linkToExisting =
+      existing.duplicateStudentId && input.duplicateDecision === "link_to_existing";
+
+    if (linkToExisting) {
+      const existingAccess = await this.findActiveAccessForStudent(existing.duplicateStudentId!);
+      if (existingAccess) {
+        throw new BadRequestException(
+          "Este aluno já possui acesso ativo. Não é possível vincular.",
+        );
+      }
+    }
+
+    const whiteBelt = await this.findWhiteBelt(organizationId, existing.birthDate);
+    const rawToken = randomBytes(32).toString("base64url");
+    const tokenHash = hashToken(rawToken);
+    const now = new Date();
+    const expiresAt = new Date(now);
+    expiresAt.setDate(expiresAt.getDate() + FIRST_ACCESS_DAYS);
+    const todayStr = now.toISOString().slice(0, 10);
+
+    const studentId = linkToExisting ? existing.duplicateStudentId! : crypto.randomUUID();
+    const accessId = crypto.randomUUID();
+    const authUser = await this.findOrCreateAuthUser(existing.name, existing.email);
+
+    await this.db.transaction(async (tx) => {
+      if (!linkToExisting) {
+        await tx.insert(students).values({
+          id: studentId,
+          organizationId,
+          name: existing.name,
+          birthDate: existing.birthDate,
+          enrollmentDate: todayStr,
+          status: "active",
+          phone: existing.phone,
+          email: existing.email,
+          monthlyAmountInCents: null,
+          monthlyDueDay: null,
+          currentBeltId: whiteBelt.id,
+          currentDegree: 0,
+          createdAt: now,
+          updatedAt: now,
+        });
+
+        if (existing.guardianName && existing.guardianPhone) {
+          await tx.insert(studentGuardians).values({
+            id: crypto.randomUUID(),
+            studentId,
+            name: existing.guardianName,
+            phone: existing.guardianPhone,
+            email: null,
+            relationship: null,
+            createdAt: now,
+            updatedAt: now,
+          });
+        }
+      }
+
+      await tx.insert(studentAccess).values({
+        id: accessId,
+        organizationId,
+        studentId,
+        authUserId: authUser.id,
+        status: "active",
+        revokedAt: null,
+        revokedByUserId: null,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      await tx.insert(studentAcceptances).values({
+        id: crypto.randomUUID(),
+        organizationId,
+        studentAccessId: accessId,
+        studentId,
+        authUserId: authUser.id,
+        termsVersion: STUDENT_ACCESS_TERMS_VERSION,
+        acceptedAt: now,
+      });
+
+      await tx
+        .update(preRegistrationRequests)
+        .set({
+          status: "approved",
+          reviewedByUserId: userId,
+          reviewedAt: now,
+          approvedStudentId: studentId,
+          approvedStudentAccessId: accessId,
+          firstAccessTokenHash: tokenHash,
+          firstAccessTokenExpiresAt: expiresAt,
+          updatedAt: now,
+        })
+        .where(eq(preRegistrationRequests.id, requestId));
+    });
+
+    const updatedRow = await this.findRequest(organizationId, requestId);
+    const duplicateStudent = updatedRow.duplicateStudentId
+      ? await this.findStudentById(organizationId, updatedRow.duplicateStudentId)
+      : null;
+
+    return {
+      request: await this.toRequestDto(updatedRow, duplicateStudent),
+      firstAccessLink: `${webAppUrl()}/student/first-access/${rawToken}`,
+      studentId,
+    };
+  }
+
+  private async rejectAsDuplicate(
+    organizationId: string,
+    requestId: string,
+    userId: string,
+    existing: RequestRow,
+  ): Promise<ApprovePreRegistrationResponse> {
+    const now = new Date();
+    const [updated] = await this.db
+      .update(preRegistrationRequests)
+      .set({
+        status: "rejected",
+        reviewedByUserId: userId,
+        reviewedAt: now,
+        rejectionReason: "Rejeitada como duplicata.",
+        updatedAt: now,
+      })
+      .where(eq(preRegistrationRequests.id, requestId))
+      .returning();
+
+    const dupStudent = existing.duplicateStudentId
+      ? await this.findStudentById(organizationId, existing.duplicateStudentId)
+      : null;
+
+    return {
+      request: await this.toRequestDto(updated, dupStudent),
+      firstAccessLink: "",
+      studentId: "",
+    };
+  }
+
+  // --- First access (#59) ---
+
+  async previewFirstAccess(token: string): Promise<FirstAccessPreview> {
+    const row = await this.findRequestByFirstAccessToken(token);
+    if (!row)
+      return { status: "invalid", hasPassword: false, studentName: null, academyName: null };
+
+    if (row.request.firstAccessConsumedAt) {
+      return { status: "consumed", hasPassword: false, studentName: null, academyName: null };
+    }
+
+    const now = new Date();
+    if (row.request.firstAccessTokenExpiresAt && row.request.firstAccessTokenExpiresAt <= now) {
+      return { status: "expired", hasPassword: false, studentName: null, academyName: null };
+    }
+
+    const authUser = await this.findAuthUserByEmail(row.request.email);
+    const hasPassword = authUser ? await this.userHasPassword(authUser.id) : false;
+
+    return {
+      status: "valid",
+      hasPassword,
+      studentName: row.request.name,
+      academyName: row.academy.name,
+    };
+  }
+
+  async completeFirstAccess(
+    token: string,
+    input: CompleteFirstAccessInput,
+  ): Promise<CompleteFirstAccessResponse> {
+    const row = await this.findRequestByFirstAccessToken(token);
+    if (!row) throw new NotFoundException("Token de primeiro acesso inválido.");
+
+    if (row.request.firstAccessConsumedAt) {
+      throw new BadRequestException("Este token já foi utilizado.");
+    }
+
+    const now = new Date();
+    if (row.request.firstAccessTokenExpiresAt && row.request.firstAccessTokenExpiresAt <= now) {
+      throw new BadRequestException("Token de primeiro acesso expirado.");
+    }
+
+    const authUser = await this.findAuthUserByEmail(row.request.email);
+    if (!authUser) throw new NotFoundException("Conta não encontrada.");
+
+    const hasPassword = await this.userHasPassword(authUser.id);
+
+    if (!hasPassword) {
+      if (!input.password) {
+        throw new BadRequestException("Senha é obrigatória para novos usuários.");
+      }
+      const { hashPassword } = await import("better-auth/crypto");
+      const hashed = await hashPassword(input.password);
+      await this.db
+        .update(account)
+        .set({ password: hashed, updatedAt: now })
+        .where(and(eq(account.userId, authUser.id), eq(account.providerId, "credential")));
+    }
+
+    await this.db
+      .update(preRegistrationRequests)
+      .set({ firstAccessConsumedAt: now, updatedAt: now })
+      .where(eq(preRegistrationRequests.id, row.request.id));
+
+    return { redirectTo: hasPassword ? "sign-in" : "sign-in" };
+  }
+
+  // --- Email (#61) ---
+
+  async sendFirstAccessEmail(
+    organizationId: string,
+    requestId: string,
+  ): Promise<SendFirstAccessEmailResponse> {
+    const request = await this.findRequest(organizationId, requestId);
+    if (request.status !== "approved") {
+      throw new BadRequestException("Email só pode ser enviado para solicitações aprovadas.");
+    }
+
+    const rawToken = randomBytes(32).toString("base64url");
+    const tokenHash = hashToken(rawToken);
+    const now = new Date();
+    const expiresAt = new Date(now);
+    expiresAt.setDate(expiresAt.getDate() + FIRST_ACCESS_DAYS);
+
+    await this.db
+      .update(preRegistrationRequests)
+      .set({
+        firstAccessTokenHash: tokenHash,
+        firstAccessTokenExpiresAt: expiresAt,
+        firstAccessConsumedAt: null,
+        updatedAt: now,
+      })
+      .where(eq(preRegistrationRequests.id, requestId));
+
+    const [academy] = await this.db
+      .select()
+      .from(organization)
+      .where(eq(organization.id, organizationId))
+      .limit(1);
+    if (!academy) throw new NotFoundException("Academia não encontrada.");
+
+    const firstAccessUrl = `${webAppUrl()}/student/first-access/${rawToken}`;
+    const resendApiKey = process.env.RESEND_API_KEY;
+    const emailFrom = process.env.EMAIL_FROM ?? "Tatamiq <noreply@tatamiq.com>";
+
+    const emailPayload = {
+      from: emailFrom,
+      to: request.email,
+      subject: `Seu acesso ao ${academy.name} no Tatamiq`,
+      html: buildFirstAccessEmailHtml(academy.name, request.name, firstAccessUrl),
+    };
+
+    if (!resendApiKey) {
+      console.log({ event: "first_access_email_dev_fallback", ...emailPayload });
+      return { sent: true };
+    }
+
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${resendApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(emailPayload),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      console.error({ event: "resend_email_failed", status: response.status, body: text });
+      throw new BadRequestException("Não foi possível enviar o email.");
+    }
+
+    return { sent: true };
+  }
+
+  // --- Private helpers ---
+
+  private async findWhiteBelt(organizationId: string, birthDate: string) {
+    const [org] = await this.db
+      .select({ childToAdultAge: organization.childToAdultAge })
+      .from(organization)
+      .where(eq(organization.id, organizationId))
+      .limit(1);
+
+    const path = isMinor(birthDate) ? "child" : "adult";
+    const slug = `${path}-white`;
+
+    const [belt] = await this.db
+      .select()
+      .from(belts)
+      .where(and(eq(belts.organizationId, organizationId), eq(belts.slug, slug)))
+      .limit(1);
+
+    if (!belt) throw new BadRequestException("Faixa branca não encontrada na academia.");
+    return belt;
+  }
+
+  private async findOrCreateAuthUser(
+    name: string,
+    email: string,
+  ): Promise<{ id: string; isNew: boolean }> {
+    const existing = await this.findAuthUserByEmail(email);
+    if (existing) return { id: existing.id, isNew: false };
+
+    const userId = crypto.randomUUID();
+    const now = new Date();
+
+    await this.db.insert(user).values({
+      id: userId,
+      name: name.trim(),
+      email: email.toLowerCase(),
+      emailVerified: false,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await this.db.insert(account).values({
+      id: crypto.randomUUID(),
+      accountId: userId,
+      providerId: "credential",
+      userId,
+      password: null,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return { id: userId, isNew: true };
+  }
+
+  private async findAuthUserByEmail(email: string) {
+    const [row] = await this.db
+      .select({ id: user.id, name: user.name, email: user.email })
+      .from(user)
+      .where(eq(user.email, email.toLowerCase()))
+      .limit(1);
+    return row ?? null;
+  }
+
+  private async userHasPassword(userId: string): Promise<boolean> {
+    const [row] = await this.db
+      .select({ password: account.password })
+      .from(account)
+      .where(and(eq(account.userId, userId), eq(account.providerId, "credential")))
+      .limit(1);
+    return !!row?.password;
+  }
+
+  private async isInstructorAccount(email: string): Promise<boolean> {
+    const authUser = await this.findAuthUserByEmail(email);
+    if (!authUser) return false;
+    const [row] = await this.db
+      .select({ id: member.id })
+      .from(member)
+      .where(eq(member.userId, authUser.id))
+      .limit(1);
+    return !!row;
+  }
+
+  private async findActiveAccessForStudent(studentId: string) {
+    const [row] = await this.db
+      .select({ id: studentAccess.id })
+      .from(studentAccess)
+      .where(and(eq(studentAccess.studentId, studentId), eq(studentAccess.status, "active")))
+      .limit(1);
+    return row ?? null;
+  }
+
+  private async findRequestByFirstAccessToken(token: string) {
+    const tokenHash = hashToken(token);
+    const [row] = await this.db
+      .select({ request: preRegistrationRequests, academy: organization })
+      .from(preRegistrationRequests)
+      .innerJoin(organization, eq(preRegistrationRequests.organizationId, organization.id))
+      .where(eq(preRegistrationRequests.firstAccessTokenHash, tokenHash))
+      .limit(1);
+    return row ?? null;
+  }
+
+  private async findLinkByOrganization(organizationId: string): Promise<LinkRow | null> {
+    const [row] = await this.db
+      .select()
+      .from(academyPreRegistrationLinks)
+      .where(eq(academyPreRegistrationLinks.organizationId, organizationId))
+      .limit(1);
+    return row ?? null;
+  }
+
+  private async findPublicLink(token: string) {
+    const [row] = await this.db
+      .select({ link: academyPreRegistrationLinks, academy: organization })
+      .from(academyPreRegistrationLinks)
+      .innerJoin(organization, eq(academyPreRegistrationLinks.organizationId, organization.id))
+      .where(eq(academyPreRegistrationLinks.token, token))
+      .limit(1);
+    return row ?? null;
+  }
+
+  private async findOpenRequestByEmail(organizationId: string, email: string) {
+    const [row] = await this.db
+      .select({ id: preRegistrationRequests.id })
+      .from(preRegistrationRequests)
+      .where(
+        and(
+          eq(preRegistrationRequests.organizationId, organizationId),
+          sql`lower(${preRegistrationRequests.email}) = ${email}`,
+          sql`${preRegistrationRequests.status} IN ('pending_review', 'approved')`,
+        ),
+      )
+      .limit(1);
+    return row ?? null;
+  }
+
+  private async findDuplicateStudent(
+    organizationId: string,
+    name: string,
+    birthDate: string,
+  ): Promise<DuplicateStudent> {
+    const [row] = await this.db
+      .select({ id: students.id, name: students.name })
+      .from(students)
+      .where(
+        and(
+          eq(students.organizationId, organizationId),
+          eq(students.birthDate, birthDate),
+          sql`lower(${students.name}) = ${name.trim().toLowerCase()}`,
+        ),
+      )
+      .limit(1);
+    return row ?? null;
+  }
+
+  private async findStudentById(organizationId: string, id: string): Promise<DuplicateStudent> {
+    const [row] = await this.db
+      .select({ id: students.id, name: students.name })
+      .from(students)
+      .where(and(eq(students.organizationId, organizationId), eq(students.id, id)))
+      .limit(1);
+    return row ?? null;
+  }
+
+  private async findRequest(organizationId: string, requestId: string): Promise<RequestRow> {
+    const [row] = await this.db
+      .select()
+      .from(preRegistrationRequests)
+      .where(
+        and(
+          eq(preRegistrationRequests.id, requestId),
+          eq(preRegistrationRequests.organizationId, organizationId),
+        ),
+      )
+      .limit(1);
+    if (!row) throw new NotFoundException("Solicitação de pré-cadastro não encontrada.");
+    return row;
+  }
+
+  private validateRequest(input: CreatePreRegistrationRequestInput): void {
+    if (!input.consentAccepted) {
+      throw new BadRequestException("Consentimento de pré-cadastro é obrigatório.");
+    }
+    if (isMinor(input.birthDate)) {
+      if (!input.guardianName?.trim() || !input.guardianPhone?.trim()) {
+        throw new BadRequestException("Menor de idade precisa de responsável com nome e telefone.");
+      }
+    }
+  }
+
+  private toLinkDto(row: LinkRow): PreRegistrationLink {
+    return {
+      id: row.id,
+      status: parseLinkStatus(row.status),
+      url: `${webAppUrl()}/pre-register/${row.token}`,
+      regeneratedAt: row.regeneratedAt?.toISOString() ?? null,
+      updatedAt: row.updatedAt.toISOString(),
+    };
+  }
+
+  private async toRequestDto(
+    row: RequestRow,
+    duplicateStudent: DuplicateStudent,
+  ): Promise<PreRegistrationRequest> {
+    const isInstructor = await this.isInstructorAccount(row.email);
+    const hasActiveAccess = row.duplicateStudentId
+      ? !!(await this.findActiveAccessForStudent(row.duplicateStudentId))
+      : false;
+
+    return {
+      id: row.id,
+      status: parseRequestStatus(row.status),
+      name: row.name,
+      birthDate: row.birthDate,
+      phone: row.phone,
+      email: row.email,
+      guardianName: row.guardianName,
+      guardianPhone: row.guardianPhone,
+      note: row.note,
+      duplicateStudent,
+      rejectionReason: row.rejectionReason,
+      approvedStudentId: row.approvedStudentId,
+      isInstructorAccount: isInstructor,
+      duplicateStudentHasActiveAccess: hasActiveAccess,
+      createdAt: row.createdAt.toISOString(),
+      reviewedAt: row.reviewedAt?.toISOString() ?? null,
+    };
+  }
+}
+
+function parseLinkStatus(value: string): "active" | "paused" {
+  if (value === "active" || value === "paused") return value;
+  throw new BadRequestException("Status do link de pré-cadastro inválido.");
+}
+
+function parseRequestStatus(value: string): "pending_review" | "approved" | "rejected" {
+  if (value === "pending_review" || value === "approved" || value === "rejected") return value;
+  throw new BadRequestException("Status da solicitação de pré-cadastro inválido.");
+}
+
+function createToken(): string {
+  return randomBytes(24).toString("base64url");
+}
+
+function hashToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
+}
+
+function emptyToNull(value?: string): string | null {
+  return value?.trim() || null;
+}
+
+function webAppUrl(): string {
+  return process.env.WEB_APP_URL ?? process.env.CORS_ORIGIN ?? "http://localhost:5173";
+}
+
+function buildFirstAccessEmailHtml(
+  academyName: string,
+  studentName: string,
+  firstAccessUrl: string,
+): string {
+  return `
+    <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 16px;">
+      <h2 style="margin: 0 0 8px;">Bem-vindo ao ${academyName}!</h2>
+      <p>Olá ${studentName},</p>
+      <p>Seu pré-cadastro foi aprovado. Use o link abaixo para configurar seu acesso ao Tatamiq:</p>
+      <p style="margin: 24px 0;">
+        <a href="${firstAccessUrl}" style="background: #18181b; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; display: inline-block;">
+          Configurar meu acesso
+        </a>
+      </p>
+      <p style="color: #71717a; font-size: 14px;">Este link expira em 7 dias.</p>
+    </div>
+  `;
+}

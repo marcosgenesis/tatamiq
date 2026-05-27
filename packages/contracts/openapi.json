@@ -177,6 +177,347 @@
         ]
       }
     },
+    "/pre-register/{token}": {
+      "get": {
+        "operationId": "PreRegistrationController_publicProfile",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreRegistrationPublicProfileDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "pre-registration"
+        ]
+      }
+    },
+    "/pre-register/{token}/requests": {
+      "post": {
+        "operationId": "PreRegistrationController_createRequest",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePreRegistrationRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreRegistrationRequestDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "pre-registration"
+        ]
+      }
+    },
+    "/student/first-access/{token}": {
+      "get": {
+        "operationId": "PreRegistrationController_previewFirstAccess",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FirstAccessPreviewDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "pre-registration"
+        ]
+      }
+    },
+    "/student/first-access/{token}/complete": {
+      "post": {
+        "operationId": "PreRegistrationController_completeFirstAccess",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteFirstAccessDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompleteFirstAccessResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "pre-registration"
+        ]
+      }
+    },
+    "/students/pre-registration-link": {
+      "get": {
+        "operationId": "PreRegistrationController_getLink",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreRegistrationLinkDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "pre-registration"
+        ]
+      }
+    },
+    "/students/pre-registration-link/pause": {
+      "post": {
+        "operationId": "PreRegistrationController_pauseLink",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreRegistrationLinkDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "pre-registration"
+        ]
+      }
+    },
+    "/students/pre-registration-link/reactivate": {
+      "post": {
+        "operationId": "PreRegistrationController_reactivateLink",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreRegistrationLinkDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "pre-registration"
+        ]
+      }
+    },
+    "/students/pre-registration-link/regenerate": {
+      "post": {
+        "operationId": "PreRegistrationController_regenerateLink",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreRegistrationLinkDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "pre-registration"
+        ]
+      }
+    },
+    "/students/pre-registrations": {
+      "get": {
+        "operationId": "PreRegistrationController_listRequests",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListPreRegistrationRequestsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "pre-registration"
+        ]
+      }
+    },
+    "/students/pre-registrations/{id}/reject": {
+      "post": {
+        "operationId": "PreRegistrationController_rejectRequest",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectPreRegistrationRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreRegistrationRequestDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "pre-registration"
+        ]
+      }
+    },
+    "/students/pre-registrations/{id}/approve": {
+      "post": {
+        "operationId": "PreRegistrationController_approveRequest",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovePreRegistrationRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApprovePreRegistrationResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "pre-registration"
+        ]
+      }
+    },
+    "/students/pre-registrations/{id}/send-first-access-email": {
+      "post": {
+        "operationId": "PreRegistrationController_sendFirstAccessEmail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendFirstAccessEmailResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "pre-registration"
+        ]
+      }
+    },
     "/students": {
       "get": {
         "operationId": "StudentsController_list",
@@ -2669,6 +3010,634 @@
           "minAttendancesForNextDegree",
           "minMonthsForNextBelt",
           "minAttendancesForNextBelt"
+        ]
+      },
+      "PreRegistrationPublicProfileDto": {
+        "type": "object",
+        "properties": {
+          "academy": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "logo": {
+                "type": "string",
+                "nullable": true
+              },
+              "address": {
+                "type": "string",
+                "nullable": true
+              },
+              "phone": {
+                "type": "string",
+                "nullable": true
+              },
+              "instagram": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "name",
+              "logo",
+              "address",
+              "phone",
+              "instagram"
+            ]
+          },
+          "link": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "paused"
+                ]
+              }
+            },
+            "required": [
+              "status"
+            ]
+          }
+        },
+        "required": [
+          "academy",
+          "link"
+        ]
+      },
+      "CreatePreRegistrationRequestDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "birthDate": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "phone": {
+            "type": "string",
+            "minLength": 1
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+          },
+          "guardianName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "enum": [
+                  ""
+                ]
+              }
+            ]
+          },
+          "guardianPhone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "enum": [
+                  ""
+                ]
+              }
+            ]
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "enum": [
+                  ""
+                ]
+              }
+            ]
+          },
+          "consentAccepted": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "birthDate",
+          "phone",
+          "email",
+          "consentAccepted"
+        ]
+      },
+      "PreRegistrationRequestDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending_review",
+              "approved",
+              "rejected"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "birthDate": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "guardianName": {
+            "type": "string",
+            "nullable": true
+          },
+          "guardianPhone": {
+            "type": "string",
+            "nullable": true
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          },
+          "duplicateStudent": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ],
+            "nullable": true
+          },
+          "rejectionReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "approvedStudentId": {
+            "type": "string",
+            "nullable": true
+          },
+          "isInstructorAccount": {
+            "type": "boolean"
+          },
+          "duplicateStudentHasActiveAccess": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          },
+          "reviewedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "name",
+          "birthDate",
+          "phone",
+          "email",
+          "guardianName",
+          "guardianPhone",
+          "note",
+          "duplicateStudent",
+          "rejectionReason",
+          "approvedStudentId",
+          "isInstructorAccount",
+          "duplicateStudentHasActiveAccess",
+          "createdAt",
+          "reviewedAt"
+        ]
+      },
+      "FirstAccessPreviewDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "valid",
+              "expired",
+              "consumed",
+              "invalid"
+            ]
+          },
+          "hasPassword": {
+            "type": "boolean"
+          },
+          "studentName": {
+            "type": "string",
+            "nullable": true
+          },
+          "academyName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "status",
+          "hasPassword",
+          "studentName",
+          "academyName"
+        ]
+      },
+      "CompleteFirstAccessDto": {
+        "type": "object",
+        "properties": {
+          "password": {
+            "type": "string",
+            "minLength": 8
+          },
+          "termsAccepted": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "termsVersion": {
+            "type": "string",
+            "enum": [
+              "student-access-v1"
+            ]
+          }
+        },
+        "required": [
+          "termsAccepted",
+          "termsVersion"
+        ]
+      },
+      "CompleteFirstAccessResponseDto": {
+        "type": "object",
+        "properties": {
+          "redirectTo": {
+            "type": "string",
+            "enum": [
+              "sign-in",
+              "student"
+            ]
+          }
+        },
+        "required": [
+          "redirectTo"
+        ]
+      },
+      "PreRegistrationLinkDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "paused"
+            ]
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "regeneratedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "nullable": true
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "url",
+          "regeneratedAt",
+          "updatedAt"
+        ]
+      },
+      "ListPreRegistrationRequestsResponseDto": {
+        "type": "object",
+        "properties": {
+          "requests": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "pending_review",
+                    "approved",
+                    "rejected"
+                  ]
+                },
+                "name": {
+                  "type": "string"
+                },
+                "birthDate": {
+                  "type": "string"
+                },
+                "phone": {
+                  "type": "string"
+                },
+                "email": {
+                  "type": "string"
+                },
+                "guardianName": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "guardianPhone": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "note": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "duplicateStudent": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name"
+                  ],
+                  "nullable": true
+                },
+                "rejectionReason": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "approvedStudentId": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "isInstructorAccount": {
+                  "type": "boolean"
+                },
+                "duplicateStudentHasActiveAccess": {
+                  "type": "boolean"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                },
+                "reviewedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+                  "nullable": true
+                }
+              },
+              "required": [
+                "id",
+                "status",
+                "name",
+                "birthDate",
+                "phone",
+                "email",
+                "guardianName",
+                "guardianPhone",
+                "note",
+                "duplicateStudent",
+                "rejectionReason",
+                "approvedStudentId",
+                "isInstructorAccount",
+                "duplicateStudentHasActiveAccess",
+                "createdAt",
+                "reviewedAt"
+              ]
+            }
+          },
+          "summary": {
+            "type": "object",
+            "properties": {
+              "pendingReview": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "approved": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "rejected": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "pendingReview",
+              "approved",
+              "rejected"
+            ]
+          }
+        },
+        "required": [
+          "requests",
+          "summary"
+        ]
+      },
+      "RejectPreRegistrationRequestDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "const": ""
+              }
+            ]
+          }
+        }
+      },
+      "ApprovePreRegistrationRequestDto": {
+        "type": "object",
+        "properties": {
+          "duplicateDecision": {
+            "type": "string",
+            "enum": [
+              "link_to_existing",
+              "create_new",
+              "reject_as_duplicate"
+            ]
+          }
+        }
+      },
+      "ApprovePreRegistrationResponseDto": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "pending_review",
+                  "approved",
+                  "rejected"
+                ]
+              },
+              "name": {
+                "type": "string"
+              },
+              "birthDate": {
+                "type": "string"
+              },
+              "phone": {
+                "type": "string"
+              },
+              "email": {
+                "type": "string"
+              },
+              "guardianName": {
+                "type": "string",
+                "nullable": true
+              },
+              "guardianPhone": {
+                "type": "string",
+                "nullable": true
+              },
+              "note": {
+                "type": "string",
+                "nullable": true
+              },
+              "duplicateStudent": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "name"
+                ],
+                "nullable": true
+              },
+              "rejectionReason": {
+                "type": "string",
+                "nullable": true
+              },
+              "approvedStudentId": {
+                "type": "string",
+                "nullable": true
+              },
+              "isInstructorAccount": {
+                "type": "boolean"
+              },
+              "duplicateStudentHasActiveAccess": {
+                "type": "boolean"
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+              },
+              "reviewedAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+                "nullable": true
+              }
+            },
+            "required": [
+              "id",
+              "status",
+              "name",
+              "birthDate",
+              "phone",
+              "email",
+              "guardianName",
+              "guardianPhone",
+              "note",
+              "duplicateStudent",
+              "rejectionReason",
+              "approvedStudentId",
+              "isInstructorAccount",
+              "duplicateStudentHasActiveAccess",
+              "createdAt",
+              "reviewedAt"
+            ]
+          },
+          "firstAccessLink": {
+            "type": "string",
+            "format": "uri"
+          },
+          "studentId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "request",
+          "firstAccessLink",
+          "studentId"
+        ]
+      },
+      "SendFirstAccessEmailResponseDto": {
+        "type": "object",
+        "properties": {
+          "sent": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "sent"
         ]
       },
       "ListStudentsResponseDto": {

@@ -446,6 +446,75 @@ export const studentAccess = pgTable(
   ],
 );
 
+export const academyPreRegistrationLinks = pgTable(
+  "academy_pre_registration_links",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    token: text("token").notNull().unique(),
+    status: text("status").notNull().default("active"),
+    regeneratedAt: timestamp("regenerated_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("academy_pre_registration_links_org_uniq").on(table.organizationId),
+    index("academy_pre_registration_links_token_idx").on(table.token),
+  ],
+);
+
+export const preRegistrationRequests = pgTable(
+  "pre_registration_requests",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    linkId: text("link_id")
+      .notNull()
+      .references(() => academyPreRegistrationLinks.id, { onDelete: "cascade" }),
+    status: text("status").notNull().default("pending_review"),
+    name: text("name").notNull(),
+    birthDate: date("birth_date").notNull(),
+    phone: text("phone").notNull(),
+    email: text("email").notNull(),
+    guardianName: text("guardian_name"),
+    guardianPhone: text("guardian_phone"),
+    note: text("note"),
+    consentAcceptedAt: timestamp("consent_accepted_at", { withTimezone: true }).notNull(),
+    reviewedByUserId: text("reviewed_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    rejectionReason: text("rejection_reason"),
+    approvedStudentId: text("approved_student_id").references(() => students.id, {
+      onDelete: "set null",
+    }),
+    approvedStudentAccessId: text("approved_student_access_id").references(() => studentAccess.id, {
+      onDelete: "set null",
+    }),
+    duplicateStudentId: text("duplicate_student_id").references(() => students.id, {
+      onDelete: "set null",
+    }),
+    firstAccessTokenHash: text("first_access_token_hash"),
+    firstAccessTokenExpiresAt: timestamp("first_access_token_expires_at", { withTimezone: true }),
+    firstAccessConsumedAt: timestamp("first_access_consumed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("pre_registration_requests_organization_id_idx").on(table.organizationId),
+    index("pre_registration_requests_link_id_idx").on(table.linkId),
+    index("pre_registration_requests_email_idx").on(table.email),
+    index("pre_registration_requests_status_idx").on(table.status),
+    uniqueIndex("pre_registration_requests_first_access_token_hash_uniq")
+      .on(table.firstAccessTokenHash)
+      .where(sql`${table.firstAccessTokenHash} IS NOT NULL`),
+  ],
+);
+
 export const studentAcceptances = pgTable(
   "student_acceptances",
   {
@@ -642,6 +711,8 @@ export type ClassCancellation = typeof classCancellations.$inferSelect;
 export type Attendance = typeof attendances.$inferSelect;
 export type StudentAccessInvite = typeof studentAccessInvites.$inferSelect;
 export type StudentAccess = typeof studentAccess.$inferSelect;
+export type AcademyPreRegistrationLink = typeof academyPreRegistrationLinks.$inferSelect;
+export type PreRegistrationRequest = typeof preRegistrationRequests.$inferSelect;
 export type StudentAcceptance = typeof studentAcceptances.$inferSelect;
 export type MonthlyFee = typeof monthlyFees.$inferSelect;
 export type MonthlyFeeEvent = typeof monthlyFeeEvents.$inferSelect;
