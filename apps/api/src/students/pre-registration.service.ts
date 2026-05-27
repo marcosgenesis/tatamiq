@@ -36,7 +36,7 @@ import {
 } from "@tatamiq/database";
 import { and, eq, sql } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
-import type { EmailService } from "./email.service";
+import { EmailService } from "./email.service";
 import { isMinor } from "./student-rules";
 
 const FIRST_ACCESS_DAYS = 7;
@@ -51,7 +51,7 @@ type DuplicateStudent = { id: string; name: string } | null;
 export class PreRegistrationService {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    private readonly emailService: EmailService,
+    @Inject(EmailService) private readonly emailService: EmailService,
   ) {}
 
   // --- Link management ---
