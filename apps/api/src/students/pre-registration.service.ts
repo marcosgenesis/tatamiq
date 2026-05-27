@@ -506,7 +506,7 @@ export class PreRegistrationService {
 
     const firstAccessUrl = `${webAppUrl()}/student/first-access/${rawToken}`;
     const resendApiKey = process.env.RESEND_API_KEY;
-    const emailFrom = process.env.EMAIL_FROM ?? "Tatamiq <noreply@tatamiq.com>";
+    const emailFrom = process.env.EMAIL_FROM ?? "Tatamiq <noreply@tatamiq.com.br>";
 
     const emailPayload = {
       from: emailFrom,
