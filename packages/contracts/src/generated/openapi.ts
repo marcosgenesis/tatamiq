@@ -116,6 +116,198 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/pre-register/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PreRegistrationController_publicProfile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pre-register/{token}/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PreRegistrationController_createRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/student/first-access/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PreRegistrationController_previewFirstAccess"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/student/first-access/{token}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PreRegistrationController_completeFirstAccess"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/students/pre-registration-link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PreRegistrationController_getLink"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/students/pre-registration-link/pause": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PreRegistrationController_pauseLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/students/pre-registration-link/reactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PreRegistrationController_reactivateLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/students/pre-registration-link/regenerate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PreRegistrationController_regenerateLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/students/pre-registrations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PreRegistrationController_listRequests"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/students/pre-registrations/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PreRegistrationController_rejectRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/students/pre-registrations/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PreRegistrationController_approveRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/students/pre-registrations/{id}/send-first-access-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PreRegistrationController_sendFirstAccessEmail"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/students": {
         parameters: {
             query?: never;
@@ -316,6 +508,54 @@ export interface paths {
             cookie?: never;
         };
         get: operations["StudentPortalController_studentMonthlyFees"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/student/monthly-fees/{id}/upload-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["StudentPortalController_studentReceiptUploadUrl"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/student/monthly-fees/{id}/receipts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["StudentPortalController_studentConfirmReceipt"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/student/monthly-fees/{id}/receipts/{receiptId}/view-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["StudentPortalController_studentReceiptViewUrl"];
         put?: never;
         post?: never;
         delete?: never;
@@ -542,6 +782,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["MonthlyFeesController_manualPayment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/monthly-fees/{id}/receipts/{receiptId}/view-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["MonthlyFeesController_receiptViewUrl"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -804,22 +1060,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/schedule/ad-hoc-classes/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: operations["ScheduleController_deleteAdHoc"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/schedule/ad-hoc-classes/{id}/cancel": {
         parameters: {
             query?: never;
@@ -831,6 +1071,22 @@ export interface paths {
         put?: never;
         post: operations["ScheduleController_cancelAdHoc"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schedule/ad-hoc-classes/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["ScheduleController_deleteAdHoc"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1012,6 +1268,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/students/import-csv/template.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CsvController_importTemplate"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/students/import-csv": {
         parameters: {
             query?: never;
@@ -1157,6 +1429,154 @@ export interface components {
             minAttendancesForNextDegree: number;
             minMonthsForNextBelt: number;
             minAttendancesForNextBelt: number;
+        };
+        PreRegistrationPublicProfileDto: {
+            academy: {
+                name: string;
+                logo: string | null;
+                address: string | null;
+                phone: string | null;
+                instagram: string | null;
+            };
+            link: {
+                /** @enum {string} */
+                status: "active" | "paused";
+            };
+        };
+        CreatePreRegistrationRequestDto: {
+            name: string;
+            birthDate: string;
+            phone: string;
+            /** Format: email */
+            email: string;
+            guardianName?: string | "";
+            guardianPhone?: string | "";
+            note?: string | "";
+            /** @enum {boolean} */
+            consentAccepted: true;
+        };
+        PreRegistrationRequestDto: {
+            id: string;
+            /** @enum {string} */
+            status: "pending_review" | "approved" | "rejected";
+            name: string;
+            birthDate: string;
+            phone: string;
+            email: string;
+            guardianName: string | null;
+            guardianPhone: string | null;
+            note: string | null;
+            duplicateStudent: {
+                id: string;
+                name: string;
+            } | null;
+            rejectionReason: string | null;
+            approvedStudentId: string | null;
+            isInstructorAccount: boolean;
+            duplicateStudentHasActiveAccess: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            reviewedAt: string | null;
+        };
+        FirstAccessPreviewDto: {
+            /** @enum {string} */
+            status: "valid" | "expired" | "consumed" | "invalid";
+            hasPassword: boolean;
+            studentName: string | null;
+            academyName: string | null;
+        };
+        CompleteFirstAccessDto: {
+            password?: string;
+            /** @enum {boolean} */
+            termsAccepted: true;
+            /** @enum {string} */
+            termsVersion: "student-access-v1";
+        };
+        CompleteFirstAccessResponseDto: {
+            /** @enum {string} */
+            redirectTo: "sign-in" | "student";
+        };
+        PreRegistrationLinkDto: {
+            id: string;
+            /** @enum {string} */
+            status: "active" | "paused";
+            /** Format: uri */
+            url: string;
+            /** Format: date-time */
+            regeneratedAt: string | null;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        ListPreRegistrationRequestsResponseDto: {
+            requests: {
+                id: string;
+                /** @enum {string} */
+                status: "pending_review" | "approved" | "rejected";
+                name: string;
+                birthDate: string;
+                phone: string;
+                email: string;
+                guardianName: string | null;
+                guardianPhone: string | null;
+                note: string | null;
+                duplicateStudent: {
+                    id: string;
+                    name: string;
+                } | null;
+                rejectionReason: string | null;
+                approvedStudentId: string | null;
+                isInstructorAccount: boolean;
+                duplicateStudentHasActiveAccess: boolean;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                reviewedAt: string | null;
+            }[];
+            summary: {
+                pendingReview: number;
+                approved: number;
+                rejected: number;
+            };
+        };
+        RejectPreRegistrationRequestDto: {
+            reason?: string | "";
+        };
+        ApprovePreRegistrationRequestDto: {
+            /** @enum {string} */
+            duplicateDecision?: "link_to_existing" | "create_new" | "reject_as_duplicate";
+        };
+        ApprovePreRegistrationResponseDto: {
+            request: {
+                id: string;
+                /** @enum {string} */
+                status: "pending_review" | "approved" | "rejected";
+                name: string;
+                birthDate: string;
+                phone: string;
+                email: string;
+                guardianName: string | null;
+                guardianPhone: string | null;
+                note: string | null;
+                duplicateStudent: {
+                    id: string;
+                    name: string;
+                } | null;
+                rejectionReason: string | null;
+                approvedStudentId: string | null;
+                isInstructorAccount: boolean;
+                duplicateStudentHasActiveAccess: boolean;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                reviewedAt: string | null;
+            };
+            /** Format: uri */
+            firstAccessLink: string;
+            studentId: string;
+        };
+        SendFirstAccessEmailResponseDto: {
+            sent: boolean;
         };
         ListStudentsResponseDto: {
             students: {
@@ -1409,6 +1829,96 @@ export interface components {
                 durationMinutes: number;
             }[];
         };
+        StudentMonthlyFeesResponseDto: {
+            fees: {
+                id: string;
+                referenceYear: number;
+                referenceMonth: number;
+                amountInCents: number;
+                dueDate: string;
+                /** @enum {string} */
+                status: "open" | "under_review" | "paid" | "waived";
+                isOverdue: boolean;
+                /** Format: date-time */
+                paidAt: string | null;
+                lastReceipt: {
+                    id: string;
+                    /** @enum {string} */
+                    status: "pending" | "approved" | "rejected" | "replaced";
+                    rejectionReason: string | null;
+                    note: string | null;
+                    /** Format: date-time */
+                    createdAt: string;
+                } | null;
+            }[];
+        };
+        UploadUrlResponseDto: {
+            /** Format: uri */
+            uploadUrl: string;
+            fileKey: string;
+        };
+        ConfirmReceiptDto: {
+            fileKey: string;
+            fileType: string;
+            fileSizeBytes: number;
+            note?: string | "";
+        };
+        MonthlyFeeDetailDto: {
+            id: string;
+            studentId: string;
+            studentName: string;
+            referenceYear: number;
+            referenceMonth: number;
+            amountInCents: number;
+            originalAmountInCents: number | null;
+            dueDate: string;
+            /** @enum {string} */
+            status: "open" | "under_review" | "paid" | "waived";
+            isOverdue: boolean;
+            /** Format: date-time */
+            paidAt: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            events: {
+                id: string;
+                monthlyFeeId: string;
+                /** @enum {string} */
+                type: "waived" | "adjusted" | "receipt_approved" | "receipt_rejected" | "receipt_replaced" | "manual_payment";
+                reason: string | null;
+                metadata: {
+                    [key: string]: unknown;
+                } | null;
+                createdByUserId: string;
+                /** Format: date-time */
+                createdAt: string;
+            }[];
+            receipts: {
+                id: string;
+                monthlyFeeId: string;
+                studentId: string;
+                fileKey: string;
+                fileUrl: string | null;
+                fileType: string;
+                fileSizeBytes: number;
+                note: string | null;
+                /** @enum {string} */
+                status: "pending" | "approved" | "rejected" | "replaced";
+                rejectionReason: string | null;
+                /** Format: date-time */
+                replacedAt: string | null;
+                createdByUserId: string;
+                /** Format: date-time */
+                createdAt: string;
+            }[];
+        };
+        ReceiptViewUrlResponseDto: {
+            /** Format: uri */
+            viewUrl: string;
+            /** Format: date-time */
+            expiresAt: string;
+        };
         StudentScheduleResponseDto: {
             days: {
                 date: string;
@@ -1506,62 +2016,6 @@ export interface components {
             referenceMonth: number;
             amountInCents: number;
             dueDay: number;
-        };
-        MonthlyFeeDetailDto: {
-            id: string;
-            studentId: string;
-            studentName: string;
-            referenceYear: number;
-            referenceMonth: number;
-            amountInCents: number;
-            originalAmountInCents: number | null;
-            dueDate: string;
-            /** @enum {string} */
-            status: "open" | "under_review" | "paid" | "waived";
-            isOverdue: boolean;
-            /** Format: date-time */
-            paidAt: string | null;
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            updatedAt: string;
-            events: {
-                id: string;
-                monthlyFeeId: string;
-                /** @enum {string} */
-                type: "waived" | "adjusted" | "receipt_approved" | "receipt_rejected" | "manual_payment";
-                reason: string | null;
-                metadata: {
-                    [key: string]: unknown;
-                } | null;
-                createdByUserId: string;
-                /** Format: date-time */
-                createdAt: string;
-            }[];
-            receipts: {
-                id: string;
-                monthlyFeeId: string;
-                studentId: string;
-                fileUrl: string;
-                fileType: string;
-                fileSizeBytes: number;
-                /** @enum {string} */
-                status: "pending" | "approved" | "rejected";
-                rejectionReason: string | null;
-                createdByUserId: string;
-                /** Format: date-time */
-                createdAt: string;
-            }[];
-        };
-        UploadUrlResponseDto: {
-            /** Format: uri */
-            uploadUrl: string;
-            fileKey: string;
-        };
-        ConfirmReceiptDto: {
-            fileKey: string;
-            fileType: string;
-            fileSizeBytes: number;
         };
         AdjustMonthlyFeeDto: {
             amountInCents: number;
@@ -2066,6 +2520,264 @@ export interface operations {
             };
         };
     };
+    PreRegistrationController_publicProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreRegistrationPublicProfileDto"];
+                };
+            };
+        };
+    };
+    PreRegistrationController_createRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePreRegistrationRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreRegistrationRequestDto"];
+                };
+            };
+        };
+    };
+    PreRegistrationController_previewFirstAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FirstAccessPreviewDto"];
+                };
+            };
+        };
+    };
+    PreRegistrationController_completeFirstAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompleteFirstAccessDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompleteFirstAccessResponseDto"];
+                };
+            };
+        };
+    };
+    PreRegistrationController_getLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreRegistrationLinkDto"];
+                };
+            };
+        };
+    };
+    PreRegistrationController_pauseLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreRegistrationLinkDto"];
+                };
+            };
+        };
+    };
+    PreRegistrationController_reactivateLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreRegistrationLinkDto"];
+                };
+            };
+        };
+    };
+    PreRegistrationController_regenerateLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreRegistrationLinkDto"];
+                };
+            };
+        };
+    };
+    PreRegistrationController_listRequests: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListPreRegistrationRequestsResponseDto"];
+                };
+            };
+        };
+    };
+    PreRegistrationController_rejectRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectPreRegistrationRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreRegistrationRequestDto"];
+                };
+            };
+        };
+    };
+    PreRegistrationController_approveRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApprovePreRegistrationRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovePreRegistrationResponseDto"];
+                };
+            };
+        };
+    };
+    PreRegistrationController_sendFirstAccessEmail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SendFirstAccessEmailResponseDto"];
+                };
+            };
+        };
+    };
     StudentsController_list: {
         parameters: {
             query?: {
@@ -2380,7 +3092,79 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["StudentMonthlyFeesResponseDto"];
+                };
+            };
+        };
+    };
+    StudentPortalController_studentReceiptUploadUrl: {
+        parameters: {
+            query: {
+                contentType: unknown;
+            };
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadUrlResponseDto"];
+                };
+            };
+        };
+    };
+    StudentPortalController_studentConfirmReceipt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmReceiptDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonthlyFeeDetailDto"];
+                };
+            };
+        };
+    };
+    StudentPortalController_studentReceiptViewUrl: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receiptId: unknown;
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptViewUrlResponseDto"];
+                };
             };
         };
     };
@@ -2717,6 +3501,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MonthlyFeeDetailDto"];
+                };
+            };
+        };
+    };
+    MonthlyFeesController_receiptViewUrl: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receiptId: unknown;
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptViewUrlResponseDto"];
                 };
             };
         };
@@ -3153,25 +3959,6 @@ export interface operations {
             };
         };
     };
-    ScheduleController_deleteAdHoc: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: unknown;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
     ScheduleController_cancelAdHoc: {
         parameters: {
             query?: never;
@@ -3190,6 +3977,25 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ScheduleOccurrenceDto"];
                 };
+            };
+        };
+    };
+    ScheduleController_deleteAdHoc: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -3453,6 +4259,23 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AttendanceDto"];
                 };
+            };
+        };
+    };
+    CsvController_importTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

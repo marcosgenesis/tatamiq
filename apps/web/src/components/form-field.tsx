@@ -9,7 +9,10 @@ export function Field(
   const { label, onChange, ...inputProps } = props;
   return (
     <label className="space-y-2 text-sm font-medium">
-      <span>{label}</span>
+      <span>
+        {label}
+        {inputProps.required && <span className="text-destructive ml-0.5">*</span>}
+      </span>
       <input
         {...inputProps}
         onChange={(event) => onChange(event.target.value)}
@@ -24,10 +27,14 @@ export function SelectField(props: {
   value: string;
   options: Array<{ value: string; label: string }>;
   onChange: (value: string) => void;
+  required?: boolean;
 }) {
   return (
     <label className="space-y-2 text-sm font-medium">
-      <span>{props.label}</span>
+      <span>
+        {props.label}
+        {props.required && <span className="text-destructive ml-0.5">*</span>}
+      </span>
       <select
         value={props.value}
         onChange={(event) => props.onChange(event.target.value)}

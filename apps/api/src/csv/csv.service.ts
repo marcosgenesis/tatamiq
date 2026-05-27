@@ -7,14 +7,20 @@ import {
   classSessions,
   type Database,
   monthlyFees,
+  studentGuardians,
   students,
 } from "@tatamiq/database";
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
+import { isMinor } from "../students/student-rules";
 import type { ImportPreviewStore, ParsedStudentRow } from "./import-preview-store";
 import { IMPORT_PREVIEW_STORE } from "./import-preview-store";
 
 const BOM = "﻿";
+const STUDENT_IMPORT_TEMPLATE_HEADER =
+  "Nome,Data Nascimento,Data Matrícula,Email,Telefone,Faixa,Grau,Valor Mensal,Dia Vencimento,Responsável Nome,Responsável Telefone,Responsável Email,Parentesco";
+const STUDENT_IMPORT_TEMPLATE_EXAMPLE =
+  "João Silva,2000-05-20,2026-05-26,joao@email.com,11999999999,Branca,0,150.00,10,,,,";
 
 @Injectable()
 export class CsvService {
@@ -23,6 +29,10 @@ export class CsvService {
     @Inject(IMPORT_PREVIEW_STORE) private readonly previewStore: ImportPreviewStore,
   ) {}
 
+  studentImportTemplate(): string {
+    return BOM + [STUDENT_IMPORT_TEMPLATE_HEADER, STUDENT_IMPORT_TEMPLATE_EXAMPLE].join("\n");
+  }
+
   async previewImport(
     organizationId: string,
     csvContent: string,
@@ -30,18 +40,26 @@ export class CsvService {
     const lines = csvContent.split(/\r?\n/).filter((l) => l.trim());
     if (lines.length < 2) throw new BadRequestException("CSV vazio ou sem dados.");
 
-    const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
-    const nameIdx = headers.indexOf("name");
-    const birthIdx = headers.indexOf("birthdate");
-    const enrollIdx = headers.indexOf("enrollmentdate");
-    const emailIdx = headers.indexOf("email");
-    const phoneIdx = headers.indexOf("phone");
-    const beltIdx = headers.indexOf("belt");
-    const degreeIdx = headers.indexOf("degree");
-    const amountIdx = headers.indexOf("monthlyamount");
-    const dueDayIdx = headers.indexOf("monthlydueday");
+    const headers = parseCsvLine(lines[0]).map(normalizeHeader);
+    const nameIdx = findHeader(headers, ["nome", "name"]);
+    const birthIdx = findHeader(headers, ["data nascimento", "data de nascimento", "birthdate"]);
+    const enrollIdx = findHeader(headers, [
+      "data matricula",
+      "data de matricula",
+      "enrollmentdate",
+    ]);
+    const emailIdx = findHeader(headers, ["email", "e-mail"]);
+    const phoneIdx = findHeader(headers, ["telefone", "phone"]);
+    const beltIdx = findHeader(headers, ["faixa", "belt"]);
+    const degreeIdx = findHeader(headers, ["grau", "degree"]);
+    const amountIdx = findHeader(headers, ["valor mensal", "monthlyamount"]);
+    const dueDayIdx = findHeader(headers, ["dia vencimento", "dia de vencimento", "monthlydueday"]);
+    const guardianNameIdx = findHeader(headers, ["responsavel nome", "nome responsavel"]);
+    const guardianPhoneIdx = findHeader(headers, ["responsavel telefone", "telefone responsavel"]);
+    const guardianEmailIdx = findHeader(headers, ["responsavel email", "email responsavel"]);
+    const guardianRelationshipIdx = findHeader(headers, ["parentesco", "responsavel parentesco"]);
 
-    if (nameIdx === -1) throw new BadRequestException("Coluna 'name' obrigatória.");
+    if (nameIdx === -1) throw new BadRequestException("Coluna 'Nome' obrigatória.");
 
     const academyBelts = await this.db
       .select()
@@ -78,13 +96,25 @@ export class CsvService {
       const beltName = cols[beltIdx]?.trim() ?? "";
       const degree = Number.parseInt(cols[degreeIdx]?.trim() ?? "0", 10) || 0;
       const monthlyAmount =
-        amountIdx >= 0 ? Number.parseInt(cols[amountIdx]?.trim() ?? "", 10) || null : null;
+        amountIdx >= 0 ? parseMonthlyAmount(cols[amountIdx]?.trim() ?? "") : null;
       const monthlyDueDay =
         dueDayIdx >= 0 ? Number.parseInt(cols[dueDayIdx]?.trim() ?? "", 10) || null : null;
+      const guardianName = cols[guardianNameIdx]?.trim() ?? "";
+      const guardianPhone = cols[guardianPhoneIdx]?.trim() ?? "";
+      const guardianEmail = cols[guardianEmailIdx]?.trim() ?? "";
+      const guardianRelationship = cols[guardianRelationshipIdx]?.trim() ?? "";
 
       if (!name) errors.push("Nome obrigatório.");
-      if (!birthDate || !/^\d{4}-\d{2}-\d{2}$/.test(birthDate))
+      if (!birthDate || !/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
         errors.push("Data de nascimento inválida (YYYY-MM-DD).");
+      } else if (isMinor(birthDate) && (!guardianName || !guardianPhone)) {
+        errors.push("Aluno menor de idade precisa de responsável com nome e telefone.");
+      }
+      if (monthlyAmount !== null && Number.isNaN(monthlyAmount))
+        errors.push("Valor mensal inválido.");
+      if (monthlyDueDay !== null && (monthlyDueDay < 1 || monthlyDueDay > 31)) {
+        errors.push("Dia de vencimento deve ser entre 1 e 31.");
+      }
       if (beltName && !beltsByName.has(beltName.toLowerCase()))
         errors.push(`Faixa '${beltName}' não encontrada.`);
       if (name && birthDate && existingSet.has(`${name.toLowerCase()}:${birthDate}`)) {
@@ -104,8 +134,12 @@ export class CsvService {
         phone,
         beltName,
         degree,
-        monthlyAmount,
+        monthlyAmount: monthlyAmount !== null && Number.isNaN(monthlyAmount) ? null : monthlyAmount,
         monthlyDueDay,
+        guardianName,
+        guardianPhone,
+        guardianEmail,
+        guardianRelationship,
         errors,
         warnings,
       });
@@ -161,8 +195,9 @@ export class CsvService {
         continue;
       }
 
+      const studentId = crypto.randomUUID();
       await this.db.insert(students).values({
-        id: crypto.randomUUID(),
+        id: studentId,
         organizationId,
         name: row.name,
         birthDate: row.birthDate,
@@ -175,6 +210,17 @@ export class CsvService {
         monthlyAmountInCents: row.monthlyAmount,
         monthlyDueDay: row.monthlyDueDay,
       });
+
+      if (row.guardianName && row.guardianPhone) {
+        await this.db.insert(studentGuardians).values({
+          id: crypto.randomUUID(),
+          studentId,
+          name: row.guardianName,
+          phone: row.guardianPhone,
+          email: row.guardianEmail || null,
+          relationship: row.guardianRelationship || null,
+        });
+      }
       imported++;
     }
 
@@ -315,6 +361,28 @@ function escapeCsv(value: string): string {
     return `"${value.replace(/"/g, '""')}"`;
   }
   return value;
+}
+
+function normalizeHeader(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ");
+}
+
+function findHeader(headers: string[], aliases: string[]): number {
+  const normalizedAliases = aliases.map(normalizeHeader);
+  return headers.findIndex((header) => normalizedAliases.includes(header));
+}
+
+function parseMonthlyAmount(value: string): number | null {
+  if (!value) return null;
+  const normalized = value.includes(",") ? value.replace(/\./g, "").replace(",", ".") : value;
+  const amount = Number.parseFloat(normalized);
+  if (Number.isNaN(amount) || amount < 0) return Number.NaN;
+  return Math.round(amount * 100);
 }
 
 function parseCsvLine(line: string): string[] {

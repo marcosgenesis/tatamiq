@@ -14,6 +14,7 @@ import type {
   MonthlyFee,
   MonthlyFeeDetail,
   PaymentReceipt,
+  ReceiptViewUrlResponse,
   RejectReceiptInput,
   StudentMonthlyFeesResponse,
   UploadUrlResponse,
@@ -350,6 +351,7 @@ export class MonthlyFeesService {
                 id: lastRelevant.id,
                 status: parseReceiptStatus(lastRelevant.status),
                 rejectionReason: lastRelevant.rejectionReason,
+                note: lastRelevant.note,
                 createdAt: lastRelevant.createdAt.toISOString(),
               }
             : null,
@@ -362,26 +364,13 @@ export class MonthlyFeesService {
     organizationId: string,
     feeId: string,
     contentType: string,
+    studentId?: string,
   ): Promise<UploadUrlResponse> {
-    const fee = await this.findFee(organizationId, feeId);
-    if (fee.status !== "open") {
-      throw new BadRequestException("Só é possível enviar comprovante para mensalidade em aberto.");
-    }
-
-    const hasPending = await this.db
-      .select({ id: paymentReceipts.id })
-      .from(paymentReceipts)
-      .where(and(eq(paymentReceipts.monthlyFeeId, feeId), eq(paymentReceipts.status, "pending")))
-      .limit(1);
-
-    if (hasPending.length > 0) {
-      throw new BadRequestException("Já existe um comprovante pendente para esta mensalidade.");
-    }
-
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"];
-    if (!allowedTypes.includes(contentType)) {
-      throw new BadRequestException("Tipo de arquivo não permitido. Use imagem ou PDF.");
-    }
+    const fee = studentId
+      ? await this.findStudentFee(organizationId, studentId, feeId)
+      : await this.findFee(organizationId, feeId);
+    this.validateReceiptSubmissionStatus(fee.status);
+    this.validateReceiptFileType(contentType);
 
     const fileKey = `receipts/${organizationId}/${feeId}/${crypto.randomUUID()}`;
     const uploadUrl = await this.r2.generatePresignedUrl(fileKey, contentType);
@@ -394,45 +383,70 @@ export class MonthlyFeesService {
     feeId: string,
     userId: string,
     input: ConfirmReceiptInput,
+    studentId?: string,
   ): Promise<MonthlyFeeDetail> {
-    const fee = await this.findFee(organizationId, feeId);
-    if (fee.status !== "open") {
-      throw new BadRequestException("Só é possível enviar comprovante para mensalidade em aberto.");
-    }
+    const fee = studentId
+      ? await this.findStudentFee(organizationId, studentId, feeId)
+      : await this.findFee(organizationId, feeId);
+    this.validateReceiptSubmissionStatus(fee.status);
+    this.validateReceiptFileType(input.fileType);
 
     if (input.fileSizeBytes > 10 * 1024 * 1024) {
       throw new BadRequestException("Arquivo excede o limite de 10 MB.");
     }
 
-    const hasPending = await this.db
-      .select({ id: paymentReceipts.id })
+    const [pendingReceipt] = await this.db
+      .select()
       .from(paymentReceipts)
       .where(and(eq(paymentReceipts.monthlyFeeId, feeId), eq(paymentReceipts.status, "pending")))
+      .orderBy(desc(paymentReceipts.createdAt))
       .limit(1);
 
-    if (hasPending.length > 0) {
-      throw new BadRequestException("Já existe um comprovante pendente para esta mensalidade.");
-    }
-
     const now = new Date();
-    await this.db.insert(paymentReceipts).values({
-      id: crypto.randomUUID(),
-      monthlyFeeId: feeId,
-      organizationId,
-      studentId: fee.studentId,
-      fileUrl: this.r2.getPublicUrl(input.fileKey),
-      fileType: input.fileType,
-      fileSizeBytes: input.fileSizeBytes,
-      status: "pending",
-      rejectionReason: null,
-      createdByUserId: userId,
-      createdAt: now,
-    });
+    const newReceiptId = crypto.randomUUID();
+    await this.db.transaction(async (tx) => {
+      if (pendingReceipt) {
+        await tx
+          .update(paymentReceipts)
+          .set({ status: "replaced", replacedAt: now })
+          .where(eq(paymentReceipts.id, pendingReceipt.id));
+      }
 
-    await this.db
-      .update(monthlyFees)
-      .set({ status: "under_review", updatedAt: now })
-      .where(eq(monthlyFees.id, feeId));
+      await tx.insert(paymentReceipts).values({
+        id: newReceiptId,
+        monthlyFeeId: feeId,
+        organizationId,
+        studentId: fee.studentId,
+        fileKey: input.fileKey,
+        fileUrl: null,
+        fileType: input.fileType,
+        fileSizeBytes: input.fileSizeBytes,
+        note: input.note?.trim() || null,
+        status: "pending",
+        rejectionReason: null,
+        replacedAt: null,
+        createdByUserId: userId,
+        createdAt: now,
+      });
+
+      await tx
+        .update(monthlyFees)
+        .set({ status: "under_review", updatedAt: now })
+        .where(eq(monthlyFees.id, feeId));
+
+      if (pendingReceipt) {
+        await tx.insert(monthlyFeeEvents).values({
+          id: crypto.randomUUID(),
+          monthlyFeeId: feeId,
+          organizationId,
+          type: "receipt_replaced",
+          reason: null,
+          metadata: { previousReceiptId: pendingReceipt.id, newReceiptId },
+          createdByUserId: userId,
+          createdAt: now,
+        });
+      }
+    });
 
     return this.get(organizationId, feeId);
   }
@@ -452,17 +466,36 @@ export class MonthlyFeesService {
     return rows.map(toReceiptDto);
   }
 
+  async receiptViewUrl(
+    organizationId: string,
+    feeId: string,
+    receiptId: string,
+    studentId?: string,
+  ): Promise<ReceiptViewUrlResponse> {
+    if (studentId) await this.findStudentFee(organizationId, studentId, feeId);
+    else await this.findFee(organizationId, feeId);
+
+    const receipt = await this.findReceipt(organizationId, feeId, receiptId);
+    if (studentId && receipt.studentId !== studentId) {
+      throw new NotFoundException("Comprovante não encontrado.");
+    }
+
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    return {
+      viewUrl: await this.r2.generateReadUrl(receipt.fileKey, 5 * 60),
+      expiresAt: expiresAt.toISOString(),
+    };
+  }
+
   async approveReceipt(
     organizationId: string,
     feeId: string,
     receiptId: string,
     userId: string,
   ): Promise<MonthlyFeeDetail> {
-    await this.findFee(organizationId, feeId);
+    const fee = await this.findFee(organizationId, feeId);
     const receipt = await this.findReceipt(organizationId, feeId, receiptId);
-    if (receipt.status !== "pending") {
-      throw new BadRequestException("Comprovante não está pendente.");
-    }
+    this.assertActivePendingReceipt(fee.status, receipt);
 
     const now = new Date();
     await this.db
@@ -496,11 +529,9 @@ export class MonthlyFeesService {
     userId: string,
     input: RejectReceiptInput,
   ): Promise<MonthlyFeeDetail> {
-    await this.findFee(organizationId, feeId);
+    const fee = await this.findFee(organizationId, feeId);
     const receipt = await this.findReceipt(organizationId, feeId, receiptId);
-    if (receipt.status !== "pending") {
-      throw new BadRequestException("Comprovante não está pendente.");
-    }
+    this.assertActivePendingReceipt(fee.status, receipt);
 
     const now = new Date();
     await this.db
@@ -544,6 +575,48 @@ export class MonthlyFeesService {
       throw new NotFoundException("Comprovante não encontrado.");
     }
     return row;
+  }
+
+  private async findStudentFee(organizationId: string, studentId: string, id: string) {
+    const [row] = await this.db
+      .select()
+      .from(monthlyFees)
+      .where(
+        and(
+          eq(monthlyFees.id, id),
+          eq(monthlyFees.organizationId, organizationId),
+          eq(monthlyFees.studentId, studentId),
+        ),
+      )
+      .limit(1);
+
+    if (!row) {
+      throw new NotFoundException("Mensalidade não encontrada.");
+    }
+
+    return row;
+  }
+
+  private validateReceiptSubmissionStatus(status: string): void {
+    if (status === "paid" || status === "waived") {
+      throw new BadRequestException("Mensalidade paga ou dispensada não aceita comprovante.");
+    }
+    if (status !== "open" && status !== "under_review") {
+      throw new BadRequestException("Status da mensalidade não aceita comprovante.");
+    }
+  }
+
+  private validateReceiptFileType(contentType: string): void {
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"];
+    if (!allowedTypes.includes(contentType)) {
+      throw new BadRequestException("Tipo de arquivo não permitido. Use imagem ou PDF.");
+    }
+  }
+
+  private assertActivePendingReceipt(feeStatus: string, receipt: ReceiptRow): void {
+    if (feeStatus !== "under_review" || receipt.status !== "pending") {
+      throw new BadRequestException("Apenas o comprovante pendente ativo pode ser revisado.");
+    }
   }
 
   private async findFee(organizationId: string, id: string) {
@@ -610,11 +683,14 @@ function toReceiptDto(row: ReceiptRow) {
     id: row.id,
     monthlyFeeId: row.monthlyFeeId,
     studentId: row.studentId,
+    fileKey: row.fileKey,
     fileUrl: row.fileUrl,
     fileType: row.fileType,
     fileSizeBytes: row.fileSizeBytes,
+    note: row.note,
     status: parseReceiptStatus(row.status),
     rejectionReason: row.rejectionReason,
+    replacedAt: row.replacedAt?.toISOString() ?? null,
     createdByUserId: row.createdByUserId,
     createdAt: row.createdAt.toISOString(),
   };
@@ -627,13 +703,20 @@ function parseStatus(value: string): MonthlyFee["status"] {
 }
 
 function parseEventType(value: string) {
-  const valid = ["waived", "adjusted", "receipt_approved", "receipt_rejected", "manual_payment"];
+  const valid = [
+    "waived",
+    "adjusted",
+    "receipt_approved",
+    "receipt_rejected",
+    "receipt_replaced",
+    "manual_payment",
+  ];
   if (valid.includes(value)) return value as MonthlyFeeDetail["events"][number]["type"];
   throw new BadRequestException("Tipo de evento inválido.");
 }
 
 function parseReceiptStatus(value: string) {
-  const valid = ["pending", "approved", "rejected"];
+  const valid = ["pending", "approved", "rejected", "replaced"];
   if (valid.includes(value)) return value as MonthlyFeeDetail["receipts"][number]["status"];
   throw new BadRequestException("Status de comprovante inválido.");
 }

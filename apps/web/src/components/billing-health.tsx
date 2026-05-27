@@ -32,9 +32,24 @@ export function BillingHealth() {
       <CardHeader className="border-b">
         <CardTitle className="text-balance text-base">Saúde financeira</CardTitle>
         <CardDescription className="text-pretty">
-          {hasIssues
-            ? `${summary?.overdue ?? 0} atrasadas · ${summary?.underReview ?? 0} em verificação`
-            : "Nenhuma pendência no momento."}
+          {hasIssues ? (
+            <>
+              {summary?.overdue ?? 0} atrasadas ·{" "}
+              {(summary?.underReview ?? 0) > 0 ? (
+                <Link
+                  to="/monthly-fees"
+                  search={{ status: "under_review" }}
+                  className="font-medium text-primary underline-offset-4 hover:underline"
+                >
+                  {summary?.underReview ?? 0} em verificação
+                </Link>
+              ) : (
+                "0 em verificação"
+              )}
+            </>
+          ) : (
+            "Nenhuma pendência no momento."
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex h-full items-center px-0">

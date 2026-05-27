@@ -2,18 +2,28 @@ import {
   BadRequestException,
   Body,
   Controller,
+  ForbiddenException,
   Get,
   HttpCode,
   Inject,
+  Param,
   Patch,
   Post,
+  Query,
   Session,
 } from "@nestjs/common";
-import { ApiBody, ApiOkResponse, ApiTags } from "@nestjs/swagger";
-import { confirmQrAttendanceSchema } from "@tatamiq/contracts";
+import { ApiBody, ApiOkResponse, ApiParam, ApiQuery, ApiTags } from "@nestjs/swagger";
+import { confirmQrAttendanceSchema, confirmReceiptSchema } from "@tatamiq/contracts";
 import type { z } from "zod";
 import type { SessionWithUser } from "../active-organization";
 import { GraduationService } from "../graduation/graduation.service";
+import {
+  ConfirmReceiptDto,
+  MonthlyFeeDetailDto,
+  ReceiptViewUrlResponseDto,
+  StudentMonthlyFeesResponseDto,
+  UploadUrlResponseDto,
+} from "../monthly-fees/monthly-fees.dto";
 import { MonthlyFeesService } from "../monthly-fees/monthly-fees.service";
 import { StudentNotesService } from "../student-notes/student-notes.service";
 import { QrAttendanceService } from "./qr-attendance.service";
@@ -64,9 +74,71 @@ export class StudentPortalController {
   }
 
   @Get("monthly-fees")
-  async studentMonthlyFees(@Session() session: SessionWithUser) {
+  @ApiOkResponse({ type: StudentMonthlyFeesResponseDto })
+  async studentMonthlyFees(
+    @Session() session: SessionWithUser,
+  ): Promise<StudentMonthlyFeesResponseDto> {
     const meData = await this.studentAccessService.me(session.user.id);
     return this.monthlyFeesService.studentFees(meData.student.id, meData.academy.id);
+  }
+
+  @Post("monthly-fees/:id/upload-url")
+  @HttpCode(200)
+  @ApiParam({ name: "id" })
+  @ApiQuery({ name: "contentType", required: true })
+  @ApiOkResponse({ type: UploadUrlResponseDto })
+  async studentReceiptUploadUrl(
+    @Session() session: SessionWithUser,
+    @Param("id") id: string,
+    @Query("contentType") contentType: string,
+  ): Promise<UploadUrlResponseDto> {
+    const meData = await this.studentAccessService.me(session.user.id);
+    assertStudentCanSubmitReceipts(meData.student.readOnly);
+    return this.monthlyFeesService.generateUploadUrl(
+      meData.academy.id,
+      id,
+      contentType,
+      meData.student.id,
+    );
+  }
+
+  @Post("monthly-fees/:id/receipts")
+  @HttpCode(200)
+  @ApiParam({ name: "id" })
+  @ApiBody({ type: ConfirmReceiptDto })
+  @ApiOkResponse({ type: MonthlyFeeDetailDto })
+  async studentConfirmReceipt(
+    @Session() session: SessionWithUser,
+    @Param("id") id: string,
+    @Body() body: ConfirmReceiptDto,
+  ): Promise<MonthlyFeeDetailDto> {
+    const meData = await this.studentAccessService.me(session.user.id);
+    assertStudentCanSubmitReceipts(meData.student.readOnly);
+    return this.monthlyFeesService.confirmReceipt(
+      meData.academy.id,
+      id,
+      session.user.id,
+      parseBody(confirmReceiptSchema, body),
+      meData.student.id,
+    );
+  }
+
+  @Get("monthly-fees/:id/receipts/:receiptId/view-url")
+  @ApiParam({ name: "id" })
+  @ApiParam({ name: "receiptId" })
+  @ApiOkResponse({ type: ReceiptViewUrlResponseDto })
+  async studentReceiptViewUrl(
+    @Session() session: SessionWithUser,
+    @Param("id") id: string,
+    @Param("receiptId") receiptId: string,
+  ): Promise<ReceiptViewUrlResponseDto> {
+    const meData = await this.studentAccessService.me(session.user.id);
+    return this.monthlyFeesService.receiptViewUrl(
+      meData.academy.id,
+      id,
+      receiptId,
+      meData.student.id,
+    );
   }
 
   @Get("notes")
@@ -130,4 +202,10 @@ function parseBody<T>(schema: z.ZodType<T>, value: unknown): T {
   const result = schema.safeParse(value);
   if (!result.success) throw new BadRequestException("Dados inválidos.");
   return result.data;
+}
+
+function assertStudentCanSubmitReceipts(readOnly: boolean): void {
+  if (readOnly) {
+    throw new ForbiddenException("Aluno inativo não pode enviar comprovante Pix.");
+  }
 }

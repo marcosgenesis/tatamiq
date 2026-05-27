@@ -55,7 +55,7 @@ export function AppShell({
         <AppSidebar />
         <SidebarInset>
           <AppHeader />
-          <div className="flex flex-1 flex-col px-4 md:px-8">{children}</div>
+          {children}
         </SidebarInset>
       </SidebarProvider>
     </AppShellCtx.Provider>

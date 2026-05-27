@@ -1,4 +1,4 @@
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { Injectable } from "@nestjs/common";
 
@@ -34,7 +34,16 @@ export class R2StorageService {
     return getSignedUrl(this.client, command, { expiresIn: 600 });
   }
 
+  async generateReadUrl(fileKey: string, expiresInSeconds = 300): Promise<string> {
+    const command = new GetObjectCommand({
+      Bucket: this.bucket,
+      Key: fileKey,
+    });
+
+    return getSignedUrl(this.client, command, { expiresIn: expiresInSeconds });
+  }
+
   getPublicUrl(fileKey: string): string {
-    return `${this.publicUrl}/${fileKey}`;
+    return this.publicUrl ? `${this.publicUrl}/${fileKey}` : fileKey;
   }
 }

@@ -201,6 +201,139 @@ export type AcceptStudentInviteResponse = z.infer<typeof acceptStudentInviteResp
 export type StudentMeResponse = z.infer<typeof studentMeResponseSchema>;
 export type InviteSummaryResponse = z.infer<typeof inviteSummaryResponseSchema>;
 
+// --- Academy Pre-registration ---
+
+export const preRegistrationLinkStatusSchema = z.enum(["active", "paused"]);
+export const preRegistrationRequestStatusSchema = z.enum([
+  "pending_review",
+  "approved",
+  "rejected",
+]);
+
+export const preRegistrationPublicProfileSchema = z.object({
+  academy: z.object({
+    name: z.string(),
+    logo: z.string().nullable(),
+    address: z.string().nullable(),
+    phone: z.string().nullable(),
+    instagram: z.string().nullable(),
+  }),
+  link: z.object({
+    status: preRegistrationLinkStatusSchema,
+  }),
+});
+
+export const createPreRegistrationRequestSchema = z.object({
+  name: z.string().trim().min(1),
+  birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  phone: z.string().trim().min(1),
+  email: z.string().trim().email(),
+  guardianName: z.string().trim().optional().or(z.literal("")),
+  guardianPhone: z.string().trim().optional().or(z.literal("")),
+  note: z.string().trim().optional().or(z.literal("")),
+  consentAccepted: z.literal(true),
+});
+
+export const preRegistrationRequestSchema = z.object({
+  id: z.string(),
+  status: preRegistrationRequestStatusSchema,
+  name: z.string(),
+  birthDate: z.string(),
+  phone: z.string(),
+  email: z.string(),
+  guardianName: z.string().nullable(),
+  guardianPhone: z.string().nullable(),
+  note: z.string().nullable(),
+  duplicateStudent: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+    })
+    .nullable(),
+  rejectionReason: z.string().nullable(),
+  approvedStudentId: z.string().nullable(),
+  isInstructorAccount: z.boolean(),
+  duplicateStudentHasActiveAccess: z.boolean(),
+  createdAt: z.string().datetime(),
+  reviewedAt: z.string().datetime().nullable(),
+});
+
+export const preRegistrationLinkSchema = z.object({
+  id: z.string(),
+  status: preRegistrationLinkStatusSchema,
+  url: z.string().url(),
+  regeneratedAt: z.string().datetime().nullable(),
+  updatedAt: z.string().datetime(),
+});
+
+export const listPreRegistrationRequestsResponseSchema = z.object({
+  requests: z.array(preRegistrationRequestSchema),
+  summary: z.object({
+    pendingReview: z.number().int().nonnegative(),
+    approved: z.number().int().nonnegative(),
+    rejected: z.number().int().nonnegative(),
+  }),
+});
+
+export const rejectPreRegistrationRequestSchema = z.object({
+  reason: z.string().trim().optional().or(z.literal("")),
+});
+
+export const duplicateDecisionSchema = z.enum([
+  "link_to_existing",
+  "create_new",
+  "reject_as_duplicate",
+]);
+
+export const approvePreRegistrationRequestSchema = z.object({
+  duplicateDecision: duplicateDecisionSchema.optional(),
+});
+
+export const approvePreRegistrationResponseSchema = z.object({
+  request: preRegistrationRequestSchema,
+  firstAccessLink: z.string().url(),
+  studentId: z.string(),
+});
+
+export const firstAccessPreviewSchema = z.object({
+  status: z.enum(["valid", "expired", "consumed", "invalid"]),
+  hasPassword: z.boolean(),
+  studentName: z.string().nullable(),
+  academyName: z.string().nullable(),
+});
+
+export const completeFirstAccessSchema = z.object({
+  password: z.string().min(8).optional(),
+  termsAccepted: z.literal(true),
+  termsVersion: z.literal("student-access-v1"),
+});
+
+export const completeFirstAccessResponseSchema = z.object({
+  redirectTo: z.enum(["sign-in", "student"]),
+});
+
+export const sendFirstAccessEmailResponseSchema = z.object({
+  sent: z.boolean(),
+});
+
+export type PreRegistrationPublicProfile = z.infer<typeof preRegistrationPublicProfileSchema>;
+export type CreatePreRegistrationRequestInput = z.infer<typeof createPreRegistrationRequestSchema>;
+export type PreRegistrationRequest = z.infer<typeof preRegistrationRequestSchema>;
+export type PreRegistrationLink = z.infer<typeof preRegistrationLinkSchema>;
+export type ListPreRegistrationRequestsResponse = z.infer<
+  typeof listPreRegistrationRequestsResponseSchema
+>;
+export type RejectPreRegistrationRequestInput = z.infer<typeof rejectPreRegistrationRequestSchema>;
+export type DuplicateDecision = z.infer<typeof duplicateDecisionSchema>;
+export type ApprovePreRegistrationRequestInput = z.infer<
+  typeof approvePreRegistrationRequestSchema
+>;
+export type ApprovePreRegistrationResponse = z.infer<typeof approvePreRegistrationResponseSchema>;
+export type FirstAccessPreview = z.infer<typeof firstAccessPreviewSchema>;
+export type CompleteFirstAccessInput = z.infer<typeof completeFirstAccessSchema>;
+export type CompleteFirstAccessResponse = z.infer<typeof completeFirstAccessResponseSchema>;
+export type SendFirstAccessEmailResponse = z.infer<typeof sendFirstAccessEmailResponseSchema>;
+
 export const classGroupStatusSchema = z.enum(["active", "archived"]);
 
 export const classGroupScheduleSchema = z.object({
@@ -407,10 +540,11 @@ export const monthlyFeeEventTypeSchema = z.enum([
   "adjusted",
   "receipt_approved",
   "receipt_rejected",
+  "receipt_replaced",
   "manual_payment",
 ]);
 
-export const paymentReceiptStatusSchema = z.enum(["pending", "approved", "rejected"]);
+export const paymentReceiptStatusSchema = z.enum(["pending", "approved", "rejected", "replaced"]);
 
 export const monthlyFeeEventSchema = z.object({
   id: z.string(),
@@ -426,11 +560,14 @@ export const paymentReceiptSchema = z.object({
   id: z.string(),
   monthlyFeeId: z.string(),
   studentId: z.string(),
-  fileUrl: z.string(),
+  fileKey: z.string(),
+  fileUrl: z.string().nullable(),
   fileType: z.string(),
   fileSizeBytes: z.number().int(),
+  note: z.string().nullable(),
   status: paymentReceiptStatusSchema,
   rejectionReason: z.string().nullable(),
+  replacedAt: z.string().datetime().nullable(),
   createdByUserId: z.string(),
   createdAt: z.string().datetime(),
 });
@@ -506,9 +643,16 @@ export const confirmReceiptSchema = z.object({
     .int()
     .positive()
     .max(10 * 1024 * 1024),
+  note: z.string().trim().optional().or(z.literal("")),
+});
+
+export const receiptViewUrlResponseSchema = z.object({
+  viewUrl: z.string().url(),
+  expiresAt: z.string().datetime(),
 });
 
 export type UploadUrlResponse = z.infer<typeof uploadUrlResponseSchema>;
+export type ReceiptViewUrlResponse = z.infer<typeof receiptViewUrlResponseSchema>;
 export type ConfirmReceiptInput = z.infer<typeof confirmReceiptSchema>;
 
 export const rejectReceiptSchema = z.object({
@@ -531,6 +675,7 @@ export const studentMonthlyFeeSchema = z.object({
       id: z.string(),
       status: paymentReceiptStatusSchema,
       rejectionReason: z.string().nullable(),
+      note: z.string().nullable(),
       createdAt: z.string().datetime(),
     })
     .nullable(),

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { CreateMonthlyFeeInput, MonthlyFee } from "@tatamiq/contracts";
+import type { CreateMonthlyFeeInput, MonthlyFee, MonthlyFeeDetail } from "@tatamiq/contracts";
 import { Download04Icon, Money03Icon, PlusSignIcon } from "hugeicons-react";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useMemo, useState } from "react";
 import { api } from "../../api";
 import { Field, SelectField } from "../../components/form-field";
 import { Badge } from "../../components/ui/badge";
@@ -24,6 +24,7 @@ import {
   monthNames,
   reaisToCents,
 } from "../../lib/formatting";
+import { activePendingReceipt, receiptHistory } from "./receipt-state";
 
 type FeeStatusFilter = "all" | "open" | "under_review" | "paid" | "waived" | "overdue";
 
@@ -52,10 +53,15 @@ const emptyForm: FeeFormState = {
 
 export function MonthlyFeesPage() {
   const queryClient = useQueryClient();
-  const [statusFilter, setStatusFilter] = useState<FeeStatusFilter>("all");
+  const [statusFilter, setStatusFilter] = useState<FeeStatusFilter>(() => {
+    const status = new URLSearchParams(window.location.search).get("status");
+    return isFeeStatusFilter(status) ? status : "all";
+  });
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [form, setForm] = useState<FeeFormState>(emptyForm);
   const [error, setError] = useState<string | null>(null);
+  const [detailFeeId, setDetailFeeId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
 
   const feesQuery = useQuery({
     queryKey: ["monthly-fees", statusFilter],
@@ -70,6 +76,19 @@ export function MonthlyFeesPage() {
   });
 
   const studentsQuery = useStudents("active", undefined, { enabled: isFormOpen });
+
+  const detailQuery = useQuery({
+    queryKey: ["monthly-fees", "detail", detailFeeId],
+    enabled: detailFeeId !== null,
+    queryFn: async () => {
+      if (!detailFeeId) throw new Error("Mensalidade inválida.");
+      const { data, error } = await api.GET("/monthly-fees/{id}", {
+        params: { path: { id: detailFeeId } },
+      });
+      if (error) throw new Error("Não foi possível carregar o detalhe.");
+      return data;
+    },
+  });
 
   const createMutation = useMutation({
     mutationFn: async (input: CreateMonthlyFeeInput) => {
@@ -129,6 +148,48 @@ export function MonthlyFeesPage() {
     },
   });
 
+  const approveReceiptMutation = useMutation({
+    mutationFn: async ({ feeId, receiptId }: { feeId: string; receiptId: string }) => {
+      const { error } = await api.POST("/monthly-fees/{id}/receipts/{receiptId}/approve", {
+        params: { path: { id: feeId, receiptId } },
+      });
+      if (error) throw new Error("Não foi possível aprovar.");
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["monthly-fees"] }),
+        queryClient.invalidateQueries({ queryKey: ["monthly-fees", "detail"] }),
+      ]);
+      setDetailFeeId(null);
+    },
+  });
+
+  const rejectReceiptMutation = useMutation({
+    mutationFn: async ({
+      feeId,
+      receiptId,
+      reason,
+    }: {
+      feeId: string;
+      receiptId: string;
+      reason: string;
+    }) => {
+      const { error } = await api.POST("/monthly-fees/{id}/receipts/{receiptId}/reject", {
+        params: { path: { id: feeId, receiptId } },
+        body: { reason },
+      });
+      if (error) throw new Error("Não foi possível rejeitar.");
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["monthly-fees"] }),
+        queryClient.invalidateQueries({ queryKey: ["monthly-fees", "detail"] }),
+      ]);
+      setDetailFeeId(null);
+      setRejectReason("");
+    },
+  });
+
   const manualPayMutation = useMutation({
     mutationFn: async ({ id, note }: { id: string; note: string }) => {
       const { error } = await api.POST("/monthly-fees/{id}/manual-payment", {
@@ -145,6 +206,8 @@ export function MonthlyFeesPage() {
 
   const fees = feesQuery.data?.fees ?? [];
   const summary = feesQuery.data?.summary;
+  const detail = detailQuery.data ?? null;
+  const pendingReceipt = useMemo(() => (detail ? activePendingReceipt(detail) : null), [detail]);
 
   function openAction(feeId: string, type: "adjust" | "waive" | "manual_payment", fee: MonthlyFee) {
     setActionFeeId(feeId);
@@ -226,74 +289,34 @@ export function MonthlyFeesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-[2rem] border border-border bg-card p-6 shadow-2xl md:p-8">
-        <Badge variant="muted">Financeiro V0</Badge>
-        <div className="mt-5 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight md:text-5xl">Mensalidades</h1>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
-              Cobranças mensais, Pix, comprovantes em verificação, ajustes e mensalidades
-              dispensadas.
-            </p>
+    <div className="space-y-6 p-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <div className="flex gap-1.5 items-center">
+            <h1 className="text-2xl">Mensalidades</h1>
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant="secondary"
-              onClick={() => {
-                const baseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3100";
-                const params = new URLSearchParams();
-                if (statusFilter !== "all") params.set("status", statusFilter);
-                const qs = params.toString();
-                window.open(`${baseUrl}/monthly-fees/export.csv${qs ? `?${qs}` : ""}`, "_blank");
-              }}
-            >
-              <Download04Icon className="size-4" /> Exportar CSV
-            </Button>
-            <Button onClick={openCreateForm}>
-              <PlusSignIcon className="size-4" /> Nova mensalidade
-            </Button>
-          </div>
-        </div>
-      </section>
 
-      <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
-        <SummaryCard
-          label="Em aberto"
-          value={summary?.open ?? 0}
-          active={statusFilter === "open"}
-          onClick={() => setStatusFilter("open")}
-        />
-        <SummaryCard
-          label="Atrasadas"
-          value={summary?.overdue ?? 0}
-          active={statusFilter === "overdue"}
-          onClick={() => setStatusFilter("overdue")}
-        />
-        <SummaryCard
-          label="Em verificação"
-          value={summary?.underReview ?? 0}
-          active={statusFilter === "under_review"}
-          onClick={() => setStatusFilter("under_review")}
-        />
-        <SummaryCard
-          label="Pagas"
-          value={summary?.paid ?? 0}
-          active={statusFilter === "paid"}
-          onClick={() => setStatusFilter("paid")}
-        />
-        <SummaryCard
-          label="Dispensadas"
-          value={summary?.waived ?? 0}
-          active={statusFilter === "waived"}
-          onClick={() => setStatusFilter("waived")}
-        />
-        <SummaryCard
-          label="Total"
-          value={summary?.total ?? 0}
-          active={statusFilter === "all"}
-          onClick={() => setStatusFilter("all")}
-        />
+          <p className="max-w-2xl text-base leading-7 text-muted-foreground">
+            Cobranças mensais, Pix, comprovantes em verificação, ajustes e mensalidades dispensadas.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="secondary"
+            onClick={() => {
+              const baseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3100";
+              const params = new URLSearchParams();
+              if (statusFilter !== "all") params.set("status", statusFilter);
+              const qs = params.toString();
+              window.open(`${baseUrl}/monthly-fees/export.csv${qs ? `?${qs}` : ""}`, "_blank");
+            }}
+          >
+            <Download04Icon className="size-4" /> Exportar CSV
+          </Button>
+          <Button onClick={openCreateForm}>
+            <PlusSignIcon className="size-4" /> Nova mensalidade
+          </Button>
+        </div>
       </div>
 
       <Drawer
@@ -366,48 +389,66 @@ export function MonthlyFeesPage() {
           </form>
         </DrawerContent>
       </Drawer>
-
-      <Card>
-        <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <CardTitle>Mensalidades</CardTitle>
-          <span className="text-sm text-muted-foreground">{fees.length} registro(s)</span>
-        </CardHeader>
-        <CardContent>
-          {feesQuery.isLoading ? (
-            <p className="text-sm text-muted-foreground">Carregando mensalidades...</p>
-          ) : null}
-          {feesQuery.isError ? (
-            <p className="text-sm text-destructive">Não foi possível carregar mensalidades.</p>
-          ) : null}
-          {!feesQuery.isLoading && fees.length === 0 ? (
-            <EmptyState onCreate={openCreateForm} />
-          ) : null}
-          {fees.length > 0 ? (
-            <div className="overflow-hidden rounded-2xl border border-border">
-              <div className="hidden grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr_0.8fr_1fr] gap-4 border-border border-b bg-muted/50 px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-[0.18em] md:grid">
-                <span>Aluno</span>
-                <span>Referência</span>
-                <span>Valor</span>
-                <span>Vencimento</span>
-                <span>Status</span>
-                <span>Ações</span>
-              </div>
-              <div className="divide-y divide-border">
-                {fees.map((fee) => (
-                  <FeeRow
-                    key={fee.id}
-                    fee={fee}
-                    onAdjust={() => openAction(fee.id, "adjust", fee)}
-                    onWaive={() => openAction(fee.id, "waive", fee)}
-                    onManualPay={() => openAction(fee.id, "manual_payment", fee)}
-                  />
-                ))}
-              </div>
+      <div>
+        {" "}
+        {feesQuery.isLoading ? (
+          <p className="text-sm text-muted-foreground">Carregando mensalidades...</p>
+        ) : null}
+        {feesQuery.isError ? (
+          <p className="text-sm text-destructive">Não foi possível carregar mensalidades.</p>
+        ) : null}
+        {!feesQuery.isLoading && fees.length === 0 ? (
+          <EmptyState onCreate={openCreateForm} />
+        ) : null}
+        {fees.length > 0 ? (
+          <div className="overflow-hidden rounded-2xl border border-border">
+            <div className="hidden grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr_0.8fr_1fr] gap-4 border-border border-b bg-muted/50 px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-[0.18em] md:grid">
+              <span>Aluno</span>
+              <span>Referência</span>
+              <span>Valor</span>
+              <span>Vencimento</span>
+              <span>Status</span>
+              <span>Ações</span>
             </div>
-          ) : null}
-        </CardContent>
-      </Card>
-
+            <div className="divide-y divide-border">
+              {fees.map((fee) => (
+                <FeeRow
+                  key={fee.id}
+                  fee={fee}
+                  onAdjust={() => openAction(fee.id, "adjust", fee)}
+                  onWaive={() => openAction(fee.id, "waive", fee)}
+                  onManualPay={() => openAction(fee.id, "manual_payment", fee)}
+                  onReview={() => {
+                    setDetailFeeId(fee.id);
+                    setRejectReason("");
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </div>
+      <ReceiptReviewDrawer
+        detail={detail}
+        isLoading={detailQuery.isLoading}
+        pendingReceipt={pendingReceipt}
+        rejectReason={rejectReason}
+        onRejectReasonChange={setRejectReason}
+        onOpenChange={(open) => {
+          if (!open) setDetailFeeId(null);
+        }}
+        onOpenReceipt={async (feeId, receiptId) => {
+          const { data, error } = await api.GET(
+            "/monthly-fees/{id}/receipts/{receiptId}/view-url",
+            { params: { path: { id: feeId, receiptId } } },
+          );
+          if (!error && data) window.open(data.viewUrl, "_blank", "noopener,noreferrer");
+        }}
+        onApprove={(feeId, receiptId) => approveReceiptMutation.mutate({ feeId, receiptId })}
+        onReject={(feeId, receiptId, reason) =>
+          rejectReceiptMutation.mutate({ feeId, receiptId, reason })
+        }
+      />
       <Drawer
         direction="right"
         open={actionFeeId !== null && actionType !== null}
@@ -464,6 +505,10 @@ export function MonthlyFeesPage() {
   );
 }
 
+function isFeeStatusFilter(value: string | null): value is FeeStatusFilter {
+  return ["all", "open", "under_review", "paid", "waived", "overdue"].includes(value ?? "");
+}
+
 function SummaryCard(props: {
   label: string;
   value: number;
@@ -489,6 +534,7 @@ function FeeRow(props: {
   onAdjust: () => void;
   onWaive: () => void;
   onManualPay: () => void;
+  onReview: () => void;
 }) {
   const fee = props.fee;
   const displayStatus = fee.isOverdue ? "Atrasada" : (statusLabels[fee.status] ?? fee.status);
@@ -522,6 +568,11 @@ function FeeRow(props: {
         <Badge variant={badgeVariant as "default"}>{displayStatus}</Badge>
       </div>
       <div className="flex flex-wrap gap-2">
+        {fee.status === "under_review" ? (
+          <Button type="button" variant="secondary" size="sm" onClick={props.onReview}>
+            Revisar
+          </Button>
+        ) : null}
         {isOpen ? (
           <>
             <Button type="button" variant="secondary" size="sm" onClick={props.onAdjust}>
@@ -538,6 +589,125 @@ function FeeRow(props: {
       </div>
     </div>
   );
+}
+
+function ReceiptReviewDrawer(props: {
+  detail: MonthlyFeeDetail | null;
+  isLoading: boolean;
+  pendingReceipt: MonthlyFeeDetail["receipts"][number] | null;
+  rejectReason: string;
+  onRejectReasonChange: (value: string) => void;
+  onOpenChange: (open: boolean) => void;
+  onOpenReceipt: (feeId: string, receiptId: string) => void;
+  onApprove: (feeId: string, receiptId: string) => void;
+  onReject: (feeId: string, receiptId: string, reason: string) => void;
+}) {
+  const history = props.detail ? receiptHistory(props.detail) : [];
+
+  return (
+    <Drawer
+      direction="right"
+      open={props.detail !== null || props.isLoading}
+      onOpenChange={props.onOpenChange}
+    >
+      <DrawerContent>
+        <DrawerHeader>
+          <DrawerTitle>Verificação de pagamento</DrawerTitle>
+          <DrawerDescription>
+            Revise o comprovante ativo antes de aprovar ou rejeitar.
+          </DrawerDescription>
+        </DrawerHeader>
+        <div className="no-scrollbar flex-1 space-y-4 overflow-y-auto px-4">
+          {props.isLoading ? <p className="text-sm text-muted-foreground">Carregando...</p> : null}
+          {props.detail && props.pendingReceipt ? (
+            <div className="space-y-4 rounded-2xl border border-border p-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Aluno</p>
+                <strong>{props.detail.studentName}</strong>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Observação do aluno</p>
+                <p className="text-sm">{props.pendingReceipt.note || "Sem observação."}</p>
+              </div>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() =>
+                  props.onOpenReceipt(props.detail?.id ?? "", props.pendingReceipt?.id ?? "")
+                }
+              >
+                Abrir comprovante
+              </Button>
+              <div className="space-y-2">
+                <Field
+                  label="Motivo da rejeição"
+                  value={props.rejectReason}
+                  onChange={props.onRejectReasonChange}
+                />
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    onClick={() =>
+                      props.onApprove(props.detail?.id ?? "", props.pendingReceipt?.id ?? "")
+                    }
+                  >
+                    Aprovar
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    disabled={!props.rejectReason.trim()}
+                    onClick={() =>
+                      props.onReject(
+                        props.detail?.id ?? "",
+                        props.pendingReceipt?.id ?? "",
+                        props.rejectReason,
+                      )
+                    }
+                  >
+                    Rejeitar
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+          {props.detail && !props.pendingReceipt ? (
+            <p className="rounded-2xl border border-border p-4 text-sm text-muted-foreground">
+              Nenhum comprovante pendente ativo.
+            </p>
+          ) : null}
+          {history.length > 0 ? (
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">Histórico</h3>
+              {history.map((receipt) => (
+                <div
+                  key={receipt.id}
+                  className="rounded-2xl border border-border p-3 text-sm text-muted-foreground"
+                >
+                  {receipt.status} · {formatDateTime(receipt.createdAt)}
+                  {receipt.rejectionReason ? <span> · {receipt.rejectionReason}</span> : null}
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
+        <DrawerFooter>
+          <DrawerClose asChild>
+            <Button type="button" variant="secondary">
+              Fechar
+            </Button>
+          </DrawerClose>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
+  );
+}
+
+function formatDateTime(value: string): string {
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(new Date(value));
 }
 
 function EmptyState(props: { onCreate: () => void }) {

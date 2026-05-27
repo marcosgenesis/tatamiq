@@ -13,8 +13,8 @@ import { useEffect } from "react";
 import { AppShell } from "./components/app-shell";
 import { LogoIcon } from "./components/logo";
 import { Toaster } from "./components/ui/sonner";
+import { AcademyOnboardingPage } from "./features/auth/academy-onboarding-page";
 import {
-  AcademyOnboardingPage,
   ForgotPasswordPage,
   ResetPasswordPage,
   SignInPage,
@@ -32,6 +32,8 @@ import { AcceptStudentInvitePage } from "./features/student-access/accept-studen
 import { ChooseAreaPage } from "./features/student-access/choose-area-page";
 import { StudentCheckInPage } from "./features/student-access/student-check-in-page";
 import { StudentDashboardPage } from "./features/student-access/student-dashboard-page";
+import { FirstAccessPage } from "./features/students/first-access-page";
+import { PreRegistrationPage } from "./features/students/pre-registration-page";
 import { StudentsPage } from "./features/students/students-page";
 import { ThemeProvider } from "./hooks/use-theme";
 import "./index.css";
@@ -120,6 +122,24 @@ const studentCheckInRoute = createRoute({
   component: StudentCheckInPage,
 });
 
+const preRegistrationRoute = createRoute({
+  getParentRoute: () => openLayout,
+  path: "/pre-register/$token",
+  component: function PreRegistrationRoute() {
+    const { token } = preRegistrationRoute.useParams();
+    return <PreRegistrationPage token={token} />;
+  },
+});
+
+const firstAccessRoute = createRoute({
+  getParentRoute: () => openLayout,
+  path: "/student/first-access/$token",
+  component: function FirstAccessRoute() {
+    const { token } = firstAccessRoute.useParams();
+    return <FirstAccessPage token={token} />;
+  },
+});
+
 // --- Auth bare routes (require auth, no layout shell) ---
 
 const chooseAreaRoute = createRoute({
@@ -137,13 +157,7 @@ const studentHomeRoute = createRoute({
 const onboardingRoute = createRoute({
   getParentRoute: () => authBareLayout,
   path: "/onboarding/academy",
-  component: function OnboardingGuard() {
-    const organizations = authClient.useListOrganizations();
-    if (!organizations.isPending && (organizations.data?.length ?? 0) > 0) {
-      return <Navigate to="/" />;
-    }
-    return <AcademyOnboardingPage />;
-  },
+  component: AcademyOnboardingPage,
 });
 
 // --- Instructor routes (require auth + org, AppShell) ---
@@ -215,7 +229,12 @@ const settingsRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   publicLayout.addChildren([signInRoute, signUpRoute, forgotPasswordRoute, resetPasswordRoute]),
-  openLayout.addChildren([acceptStudentInviteRoute, studentCheckInRoute]),
+  openLayout.addChildren([
+    acceptStudentInviteRoute,
+    studentCheckInRoute,
+    preRegistrationRoute,
+    firstAccessRoute,
+  ]),
   authBareLayout.addChildren([chooseAreaRoute, studentHomeRoute, onboardingRoute]),
   instructorLayout.addChildren([
     indexRoute,
