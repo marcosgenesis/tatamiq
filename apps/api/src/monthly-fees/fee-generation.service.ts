@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import { Cron } from "@nestjs/schedule";
-import { type Database, monthlyFees, students } from "@tatamiq/database";
-import { and, eq, gte, lte, sql } from "drizzle-orm";
+import { type Database, member, monthlyFees, students } from "@tatamiq/database";
+import { and, eq, sql } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
 import { clampDueDay, formatDueDate } from "./monthly-fee-rules";
 
@@ -35,6 +35,11 @@ export class FeeGenerationService {
     organizationId: string,
     daysAheadLimit: number | null,
   ): Promise<number> {
+    if (!(await this.organizationHasOwner(organizationId))) {
+      this.logger.warn(`Skipping fee generation for ownerless organization ${organizationId}.`);
+      return 0;
+    }
+
     const now = new Date();
     const spNow = toSaoPauloDate(now);
     const currentYear = spNow.getFullYear();
@@ -108,6 +113,16 @@ export class FeeGenerationService {
     }
 
     return created;
+  }
+
+  private async organizationHasOwner(organizationId: string): Promise<boolean> {
+    const owners = await this.db
+      .select({ id: member.id })
+      .from(member)
+      .where(and(eq(member.organizationId, organizationId), eq(member.role, "owner")))
+      .limit(1);
+
+    return owners.length > 0;
   }
 }
 
