@@ -12,6 +12,30 @@ _Avoid_: equipe, filial, federação, organization como termo de UI/domínio
 Pessoa responsável por administrar e conduzir a maior parte da operação da **Academia**; na V0, todo cadastro público cria esse tipo de conta.
 _Avoid_: administrador genérico, operador, gestor como papel separado
 
+**Operador da Plataforma**:
+Pessoa interna do Tatamiq autorizada a prestar suporte operacional a usuários e academias sem conhecer senhas nem acessar caixas de email; fora da primeira versão da administração interna.
+_Avoid_: admin da academia, instrutor, suporte genérico, administrador sem contexto, papel obrigatório na V0
+
+**Administrador da Plataforma**:
+Pessoa interna do Tatamiq com permissão global para gerir usuários e academias da plataforma, incluindo impersonação, bloqueio, revogação de sessões, exclusão de usuários, alteração de papel global de administrador e ações destrutivas quando disponíveis; é o único papel interno ativo na primeira versão, e o bloqueio de um usuário não altera automaticamente academias ou dados operacionais associados.
+_Avoid_: dono da academia, owner da academia, instrutor, admin da academia, super user como termo de domínio
+
+**Auditoria Administrativa**:
+Registro das ações sensíveis executadas por **Administradores da Plataforma** fora do **Suporte Assistido**, incluindo autor, alvo, ação, resultado, timestamp, motivo opcional e acessos a arquivos privados sensíveis, sem persistir payload completo na V1.
+_Avoid_: log técnico bruto, payload completo, auditoria apenas de suporte, motivo obrigatório
+
+**Exclusão de Usuário**:
+Ação destrutiva executada por um **Administrador da Plataforma** sobre uma conta de autenticação, escolhendo explicitamente entre exclusão definitiva quando aceitável ou exclusão preservando histórico, que revoga sessões, remove credenciais quando possível, anonimiza nome, email e imagem da conta mantendo o ID para auditoria; quando o usuário é dono único de uma **Academia**, exige decidir entre manter a academia sem dono ou transferir a propriedade antes de concluir.
+_Avoid_: remoção automática sem impacto, inativação de academia, apagar histórico por acidente, excluir academia junto na V1, anonimizar ficha de aluno operacional
+
+**Suporte Assistido**:
+Acesso temporário de até 1 hora e auditado em que um **Administrador da Plataforma** atua na plataforma com a perspectiva e permissões de um usuário não-administrador para diagnosticar ou resolver um problema reportado, com motivo opcional, indicador visível durante a sessão e registro de auditoria da sessão e das ações assistidas, sem armazenar payload completo na V1; permite executar as mesmas ações operacionais do usuário assistido, mas não ações globais de administração da plataforma dentro da sessão assistida.
+_Avoid_: login pelo email do cliente, acesso à senha, acesso oculto, backdoor, impersonação silenciosa, permissão global disfarçada, impersonar administrador
+
+**Administração da Plataforma**:
+Área operacional separada da área da **Academia**, acessada pela rota `/platform` e usada por **Administradores da Plataforma** para gerir o Tatamiq sem serem membros das academias atendidas; na primeira versão cobre dashboard operacional simples, academias, usuários, administradores da plataforma, auditoria administrativa e auditoria de suporte assistido, permite visualizar dados operacionais completos das academias, tem edição direta limitada a dados básicos de provisionamento da academia e busca simples por nome, email ou slug.
+_Avoid_: admin da academia, painel do instrutor, member role global, billing interno, relatório avançado, operação paralela de edição de dados da academia, filtros analíticos avançados, rota /admin
+
 **Acesso do Aluno**:
 Capacidade do **Aluno**, inclusive menor de idade quando convidado pelo instrutor, consultar as próximas aulas dos próximos 7 dias das suas turmas, as próprias presenças e mensalidades dos últimos 12 meses, evolução e turmas vinculadas, e alterar contato pessoal e foto, sem administrar a academia/tatame; nasce somente a partir de um **Convite do Aluno** para uma ficha de **Aluno** já existente, pode coexistir com acesso de instrutor na mesma conta com escolha explícita de área ao entrar, pode ser revogado pelo instrutor sem inativar o aluno ou apagar a conta de autenticação, e alterações de telefone e email mantêm auditoria simples.
 _Avoid_: portal completo, conta administrativa, autovínculo por email
@@ -19,6 +43,18 @@ _Avoid_: portal completo, conta administrativa, autovínculo por email
 **Onboarding da Academia**:
 Etapa inicial em que um **Dono/Instrutor Solo** autenticado, mas ainda sem **Academia**, informa o nome obrigatório da organização local que irá gerir.
 _Avoid_: app demo, academia implícita, tenant padrão, perfil completo obrigatório
+
+**Provisionamento de Academia**:
+Criação de uma **Academia** por um **Administrador da Plataforma**, vinculando-a como propriedade de um email de futuro ou atual **Dono/Instrutor Solo** sem exigir acesso à caixa de email dele; quando a conta ainda não existe, cria uma **Conta Reservada** e um link para definição de senha no primeiro acesso com expiração de 7 dias.
+_Avoid_: onboarding pelo suporte, academia demo, assumir senha do instrutor, convite de aluno, senha temporária
+
+**Transferência de Academia**:
+Mudança de propriedade operacional de uma **Academia** para outro email por decisão de um **Administrador da Plataforma**, reutilizando uma conta existente ou criando uma **Conta Reservada** com link de primeiro acesso de 7 dias quando necessário.
+_Avoid_: convite de equipe, transferência automática por exclusão, compartilhar senha, mudar dono sem auditoria
+
+**Conta Reservada**:
+Conta de autenticação criada pelo sistema para um email conhecido, vinculada a um acesso futuro e sem login por senha até a definição de senha no primeiro acesso; pode ser usada para futuro **Dono/Instrutor Solo** ou futuro **Administrador da Plataforma**, seu link de primeiro acesso pode ser regenerado sem criar nova conta, e o envio inicial pode ocorrer por link copiável sem email automático obrigatório.
+_Avoid_: senha temporária, conta fake, conta compartilhada, acesso pelo email do cliente, email automático obrigatório
 
 **Convite do Aluno**:
 Link completo que o instrutor copia e envia por fora para vincular uma conta de acesso ao cadastro de um **Aluno** existente, expirando em 7 dias; reenviar convite na V0 significa invalidar qualquer convite pendente anterior para aquele aluno e criar um novo link com nova expiração de 7 dias, desde que ainda não exista **Acesso do Aluno** ativo para aquela ficha; quando já existe acesso ativo, o instrutor precisa revogar o acesso antes de recriar convite.
@@ -191,8 +227,30 @@ _Avoid_: tarefa, lembrete, prontuário, workflow, comentário do aluno, exclusã
 ## Relationships
 
 - O cadastro público da V0 cria sempre um **Dono/Instrutor Solo**
+- Um **Operador da Plataforma** é um papel futuro, não ativo na primeira versão da administração interna
+- Um **Administrador da Plataforma** não é membro da **Academia** por padrão; quando usa **Suporte Assistido**, sua atuação deve ser temporária, auditada e visivelmente indicada na interface
+- Durante o **Suporte Assistido**, ações operacionais permitidas ao usuário assistido também são permitidas ao administrador, mas devem ser registradas como ações assistidas
+- A auditoria de **Suporte Assistido** registra sessão, motivo opcional, participantes, academia quando aplicável, início/fim, IP/user agent e ações realizadas, sem persistir payload completo na V1
+- **Suporte Assistido** não pode ser iniciado sobre outro **Administrador da Plataforma**
+- A **Auditoria Administrativa** registra ações como provisionar academia, transferir academia, bloquear/desbloquear usuário, revogar sessões, excluir usuário e adicionar/remover administrador
+- Um **Administrador da Plataforma** tem poder global fora do escopo de uma **Academia** e não deve ser confundido com o papel `owner` da academia
+- A **Administração da Plataforma** fica fora da área normal da **Academia**, não depende de `activeOrganizationId`, na primeira versão é acessada por **Administradores da Plataforma** e é o destino padrão após login de uma conta com papel global de administrador
+- Uma conta que combina papel de **Administrador da Plataforma** com vínculos próprios de academia ou aluno troca de área por seletor explícito; isso não é **Suporte Assistido**
+- A **Administração da Plataforma** pode visualizar dados operacionais completos da **Academia**, incluindo arquivos privados sensíveis como fotos e **Comprovantes Pix**, preferencialmente reaproveitando telas operacionais em modo somente leitura, mas não edita diretamente alunos, turmas, mensalidades, presenças, Pix ou graduação; esse suporte ocorre por **Suporte Assistido**
+- Acesso administrativo a arquivos privados sensíveis deve registrar **Auditoria Administrativa**
+- Um **Administrador da Plataforma** pode realizar **Provisionamento de Academia** para um email de futuro ou atual **Dono/Instrutor Solo**
+- O **Provisionamento de Academia** cria ou reutiliza uma conta pelo email informado, cria a **Academia**, vincula o dono como `owner` técnico e entrega um link de primeiro acesso para definição de senha quando necessário
+- Um **Administrador da Plataforma** pode adicionar outro administrador por email, reutilizando uma conta existente ou criando uma **Conta Reservada** com link de primeiro acesso quando necessário
+- Remover o papel de **Administrador da Plataforma** não exclui a conta nem remove acessos de academia ou aluno, mas deve revogar sessões por segurança e nunca pode remover o último administrador ativo
+- A **Transferência de Academia** cria ou reutiliza uma conta pelo email informado, vincula o novo dono como `owner` técnico e entrega um link de primeiro acesso para definição de senha quando necessário
+- Uma **Conta Reservada** não permite login por senha até que a pessoa defina senha no primeiro acesso
+- Regenerar o link de primeiro acesso de uma **Conta Reservada** invalida o link anterior, cria nova expiração de 7 dias e registra **Auditoria Administrativa**
 - Um **Dono/Instrutor Solo** sem **Academia** acessa apenas o **Onboarding da Academia**
-- Uma **Academia** tem um **Dono/Instrutor Solo** no MVP
+- Uma **Academia** tem um **Dono/Instrutor Solo** no MVP, mas pode ficar temporariamente sem dono após **Exclusão de Usuário** decidida por um **Administrador da Plataforma**
+- Bloquear o usuário de um **Dono/Instrutor Solo** impede login e revoga sessões, mas não inativa nem altera automaticamente a **Academia** ou seu histórico operacional
+- Uma **Exclusão de Usuário** exige escolha explícita entre exclusão definitiva e exclusão preservando histórico, com aviso de impacto antes da confirmação; a exclusão definitiva é permitida mesmo com histórico, desde que vínculos de dono de academia sejam resolvidos antes e o impacto seja confirmado
+- Uma **Academia** sem dono preserva histórico e acessos existentes, mas fica sem operação administrativa e pausa a geração futura automática de **Mensalidades** até receber novo dono
+- Uma **Transferência de Academia** reativa a operação administrativa e a geração futura automática de **Mensalidades** quando a academia estava sem dono
 - Uma **Academia** tem muitos **Alunos**
 - Uma **Academia** pode ter um **Pix da Academia** para orientar pagamentos de mensalidades
 - Uma **Mensalidade** pode ter múltiplos **Comprovantes Pix** (rejeição → nova tentativa)
@@ -238,7 +296,7 @@ _Avoid_: tarefa, lembrete, prontuário, workflow, comentário do aluno, exclusã
 - Uma **Turma** pertence a uma única **Modalidade** no MVP
 - Um **Aluno** pode pertencer a muitas **Turmas**
 - Uma **Turma** pode ter muitos **Alunos**
-- Um **Aluno Ativo** gera **Mensalidades** automaticamente a cada mês
+- Um **Aluno Ativo** gera **Mensalidades** automaticamente a cada mês, exceto quando a **Academia** está temporariamente sem dono
 - Um **Aluno** pode ter muitas **Mensalidades**
 - Um **Ajuste de Mensalidade** afeta apenas uma **Mensalidade** específica
 - Uma **Mensalidade Dispensada** permanece no histórico financeiro e não é considerada inadimplência
@@ -262,3 +320,6 @@ _Avoid_: tarefa, lembrete, prontuário, workflow, comentário do aluno, exclusã
 - Aluno menor pode aceitar o uso do app na V0; a autorização do responsável fica como responsabilidade operacional da academia/instrutor, pois responsável não tem acesso próprio.
 - "convite" agora tem duas intenções possíveis; resolvido: **Convite do Aluno** vincula acesso a **Aluno** existente, enquanto **Link de Pré-Cadastro da Academia** coleta **Solicitações de Pré-Cadastro** de interessados ainda não aprovados.
 - "usuário já tem conta" foi separado de **Aluno** e **Acesso do Aluno**; no pré-cadastro V0, a solicitação não exige confirmação de email antes da análise, e só a aprovação cria a ficha de **Aluno** e o **Acesso do Aluno**.
+- "super user" foi tratado como apelido técnico/informal; o termo de domínio é **Administrador da Plataforma**.
+- **Academia Suspensa** fica fora da primeira versão; bloqueio de acesso pela plataforma ocorre sobre usuários, não sobre a **Academia**.
+- "deletar usuário" foi resolvido como **Exclusão de Usuário**, com escolha explícita no momento da ação entre exclusão definitiva e exclusão controlada.
