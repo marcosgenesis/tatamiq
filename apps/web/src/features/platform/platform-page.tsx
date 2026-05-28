@@ -1,8 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, Navigate, useNavigate } from "@tanstack/react-router";
 import { Building02Icon, UserMultiple02Icon } from "hugeicons-react";
-import { type ReactNode, useState } from "react";
-import { LogoIcon } from "../../components/logo";
+import { useState } from "react";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
@@ -25,6 +24,7 @@ import {
   type PlatformAcademyOperationalOverview,
   type PlatformAcademySummary,
 } from "./platform-api";
+import { PlatformLoading, PlatformShell } from "./platform-shell";
 
 export function PlatformPage() {
   const navigate = useNavigate();
@@ -64,6 +64,21 @@ export function PlatformPage() {
       user={user}
       onSignOut={() => authClient.signOut().then(() => navigate({ to: "/sign-in" }))}
     >
+      <div className="flex items-center gap-3">
+        <Link
+          to="/platform/users"
+          className="ml-auto inline-flex h-8 items-center justify-center rounded-lg border border-border bg-background px-3 text-sm font-medium transition-colors hover:bg-muted"
+        >
+          Usuários
+        </Link>
+        <Link
+          to="/platform/audit"
+          className="inline-flex h-8 items-center justify-center rounded-lg border border-border bg-background px-3 text-sm font-medium transition-colors hover:bg-muted"
+        >
+          Auditoria
+        </Link>
+      </div>
+
       <section className="grid gap-4 md:grid-cols-4">
         <MetricCard label="Academias" value={dashboard.data?.totals.academies} />
         <MetricCard label="Usuários" value={dashboard.data?.totals.users} />
@@ -379,49 +394,6 @@ function SmallMetric({ label, value }: { label: string; value: number }) {
   );
 }
 
-function PlatformShell({
-  user,
-  onSignOut,
-  children,
-}: {
-  user: { name: string | null; email: string | null };
-  onSignOut: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <main className="min-h-screen bg-muted/30 text-foreground">
-      <header className="border-b bg-background">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-3">
-            <LogoIcon className="size-8" />
-            <div>
-              <p className="text-muted-foreground text-sm">Tatamiq</p>
-              <h1 className="font-semibold text-xl">Administração da Plataforma</h1>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="hidden text-right text-sm sm:block">
-              <p className="font-medium">{user.name ?? "Administrador"}</p>
-              <p className="text-muted-foreground">{user.email ?? "Sem email"}</p>
-            </div>
-            <Link
-              to="/choose-area"
-              className="inline-flex h-8 items-center justify-center rounded-lg border border-border bg-background px-2.5 text-sm font-medium transition-colors hover:bg-muted"
-            >
-              Trocar área
-            </Link>
-            <Button variant="ghost" onClick={onSignOut}>
-              Sair
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <div className="mx-auto space-y-6 px-6 py-8 max-w-6xl">{children}</div>
-    </main>
-  );
-}
-
 function MetricCard({ label, value }: { label: string; value: number | undefined }) {
   return (
     <Card>
@@ -512,17 +484,6 @@ function DetailRow({ label, value }: { label: string; value: string }) {
       <span className="text-muted-foreground">{label}</span>
       <span className="text-right font-medium">{value}</span>
     </div>
-  );
-}
-
-function PlatformLoading({ label }: { label: string }) {
-  return (
-    <main className="grid min-h-screen place-items-center bg-background text-foreground">
-      <div className="flex flex-col items-center gap-4">
-        <LogoIcon className="size-12" />
-        <p className="text-muted-foreground text-sm">{label}</p>
-      </div>
-    </main>
   );
 }
 

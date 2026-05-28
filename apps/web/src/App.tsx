@@ -27,7 +27,10 @@ import { GraduationPage } from "./features/graduation/graduation-page";
 import { MonthlyFeesPage } from "./features/monthly-fees/monthly-fees-page";
 import { PlaceholderPage } from "./features/placeholder/placeholder-page";
 import { getPlatformMe } from "./features/platform/platform-api";
+import { PlatformAuditPage } from "./features/platform/platform-audit-page";
 import { PlatformAcademyPage, PlatformPage } from "./features/platform/platform-page";
+import { PlatformUserDetailPage } from "./features/platform/platform-user-detail-page";
+import { PlatformUsersPage } from "./features/platform/platform-users-page";
 import { SchedulePage } from "./features/schedule/schedule-page";
 import { SettingsPage } from "./features/settings/settings-page";
 import { AcceptStudentInvitePage } from "./features/student-access/accept-student-invite-page";
@@ -184,12 +187,33 @@ const platformRoute = createRoute({
   component: PlatformPage,
 });
 
+const platformAuditRoute = createRoute({
+  getParentRoute: () => authBareLayout,
+  path: "/platform/audit",
+  component: PlatformAuditPage,
+});
+
 const platformAcademyRoute = createRoute({
   getParentRoute: () => authBareLayout,
   path: "/platform/academies/$academyId",
   component: function PlatformAcademyRoute() {
     const { academyId } = platformAcademyRoute.useParams();
     return <PlatformAcademyPage academyId={academyId} />;
+  },
+});
+
+const platformUsersRoute = createRoute({
+  getParentRoute: () => authBareLayout,
+  path: "/platform/users",
+  component: PlatformUsersPage,
+});
+
+const platformUserDetailRoute = createRoute({
+  getParentRoute: () => authBareLayout,
+  path: "/platform/users/$userId",
+  component: function PlatformUserDetailRoute() {
+    const { userId } = platformUserDetailRoute.useParams();
+    return <PlatformUserDetailPage userId={userId} />;
   },
 });
 
@@ -275,7 +299,10 @@ const routeTree = rootRoute.addChildren([
     studentGraduationRoute,
     onboardingRoute,
     platformRoute,
+    platformAuditRoute,
     platformAcademyRoute,
+    platformUsersRoute,
+    platformUserDetailRoute,
   ]),
   instructorLayout.addChildren([
     indexRoute,

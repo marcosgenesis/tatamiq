@@ -725,3 +725,30 @@ export type PaymentReceipt = typeof paymentReceipts.$inferSelect;
 export type StudentNote = typeof studentNotes.$inferSelect;
 export type Promotion = typeof promotions.$inferSelect;
 export type StudentContactChange = typeof studentContactChanges.$inferSelect;
+
+export const adminAuditLogs = pgTable(
+  "admin_audit_logs",
+  {
+    id: text("id").primaryKey(),
+    adminUserId: text("admin_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    action: text("action").notNull(),
+    targetType: text("target_type").notNull(),
+    targetId: text("target_id"),
+    result: text("result").notNull().default("success"),
+    reason: text("reason"),
+    metadata: jsonb("metadata"),
+    academyId: text("academy_id").references(() => organization.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("admin_audit_logs_admin_user_id_idx").on(table.adminUserId),
+    index("admin_audit_logs_action_idx").on(table.action),
+    index("admin_audit_logs_target_type_idx").on(table.targetType),
+    index("admin_audit_logs_academy_id_idx").on(table.academyId),
+    index("admin_audit_logs_created_at_idx").on(table.createdAt),
+  ],
+);
+
+export type AdminAuditLog = typeof adminAuditLogs.$inferSelect;

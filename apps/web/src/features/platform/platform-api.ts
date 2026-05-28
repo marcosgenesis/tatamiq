@@ -121,6 +121,124 @@ export async function getPlatformAcademyOperationalOverview(
   return platformFetch(`/platform/academies/${id}/operational-overview`);
 }
 
+export type PlatformAuditLogEntry = {
+  id: string;
+  adminUserId: string;
+  adminName: string | null;
+  adminEmail: string | null;
+  action: string;
+  targetType: string;
+  targetId: string | null;
+  result: string;
+  reason: string | null;
+  metadata: unknown;
+  academyId: string | null;
+  createdAt: string;
+};
+
+export type PlatformAuditListResponse = {
+  items: PlatformAuditLogEntry[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+};
+
+export async function listPlatformAuditLogs(filters: {
+  action?: string;
+  adminUserId?: string;
+  academyId?: string;
+  from?: string;
+  to?: string;
+  page?: number;
+}): Promise<PlatformAuditListResponse> {
+  const params = new URLSearchParams({ pageSize: "20" });
+  if (filters.action) params.set("action", filters.action);
+  if (filters.adminUserId) params.set("adminUserId", filters.adminUserId);
+  if (filters.academyId) params.set("academyId", filters.academyId);
+  if (filters.from) params.set("from", filters.from);
+  if (filters.to) params.set("to", filters.to);
+  if (filters.page !== undefined) params.set("page", String(filters.page));
+  return platformFetch(`/platform/audit?${params.toString()}`);
+}
+
+// --- User management types ---
+
+export type PlatformUserSummary = {
+  id: string;
+  name: string;
+  email: string;
+  image: string | null;
+  role: string | null;
+  banned: boolean;
+  banReason: string | null;
+  createdAt: string;
+};
+
+export type PlatformUsersResponse = {
+  items: PlatformUserSummary[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+};
+
+export type PlatformUserMembership = {
+  memberId: string;
+  organizationId: string;
+  organizationName: string;
+  organizationSlug: string;
+  role: string;
+  createdAt: string;
+};
+
+export type PlatformUserStudentAccess = {
+  id: string;
+  studentId: string;
+  studentName: string;
+  organizationId: string;
+  organizationName: string;
+  status: string;
+  createdAt: string;
+};
+
+export type PlatformUserDetail = PlatformUserSummary & {
+  emailVerified: boolean;
+  memberships: PlatformUserMembership[];
+  studentAccessLinks: PlatformUserStudentAccess[];
+  activeSessions: number;
+};
+
+export async function listPlatformUsers(
+  query: string,
+  page?: number,
+): Promise<PlatformUsersResponse> {
+  const params = new URLSearchParams({ pageSize: "10" });
+  if (query.trim()) params.set("q", query.trim());
+  if (page !== undefined) params.set("page", String(page));
+  return platformFetch(`/platform/users?${params.toString()}`);
+}
+
+export async function getPlatformUser(id: string): Promise<PlatformUserDetail> {
+  return platformFetch(`/platform/users/${id}`);
+}
+
+export async function banPlatformUser(id: string, reason?: string): Promise<{ success: boolean }> {
+  return platformPost(`/platform/users/${id}/ban`, { reason });
+}
+
+export async function unbanPlatformUser(id: string): Promise<{ success: boolean }> {
+  return platformPost(`/platform/users/${id}/unban`, {});
+}
+
+export async function revokePlatformUserSessions(id: string): Promise<{ success: boolean }> {
+  return platformPost(`/platform/users/${id}/revoke-sessions`, {});
+}
+
 async function platformFetch<T>(path: string): Promise<T> {
   const response = await fetch(`${apiUrl}${path}`, {
     credentials: "include",
@@ -128,6 +246,21 @@ async function platformFetch<T>(path: string): Promise<T> {
 
   if (!response.ok) {
     throw new Error("Acesso restrito a Administradores da Plataforma.");
+  }
+
+  return response.json() as Promise<T>;
+}
+
+async function platformPost<T>(path: string, body: unknown): Promise<T> {
+  const response = await fetch(`${apiUrl}${path}`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    throw new Error("Erro ao executar ação.");
   }
 
   return response.json() as Promise<T>;
