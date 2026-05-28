@@ -111,6 +111,21 @@ export async function listPlatformAcademies(query: string): Promise<PlatformAcad
   return platformFetch(`/platform/academies?${params.toString()}`);
 }
 
+export type ProvisionAcademyResult = {
+  academy: PlatformAcademyDetail;
+  ownerUserId: string;
+  ownerWasCreated: boolean;
+  firstAccessLink: string | null;
+};
+
+export async function provisionPlatformAcademy(input: {
+  academyName: string;
+  ownerEmail: string;
+  ownerName?: string;
+}): Promise<ProvisionAcademyResult> {
+  return platformPost("/platform/academies/provision", input);
+}
+
 export async function getPlatformAcademy(id: string): Promise<PlatformAcademyDetail> {
   return platformFetch(`/platform/academies/${id}`);
 }

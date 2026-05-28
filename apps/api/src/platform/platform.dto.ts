@@ -67,6 +67,31 @@ export class PlatformAcademyDetailDto extends PlatformAcademySummaryDto {
   instagram!: string | null;
 }
 
+export class ProvisionAcademyBodyDto {
+  @ApiProperty({ type: String })
+  academyName!: string;
+
+  @ApiProperty({ type: String })
+  ownerEmail!: string;
+
+  @ApiProperty({ type: String, required: false })
+  ownerName?: string;
+}
+
+export class ProvisionAcademyResultDto {
+  @ApiProperty({ type: () => PlatformAcademyDetailDto })
+  academy!: PlatformAcademyDetailDto;
+
+  @ApiProperty({ type: String })
+  ownerUserId!: string;
+
+  @ApiProperty({ type: Boolean })
+  ownerWasCreated!: boolean;
+
+  @ApiProperty({ type: String, nullable: true })
+  firstAccessLink!: string | null;
+}
+
 export class PlatformPaginationDto {
   @ApiProperty({ type: Number })
   page!: number;

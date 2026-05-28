@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -24,6 +25,8 @@ import {
   PlatformSensitiveFileUrlDto,
   PlatformUserDetailDto,
   PlatformUsersResponseDto,
+  type ProvisionAcademyBodyDto,
+  ProvisionAcademyResultDto,
 } from "./platform.dto";
 import { PlatformService } from "./platform.service";
 import {
@@ -75,6 +78,29 @@ export class PlatformController {
       page: parseOptionalInteger(page),
       pageSize: parseOptionalInteger(pageSize),
     });
+  }
+
+  @Post("academies/provision")
+  @ApiOkResponse({ type: ProvisionAcademyResultDto })
+  async provisionAcademy(
+    @Session() session: PlatformSession,
+    @Body() body: ProvisionAcademyBodyDto,
+  ) {
+    const admin = this.platformAdminService.assertPlatformAdmin(session);
+    const input = parseProvisionAcademyBody(body);
+    const result = await this.platformService.provisionAcademy(input);
+    await this.auditService.write({
+      adminUserId: admin.user.id,
+      action: "platform.academy.provisioned",
+      targetType: "academy",
+      targetId: result.academy.id,
+      academyId: result.academy.id,
+      metadata: {
+        ownerUserId: result.ownerUserId,
+        ownerWasCreated: result.ownerWasCreated,
+      },
+    });
+    return result;
   }
 
   @Get("academies/:id")
@@ -218,4 +244,17 @@ function parseOptionalInteger(value: string | undefined): number | undefined {
   if (!value) return undefined;
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function parseProvisionAcademyBody(body: ProvisionAcademyBodyDto) {
+  const academyName = body.academyName?.trim();
+  const ownerEmail = body.ownerEmail?.trim();
+  const ownerName = body.ownerName?.trim();
+
+  if (!academyName) throw new BadRequestException("Nome da academia é obrigatório.");
+  if (!ownerEmail?.includes("@")) {
+    throw new BadRequestException("Email do dono é obrigatório.");
+  }
+
+  return { academyName, ownerEmail, ownerName };
 }

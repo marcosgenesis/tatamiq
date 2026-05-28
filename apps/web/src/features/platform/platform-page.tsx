@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, useNavigate } from "@tanstack/react-router";
 import { Building02Icon, UserMultiple02Icon } from "hugeicons-react";
 import { useState } from "react";
@@ -23,12 +23,19 @@ import {
   listPlatformAcademies,
   type PlatformAcademyOperationalOverview,
   type PlatformAcademySummary,
+  provisionPlatformAcademy,
 } from "./platform-api";
 import { PlatformLoading, PlatformShell } from "./platform-shell";
 
 export function PlatformPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [academyQuery, setAcademyQuery] = useState("");
+  const [provisionForm, setProvisionForm] = useState({
+    academyName: "",
+    ownerEmail: "",
+    ownerName: "",
+  });
   const platform = useQuery({
     queryKey: ["platform", "me"],
     queryFn: getPlatformMe,
@@ -43,6 +50,16 @@ export function PlatformPage() {
     queryKey: ["platform", "academies", academyQuery],
     queryFn: () => listPlatformAcademies(academyQuery),
     retry: false,
+  });
+  const provision = useMutation({
+    mutationFn: provisionPlatformAcademy,
+    onSuccess: async () => {
+      setProvisionForm({ academyName: "", ownerEmail: "", ownerName: "" });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["platform", "dashboard"] }),
+        queryClient.invalidateQueries({ queryKey: ["platform", "academies"] }),
+      ]);
+    },
   });
 
   if (platform.isLoading) {
@@ -85,6 +102,72 @@ export function PlatformPage() {
         <MetricCard label="Administradores" value={dashboard.data?.totals.admins} />
         <MetricCard label="Usuários bloqueados" value={dashboard.data?.totals.bannedUsers} />
       </section>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Provisionar Academia</CardTitle>
+          <p className="text-muted-foreground text-sm">
+            Crie uma Academia para um email existente ou para uma Conta Reservada com link copiável.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <form
+            className="grid gap-3 md:grid-cols-[1fr_1fr_1fr_auto]"
+            onSubmit={(event) => {
+              event.preventDefault();
+              provision.mutate({
+                academyName: provisionForm.academyName,
+                ownerEmail: provisionForm.ownerEmail,
+                ...(provisionForm.ownerName ? { ownerName: provisionForm.ownerName } : {}),
+              });
+            }}
+          >
+            <Input
+              required
+              placeholder="Nome da academia"
+              value={provisionForm.academyName}
+              onChange={(event) =>
+                setProvisionForm((current) => ({ ...current, academyName: event.target.value }))
+              }
+            />
+            <Input
+              required
+              type="email"
+              placeholder="Email do dono"
+              value={provisionForm.ownerEmail}
+              onChange={(event) =>
+                setProvisionForm((current) => ({ ...current, ownerEmail: event.target.value }))
+              }
+            />
+            <Input
+              placeholder="Nome do dono"
+              value={provisionForm.ownerName}
+              onChange={(event) =>
+                setProvisionForm((current) => ({ ...current, ownerName: event.target.value }))
+              }
+            />
+            <Button type="submit" disabled={provision.isPending}>
+              {provision.isPending ? "Criando..." : "Provisionar"}
+            </Button>
+          </form>
+          {provision.data?.firstAccessLink ? (
+            <div className="mt-4 rounded-lg border bg-background p-3 text-sm">
+              <p className="font-medium">Link de primeiro acesso</p>
+              <p className="break-all text-muted-foreground">{provision.data.firstAccessLink}</p>
+            </div>
+          ) : null}
+          {provision.data && !provision.data.firstAccessLink ? (
+            <p className="mt-3 text-muted-foreground text-sm">
+              Academia provisionada para uma conta existente.
+            </p>
+          ) : null}
+          {provision.isError ? (
+            <p className="mt-3 text-destructive text-sm">
+              Não foi possível provisionar a academia.
+            </p>
+          ) : null}
+        </CardContent>
+      </Card>
 
       <section className="grid gap-6 lg:grid-cols-[1fr_0.8fr]">
         <Card>

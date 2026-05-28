@@ -16,7 +16,9 @@ import {
   user,
 } from "@tatamiq/database";
 import { and, count, desc, eq, ilike, isNotNull, isNull, or } from "drizzle-orm";
+import { seedIbjjfBelts } from "../belts/seed-belts";
 import { DATABASE } from "../database/database.module";
+import { ReservedAccountService } from "./reserved-account.service";
 
 export type PlatformDashboard = {
   totals: {
@@ -41,6 +43,19 @@ export type PlatformAcademyDetail = PlatformAcademySummary & {
   address: string | null;
   phone: string | null;
   instagram: string | null;
+};
+
+export type ProvisionAcademyInput = {
+  academyName: string;
+  ownerEmail: string;
+  ownerName?: string;
+};
+
+export type ProvisionAcademyResult = {
+  academy: PlatformAcademyDetail;
+  ownerUserId: string;
+  ownerWasCreated: boolean;
+  firstAccessLink: string | null;
 };
 
 type PlatformAcademyOwner = {
@@ -98,7 +113,10 @@ export type PlatformAcademyOperationalOverview = {
 
 @Injectable()
 export class PlatformService {
-  constructor(@Inject(DATABASE) private readonly db: Database) {}
+  constructor(
+    @Inject(DATABASE) private readonly db: Database,
+    @Inject(ReservedAccountService) private readonly reservedAccounts: ReservedAccountService,
+  ) {}
 
   async dashboard(): Promise<PlatformDashboard> {
     const [[academyTotal], [userTotal], [adminTotal], [bannedTotal], recentAcademies] =
@@ -164,6 +182,45 @@ export class PlatformService {
         total: total ?? 0,
         totalPages: Math.ceil((total ?? 0) / pageSize),
       },
+    };
+  }
+
+  async provisionAcademy(input: ProvisionAcademyInput): Promise<ProvisionAcademyResult> {
+    const academyName = input.academyName.trim();
+    const ownerEmail = input.ownerEmail.trim().toLowerCase();
+    const ownerName = input.ownerName?.trim() || ownerEmail;
+
+    const reserved = await this.reservedAccounts.createOrReuse(ownerEmail, ownerName);
+    const academyId = crypto.randomUUID();
+    const slug = await this.createUniqueAcademySlug(academyName);
+    const now = new Date();
+
+    await this.db.insert(organization).values({
+      id: academyId,
+      name: academyName,
+      slug,
+      createdAt: now,
+    });
+
+    await this.db.insert(member).values({
+      id: crypto.randomUUID(),
+      organizationId: academyId,
+      userId: reserved.user.id,
+      role: "owner",
+      createdAt: now,
+    });
+
+    await seedIbjjfBelts(this.db, academyId);
+
+    const academy = await this.getAcademy(academyId);
+
+    return {
+      academy,
+      ownerUserId: reserved.user.id,
+      ownerWasCreated: reserved.isNew,
+      firstAccessLink: reserved.firstAccessLink
+        ? `${webAppUrl()}/first-access/${reserved.firstAccessLink}`
+        : null,
     };
   }
 
@@ -331,6 +388,24 @@ export class PlatformService {
         promotedAt: row.promotion.promotedAt,
       })),
     };
+  }
+
+  private async createUniqueAcademySlug(name: string): Promise<string> {
+    const base = slugify(name) || "academia";
+
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const suffix = crypto.randomUUID().slice(0, 6);
+      const candidate = `${base}-${suffix}`;
+      const existing = await this.db
+        .select({ id: organization.id })
+        .from(organization)
+        .where(eq(organization.slug, candidate))
+        .limit(1);
+
+      if (existing.length === 0) return candidate;
+    }
+
+    return `${base}-${crypto.randomUUID()}`;
   }
 
   private countStudents(organizationId: string, status?: string) {
@@ -536,6 +611,20 @@ function toUserSummary(row: UserRow): PlatformUserSummary {
     banReason: row.banReason ?? null,
     createdAt: row.createdAt.toISOString(),
   };
+}
+
+function slugify(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-{2,}/g, "-");
+}
+
+function webAppUrl(): string {
+  return process.env.WEB_APP_URL ?? process.env.CORS_ORIGIN ?? "http://localhost:5173";
 }
 
 function toAcademySummary(org: OrganizationRow, owner: UserRow | null): PlatformAcademySummary {
