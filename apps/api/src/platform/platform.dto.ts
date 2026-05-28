@@ -110,3 +110,186 @@ export class PlatformDashboardDto {
   @ApiProperty({ type: () => [PlatformAcademySummaryDto] })
   recentAcademies!: PlatformAcademySummaryDto[];
 }
+
+export class PlatformStudentOperationalDto {
+  @ApiProperty({ type: String })
+  id!: string;
+
+  @ApiProperty({ type: String })
+  name!: string;
+
+  @ApiProperty({ type: String })
+  status!: string;
+
+  @ApiProperty({ type: String, nullable: true })
+  email!: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  belt!: string | null;
+
+  @ApiProperty({ type: Number })
+  degree!: number;
+}
+
+export class PlatformClassGroupOperationalDto {
+  @ApiProperty({ type: String })
+  id!: string;
+
+  @ApiProperty({ type: String })
+  name!: string;
+
+  @ApiProperty({ type: String })
+  status!: string;
+
+  @ApiProperty({ type: Number })
+  defaultDurationMinutes!: number;
+}
+
+export class PlatformMonthlyFeeOperationalDto {
+  @ApiProperty({ type: String })
+  id!: string;
+
+  @ApiProperty({ type: String })
+  studentName!: string;
+
+  @ApiProperty({ type: String })
+  reference!: string;
+
+  @ApiProperty({ type: Number })
+  amountInCents!: number;
+
+  @ApiProperty({ type: String })
+  dueDate!: string;
+
+  @ApiProperty({ type: String })
+  status!: string;
+}
+
+export class PlatformAttendanceOperationalDto {
+  @ApiProperty({ type: String })
+  id!: string;
+
+  @ApiProperty({ type: String })
+  studentName!: string;
+
+  @ApiProperty({ type: String })
+  classGroupName!: string;
+
+  @ApiProperty({ type: String })
+  source!: string;
+
+  @ApiProperty({ type: String, enum: ["valid", "invalidated"] })
+  status!: "valid" | "invalidated";
+
+  @ApiProperty({ type: String })
+  createdAt!: string;
+}
+
+export class PlatformPromotionOperationalDto {
+  @ApiProperty({ type: String })
+  id!: string;
+
+  @ApiProperty({ type: String })
+  studentName!: string;
+
+  @ApiProperty({ type: String })
+  beltName!: string;
+
+  @ApiProperty({ type: Number })
+  degree!: number;
+
+  @ApiProperty({ type: String })
+  promotedAt!: string;
+}
+
+export class PlatformStudentsOperationalSummaryDto {
+  @ApiProperty({ type: Number })
+  total!: number;
+
+  @ApiProperty({ type: Number })
+  active!: number;
+
+  @ApiProperty({ type: Number })
+  inactive!: number;
+}
+
+export class PlatformClassGroupsOperationalSummaryDto {
+  @ApiProperty({ type: Number })
+  total!: number;
+
+  @ApiProperty({ type: Number })
+  active!: number;
+
+  @ApiProperty({ type: Number })
+  archived!: number;
+}
+
+export class PlatformMonthlyFeesOperationalSummaryDto {
+  @ApiProperty({ type: Number })
+  total!: number;
+
+  @ApiProperty({ type: Number })
+  open!: number;
+
+  @ApiProperty({ type: Number })
+  paid!: number;
+
+  @ApiProperty({ type: Number })
+  underReview!: number;
+
+  @ApiProperty({ type: Number })
+  waived!: number;
+}
+
+export class PlatformAttendancesOperationalSummaryDto {
+  @ApiProperty({ type: Number })
+  total!: number;
+
+  @ApiProperty({ type: Number })
+  valid!: number;
+
+  @ApiProperty({ type: Number })
+  invalidated!: number;
+}
+
+export class PlatformPromotionsOperationalSummaryDto {
+  @ApiProperty({ type: Number })
+  total!: number;
+}
+
+export class PlatformAcademyOperationalSummaryDto {
+  @ApiProperty({ type: () => PlatformStudentsOperationalSummaryDto })
+  students!: PlatformStudentsOperationalSummaryDto;
+
+  @ApiProperty({ type: () => PlatformClassGroupsOperationalSummaryDto })
+  classGroups!: PlatformClassGroupsOperationalSummaryDto;
+
+  @ApiProperty({ type: () => PlatformMonthlyFeesOperationalSummaryDto })
+  monthlyFees!: PlatformMonthlyFeesOperationalSummaryDto;
+
+  @ApiProperty({ type: () => PlatformAttendancesOperationalSummaryDto })
+  attendances!: PlatformAttendancesOperationalSummaryDto;
+
+  @ApiProperty({ type: () => PlatformPromotionsOperationalSummaryDto })
+  promotions!: PlatformPromotionsOperationalSummaryDto;
+}
+
+export class PlatformAcademyOperationalOverviewDto {
+  @ApiProperty({ type: () => PlatformAcademyOperationalSummaryDto })
+  summary!: PlatformAcademyOperationalSummaryDto;
+
+  @ApiProperty({ type: () => [PlatformStudentOperationalDto] })
+  students!: PlatformStudentOperationalDto[];
+
+  @ApiProperty({ type: () => [PlatformClassGroupOperationalDto] })
+  classGroups!: PlatformClassGroupOperationalDto[];
+
+  @ApiProperty({ type: () => [PlatformMonthlyFeeOperationalDto] })
+  monthlyFees!: PlatformMonthlyFeeOperationalDto[];
+
+  @ApiProperty({ type: () => [PlatformAttendanceOperationalDto] })
+  attendances!: PlatformAttendanceOperationalDto[];
+
+  @ApiProperty({ type: () => [PlatformPromotionOperationalDto] })
+  promotions!: PlatformPromotionOperationalDto[];
+}

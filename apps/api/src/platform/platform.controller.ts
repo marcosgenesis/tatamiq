@@ -4,6 +4,7 @@ import { Session } from "@thallesp/nestjs-better-auth";
 import {
   PlatformAcademiesResponseDto,
   PlatformAcademyDetailDto,
+  PlatformAcademyOperationalOverviewDto,
   PlatformDashboardDto,
   PlatformMeDto,
 } from "./platform.dto";
@@ -56,6 +57,13 @@ export class PlatformController {
   academy(@Session() session: PlatformSession, @Param("id") id: string) {
     this.platformAdminService.assertPlatformAdmin(session);
     return this.platformService.getAcademy(id);
+  }
+
+  @Get("academies/:id/operational-overview")
+  @ApiOkResponse({ type: PlatformAcademyOperationalOverviewDto })
+  academyOperationalOverview(@Session() session: PlatformSession, @Param("id") id: string) {
+    this.platformAdminService.assertPlatformAdmin(session);
+    return this.platformService.getAcademyOperationalOverview(id);
   }
 }
 

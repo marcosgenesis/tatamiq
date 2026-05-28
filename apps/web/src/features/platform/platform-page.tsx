@@ -18,9 +18,11 @@ import {
 import { authClient } from "../../lib/auth-client";
 import {
   getPlatformAcademy,
+  getPlatformAcademyOperationalOverview,
   getPlatformDashboard,
   getPlatformMe,
   listPlatformAcademies,
+  type PlatformAcademyOperationalOverview,
   type PlatformAcademySummary,
 } from "./platform-api";
 
@@ -121,6 +123,11 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
     queryFn: () => getPlatformAcademy(academyId),
     retry: false,
   });
+  const operational = useQuery({
+    queryKey: ["platform", "academies", academyId, "operational-overview"],
+    queryFn: () => getPlatformAcademyOperationalOverview(academyId),
+    retry: false,
+  });
 
   if (platform.isLoading || academy.isLoading) {
     return <PlatformLoading label="Carregando academia..." />;
@@ -180,21 +187,195 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
 
         <Card>
           <CardHeader>
-            <CardTitle>Visão operacional</CardTitle>
+            <CardTitle>Regra de edição</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">
             <p>
-              Esta fatia confirma a academia e prepara o detalhe. A próxima issue adiciona os dados
-              operacionais completos em modo somente leitura.
+              Esta visão é completa o suficiente para diagnóstico, mas é somente leitura. Editar
+              alunos, turmas, mensalidades, presenças, Pix ou graduação não é permitido diretamente
+              em /platform.
             </p>
-            <p>
-              Editar alunos, turmas, mensalidades, presenças, Pix ou graduação não é permitido
-              diretamente em /platform.
-            </p>
+            <p>Quando a edição for necessária, ela deve acontecer via Suporte Assistido.</p>
           </CardContent>
         </Card>
       </section>
+
+      {operational.isLoading ? (
+        <Card>
+          <CardContent className="p-6">
+            <p className="text-muted-foreground text-sm">Carregando dados operacionais...</p>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {operational.data ? <OperationalOverview overview={operational.data} /> : null}
     </PlatformShell>
+  );
+}
+
+function OperationalOverview({ overview }: { overview: PlatformAcademyOperationalOverview }) {
+  return (
+    <section className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-5">
+        <SmallMetric label="Alunos" value={overview.summary.students.total} />
+        <SmallMetric label="Turmas" value={overview.summary.classGroups.total} />
+        <SmallMetric label="Mensalidades" value={overview.summary.monthlyFees.total} />
+        <SmallMetric label="Presenças" value={overview.summary.attendances.total} />
+        <SmallMetric label="Promoções" value={overview.summary.promotions.total} />
+      </div>
+
+      <section className="grid gap-6 xl:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Alunos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Graduação</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {overview.students.map((student) => (
+                  <TableRow key={student.id}>
+                    <TableCell>
+                      <p>{student.name}</p>
+                      <p className="text-muted-foreground text-xs">
+                        {student.email ?? "Sem email"}
+                      </p>
+                    </TableCell>
+                    <TableCell>{student.status}</TableCell>
+                    <TableCell>
+                      {student.belt ?? "Sem faixa"} • grau {student.degree}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Turmas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Duração</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {overview.classGroups.map((group) => (
+                  <TableRow key={group.id}>
+                    <TableCell>{group.name}</TableCell>
+                    <TableCell>{group.status}</TableCell>
+                    <TableCell>{group.defaultDurationMinutes} min</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Mensalidades recentes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Aluno</TableHead>
+                  <TableHead>Referência</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {overview.monthlyFees.map((fee) => (
+                  <TableRow key={fee.id}>
+                    <TableCell>{fee.studentName}</TableCell>
+                    <TableCell>{fee.reference}</TableCell>
+                    <TableCell>{fee.status}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Presenças recentes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Aluno</TableHead>
+                  <TableHead>Turma</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {overview.attendances.map((attendance) => (
+                  <TableRow key={attendance.id}>
+                    <TableCell>{attendance.studentName}</TableCell>
+                    <TableCell>{attendance.classGroupName}</TableCell>
+                    <TableCell>{attendance.status}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        <Card className="xl:col-span-2">
+          <CardHeader>
+            <CardTitle>Promoções de Graduação recentes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Aluno</TableHead>
+                  <TableHead>Nova graduação</TableHead>
+                  <TableHead>Data</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {overview.promotions.map((promotion) => (
+                  <TableRow key={promotion.id}>
+                    <TableCell>{promotion.studentName}</TableCell>
+                    <TableCell>
+                      {promotion.beltName} • grau {promotion.degree}
+                    </TableCell>
+                    <TableCell>{formatDate(promotion.promotedAt)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </section>
+    </section>
+  );
+}
+
+function SmallMetric({ label, value }: { label: string; value: number }) {
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <p className="text-muted-foreground text-xs">{label}</p>
+        <p className="font-semibold text-xl tabular-nums">{value}</p>
+      </CardContent>
+    </Card>
   );
 }
 

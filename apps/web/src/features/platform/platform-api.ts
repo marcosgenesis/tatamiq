@@ -50,6 +50,53 @@ export type PlatformAcademiesResponse = {
   };
 };
 
+export type PlatformAcademyOperationalOverview = {
+  summary: {
+    students: { total: number; active: number; inactive: number };
+    classGroups: { total: number; active: number; archived: number };
+    monthlyFees: { total: number; open: number; paid: number; underReview: number; waived: number };
+    attendances: { total: number; valid: number; invalidated: number };
+    promotions: { total: number };
+  };
+  students: Array<{
+    id: string;
+    name: string;
+    status: string;
+    email: string | null;
+    belt: string | null;
+    degree: number;
+  }>;
+  classGroups: Array<{
+    id: string;
+    name: string;
+    status: string;
+    defaultDurationMinutes: number;
+  }>;
+  monthlyFees: Array<{
+    id: string;
+    studentName: string;
+    reference: string;
+    amountInCents: number;
+    dueDate: string;
+    status: string;
+  }>;
+  attendances: Array<{
+    id: string;
+    studentName: string;
+    classGroupName: string;
+    source: string;
+    status: "valid" | "invalidated";
+    createdAt: string;
+  }>;
+  promotions: Array<{
+    id: string;
+    studentName: string;
+    beltName: string;
+    degree: number;
+    promotedAt: string;
+  }>;
+};
+
 export async function getPlatformMe(): Promise<PlatformMe> {
   return platformFetch("/platform/me");
 }
@@ -66,6 +113,12 @@ export async function listPlatformAcademies(query: string): Promise<PlatformAcad
 
 export async function getPlatformAcademy(id: string): Promise<PlatformAcademyDetail> {
   return platformFetch(`/platform/academies/${id}`);
+}
+
+export async function getPlatformAcademyOperationalOverview(
+  id: string,
+): Promise<PlatformAcademyOperationalOverview> {
+  return platformFetch(`/platform/academies/${id}/operational-overview`);
 }
 
 async function platformFetch<T>(path: string): Promise<T> {

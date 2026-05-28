@@ -2765,6 +2765,27 @@
           "platform"
         ]
       }
+    },
+    "/platform/academies/{id}/operational-overview": {
+      "get": {
+        "operationId": "PlatformController_academyOperationalOverview",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformAcademyOperationalOverviewDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "platform"
+        ]
+      }
     }
   },
   "info": {
@@ -7426,6 +7447,323 @@
           "address",
           "phone",
           "instagram"
+        ]
+      },
+      "PlatformStudentsOperationalSummaryDto": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number"
+          },
+          "active": {
+            "type": "number"
+          },
+          "inactive": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "total",
+          "active",
+          "inactive"
+        ]
+      },
+      "PlatformClassGroupsOperationalSummaryDto": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number"
+          },
+          "active": {
+            "type": "number"
+          },
+          "archived": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "total",
+          "active",
+          "archived"
+        ]
+      },
+      "PlatformMonthlyFeesOperationalSummaryDto": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number"
+          },
+          "open": {
+            "type": "number"
+          },
+          "paid": {
+            "type": "number"
+          },
+          "underReview": {
+            "type": "number"
+          },
+          "waived": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "total",
+          "open",
+          "paid",
+          "underReview",
+          "waived"
+        ]
+      },
+      "PlatformAttendancesOperationalSummaryDto": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number"
+          },
+          "valid": {
+            "type": "number"
+          },
+          "invalidated": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "total",
+          "valid",
+          "invalidated"
+        ]
+      },
+      "PlatformPromotionsOperationalSummaryDto": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "total"
+        ]
+      },
+      "PlatformAcademyOperationalSummaryDto": {
+        "type": "object",
+        "properties": {
+          "students": {
+            "$ref": "#/components/schemas/PlatformStudentsOperationalSummaryDto"
+          },
+          "classGroups": {
+            "$ref": "#/components/schemas/PlatformClassGroupsOperationalSummaryDto"
+          },
+          "monthlyFees": {
+            "$ref": "#/components/schemas/PlatformMonthlyFeesOperationalSummaryDto"
+          },
+          "attendances": {
+            "$ref": "#/components/schemas/PlatformAttendancesOperationalSummaryDto"
+          },
+          "promotions": {
+            "$ref": "#/components/schemas/PlatformPromotionsOperationalSummaryDto"
+          }
+        },
+        "required": [
+          "students",
+          "classGroups",
+          "monthlyFees",
+          "attendances",
+          "promotions"
+        ]
+      },
+      "PlatformStudentOperationalDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "belt": {
+            "type": "string",
+            "nullable": true
+          },
+          "degree": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "status",
+          "email",
+          "belt",
+          "degree"
+        ]
+      },
+      "PlatformClassGroupOperationalDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "defaultDurationMinutes": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "status",
+          "defaultDurationMinutes"
+        ]
+      },
+      "PlatformMonthlyFeeOperationalDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "studentName": {
+            "type": "string"
+          },
+          "reference": {
+            "type": "string"
+          },
+          "amountInCents": {
+            "type": "number"
+          },
+          "dueDate": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "studentName",
+          "reference",
+          "amountInCents",
+          "dueDate",
+          "status"
+        ]
+      },
+      "PlatformAttendanceOperationalDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "studentName": {
+            "type": "string"
+          },
+          "classGroupName": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "valid",
+              "invalidated"
+            ]
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "studentName",
+          "classGroupName",
+          "source",
+          "status",
+          "createdAt"
+        ]
+      },
+      "PlatformPromotionOperationalDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "studentName": {
+            "type": "string"
+          },
+          "beltName": {
+            "type": "string"
+          },
+          "degree": {
+            "type": "number"
+          },
+          "promotedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "studentName",
+          "beltName",
+          "degree",
+          "promotedAt"
+        ]
+      },
+      "PlatformAcademyOperationalOverviewDto": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "$ref": "#/components/schemas/PlatformAcademyOperationalSummaryDto"
+          },
+          "students": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlatformStudentOperationalDto"
+            }
+          },
+          "classGroups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlatformClassGroupOperationalDto"
+            }
+          },
+          "monthlyFees": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlatformMonthlyFeeOperationalDto"
+            }
+          },
+          "attendances": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlatformAttendanceOperationalDto"
+            }
+          },
+          "promotions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlatformPromotionOperationalDto"
+            }
+          }
+        },
+        "required": [
+          "summary",
+          "students",
+          "classGroups",
+          "monthlyFees",
+          "attendances",
+          "promotions"
         ]
       }
     }
