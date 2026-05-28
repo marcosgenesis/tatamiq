@@ -12,6 +12,7 @@ import { DatabaseModule } from "./database/database.module";
 import { GraduationModule } from "./graduation/graduation.module";
 import { HealthController } from "./health/health.controller";
 import { MonthlyFeesModule } from "./monthly-fees/monthly-fees.module";
+import { PlatformModule } from "./platform/platform.module";
 import { ScheduleModule } from "./schedule/schedule.module";
 import { StudentAccessModule } from "./student-access/student-access.module";
 import { StudentNotesModule } from "./student-notes/student-notes.module";
@@ -44,6 +45,7 @@ import { StudentsModule } from "./students/students.module";
     MonthlyFeesModule,
     GraduationModule,
     CsvModule,
+    PlatformModule,
   ],
   controllers: [HealthController],
 })

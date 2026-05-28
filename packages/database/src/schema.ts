@@ -17,6 +17,10 @@ export const user = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").notNull().default(false),
   image: text("image"),
+  role: text("role"),
+  banned: boolean("banned").notNull().default(false),
+  banReason: text("ban_reason"),
+  banExpires: timestamp("ban_expires", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -51,6 +55,7 @@ export const session = pgTable("session", {
   activeOrganizationId: text("active_organization_id").references(() => organization.id, {
     onDelete: "set null",
   }),
+  impersonatedBy: text("impersonated_by"),
 });
 
 export const account = pgTable("account", {
