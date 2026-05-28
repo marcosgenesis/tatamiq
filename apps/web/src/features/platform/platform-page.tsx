@@ -24,6 +24,7 @@ import {
   type PlatformAcademyOperationalOverview,
   type PlatformAcademySummary,
   provisionPlatformAcademy,
+  transferPlatformAcademy,
 } from "./platform-api";
 import { PlatformLoading, PlatformShell } from "./platform-shell";
 
@@ -215,6 +216,8 @@ export function PlatformPage() {
 
 export function PlatformAcademyPage({ academyId }: { academyId: string }) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [transferForm, setTransferForm] = useState({ ownerEmail: "", ownerName: "" });
   const platform = useQuery({ queryKey: ["platform", "me"], queryFn: getPlatformMe, retry: false });
   const academy = useQuery({
     queryKey: ["platform", "academies", academyId],
@@ -225,6 +228,21 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
     queryKey: ["platform", "academies", academyId, "operational-overview"],
     queryFn: () => getPlatformAcademyOperationalOverview(academyId),
     retry: false,
+  });
+  const transfer = useMutation({
+    mutationFn: () =>
+      transferPlatformAcademy(academyId, {
+        ownerEmail: transferForm.ownerEmail,
+        ...(transferForm.ownerName ? { ownerName: transferForm.ownerName } : {}),
+      }),
+    onSuccess: async () => {
+      setTransferForm({ ownerEmail: "", ownerName: "" });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["platform", "academies", academyId] }),
+        queryClient.invalidateQueries({ queryKey: ["platform", "dashboard"] }),
+        queryClient.invalidateQueries({ queryKey: ["platform", "academies"] }),
+      ]);
+    },
   });
 
   if (platform.isLoading || academy.isLoading) {
@@ -285,15 +303,53 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
 
         <Card>
           <CardHeader>
-            <CardTitle>Regra de edição</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm text-muted-foreground">
-            <p>
-              Esta visão é completa o suficiente para diagnóstico, mas é somente leitura. Editar
-              alunos, turmas, mensalidades, presenças, Pix ou graduação não é permitido diretamente
-              em /platform.
+            <CardTitle>Transferência de Academia</CardTitle>
+            <p className="text-muted-foreground text-sm">
+              Troque o dono operacional sem acessar senha ou caixa de email do cliente.
             </p>
-            <p>Quando a edição for necessária, ela deve acontecer via Suporte Assistido.</p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <form
+              className="grid gap-3"
+              onSubmit={(event) => {
+                event.preventDefault();
+                transfer.mutate();
+              }}
+            >
+              <Input
+                required
+                type="email"
+                placeholder="Novo email do dono"
+                value={transferForm.ownerEmail}
+                onChange={(event) =>
+                  setTransferForm((current) => ({ ...current, ownerEmail: event.target.value }))
+                }
+              />
+              <Input
+                placeholder="Nome do novo dono"
+                value={transferForm.ownerName}
+                onChange={(event) =>
+                  setTransferForm((current) => ({ ...current, ownerName: event.target.value }))
+                }
+              />
+              <Button type="submit" disabled={transfer.isPending}>
+                {transfer.isPending ? "Transferindo..." : "Transferir Academia"}
+              </Button>
+            </form>
+            {transfer.data?.firstAccessLink ? (
+              <div className="rounded-lg border bg-background p-3 text-sm">
+                <p className="font-medium">Link de primeiro acesso</p>
+                <p className="break-all text-muted-foreground">{transfer.data.firstAccessLink}</p>
+              </div>
+            ) : null}
+            {transfer.data && !transfer.data.firstAccessLink ? (
+              <p className="text-muted-foreground text-sm">
+                Academia transferida para conta existente.
+              </p>
+            ) : null}
+            {transfer.isError ? (
+              <p className="text-destructive text-sm">Não foi possível transferir a academia.</p>
+            ) : null}
           </CardContent>
         </Card>
       </section>

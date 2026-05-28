@@ -58,6 +58,18 @@ export type ProvisionAcademyResult = {
   firstAccessLink: string | null;
 };
 
+export type TransferAcademyInput = {
+  ownerEmail: string;
+  ownerName?: string;
+};
+
+export type TransferAcademyResult = {
+  academy: PlatformAcademyDetail;
+  ownerUserId: string;
+  ownerWasCreated: boolean;
+  firstAccessLink: string | null;
+};
+
 type PlatformAcademyOwner = {
   id: string;
   name: string;
@@ -211,6 +223,41 @@ export class PlatformService {
     });
 
     await seedIbjjfBelts(this.db, academyId);
+
+    const academy = await this.getAcademy(academyId);
+
+    return {
+      academy,
+      ownerUserId: reserved.user.id,
+      ownerWasCreated: reserved.isNew,
+      firstAccessLink: reserved.firstAccessLink
+        ? `${webAppUrl()}/first-access/${reserved.firstAccessLink}`
+        : null,
+    };
+  }
+
+  async transferAcademy(
+    academyId: string,
+    input: TransferAcademyInput,
+  ): Promise<TransferAcademyResult> {
+    await this.getAcademy(academyId);
+
+    const ownerEmail = input.ownerEmail.trim().toLowerCase();
+    const ownerName = input.ownerName?.trim() || ownerEmail;
+    const reserved = await this.reservedAccounts.createOrReuse(ownerEmail, ownerName);
+    const now = new Date();
+
+    await this.db
+      .delete(member)
+      .where(and(eq(member.organizationId, academyId), eq(member.role, "owner")));
+
+    await this.db.insert(member).values({
+      id: crypto.randomUUID(),
+      organizationId: academyId,
+      userId: reserved.user.id,
+      role: "owner",
+      createdAt: now,
+    });
 
     const academy = await this.getAcademy(academyId);
 

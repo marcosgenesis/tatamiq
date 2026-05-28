@@ -92,6 +92,16 @@ export class ProvisionAcademyResultDto {
   firstAccessLink!: string | null;
 }
 
+export class TransferAcademyBodyDto {
+  @ApiProperty({ type: String })
+  ownerEmail!: string;
+
+  @ApiProperty({ type: String, required: false })
+  ownerName?: string;
+}
+
+export class TransferAcademyResultDto extends ProvisionAcademyResultDto {}
+
 export class PlatformPaginationDto {
   @ApiProperty({ type: Number })
   page!: number;

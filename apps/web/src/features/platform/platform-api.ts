@@ -118,12 +118,21 @@ export type ProvisionAcademyResult = {
   firstAccessLink: string | null;
 };
 
+export type TransferAcademyResult = ProvisionAcademyResult;
+
 export async function provisionPlatformAcademy(input: {
   academyName: string;
   ownerEmail: string;
   ownerName?: string;
 }): Promise<ProvisionAcademyResult> {
   return platformPost("/platform/academies/provision", input);
+}
+
+export async function transferPlatformAcademy(
+  academyId: string,
+  input: { ownerEmail: string; ownerName?: string },
+): Promise<TransferAcademyResult> {
+  return platformPost(`/platform/academies/${academyId}/transfer`, input);
 }
 
 export async function getPlatformAcademy(id: string): Promise<PlatformAcademyDetail> {

@@ -27,6 +27,8 @@ import {
   PlatformUsersResponseDto,
   type ProvisionAcademyBodyDto,
   ProvisionAcademyResultDto,
+  type TransferAcademyBodyDto,
+  TransferAcademyResultDto,
 } from "./platform.dto";
 import { PlatformService } from "./platform.service";
 import {
@@ -95,6 +97,30 @@ export class PlatformController {
       targetType: "academy",
       targetId: result.academy.id,
       academyId: result.academy.id,
+      metadata: {
+        ownerUserId: result.ownerUserId,
+        ownerWasCreated: result.ownerWasCreated,
+      },
+    });
+    return result;
+  }
+
+  @Post("academies/:id/transfer")
+  @ApiOkResponse({ type: TransferAcademyResultDto })
+  async transferAcademy(
+    @Session() session: PlatformSession,
+    @Param("id") id: string,
+    @Body() body: TransferAcademyBodyDto,
+  ) {
+    const admin = this.platformAdminService.assertPlatformAdmin(session);
+    const input = parseTransferAcademyBody(body);
+    const result = await this.platformService.transferAcademy(id, input);
+    await this.auditService.write({
+      adminUserId: admin.user.id,
+      action: "platform.academy.transferred",
+      targetType: "academy",
+      targetId: id,
+      academyId: id,
       metadata: {
         ownerUserId: result.ownerUserId,
         ownerWasCreated: result.ownerWasCreated,
@@ -248,13 +274,24 @@ function parseOptionalInteger(value: string | undefined): number | undefined {
 
 function parseProvisionAcademyBody(body: ProvisionAcademyBodyDto) {
   const academyName = body.academyName?.trim();
+  const owner = parseOwnerInput(body);
+
+  if (!academyName) throw new BadRequestException("Nome da academia é obrigatório.");
+
+  return { academyName, ...owner };
+}
+
+function parseTransferAcademyBody(body: TransferAcademyBodyDto) {
+  return parseOwnerInput(body);
+}
+
+function parseOwnerInput(body: { ownerEmail?: string; ownerName?: string }) {
   const ownerEmail = body.ownerEmail?.trim();
   const ownerName = body.ownerName?.trim();
 
-  if (!academyName) throw new BadRequestException("Nome da academia é obrigatório.");
   if (!ownerEmail?.includes("@")) {
     throw new BadRequestException("Email do dono é obrigatório.");
   }
 
-  return { academyName, ownerEmail, ownerName };
+  return { ownerEmail, ownerName };
 }

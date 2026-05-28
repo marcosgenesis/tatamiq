@@ -2766,6 +2766,27 @@
         ]
       }
     },
+    "/platform/academies/{id}/transfer": {
+      "post": {
+        "operationId": "PlatformController_transferAcademy",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferAcademyResultDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "platform"
+        ]
+      }
+    },
     "/platform/academies/{id}": {
       "get": {
         "operationId": "PlatformController_academy",
@@ -7618,6 +7639,30 @@
         ]
       },
       "ProvisionAcademyResultDto": {
+        "type": "object",
+        "properties": {
+          "academy": {
+            "$ref": "#/components/schemas/PlatformAcademyDetailDto"
+          },
+          "ownerUserId": {
+            "type": "string"
+          },
+          "ownerWasCreated": {
+            "type": "boolean"
+          },
+          "firstAccessLink": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "academy",
+          "ownerUserId",
+          "ownerWasCreated",
+          "firstAccessLink"
+        ]
+      },
+      "TransferAcademyResultDto": {
         "type": "object",
         "properties": {
           "academy": {
