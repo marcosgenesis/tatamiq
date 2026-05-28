@@ -2850,6 +2850,67 @@
         ]
       }
     },
+    "/platform/administrators": {
+      "get": {
+        "operationId": "PlatformController_administrators",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformAdministratorsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "platform"
+        ]
+      },
+      "post": {
+        "operationId": "PlatformController_addAdministrator",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddPlatformAdministratorResultDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/platform/administrators/{id}/remove": {
+      "post": {
+        "operationId": "PlatformController_removeAdministrator",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformActionResultDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "platform"
+        ]
+      }
+    },
     "/platform/audit": {
       "get": {
         "operationId": "PlatformController_audit",
@@ -8018,6 +8079,87 @@
           "expiresAt"
         ]
       },
+      "PlatformAdministratorDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "nullable": true
+          },
+          "banned": {
+            "type": "boolean"
+          },
+          "configured": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "role",
+          "banned",
+          "configured",
+          "createdAt"
+        ]
+      },
+      "PlatformAdministratorsResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlatformAdministratorDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "AddPlatformAdministratorResultDto": {
+        "type": "object",
+        "properties": {
+          "administrator": {
+            "$ref": "#/components/schemas/PlatformAdministratorDto"
+          },
+          "userWasCreated": {
+            "type": "boolean"
+          },
+          "firstAccessLink": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "administrator",
+          "userWasCreated",
+          "firstAccessLink"
+        ]
+      },
+      "PlatformActionResultDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success"
+        ]
+      },
       "PlatformAuditLogEntryDto": {
         "type": "object",
         "properties": {
@@ -8285,17 +8427,6 @@
           "memberships",
           "studentAccessLinks",
           "activeSessions"
-        ]
-      },
-      "PlatformActionResultDto": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "success"
         ]
       }
     }

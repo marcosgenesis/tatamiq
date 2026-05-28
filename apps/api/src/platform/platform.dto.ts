@@ -485,3 +485,50 @@ export class PlatformActionResultDto {
   @ApiProperty({ type: Boolean })
   success!: boolean;
 }
+
+export class PlatformAdministratorDto {
+  @ApiProperty({ type: String })
+  id!: string;
+
+  @ApiProperty({ type: String })
+  name!: string;
+
+  @ApiProperty({ type: String })
+  email!: string;
+
+  @ApiProperty({ type: String, nullable: true })
+  role!: string | null;
+
+  @ApiProperty({ type: Boolean })
+  banned!: boolean;
+
+  @ApiProperty({ type: Boolean })
+  configured!: boolean;
+
+  @ApiProperty({ type: String })
+  createdAt!: string;
+}
+
+export class PlatformAdministratorsResponseDto {
+  @ApiProperty({ type: () => [PlatformAdministratorDto] })
+  items!: PlatformAdministratorDto[];
+}
+
+export class AddPlatformAdministratorBodyDto {
+  @ApiProperty({ type: String })
+  email!: string;
+
+  @ApiProperty({ type: String, required: false })
+  name?: string;
+}
+
+export class AddPlatformAdministratorResultDto {
+  @ApiProperty({ type: () => PlatformAdministratorDto })
+  administrator!: PlatformAdministratorDto;
+
+  @ApiProperty({ type: Boolean })
+  userWasCreated!: boolean;
+
+  @ApiProperty({ type: String, nullable: true })
+  firstAccessLink!: string | null;
+}

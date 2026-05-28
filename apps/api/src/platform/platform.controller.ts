@@ -14,10 +14,13 @@ import { Session } from "@thallesp/nestjs-better-auth";
 import { R2StorageService } from "../monthly-fees/r2-storage.service";
 import { AuditService } from "./audit.service";
 import {
+  type AddPlatformAdministratorBodyDto,
+  AddPlatformAdministratorResultDto,
   PlatformAcademiesResponseDto,
   PlatformAcademyDetailDto,
   PlatformAcademyOperationalOverviewDto,
   PlatformActionResultDto,
+  PlatformAdministratorsResponseDto,
   PlatformAuditListResponseDto,
   type PlatformBanUserBodyDto,
   PlatformDashboardDto,
@@ -169,6 +172,46 @@ export class PlatformController {
     return { viewUrl, expiresAt };
   }
 
+  @Get("administrators")
+  @ApiOkResponse({ type: PlatformAdministratorsResponseDto })
+  administrators(@Session() session: PlatformSession) {
+    this.platformAdminService.assertPlatformAdmin(session);
+    return this.platformService.listAdministrators();
+  }
+
+  @Post("administrators")
+  @ApiOkResponse({ type: AddPlatformAdministratorResultDto })
+  async addAdministrator(
+    @Session() session: PlatformSession,
+    @Body() body: AddPlatformAdministratorBodyDto,
+  ) {
+    const admin = this.platformAdminService.assertPlatformAdmin(session);
+    const input = parseAdministratorBody(body);
+    const result = await this.platformService.addAdministrator(input);
+    await this.auditService.write({
+      adminUserId: admin.user.id,
+      action: "platform.admin.added",
+      targetType: "user",
+      targetId: result.administrator.id,
+      metadata: { userWasCreated: result.userWasCreated },
+    });
+    return result;
+  }
+
+  @Post("administrators/:id/remove")
+  @ApiOkResponse({ type: PlatformActionResultDto })
+  async removeAdministrator(@Session() session: PlatformSession, @Param("id") id: string) {
+    const admin = this.platformAdminService.assertPlatformAdmin(session);
+    const result = await this.platformService.removeAdministrator(id);
+    await this.auditService.write({
+      adminUserId: admin.user.id,
+      action: "platform.admin.removed",
+      targetType: "user",
+      targetId: id,
+    });
+    return result;
+  }
+
   @Get("audit")
   @ApiOkResponse({ type: PlatformAuditListResponseDto })
   audit(
@@ -283,6 +326,17 @@ function parseProvisionAcademyBody(body: ProvisionAcademyBodyDto) {
 
 function parseTransferAcademyBody(body: TransferAcademyBodyDto) {
   return parseOwnerInput(body);
+}
+
+function parseAdministratorBody(body: AddPlatformAdministratorBodyDto) {
+  const email = body.email?.trim();
+  const name = body.name?.trim();
+
+  if (!email?.includes("@")) {
+    throw new BadRequestException("Email do administrador é obrigatório.");
+  }
+
+  return { email, name };
 }
 
 function parseOwnerInput(body: { ownerEmail?: string; ownerName?: string }) {

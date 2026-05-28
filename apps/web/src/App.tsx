@@ -26,6 +26,7 @@ import { DashboardPage } from "./features/dashboard/dashboard-page";
 import { GraduationPage } from "./features/graduation/graduation-page";
 import { MonthlyFeesPage } from "./features/monthly-fees/monthly-fees-page";
 import { PlaceholderPage } from "./features/placeholder/placeholder-page";
+import { PlatformAdministratorsPage } from "./features/platform/platform-administrators-page";
 import { getPlatformMe } from "./features/platform/platform-api";
 import { PlatformAuditPage } from "./features/platform/platform-audit-page";
 import { PlatformAcademyPage, PlatformPage } from "./features/platform/platform-page";
@@ -193,6 +194,12 @@ const platformAuditRoute = createRoute({
   component: PlatformAuditPage,
 });
 
+const platformAdministratorsRoute = createRoute({
+  getParentRoute: () => authBareLayout,
+  path: "/platform/administrators",
+  component: PlatformAdministratorsPage,
+});
+
 const platformAcademyRoute = createRoute({
   getParentRoute: () => authBareLayout,
   path: "/platform/academies/$academyId",
@@ -300,6 +307,7 @@ const routeTree = rootRoute.addChildren([
     onboardingRoute,
     platformRoute,
     platformAuditRoute,
+    platformAdministratorsRoute,
     platformAcademyRoute,
     platformUsersRoute,
     platformUserDetailRoute,

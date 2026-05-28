@@ -263,6 +263,41 @@ export async function revokePlatformUserSessions(id: string): Promise<{ success:
   return platformPost(`/platform/users/${id}/revoke-sessions`, {});
 }
 
+export type PlatformAdministrator = {
+  id: string;
+  name: string;
+  email: string;
+  role: string | null;
+  banned: boolean;
+  configured: boolean;
+  createdAt: string;
+};
+
+export type PlatformAdministratorsResponse = {
+  items: PlatformAdministrator[];
+};
+
+export type AddPlatformAdministratorResult = {
+  administrator: PlatformAdministrator;
+  userWasCreated: boolean;
+  firstAccessLink: string | null;
+};
+
+export async function listPlatformAdministrators(): Promise<PlatformAdministratorsResponse> {
+  return platformFetch("/platform/administrators");
+}
+
+export async function addPlatformAdministrator(input: {
+  email: string;
+  name?: string;
+}): Promise<AddPlatformAdministratorResult> {
+  return platformPost("/platform/administrators", input);
+}
+
+export async function removePlatformAdministrator(id: string): Promise<{ success: boolean }> {
+  return platformPost(`/platform/administrators/${id}/remove`, {});
+}
+
 async function platformFetch<T>(path: string): Promise<T> {
   const response = await fetch(`${apiUrl}${path}`, {
     credentials: "include",

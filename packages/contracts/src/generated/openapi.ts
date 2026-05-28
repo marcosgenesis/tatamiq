@@ -1492,6 +1492,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/platform/administrators": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PlatformController_administrators"];
+        put?: never;
+        post: operations["PlatformController_addAdministrator"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/platform/administrators/{id}/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PlatformController_removeAdministrator"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/platform/audit": {
         parameters: {
             query?: never;
@@ -2729,6 +2761,26 @@ export interface components {
             viewUrl: string;
             expiresAt: string;
         };
+        PlatformAdministratorDto: {
+            id: string;
+            name: string;
+            email: string;
+            role: string | null;
+            banned: boolean;
+            configured: boolean;
+            createdAt: string;
+        };
+        PlatformAdministratorsResponseDto: {
+            items: components["schemas"]["PlatformAdministratorDto"][];
+        };
+        AddPlatformAdministratorResultDto: {
+            administrator: components["schemas"]["PlatformAdministratorDto"];
+            userWasCreated: boolean;
+            firstAccessLink: string | null;
+        };
+        PlatformActionResultDto: {
+            success: boolean;
+        };
         PlatformAuditLogEntryDto: {
             id: string;
             adminUserId: string;
@@ -2791,9 +2843,6 @@ export interface components {
             memberships: components["schemas"]["PlatformUserMembershipDto"][];
             studentAccessLinks: components["schemas"]["PlatformUserStudentAccessDto"][];
             activeSessions: number;
-        };
-        PlatformActionResultDto: {
-            success: boolean;
         };
     };
     responses: never;
@@ -4962,6 +5011,63 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PlatformSensitiveFileUrlDto"];
+                };
+            };
+        };
+    };
+    PlatformController_administrators: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformAdministratorsResponseDto"];
+                };
+            };
+        };
+    };
+    PlatformController_addAdministrator: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AddPlatformAdministratorResultDto"];
+                };
+            };
+        };
+    };
+    PlatformController_removeAdministrator: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformActionResultDto"];
                 };
             };
         };

@@ -90,6 +90,12 @@ export function PlatformPage() {
           Usuários
         </Link>
         <Link
+          to="/platform/administrators"
+          className="inline-flex h-8 items-center justify-center rounded-lg border border-border bg-background px-3 text-sm font-medium transition-colors hover:bg-muted"
+        >
+          Administradores
+        </Link>
+        <Link
           to="/platform/audit"
           className="inline-flex h-8 items-center justify-center rounded-lg border border-border bg-background px-3 text-sm font-medium transition-colors hover:bg-muted"
         >

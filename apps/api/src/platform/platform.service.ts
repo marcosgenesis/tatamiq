@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import {
   attendances,
   belts,
@@ -15,7 +15,8 @@ import {
   students,
   user,
 } from "@tatamiq/database";
-import { and, count, desc, eq, ilike, isNotNull, isNull, or } from "drizzle-orm";
+import { and, count, desc, eq, ilike, inArray, isNotNull, isNull, or } from "drizzle-orm";
+import { platformAdminUserIds } from "../auth";
 import { seedIbjjfBelts } from "../belts/seed-belts";
 import { DATABASE } from "../database/database.module";
 import { ReservedAccountService } from "./reserved-account.service";
@@ -67,6 +68,22 @@ export type TransferAcademyResult = {
   academy: PlatformAcademyDetail;
   ownerUserId: string;
   ownerWasCreated: boolean;
+  firstAccessLink: string | null;
+};
+
+export type PlatformAdministrator = {
+  id: string;
+  name: string;
+  email: string;
+  role: string | null;
+  banned: boolean;
+  configured: boolean;
+  createdAt: string;
+};
+
+export type AddPlatformAdministratorResult = {
+  administrator: PlatformAdministrator;
+  userWasCreated: boolean;
   firstAccessLink: string | null;
 };
 
@@ -149,6 +166,64 @@ export class PlatformService {
       },
       recentAcademies: recentAcademies.items,
     };
+  }
+
+  async listAdministrators(): Promise<{ items: PlatformAdministrator[] }> {
+    const configuredIds = platformAdminUserIds();
+    const roleCondition = eq(user.role, "admin");
+    const where =
+      configuredIds.length > 0 ? or(roleCondition, inArray(user.id, configuredIds)) : roleCondition;
+
+    const rows = await this.db.select().from(user).where(where).orderBy(user.email);
+
+    return {
+      items: rows.map((row) => toAdministrator(row, configuredIds)),
+    };
+  }
+
+  async addAdministrator(input: {
+    email: string;
+    name?: string;
+  }): Promise<AddPlatformAdministratorResult> {
+    const email = input.email.trim().toLowerCase();
+    const name = input.name?.trim() || email;
+    const reserved = await this.reservedAccounts.createOrReuse(email, name);
+
+    const [updated] = await this.db
+      .update(user)
+      .set({ role: "admin", updatedAt: new Date() })
+      .where(eq(user.id, reserved.user.id))
+      .returning();
+
+    return {
+      administrator: toAdministrator(updated ?? reserved.user, platformAdminUserIds()),
+      userWasCreated: reserved.isNew,
+      firstAccessLink: reserved.firstAccessLink
+        ? `${webAppUrl()}/first-access/${reserved.firstAccessLink}`
+        : null,
+    };
+  }
+
+  async removeAdministrator(userId: string): Promise<{ success: true }> {
+    const admins = await this.listAdministrators();
+    const activeAdmins = admins.items.filter((admin) => !admin.banned);
+    const target = admins.items.find((admin) => admin.id === userId);
+
+    if (!target) {
+      throw new NotFoundException("Administrador da Plataforma não encontrado.");
+    }
+
+    if (!target.configured && activeAdmins.length <= 1) {
+      throw new BadRequestException("Não é possível remover o último Administrador da Plataforma.");
+    }
+
+    await this.db
+      .update(user)
+      .set({ role: null, updatedAt: new Date() })
+      .where(eq(user.id, userId));
+    await this.db.delete(session).where(eq(session.userId, userId));
+
+    return { success: true };
   }
 
   async listAcademies(options: { query?: string; page?: number; pageSize?: number } = {}) {
@@ -672,6 +747,18 @@ function slugify(value: string): string {
 
 function webAppUrl(): string {
   return process.env.WEB_APP_URL ?? process.env.CORS_ORIGIN ?? "http://localhost:5173";
+}
+
+function toAdministrator(row: UserRow, configuredIds: string[]): PlatformAdministrator {
+  return {
+    id: row.id,
+    name: row.name,
+    email: row.email,
+    role: row.role,
+    banned: row.banned,
+    configured: configuredIds.includes(row.id),
+    createdAt: row.createdAt.toISOString(),
+  };
 }
 
 function toAcademySummary(org: OrganizationRow, owner: UserRow | null): PlatformAcademySummary {
