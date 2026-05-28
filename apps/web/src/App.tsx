@@ -12,6 +12,7 @@ import { CheckmarkSquare03Icon } from "hugeicons-react";
 import { useEffect } from "react";
 import { AppShell } from "./components/app-shell";
 import { LogoIcon } from "./components/logo";
+import { Button } from "./components/ui/button";
 import { Toaster } from "./components/ui/sonner";
 import { AcademyOnboardingPage } from "./features/auth/academy-onboarding-page";
 import {
@@ -27,7 +28,11 @@ import { GraduationPage } from "./features/graduation/graduation-page";
 import { MonthlyFeesPage } from "./features/monthly-fees/monthly-fees-page";
 import { PlaceholderPage } from "./features/placeholder/placeholder-page";
 import { PlatformAdministratorsPage } from "./features/platform/platform-administrators-page";
-import { getPlatformMe } from "./features/platform/platform-api";
+import {
+  endPlatformSupport,
+  getCurrentPlatformSupport,
+  getPlatformMe,
+} from "./features/platform/platform-api";
 import { PlatformAuditPage } from "./features/platform/platform-audit-page";
 import { PlatformAcademyPage, PlatformPage } from "./features/platform/platform-page";
 import { PlatformUserDetailPage } from "./features/platform/platform-user-detail-page";
@@ -428,8 +433,49 @@ function InstructorLayout() {
       onSignOut={signOut}
       onRefreshAcademies={refreshAcademies}
     >
+      <SupportBanner />
       <Outlet />
     </AppShell>
+  );
+}
+
+function SupportBanner() {
+  const navigate = useNavigate();
+  const support = useQuery({
+    queryKey: ["platform", "support", "current"],
+    queryFn: getCurrentPlatformSupport,
+    retry: false,
+    refetchInterval: 60_000,
+  });
+
+  if (!support.data) return null;
+
+  async function endSupport() {
+    await endPlatformSupport();
+    await authClient.admin.stopImpersonating();
+    await support.refetch();
+    await navigate({ to: "/platform" });
+  }
+
+  return (
+    <div className="border-b border-amber-300 bg-amber-50 px-4 py-3 text-amber-950">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
+        <div>
+          <p className="font-semibold text-sm">Suporte Assistido ativo</p>
+          <p className="text-sm">
+            Você está operando como cliente em nome de {support.data.adminName ?? "Administrador"}.
+            Expira às{" "}
+            {new Intl.DateTimeFormat("pt-BR", { timeStyle: "short" }).format(
+              new Date(support.data.expiresAt),
+            )}
+            .
+          </p>
+        </div>
+        <Button variant="outline" onClick={endSupport}>
+          Encerrar suporte
+        </Button>
+      </div>
+    </div>
   );
 }
 

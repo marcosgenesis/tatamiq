@@ -18,7 +18,9 @@ export type AuditAction =
   | "platform.first_access_link.regenerated"
   | "platform.sensitive_file.accessed"
   | "platform.support.started"
-  | "platform.support.ended";
+  | "platform.support.activated"
+  | "platform.support.ended"
+  | "platform.support.action";
 
 export type WriteAuditEntry = {
   adminUserId: string;

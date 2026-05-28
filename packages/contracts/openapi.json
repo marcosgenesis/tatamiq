@@ -2911,6 +2911,90 @@
         ]
       }
     },
+    "/platform/support/start": {
+      "post": {
+        "operationId": "PlatformController_startSupport",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformSupportSessionDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/platform/support/activate": {
+      "post": {
+        "operationId": "PlatformController_activateSupport",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformSupportSessionDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/platform/support/current": {
+      "get": {
+        "operationId": "PlatformController_currentSupport",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformSupportSessionDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/platform/support/end": {
+      "post": {
+        "operationId": "PlatformController_endSupport",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformSupportSessionDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "platform"
+        ]
+      }
+    },
     "/platform/audit": {
       "get": {
         "operationId": "PlatformController_audit",
@@ -8200,6 +8284,65 @@
         },
         "required": [
           "success"
+        ]
+      },
+      "PlatformSupportSessionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "adminUserId": {
+            "type": "string"
+          },
+          "targetUserId": {
+            "type": "string"
+          },
+          "academyId": {
+            "type": "string",
+            "nullable": true
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string"
+          },
+          "startedAt": {
+            "type": "string"
+          },
+          "activatedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "endedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "expiresAt": {
+            "type": "string"
+          },
+          "adminName": {
+            "type": "string",
+            "nullable": true
+          },
+          "adminEmail": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "adminUserId",
+          "targetUserId",
+          "academyId",
+          "reason",
+          "status",
+          "startedAt",
+          "activatedAt",
+          "endedAt",
+          "expiresAt"
         ]
       },
       "PlatformAuditLogEntryDto": {

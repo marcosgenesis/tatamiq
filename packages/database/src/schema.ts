@@ -752,3 +752,36 @@ export const adminAuditLogs = pgTable(
 );
 
 export type AdminAuditLog = typeof adminAuditLogs.$inferSelect;
+
+export const platformSupportSessions = pgTable(
+  "platform_support_sessions",
+  {
+    id: text("id").primaryKey(),
+    adminUserId: text("admin_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    targetUserId: text("target_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    academyId: text("academy_id").references(() => organization.id, { onDelete: "set null" }),
+    reason: text("reason"),
+    status: text("status").notNull().default("pending"),
+    impersonationSessionId: text("impersonation_session_id"),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+    activatedAt: timestamp("activated_at", { withTimezone: true }),
+    endedAt: timestamp("ended_at", { withTimezone: true }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    index("platform_support_sessions_admin_user_id_idx").on(table.adminUserId),
+    index("platform_support_sessions_target_user_id_idx").on(table.targetUserId),
+    index("platform_support_sessions_status_idx").on(table.status),
+    index("platform_support_sessions_impersonation_session_id_idx").on(
+      table.impersonationSessionId,
+    ),
+  ],
+);
+
+export type PlatformSupportSession = typeof platformSupportSessions.$inferSelect;

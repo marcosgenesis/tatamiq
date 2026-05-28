@@ -1524,6 +1524,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/platform/support/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PlatformController_startSupport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/platform/support/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PlatformController_activateSupport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/platform/support/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PlatformController_currentSupport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/platform/support/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PlatformController_endSupport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/platform/audit": {
         parameters: {
             query?: never;
@@ -2812,6 +2876,20 @@ export interface components {
         };
         PlatformActionResultDto: {
             success: boolean;
+        };
+        PlatformSupportSessionDto: {
+            id: string;
+            adminUserId: string;
+            targetUserId: string;
+            academyId: string | null;
+            reason: string | null;
+            status: string;
+            startedAt: string;
+            activatedAt: string | null;
+            endedAt: string | null;
+            expiresAt: string;
+            adminName?: string | null;
+            adminEmail?: string | null;
         };
         PlatformAuditLogEntryDto: {
             id: string;
@@ -5114,6 +5192,82 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PlatformActionResultDto"];
+                };
+            };
+        };
+    };
+    PlatformController_startSupport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformSupportSessionDto"];
+                };
+            };
+        };
+    };
+    PlatformController_activateSupport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformSupportSessionDto"];
+                };
+            };
+        };
+    };
+    PlatformController_currentSupport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformSupportSessionDto"];
+                };
+            };
+        };
+    };
+    PlatformController_endSupport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformSupportSessionDto"];
                 };
             };
         };

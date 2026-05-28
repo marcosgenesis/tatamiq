@@ -16,6 +16,7 @@ import {
 } from "../../components/ui/table";
 import { authClient } from "../../lib/auth-client";
 import {
+  activatePlatformSupport,
   getPlatformAcademy,
   getPlatformAcademyOperationalOverview,
   getPlatformDashboard,
@@ -24,6 +25,7 @@ import {
   type PlatformAcademyOperationalOverview,
   type PlatformAcademySummary,
   provisionPlatformAcademy,
+  startPlatformSupport,
   transferPlatformAcademy,
 } from "./platform-api";
 import { PlatformLoading, PlatformShell } from "./platform-shell";
@@ -224,6 +226,7 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [transferForm, setTransferForm] = useState({ ownerEmail: "", ownerName: "" });
+  const [supportReason, setSupportReason] = useState("");
   const platform = useQuery({ queryKey: ["platform", "me"], queryFn: getPlatformMe, retry: false });
   const academy = useQuery({
     queryKey: ["platform", "academies", academyId],
@@ -235,6 +238,26 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
     queryFn: () => getPlatformAcademyOperationalOverview(academyId),
     retry: false,
   });
+  const support = useMutation({
+    mutationFn: async () => {
+      if (!academy.data?.owner) throw new Error("Academia sem dono.");
+      const prepared = await startPlatformSupport({
+        targetUserId: academy.data.owner.id,
+        academyId,
+        ...(supportReason ? { reason: supportReason } : {}),
+      });
+      const impersonation = await authClient.admin.impersonateUser({
+        userId: academy.data.owner.id,
+      });
+      if (impersonation.error)
+        throw new Error(impersonation.error.message ?? "Erro ao iniciar suporte.");
+      await activatePlatformSupport(prepared.id);
+    },
+    onSuccess: async () => {
+      await navigate({ to: "/choose-area" });
+    },
+  });
+
   const transfer = useMutation({
     mutationFn: () =>
       transferPlatformAcademy(academyId, {
@@ -304,6 +327,36 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
             <DetailRow label="Endereço" value={academy.data.address ?? "—"} />
             <DetailRow label="Telefone/WhatsApp" value={academy.data.phone ?? "—"} />
             <DetailRow label="Instagram" value={academy.data.instagram ?? "—"} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Suporte Assistido</CardTitle>
+            <p className="text-muted-foreground text-sm">
+              Entre como o dono por até 1 hora para prestar suporte operacional visível e auditado.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Input
+              placeholder="Motivo do suporte (opcional)"
+              value={supportReason}
+              onChange={(event) => setSupportReason(event.target.value)}
+              disabled={!academy.data.owner || support.isPending}
+            />
+            <Button
+              variant="outline"
+              onClick={() => support.mutate()}
+              disabled={!academy.data.owner || support.isPending}
+            >
+              {support.isPending ? "Iniciando..." : "Iniciar suporte como dono"}
+            </Button>
+            {!academy.data.owner ? (
+              <p className="text-muted-foreground text-sm">Academia sem dono para suporte.</p>
+            ) : null}
+            {support.isError ? (
+              <p className="text-destructive text-sm">Não foi possível iniciar o suporte.</p>
+            ) : null}
           </CardContent>
         </Card>
 

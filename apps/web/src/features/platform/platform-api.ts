@@ -292,6 +292,43 @@ export async function deletePlatformUser(
   return platformPost(`/platform/users/${id}/delete`, input);
 }
 
+export type PlatformSupportSession = {
+  id: string;
+  adminUserId: string;
+  targetUserId: string;
+  academyId: string | null;
+  reason: string | null;
+  status: string;
+  startedAt: string;
+  activatedAt: string | null;
+  endedAt: string | null;
+  expiresAt: string;
+  adminName?: string | null;
+  adminEmail?: string | null;
+};
+
+export async function startPlatformSupport(input: {
+  targetUserId: string;
+  academyId?: string;
+  reason?: string;
+}): Promise<PlatformSupportSession & { targetName: string; targetEmail: string }> {
+  return platformPost("/platform/support/start", input);
+}
+
+export async function activatePlatformSupport(
+  supportSessionId: string,
+): Promise<PlatformSupportSession> {
+  return platformPost("/platform/support/activate", { supportSessionId });
+}
+
+export async function getCurrentPlatformSupport(): Promise<PlatformSupportSession | null> {
+  return platformFetch("/platform/support/current");
+}
+
+export async function endPlatformSupport(): Promise<PlatformSupportSession> {
+  return platformPost("/platform/support/end", {});
+}
+
 export type PlatformAdministrator = {
   id: string;
   name: string;

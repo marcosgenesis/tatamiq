@@ -15,6 +15,7 @@ import {
 } from "../../components/ui/table";
 import { authClient } from "../../lib/auth-client";
 import {
+  activatePlatformSupport,
   banPlatformUser,
   type DeletePlatformUserInput,
   deletePlatformUser,
@@ -22,6 +23,7 @@ import {
   getPlatformUser,
   getPlatformUserDeletionImpact,
   revokePlatformUserSessions,
+  startPlatformSupport,
   unbanPlatformUser,
 } from "./platform-api";
 import { PlatformLoading, PlatformShell } from "./platform-shell";
@@ -32,6 +34,7 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
   const [banReason, setBanReason] = useState("");
   const [showBanForm, setShowBanForm] = useState(false);
   const [showDeleteForm, setShowDeleteForm] = useState(false);
+  const [supportReason, setSupportReason] = useState("");
   const [deleteForm, setDeleteForm] = useState<DeletePlatformUserInput>({
     mode: "preserve_history",
   });
@@ -83,6 +86,22 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["platform", "users"] });
       await navigate({ to: "/platform/users" });
+    },
+  });
+
+  const supportMutation = useMutation({
+    mutationFn: async () => {
+      const prepared = await startPlatformSupport({
+        targetUserId: userId,
+        ...(supportReason ? { reason: supportReason } : {}),
+      });
+      const impersonation = await authClient.admin.impersonateUser({ userId });
+      if (impersonation.error)
+        throw new Error(impersonation.error.message ?? "Erro ao iniciar suporte.");
+      await activatePlatformSupport(prepared.id);
+    },
+    onSuccess: async () => {
+      await navigate({ to: "/choose-area" });
     },
   });
 
@@ -245,6 +264,29 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
 
             <div className="space-y-3 border-t pt-4">
               <div>
+                <p className="font-medium text-sm">Suporte Assistido</p>
+                <p className="text-muted-foreground text-sm">
+                  Entra temporariamente como este usuário por até 1 hora. Administradores não podem
+                  ser alvo.
+                </p>
+              </div>
+              <Input
+                placeholder="Motivo do suporte (opcional)"
+                value={supportReason}
+                onChange={(event) => setSupportReason(event.target.value)}
+                disabled={detail.role === "admin" || supportMutation.isPending}
+              />
+              <Button
+                variant="outline"
+                onClick={() => supportMutation.mutate()}
+                disabled={detail.role === "admin" || supportMutation.isPending}
+              >
+                {supportMutation.isPending ? "Iniciando..." : "Iniciar Suporte Assistido"}
+              </Button>
+            </div>
+
+            <div className="space-y-3 border-t pt-4">
+              <div>
                 <p className="font-medium text-sm">Exclusão de Usuário</p>
                 <p className="text-muted-foreground text-sm">
                   Escolha entre exclusão definitiva ou exclusão preservando histórico.
@@ -360,6 +402,9 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
             ) : null}
             {deleteMutation.isError ? (
               <p className="text-sm text-red-600">Erro ao excluir usuário.</p>
+            ) : null}
+            {supportMutation.isError ? (
+              <p className="text-sm text-red-600">Erro ao iniciar Suporte Assistido.</p>
             ) : null}
           </CardContent>
         </Card>

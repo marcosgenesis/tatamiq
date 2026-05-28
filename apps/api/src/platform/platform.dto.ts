@@ -580,3 +580,57 @@ export class AddPlatformAdministratorResultDto {
   @ApiProperty({ type: String, nullable: true })
   firstAccessLink!: string | null;
 }
+
+export class StartPlatformSupportBodyDto {
+  @ApiProperty({ type: String })
+  targetUserId!: string;
+
+  @ApiProperty({ type: String, required: false })
+  academyId?: string;
+
+  @ApiProperty({ type: String, required: false })
+  reason?: string;
+}
+
+export class ActivatePlatformSupportBodyDto {
+  @ApiProperty({ type: String })
+  supportSessionId!: string;
+}
+
+export class PlatformSupportSessionDto {
+  @ApiProperty({ type: String })
+  id!: string;
+
+  @ApiProperty({ type: String })
+  adminUserId!: string;
+
+  @ApiProperty({ type: String })
+  targetUserId!: string;
+
+  @ApiProperty({ type: String, nullable: true })
+  academyId!: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  reason!: string | null;
+
+  @ApiProperty({ type: String })
+  status!: string;
+
+  @ApiProperty({ type: String })
+  startedAt!: string;
+
+  @ApiProperty({ type: String, nullable: true })
+  activatedAt!: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  endedAt!: string | null;
+
+  @ApiProperty({ type: String })
+  expiresAt!: string;
+
+  @ApiProperty({ type: String, nullable: true, required: false })
+  adminName?: string | null;
+
+  @ApiProperty({ type: String, nullable: true, required: false })
+  adminEmail?: string | null;
+}

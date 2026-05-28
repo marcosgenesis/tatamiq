@@ -11,7 +11,9 @@ export type PlatformSession = UserSession<typeof auth> & {
     role?: string | null;
   };
   session: {
+    id: string;
     activeOrganizationId?: string | null;
+    impersonatedBy?: string | null;
   };
 };
 

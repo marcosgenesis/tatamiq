@@ -8,12 +8,17 @@ import {
   Param,
   Post,
   Query,
+  Req,
 } from "@nestjs/common";
 import { ApiOkResponse, ApiTags } from "@nestjs/swagger";
 import { Session } from "@thallesp/nestjs-better-auth";
+
+type PlatformRequest = { ip?: string; headers: Record<string, string | string[] | undefined> };
+
 import { R2StorageService } from "../monthly-fees/r2-storage.service";
 import { AuditService } from "./audit.service";
 import {
+  type ActivatePlatformSupportBodyDto,
   type AddPlatformAdministratorBodyDto,
   AddPlatformAdministratorResultDto,
   PlatformAcademiesResponseDto,
@@ -27,11 +32,13 @@ import {
   type PlatformDeleteUserBodyDto,
   PlatformMeDto,
   PlatformSensitiveFileUrlDto,
+  PlatformSupportSessionDto,
   PlatformUserDeletionImpactDto,
   PlatformUserDetailDto,
   PlatformUsersResponseDto,
   type ProvisionAcademyBodyDto,
   ProvisionAcademyResultDto,
+  type StartPlatformSupportBodyDto,
   type TransferAcademyBodyDto,
   TransferAcademyResultDto,
 } from "./platform.dto";
@@ -210,6 +217,89 @@ export class PlatformController {
       action: "platform.admin.removed",
       targetType: "user",
       targetId: id,
+    });
+    return result;
+  }
+
+  @Post("support/start")
+  @ApiOkResponse({ type: PlatformSupportSessionDto })
+  async startSupport(
+    @Session() session: PlatformSession,
+    @Body() body: StartPlatformSupportBodyDto,
+    @Req() request: PlatformRequest,
+  ) {
+    const admin = this.platformAdminService.assertPlatformAdmin(session);
+    const userAgentHeader = request.headers["user-agent"];
+    const userAgent = Array.isArray(userAgentHeader) ? userAgentHeader.join(", ") : userAgentHeader;
+    const input = {
+      adminUserId: admin.user.id,
+      targetUserId: body.targetUserId,
+      ...(body.academyId ? { academyId: body.academyId } : {}),
+      ...(body.reason ? { reason: body.reason } : {}),
+      ipAddress: request.ip ?? null,
+      userAgent: userAgent ?? null,
+    };
+    const result = await this.platformService.prepareSupport(input);
+    await this.auditService.write({
+      adminUserId: admin.user.id,
+      action: "platform.support.started",
+      targetType: "user",
+      targetId: body.targetUserId,
+      academyId: body.academyId,
+      reason: body.reason,
+      metadata: {
+        supportSessionId: result.id,
+        ipAddress: request.ip ?? null,
+        userAgent: userAgent ?? null,
+      },
+    });
+    return result;
+  }
+
+  @Post("support/activate")
+  @ApiOkResponse({ type: PlatformSupportSessionDto })
+  async activateSupport(
+    @Session() session: PlatformSession,
+    @Body() body: ActivatePlatformSupportBodyDto,
+  ) {
+    if (!session.session.impersonatedBy) throw new BadRequestException("Não há suporte ativo.");
+    const result = await this.platformService.activateSupport({
+      supportSessionId: body.supportSessionId,
+      adminUserId: session.session.impersonatedBy,
+      targetUserId: session.user.id,
+      impersonationSessionId: session.session.id,
+    });
+    await this.auditService.write({
+      adminUserId: session.session.impersonatedBy,
+      action: "platform.support.activated",
+      targetType: "user",
+      targetId: session.user.id,
+      academyId: result.academyId ?? undefined,
+      reason: result.reason ?? undefined,
+      metadata: { supportSessionId: result.id, impersonationSessionId: session.session.id },
+    });
+    return result;
+  }
+
+  @Get("support/current")
+  @ApiOkResponse({ type: PlatformSupportSessionDto })
+  currentSupport(@Session() session: PlatformSession) {
+    return this.platformService.currentSupport(session.session.id);
+  }
+
+  @Post("support/end")
+  @ApiOkResponse({ type: PlatformSupportSessionDto })
+  async endSupport(@Session() session: PlatformSession) {
+    if (!session.session.impersonatedBy) throw new BadRequestException("Não há suporte ativo.");
+    const result = await this.platformService.endSupport(session.session.id);
+    await this.auditService.write({
+      adminUserId: session.session.impersonatedBy,
+      action: "platform.support.ended",
+      targetType: "user",
+      targetId: session.user.id,
+      academyId: result.academyId ?? undefined,
+      reason: result.reason ?? undefined,
+      metadata: { supportSessionId: result.id, impersonationSessionId: session.session.id },
     });
     return result;
   }
