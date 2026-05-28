@@ -1572,6 +1572,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/platform/users/{id}/deletion-impact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PlatformController_userDeletionImpact"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/platform/users/{id}/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PlatformController_deleteUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/platform/users/{id}/ban": {
         parameters: {
             query?: never;
@@ -2843,6 +2875,20 @@ export interface components {
             memberships: components["schemas"]["PlatformUserMembershipDto"][];
             studentAccessLinks: components["schemas"]["PlatformUserStudentAccessDto"][];
             activeSessions: number;
+        };
+        PlatformOwnedAcademyImpactDto: {
+            id: string;
+            name: string;
+            slug: string;
+            isOnlyOwner: boolean;
+        };
+        PlatformUserDeletionImpactDto: {
+            userId: string;
+            memberships: number;
+            ownedAcademies: components["schemas"]["PlatformOwnedAcademyImpactDto"][];
+            studentAccessLinks: number;
+            activeSessions: number;
+            isPlatformAdmin: boolean;
         };
     };
     responses: never;
@@ -5125,6 +5171,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PlatformUserDetailDto"];
+                };
+            };
+        };
+    };
+    PlatformController_userDeletionImpact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformUserDeletionImpactDto"];
+                };
+            };
+        };
+    };
+    PlatformController_deleteUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformActionResultDto"];
                 };
             };
         };

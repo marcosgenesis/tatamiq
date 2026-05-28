@@ -486,6 +486,54 @@ export class PlatformActionResultDto {
   success!: boolean;
 }
 
+export class PlatformOwnedAcademyImpactDto {
+  @ApiProperty({ type: String })
+  id!: string;
+
+  @ApiProperty({ type: String })
+  name!: string;
+
+  @ApiProperty({ type: String })
+  slug!: string;
+
+  @ApiProperty({ type: Boolean })
+  isOnlyOwner!: boolean;
+}
+
+export class PlatformUserDeletionImpactDto {
+  @ApiProperty({ type: String })
+  userId!: string;
+
+  @ApiProperty({ type: Number })
+  memberships!: number;
+
+  @ApiProperty({ type: () => [PlatformOwnedAcademyImpactDto] })
+  ownedAcademies!: PlatformOwnedAcademyImpactDto[];
+
+  @ApiProperty({ type: Number })
+  studentAccessLinks!: number;
+
+  @ApiProperty({ type: Number })
+  activeSessions!: number;
+
+  @ApiProperty({ type: Boolean })
+  isPlatformAdmin!: boolean;
+}
+
+export class PlatformDeleteUserBodyDto {
+  @ApiProperty({ type: String, enum: ["definitive", "preserve_history"] })
+  mode!: "definitive" | "preserve_history";
+
+  @ApiProperty({ type: String, enum: ["keep_ownerless", "transfer"], required: false })
+  ownerResolution?: "keep_ownerless" | "transfer";
+
+  @ApiProperty({ type: String, required: false })
+  transferOwnerEmail?: string;
+
+  @ApiProperty({ type: String, required: false })
+  transferOwnerName?: string;
+}
+
 export class PlatformAdministratorDto {
   @ApiProperty({ type: String })
   id!: string;

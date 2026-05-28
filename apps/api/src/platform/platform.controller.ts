@@ -24,8 +24,10 @@ import {
   PlatformAuditListResponseDto,
   type PlatformBanUserBodyDto,
   PlatformDashboardDto,
+  type PlatformDeleteUserBodyDto,
   PlatformMeDto,
   PlatformSensitiveFileUrlDto,
+  PlatformUserDeletionImpactDto,
   PlatformUserDetailDto,
   PlatformUsersResponseDto,
   type ProvisionAcademyBodyDto,
@@ -259,6 +261,38 @@ export class PlatformController {
   user(@Session() session: PlatformSession, @Param("id") id: string) {
     this.platformAdminService.assertPlatformAdmin(session);
     return this.platformService.getUser(id);
+  }
+
+  @Get("users/:id/deletion-impact")
+  @ApiOkResponse({ type: PlatformUserDeletionImpactDto })
+  userDeletionImpact(@Session() session: PlatformSession, @Param("id") id: string) {
+    this.platformAdminService.assertPlatformAdmin(session);
+    return this.platformService.userDeletionImpact(id);
+  }
+
+  @Post("users/:id/delete")
+  @ApiOkResponse({ type: PlatformActionResultDto })
+  async deleteUser(
+    @Session() session: PlatformSession,
+    @Param("id") id: string,
+    @Body() body: PlatformDeleteUserBodyDto,
+  ) {
+    const admin = this.platformAdminService.assertPlatformAdmin(session);
+    const result = await this.platformService.deleteUser(id, body);
+    await this.auditService.write({
+      adminUserId: admin.user.id,
+      action:
+        body.mode === "preserve_history"
+          ? "platform.user.deleted_preserving_history"
+          : "platform.user.deleted",
+      targetType: "user",
+      targetId: id,
+      metadata: {
+        mode: body.mode,
+        ownerResolution: body.ownerResolution ?? null,
+      },
+    });
+    return result;
   }
 
   @Post("users/:id/ban")

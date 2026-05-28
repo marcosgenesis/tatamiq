@@ -259,8 +259,37 @@ export async function unbanPlatformUser(id: string): Promise<{ success: boolean 
   return platformPost(`/platform/users/${id}/unban`, {});
 }
 
+export type PlatformUserDeletionImpact = {
+  userId: string;
+  memberships: number;
+  ownedAcademies: Array<{ id: string; name: string; slug: string; isOnlyOwner: boolean }>;
+  studentAccessLinks: number;
+  activeSessions: number;
+  isPlatformAdmin: boolean;
+};
+
+export type DeletePlatformUserInput = {
+  mode: "definitive" | "preserve_history";
+  ownerResolution?: "keep_ownerless" | "transfer";
+  transferOwnerEmail?: string;
+  transferOwnerName?: string;
+};
+
 export async function revokePlatformUserSessions(id: string): Promise<{ success: boolean }> {
   return platformPost(`/platform/users/${id}/revoke-sessions`, {});
+}
+
+export async function getPlatformUserDeletionImpact(
+  id: string,
+): Promise<PlatformUserDeletionImpact> {
+  return platformFetch(`/platform/users/${id}/deletion-impact`);
+}
+
+export async function deletePlatformUser(
+  id: string,
+  input: DeletePlatformUserInput,
+): Promise<{ success: boolean }> {
+  return platformPost(`/platform/users/${id}/delete`, input);
 }
 
 export type PlatformAdministrator = {

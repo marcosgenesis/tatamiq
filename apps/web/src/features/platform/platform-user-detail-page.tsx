@@ -16,8 +16,11 @@ import {
 import { authClient } from "../../lib/auth-client";
 import {
   banPlatformUser,
+  type DeletePlatformUserInput,
+  deletePlatformUser,
   getPlatformMe,
   getPlatformUser,
+  getPlatformUserDeletionImpact,
   revokePlatformUserSessions,
   unbanPlatformUser,
 } from "./platform-api";
@@ -28,6 +31,10 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
   const queryClient = useQueryClient();
   const [banReason, setBanReason] = useState("");
   const [showBanForm, setShowBanForm] = useState(false);
+  const [showDeleteForm, setShowDeleteForm] = useState(false);
+  const [deleteForm, setDeleteForm] = useState<DeletePlatformUserInput>({
+    mode: "preserve_history",
+  });
 
   const platform = useQuery({
     queryKey: ["platform", "me"],
@@ -39,6 +46,13 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
     queryKey: ["platform", "users", userId],
     queryFn: () => getPlatformUser(userId),
     retry: false,
+  });
+
+  const deletionImpact = useQuery({
+    queryKey: ["platform", "users", userId, "deletion-impact"],
+    queryFn: () => getPlatformUserDeletionImpact(userId),
+    retry: false,
+    enabled: showDeleteForm,
   });
 
   const banMutation = useMutation({
@@ -61,6 +75,14 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
     mutationFn: () => revokePlatformUserSessions(userId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["platform", "users"] });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => deletePlatformUser(userId, deleteForm),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["platform", "users"] });
+      await navigate({ to: "/platform/users" });
     },
   });
 
@@ -206,7 +228,7 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
               </div>
             )}
 
-            <div className="border-t pt-4 space-y-2">
+            <div className="space-y-2 border-t pt-4">
               <p className="text-sm text-muted-foreground">
                 Revogar sessões desconecta o usuário de todos os dispositivos.
               </p>
@@ -221,6 +243,112 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
               </Button>
             </div>
 
+            <div className="space-y-3 border-t pt-4">
+              <div>
+                <p className="font-medium text-sm">Exclusão de Usuário</p>
+                <p className="text-muted-foreground text-sm">
+                  Escolha entre exclusão definitiva ou exclusão preservando histórico.
+                </p>
+              </div>
+              {showDeleteForm ? (
+                <div className="space-y-3 rounded-lg border p-3">
+                  {deletionImpact.data ? (
+                    <div className="space-y-1 text-sm">
+                      <p>Vínculos de academia: {deletionImpact.data.memberships}</p>
+                      <p>Acessos de aluno: {deletionImpact.data.studentAccessLinks}</p>
+                      <p>Sessões ativas: {deletionImpact.data.activeSessions}</p>
+                      {deletionImpact.data.ownedAcademies.length > 0 ? (
+                        <p className="text-primary">
+                          Dono de {deletionImpact.data.ownedAcademies.length} academia(s).
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : null}
+
+                  <select
+                    className="h-9 w-full rounded-lg border bg-background px-3 text-sm"
+                    value={deleteForm.mode}
+                    onChange={(event) =>
+                      setDeleteForm((current) => ({
+                        ...current,
+                        mode: event.target.value as DeletePlatformUserInput["mode"],
+                      }))
+                    }
+                  >
+                    <option value="preserve_history">Excluir preservando histórico</option>
+                    <option value="definitive">Excluir definitivamente</option>
+                  </select>
+
+                  {deletionImpact.data?.ownedAcademies.some((academy) => academy.isOnlyOwner) ? (
+                    <div className="space-y-2">
+                      <select
+                        className="h-9 w-full rounded-lg border bg-background px-3 text-sm"
+                        value={deleteForm.ownerResolution ?? ""}
+                        onChange={(event) => {
+                          const value = event.target.value as
+                            | DeletePlatformUserInput["ownerResolution"]
+                            | "";
+                          setDeleteForm((current) => {
+                            if (!value) {
+                              const { ownerResolution: _ownerResolution, ...rest } = current;
+                              return rest;
+                            }
+                            return { ...current, ownerResolution: value };
+                          });
+                        }}
+                      >
+                        <option value="">Escolha o que fazer com a academia</option>
+                        <option value="keep_ownerless">Manter academia sem dono</option>
+                        <option value="transfer">Transferir antes de excluir</option>
+                      </select>
+                      {deleteForm.ownerResolution === "transfer" ? (
+                        <>
+                          <Input
+                            type="email"
+                            placeholder="Email do novo dono"
+                            value={deleteForm.transferOwnerEmail ?? ""}
+                            onChange={(event) =>
+                              setDeleteForm((current) => ({
+                                ...current,
+                                transferOwnerEmail: event.target.value,
+                              }))
+                            }
+                          />
+                          <Input
+                            placeholder="Nome do novo dono"
+                            value={deleteForm.transferOwnerName ?? ""}
+                            onChange={(event) =>
+                              setDeleteForm((current) => ({
+                                ...current,
+                                transferOwnerName: event.target.value,
+                              }))
+                            }
+                          />
+                        </>
+                      ) : null}
+                    </div>
+                  ) : null}
+
+                  <div className="flex gap-2">
+                    <Button
+                      variant="destructive"
+                      onClick={() => deleteMutation.mutate()}
+                      disabled={deleteMutation.isPending}
+                    >
+                      {deleteMutation.isPending ? "Excluindo..." : "Confirmar exclusão"}
+                    </Button>
+                    <Button variant="outline" onClick={() => setShowDeleteForm(false)}>
+                      Cancelar
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Button variant="destructive" onClick={() => setShowDeleteForm(true)}>
+                  Excluir usuário
+                </Button>
+              )}
+            </div>
+
             {banMutation.isError ? (
               <p className="text-sm text-red-600">Erro ao bloquear usuário.</p>
             ) : null}
@@ -229,6 +357,9 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
             ) : null}
             {revokeMutation.isError ? (
               <p className="text-sm text-red-600">Erro ao revogar sessões.</p>
+            ) : null}
+            {deleteMutation.isError ? (
+              <p className="text-sm text-red-600">Erro ao excluir usuário.</p>
             ) : null}
           </CardContent>
         </Card>

@@ -2974,6 +2974,48 @@
         ]
       }
     },
+    "/platform/users/{id}/deletion-impact": {
+      "get": {
+        "operationId": "PlatformController_userDeletionImpact",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformUserDeletionImpactDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/platform/users/{id}/delete": {
+      "post": {
+        "operationId": "PlatformController_deleteUser",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformActionResultDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "platform"
+        ]
+      }
+    },
     "/platform/users/{id}/ban": {
       "post": {
         "operationId": "PlatformController_banUser",
@@ -8427,6 +8469,63 @@
           "memberships",
           "studentAccessLinks",
           "activeSessions"
+        ]
+      },
+      "PlatformOwnedAcademyImpactDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "isOnlyOwner": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "isOnlyOwner"
+        ]
+      },
+      "PlatformUserDeletionImpactDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "memberships": {
+            "type": "number"
+          },
+          "ownedAcademies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlatformOwnedAcademyImpactDto"
+            }
+          },
+          "studentAccessLinks": {
+            "type": "number"
+          },
+          "activeSessions": {
+            "type": "number"
+          },
+          "isPlatformAdmin": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "userId",
+          "memberships",
+          "ownedAcademies",
+          "studentAccessLinks",
+          "activeSessions",
+          "isPlatformAdmin"
         ]
       }
     }
