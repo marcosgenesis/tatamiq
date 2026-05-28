@@ -1364,6 +1364,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/platform/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PlatformController_me"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/platform/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PlatformController_dashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/platform/academies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PlatformController_academies"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/platform/academies/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PlatformController_academy"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/platform/academies/{id}/operational-overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PlatformController_academyOperationalOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2354,6 +2434,140 @@ export interface components {
         };
         InvalidateAttendanceDto: {
             reason: string;
+        };
+        PlatformMeUserDto: {
+            id: string;
+            name: string | null;
+            email: string | null;
+            image: string | null;
+            role: string | null;
+        };
+        PlatformMeDto: {
+            /** @example true */
+            isAdmin: boolean;
+            user: components["schemas"]["PlatformMeUserDto"];
+        };
+        PlatformDashboardTotalsDto: {
+            academies: number;
+            users: number;
+            admins: number;
+            bannedUsers: number;
+        };
+        PlatformAcademyOwnerDto: {
+            id: string;
+            name: string;
+            email: string;
+        };
+        PlatformAcademySummaryDto: {
+            id: string;
+            name: string;
+            slug: string;
+            logo: string | null;
+            createdAt: string;
+            owner: components["schemas"]["PlatformAcademyOwnerDto"] | null;
+        };
+        PlatformDashboardDto: {
+            totals: components["schemas"]["PlatformDashboardTotalsDto"];
+            recentAcademies: components["schemas"]["PlatformAcademySummaryDto"][];
+        };
+        PlatformPaginationDto: {
+            page: number;
+            pageSize: number;
+            total: number;
+            totalPages: number;
+        };
+        PlatformAcademiesResponseDto: {
+            items: components["schemas"]["PlatformAcademySummaryDto"][];
+            pagination: components["schemas"]["PlatformPaginationDto"];
+        };
+        PlatformAcademyDetailDto: {
+            id: string;
+            name: string;
+            slug: string;
+            logo: string | null;
+            createdAt: string;
+            owner: components["schemas"]["PlatformAcademyOwnerDto"] | null;
+            address: string | null;
+            phone: string | null;
+            instagram: string | null;
+        };
+        PlatformStudentsOperationalSummaryDto: {
+            total: number;
+            active: number;
+            inactive: number;
+        };
+        PlatformClassGroupsOperationalSummaryDto: {
+            total: number;
+            active: number;
+            archived: number;
+        };
+        PlatformMonthlyFeesOperationalSummaryDto: {
+            total: number;
+            open: number;
+            paid: number;
+            underReview: number;
+            waived: number;
+        };
+        PlatformAttendancesOperationalSummaryDto: {
+            total: number;
+            valid: number;
+            invalidated: number;
+        };
+        PlatformPromotionsOperationalSummaryDto: {
+            total: number;
+        };
+        PlatformAcademyOperationalSummaryDto: {
+            students: components["schemas"]["PlatformStudentsOperationalSummaryDto"];
+            classGroups: components["schemas"]["PlatformClassGroupsOperationalSummaryDto"];
+            monthlyFees: components["schemas"]["PlatformMonthlyFeesOperationalSummaryDto"];
+            attendances: components["schemas"]["PlatformAttendancesOperationalSummaryDto"];
+            promotions: components["schemas"]["PlatformPromotionsOperationalSummaryDto"];
+        };
+        PlatformStudentOperationalDto: {
+            id: string;
+            name: string;
+            status: string;
+            email: string | null;
+            belt: string | null;
+            degree: number;
+        };
+        PlatformClassGroupOperationalDto: {
+            id: string;
+            name: string;
+            status: string;
+            defaultDurationMinutes: number;
+        };
+        PlatformMonthlyFeeOperationalDto: {
+            id: string;
+            studentName: string;
+            reference: string;
+            amountInCents: number;
+            dueDate: string;
+            status: string;
+        };
+        PlatformAttendanceOperationalDto: {
+            id: string;
+            studentName: string;
+            classGroupName: string;
+            source: string;
+            /** @enum {string} */
+            status: "valid" | "invalidated";
+            createdAt: string;
+        };
+        PlatformPromotionOperationalDto: {
+            id: string;
+            studentName: string;
+            beltName: string;
+            degree: number;
+            promotedAt: string;
+        };
+        PlatformAcademyOperationalOverviewDto: {
+            summary: components["schemas"]["PlatformAcademyOperationalSummaryDto"];
+            students: components["schemas"]["PlatformStudentOperationalDto"][];
+            classGroups: components["schemas"]["PlatformClassGroupOperationalDto"][];
+            monthlyFees: components["schemas"]["PlatformMonthlyFeeOperationalDto"][];
+            attendances: components["schemas"]["PlatformAttendanceOperationalDto"][];
+            promotions: components["schemas"]["PlatformPromotionOperationalDto"][];
         };
     };
     responses: never;
@@ -4371,6 +4585,101 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    PlatformController_me: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformMeDto"];
+                };
+            };
+        };
+    };
+    PlatformController_dashboard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformDashboardDto"];
+                };
+            };
+        };
+    };
+    PlatformController_academies: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformAcademiesResponseDto"];
+                };
+            };
+        };
+    };
+    PlatformController_academy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformAcademyDetailDto"];
+                };
+            };
+        };
+    };
+    PlatformController_academyOperationalOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformAcademyOperationalOverviewDto"];
+                };
             };
         };
     };

@@ -5,6 +5,7 @@ import { api } from "../../api";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { authClient } from "../../lib/auth-client";
+import { getPlatformMe } from "../platform/platform-api";
 
 export function ChooseAreaPage() {
   const navigate = useNavigate();
@@ -18,15 +19,30 @@ export function ChooseAreaPage() {
     },
     retry: false,
   });
+  const platformQuery = useQuery({
+    queryKey: ["platform", "me"],
+    queryFn: getPlatformMe,
+    retry: false,
+  });
 
   const hasInstructor = (organizations.data?.length ?? 0) > 0;
   const hasStudent = !!studentQuery.data;
+  const hasPlatform = !!platformQuery.data;
 
   useEffect(() => {
-    if (organizations.isPending || studentQuery.isLoading) return;
-    if (hasInstructor && !hasStudent) void navigate({ to: "/" });
-    if (!hasInstructor && hasStudent) void navigate({ to: "/student" });
-  }, [hasInstructor, hasStudent, organizations.isPending, studentQuery.isLoading, navigate]);
+    if (organizations.isPending || studentQuery.isLoading || platformQuery.isLoading) return;
+    if (hasPlatform) void navigate({ to: "/platform" });
+    if (!hasPlatform && hasInstructor && !hasStudent) void navigate({ to: "/" });
+    if (!hasPlatform && !hasInstructor && hasStudent) void navigate({ to: "/student" });
+  }, [
+    hasPlatform,
+    hasInstructor,
+    hasStudent,
+    organizations.isPending,
+    studentQuery.isLoading,
+    platformQuery.isLoading,
+    navigate,
+  ]);
 
   return (
     <main className="grid min-h-screen place-items-center bg-background p-6 text-foreground">
@@ -38,8 +54,17 @@ export function ChooseAreaPage() {
           <p className="text-sm text-muted-foreground">
             Selecione como você quer acessar o Tatamiq agora.
           </p>
+          {hasPlatform ? (
+            <Button className="w-full" onClick={() => (window.location.href = "/platform")}>
+              Administração da Plataforma
+            </Button>
+          ) : null}
           {hasInstructor ? (
-            <Button className="w-full" onClick={() => (window.location.href = "/")}>
+            <Button
+              className="w-full"
+              variant={hasPlatform ? "secondary" : "default"}
+              onClick={() => (window.location.href = "/")}
+            >
               Área do instrutor
             </Button>
           ) : null}
@@ -52,7 +77,12 @@ export function ChooseAreaPage() {
               Área do aluno
             </Button>
           ) : null}
-          {!organizations.isPending && !studentQuery.isLoading && !hasInstructor && !hasStudent ? (
+          {!organizations.isPending &&
+          !studentQuery.isLoading &&
+          !platformQuery.isLoading &&
+          !hasPlatform &&
+          !hasInstructor &&
+          !hasStudent ? (
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">
                 Esta conta ainda não tem academia nem acesso de aluno.

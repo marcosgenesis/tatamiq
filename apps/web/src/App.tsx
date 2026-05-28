@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import {
   createRootRoute,
   createRoute,
@@ -26,6 +26,8 @@ import { DashboardPage } from "./features/dashboard/dashboard-page";
 import { GraduationPage } from "./features/graduation/graduation-page";
 import { MonthlyFeesPage } from "./features/monthly-fees/monthly-fees-page";
 import { PlaceholderPage } from "./features/placeholder/placeholder-page";
+import { getPlatformMe } from "./features/platform/platform-api";
+import { PlatformAcademyPage, PlatformPage } from "./features/platform/platform-page";
 import { SchedulePage } from "./features/schedule/schedule-page";
 import { SettingsPage } from "./features/settings/settings-page";
 import { AcceptStudentInvitePage } from "./features/student-access/accept-student-invite-page";
@@ -176,6 +178,21 @@ const onboardingRoute = createRoute({
   component: AcademyOnboardingPage,
 });
 
+const platformRoute = createRoute({
+  getParentRoute: () => authBareLayout,
+  path: "/platform",
+  component: PlatformPage,
+});
+
+const platformAcademyRoute = createRoute({
+  getParentRoute: () => authBareLayout,
+  path: "/platform/academies/$academyId",
+  component: function PlatformAcademyRoute() {
+    const { academyId } = platformAcademyRoute.useParams();
+    return <PlatformAcademyPage academyId={academyId} />;
+  },
+});
+
 // --- Instructor routes (require auth + org, AppShell) ---
 
 const indexRoute = createRoute({
@@ -257,6 +274,8 @@ const routeTree = rootRoute.addChildren([
     studentAttendanceRoute,
     studentGraduationRoute,
     onboardingRoute,
+    platformRoute,
+    platformAcademyRoute,
   ]),
   instructorLayout.addChildren([
     indexRoute,
@@ -289,8 +308,16 @@ function RootLayout() {
 
 function PublicLayout() {
   const session = authClient.useSession();
-  if (session.data) return <Navigate to="/choose-area" />;
+  if (session.data) return <AuthenticatedRedirect />;
   return <Outlet />;
+}
+
+function AuthenticatedRedirect() {
+  const platform = usePlatformAccess();
+
+  if (platform === "loading") return <LoadingScreen />;
+  if (platform === "allowed") return <Navigate to="/platform" />;
+  return <Navigate to="/choose-area" />;
 }
 
 function AuthBareLayout() {
@@ -369,6 +396,18 @@ function InstructorLayout() {
       <Outlet />
     </AppShell>
   );
+}
+
+function usePlatformAccess(): "loading" | "allowed" | "denied" {
+  const platform = useQuery({
+    queryKey: ["platform", "me"],
+    queryFn: getPlatformMe,
+    retry: false,
+  });
+
+  if (platform.isLoading) return "loading";
+  if (platform.isSuccess) return "allowed";
+  return "denied";
 }
 
 function LoadingScreen() {

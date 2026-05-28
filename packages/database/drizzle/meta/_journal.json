@@ -134,6 +134,13 @@
       "when": 1780504000000,
       "tag": "0018_pre_registration_first_access",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1780590400000,
+      "tag": "0019_platform_admin",
+      "breakpoints": true
     }
   ]
 }

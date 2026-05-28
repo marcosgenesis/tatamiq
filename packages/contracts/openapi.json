@@ -2681,6 +2681,111 @@
           "csv"
         ]
       }
+    },
+    "/platform/me": {
+      "get": {
+        "operationId": "PlatformController_me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformMeDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/platform/dashboard": {
+      "get": {
+        "operationId": "PlatformController_dashboard",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformDashboardDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/platform/academies": {
+      "get": {
+        "operationId": "PlatformController_academies",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformAcademiesResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/platform/academies/{id}": {
+      "get": {
+        "operationId": "PlatformController_academy",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformAcademyDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/platform/academies/{id}/operational-overview": {
+      "get": {
+        "operationId": "PlatformController_academyOperationalOverview",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformAcademyOperationalOverviewDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "platform"
+        ]
+      }
     }
   },
   "info": {
@@ -7103,6 +7208,562 @@
         },
         "required": [
           "reason"
+        ]
+      },
+      "PlatformMeUserDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "image": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "image",
+          "role"
+        ]
+      },
+      "PlatformMeDto": {
+        "type": "object",
+        "properties": {
+          "isAdmin": {
+            "type": "boolean",
+            "example": true
+          },
+          "user": {
+            "$ref": "#/components/schemas/PlatformMeUserDto"
+          }
+        },
+        "required": [
+          "isAdmin",
+          "user"
+        ]
+      },
+      "PlatformDashboardTotalsDto": {
+        "type": "object",
+        "properties": {
+          "academies": {
+            "type": "number"
+          },
+          "users": {
+            "type": "number"
+          },
+          "admins": {
+            "type": "number"
+          },
+          "bannedUsers": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "academies",
+          "users",
+          "admins",
+          "bannedUsers"
+        ]
+      },
+      "PlatformAcademyOwnerDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email"
+        ]
+      },
+      "PlatformAcademySummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "logo": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "owner": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlatformAcademyOwnerDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "logo",
+          "createdAt",
+          "owner"
+        ]
+      },
+      "PlatformDashboardDto": {
+        "type": "object",
+        "properties": {
+          "totals": {
+            "$ref": "#/components/schemas/PlatformDashboardTotalsDto"
+          },
+          "recentAcademies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlatformAcademySummaryDto"
+            }
+          }
+        },
+        "required": [
+          "totals",
+          "recentAcademies"
+        ]
+      },
+      "PlatformPaginationDto": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "number"
+          },
+          "pageSize": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          },
+          "totalPages": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "page",
+          "pageSize",
+          "total",
+          "totalPages"
+        ]
+      },
+      "PlatformAcademiesResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlatformAcademySummaryDto"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PlatformPaginationDto"
+          }
+        },
+        "required": [
+          "items",
+          "pagination"
+        ]
+      },
+      "PlatformAcademyDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "logo": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "owner": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlatformAcademyOwnerDto"
+              }
+            ]
+          },
+          "address": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true
+          },
+          "instagram": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "logo",
+          "createdAt",
+          "owner",
+          "address",
+          "phone",
+          "instagram"
+        ]
+      },
+      "PlatformStudentsOperationalSummaryDto": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number"
+          },
+          "active": {
+            "type": "number"
+          },
+          "inactive": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "total",
+          "active",
+          "inactive"
+        ]
+      },
+      "PlatformClassGroupsOperationalSummaryDto": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number"
+          },
+          "active": {
+            "type": "number"
+          },
+          "archived": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "total",
+          "active",
+          "archived"
+        ]
+      },
+      "PlatformMonthlyFeesOperationalSummaryDto": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number"
+          },
+          "open": {
+            "type": "number"
+          },
+          "paid": {
+            "type": "number"
+          },
+          "underReview": {
+            "type": "number"
+          },
+          "waived": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "total",
+          "open",
+          "paid",
+          "underReview",
+          "waived"
+        ]
+      },
+      "PlatformAttendancesOperationalSummaryDto": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number"
+          },
+          "valid": {
+            "type": "number"
+          },
+          "invalidated": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "total",
+          "valid",
+          "invalidated"
+        ]
+      },
+      "PlatformPromotionsOperationalSummaryDto": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "total"
+        ]
+      },
+      "PlatformAcademyOperationalSummaryDto": {
+        "type": "object",
+        "properties": {
+          "students": {
+            "$ref": "#/components/schemas/PlatformStudentsOperationalSummaryDto"
+          },
+          "classGroups": {
+            "$ref": "#/components/schemas/PlatformClassGroupsOperationalSummaryDto"
+          },
+          "monthlyFees": {
+            "$ref": "#/components/schemas/PlatformMonthlyFeesOperationalSummaryDto"
+          },
+          "attendances": {
+            "$ref": "#/components/schemas/PlatformAttendancesOperationalSummaryDto"
+          },
+          "promotions": {
+            "$ref": "#/components/schemas/PlatformPromotionsOperationalSummaryDto"
+          }
+        },
+        "required": [
+          "students",
+          "classGroups",
+          "monthlyFees",
+          "attendances",
+          "promotions"
+        ]
+      },
+      "PlatformStudentOperationalDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "belt": {
+            "type": "string",
+            "nullable": true
+          },
+          "degree": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "status",
+          "email",
+          "belt",
+          "degree"
+        ]
+      },
+      "PlatformClassGroupOperationalDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "defaultDurationMinutes": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "status",
+          "defaultDurationMinutes"
+        ]
+      },
+      "PlatformMonthlyFeeOperationalDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "studentName": {
+            "type": "string"
+          },
+          "reference": {
+            "type": "string"
+          },
+          "amountInCents": {
+            "type": "number"
+          },
+          "dueDate": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "studentName",
+          "reference",
+          "amountInCents",
+          "dueDate",
+          "status"
+        ]
+      },
+      "PlatformAttendanceOperationalDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "studentName": {
+            "type": "string"
+          },
+          "classGroupName": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "valid",
+              "invalidated"
+            ]
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "studentName",
+          "classGroupName",
+          "source",
+          "status",
+          "createdAt"
+        ]
+      },
+      "PlatformPromotionOperationalDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "studentName": {
+            "type": "string"
+          },
+          "beltName": {
+            "type": "string"
+          },
+          "degree": {
+            "type": "number"
+          },
+          "promotedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "studentName",
+          "beltName",
+          "degree",
+          "promotedAt"
+        ]
+      },
+      "PlatformAcademyOperationalOverviewDto": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "$ref": "#/components/schemas/PlatformAcademyOperationalSummaryDto"
+          },
+          "students": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlatformStudentOperationalDto"
+            }
+          },
+          "classGroups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlatformClassGroupOperationalDto"
+            }
+          },
+          "monthlyFees": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlatformMonthlyFeeOperationalDto"
+            }
+          },
+          "attendances": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlatformAttendanceOperationalDto"
+            }
+          },
+          "promotions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlatformPromotionOperationalDto"
+            }
+          }
+        },
+        "required": [
+          "summary",
+          "students",
+          "classGroups",
+          "monthlyFees",
+          "attendances",
+          "promotions"
         ]
       }
     }
