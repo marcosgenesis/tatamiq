@@ -453,6 +453,7 @@ function SupportBanner() {
   async function endSupport() {
     await endPlatformSupport();
     await authClient.admin.stopImpersonating();
+    queryClient.clear();
     await support.refetch();
     await navigate({ to: "/platform" });
   }

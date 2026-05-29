@@ -100,8 +100,9 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
         throw new Error(impersonation.error.message ?? "Erro ao iniciar suporte.");
       await activatePlatformSupport(prepared.id);
     },
-    onSuccess: async () => {
-      await navigate({ to: "/choose-area" });
+    onSuccess: () => {
+      queryClient.clear();
+      window.location.href = "/choose-area";
     },
   });
 
