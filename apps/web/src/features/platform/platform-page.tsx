@@ -251,7 +251,12 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
       });
       if (impersonation.error)
         throw new Error(impersonation.error.message ?? "Erro ao iniciar suporte.");
-      await activatePlatformSupport(prepared.id);
+      try {
+        await activatePlatformSupport(prepared.id);
+      } catch {
+        await authClient.admin.stopImpersonating();
+        throw new Error("Erro ao ativar suporte.");
+      }
     },
     onSuccess: () => {
       queryClient.clear();

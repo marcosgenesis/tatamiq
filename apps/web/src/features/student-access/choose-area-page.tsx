@@ -34,8 +34,8 @@ export function ChooseAreaPage() {
   useEffect(() => {
     if (organizations.isPending || studentQuery.isLoading || platformQuery.isLoading) return;
     if (hasPlatform) void navigate({ to: "/platform" });
-    if (!hasPlatform && hasInstructor && !hasStudent) void navigate({ to: "/" });
-    if (!hasPlatform && !hasInstructor && hasStudent) void navigate({ to: "/student" });
+    else if (hasInstructor) void navigate({ to: "/" });
+    else if (hasStudent) void navigate({ to: "/student" });
   }, [
     hasPlatform,
     hasInstructor,
