@@ -42,7 +42,13 @@ export function PreRegistrationsTab() {
     queryKey: ["students", "pre-registrations"],
     queryFn: async () => {
       const { data, error } = await api.GET("/students/pre-registrations");
-      if (error) throw new Error("Não foi possível carregar pré-cadastros.");
+      if (error) {
+        const message =
+          typeof error === "object" && error !== null && "message" in error
+            ? String((error as { message: string }).message)
+            : "Não foi possível carregar pré-cadastros.";
+        throw new Error(message);
+      }
       return data;
     },
   });
@@ -208,7 +214,16 @@ export function PreRegistrationsTab() {
         {requestsQuery.isLoading ? (
           <p className="text-sm text-muted-foreground">Carregando solicitações...</p>
         ) : null}
-        {requests.length === 0 && !requestsQuery.isLoading ? (
+        {requestsQuery.isError ? (
+          <Card>
+            <CardContent className="p-6 text-sm text-destructive">
+              {requestsQuery.error instanceof Error
+                ? requestsQuery.error.message
+                : "Não foi possível carregar pré-cadastros."}
+            </CardContent>
+          </Card>
+        ) : null}
+        {!requestsQuery.isError && requests.length === 0 && !requestsQuery.isLoading ? (
           <Card>
             <CardContent className="p-6 text-sm text-muted-foreground">
               Nenhum pré-cadastro recebido.

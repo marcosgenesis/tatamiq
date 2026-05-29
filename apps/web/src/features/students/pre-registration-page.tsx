@@ -52,7 +52,13 @@ export function PreRegistrationPage({ token }: { token: string }) {
         params: { path: { token } },
         body: { ...form, consentAccepted: true },
       });
-      if (error) throw new Error("Não foi possível enviar sua solicitação.");
+      if (error) {
+        const message =
+          typeof error === "object" && error !== null && "message" in error
+            ? String((error as { message: string }).message)
+            : "Não foi possível enviar sua solicitação.";
+        throw new Error(message);
+      }
     },
     onSuccess: () => {
       setSubmitted(true);
