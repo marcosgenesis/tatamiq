@@ -11,7 +11,7 @@ import {
   Req,
 } from "@nestjs/common";
 import { ApiOkResponse, ApiTags } from "@nestjs/swagger";
-import { Session } from "@thallesp/nestjs-better-auth";
+import { AllowAnonymous, Session } from "@thallesp/nestjs-better-auth";
 
 type PlatformRequest = { ip?: string; headers: Record<string, string | string[] | undefined> };
 
@@ -21,6 +21,8 @@ import {
   type ActivatePlatformSupportBodyDto,
   type AddPlatformAdministratorBodyDto,
   AddPlatformAdministratorResultDto,
+  type CompleteReservedFirstAccessBodyDto,
+  CompleteReservedFirstAccessResponseDto,
   PlatformAcademiesResponseDto,
   PlatformAcademyDetailDto,
   PlatformAcademyOperationalOverviewDto,
@@ -38,6 +40,7 @@ import {
   PlatformUsersResponseDto,
   type ProvisionAcademyBodyDto,
   ProvisionAcademyResultDto,
+  ReservedFirstAccessPreviewDto,
   type StartPlatformSupportBodyDto,
   type TransferAcademyBodyDto,
   TransferAcademyResultDto,
@@ -48,6 +51,7 @@ import {
   type PlatformMe,
   type PlatformSession,
 } from "./platform-admin.service";
+import { ReservedAccountService } from "./reserved-account.service";
 
 @ApiTags("platform")
 @Controller("platform")
@@ -57,7 +61,29 @@ export class PlatformController {
     @Inject(PlatformService) private readonly platformService: PlatformService,
     @Inject(AuditService) private readonly auditService: AuditService,
     @Inject(R2StorageService) private readonly r2: R2StorageService,
+    @Inject(ReservedAccountService) private readonly reservedAccounts: ReservedAccountService,
   ) {}
+
+  @Get("first-access/:token")
+  @AllowAnonymous()
+  @ApiOkResponse({ type: ReservedFirstAccessPreviewDto })
+  previewFirstAccess(@Param("token") token: string) {
+    return this.reservedAccounts.previewFirstAccess(token);
+  }
+
+  @Post("first-access/:token/complete")
+  @AllowAnonymous()
+  @ApiOkResponse({ type: CompleteReservedFirstAccessResponseDto })
+  async completeFirstAccess(
+    @Param("token") token: string,
+    @Body() body: CompleteReservedFirstAccessBodyDto,
+  ) {
+    if (!body.password || body.password.length < 8) {
+      throw new BadRequestException("Senha deve ter no mínimo 8 caracteres.");
+    }
+    await this.reservedAccounts.completeFirstAccess(token, body.password);
+    return { success: true };
+  }
 
   @Get("me")
   @ApiOkResponse({ type: PlatformMeDto })

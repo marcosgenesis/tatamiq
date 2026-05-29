@@ -2682,6 +2682,48 @@
         ]
       }
     },
+    "/platform/first-access/{token}": {
+      "get": {
+        "operationId": "PlatformController_previewFirstAccess",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservedFirstAccessPreviewDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/platform/first-access/{token}/complete": {
+      "post": {
+        "operationId": "PlatformController_completeFirstAccess",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompleteReservedFirstAccessResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "platform"
+        ]
+      }
+    },
     "/platform/me": {
       "get": {
         "operationId": "PlatformController_me",
@@ -7584,6 +7626,43 @@
         },
         "required": [
           "reason"
+        ]
+      },
+      "ReservedFirstAccessPreviewDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "valid",
+              "invalid",
+              "expired"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "status",
+          "name",
+          "email"
+        ]
+      },
+      "CompleteReservedFirstAccessResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success"
         ]
       },
       "PlatformMeUserDto": {

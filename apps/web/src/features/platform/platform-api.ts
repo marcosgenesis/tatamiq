@@ -50,6 +50,25 @@ export type PlatformAcademiesResponse = {
   };
 };
 
+export type ReservedFirstAccessPreview = {
+  status: "valid" | "invalid" | "expired";
+  name: string | null;
+  email: string | null;
+};
+
+export async function previewReservedFirstAccess(
+  token: string,
+): Promise<ReservedFirstAccessPreview> {
+  return platformFetch(`/platform/first-access/${token}`);
+}
+
+export async function completeReservedFirstAccess(
+  token: string,
+  password: string,
+): Promise<{ success: boolean }> {
+  return platformPost(`/platform/first-access/${token}/complete`, { password });
+}
+
 export type PlatformAcademyOperationalOverview = {
   summary: {
     students: { total: number; active: number; inactive: number };

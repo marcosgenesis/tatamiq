@@ -34,6 +34,7 @@ import {
   getPlatformMe,
 } from "./features/platform/platform-api";
 import { PlatformAuditPage } from "./features/platform/platform-audit-page";
+import { PlatformFirstAccessPage } from "./features/platform/platform-first-access-page";
 import { PlatformAcademyPage, PlatformPage } from "./features/platform/platform-page";
 import { PlatformUserDetailPage } from "./features/platform/platform-user-detail-page";
 import { PlatformUsersPage } from "./features/platform/platform-users-page";
@@ -152,6 +153,15 @@ const firstAccessRoute = createRoute({
   component: function FirstAccessRoute() {
     const { token } = firstAccessRoute.useParams();
     return <FirstAccessPage token={token} />;
+  },
+});
+
+const platformFirstAccessRoute = createRoute({
+  getParentRoute: () => openLayout,
+  path: "/first-access/$token",
+  component: function PlatformFirstAccessRoute() {
+    const { token } = platformFirstAccessRoute.useParams();
+    return <PlatformFirstAccessPage token={token} />;
   },
 });
 
@@ -303,6 +313,7 @@ const routeTree = rootRoute.addChildren([
     studentCheckInRoute,
     preRegistrationRoute,
     firstAccessRoute,
+    platformFirstAccessRoute,
   ]),
   authBareLayout.addChildren([
     chooseAreaRoute,

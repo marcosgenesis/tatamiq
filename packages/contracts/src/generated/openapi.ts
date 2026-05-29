@@ -1364,6 +1364,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/platform/first-access/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PlatformController_previewFirstAccess"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/platform/first-access/{token}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PlatformController_completeFirstAccess"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/platform/me": {
         parameters: {
             query?: never;
@@ -2706,6 +2738,15 @@ export interface components {
         };
         InvalidateAttendanceDto: {
             reason: string;
+        };
+        ReservedFirstAccessPreviewDto: {
+            /** @enum {string} */
+            status: "valid" | "invalid" | "expired";
+            name: string | null;
+            email: string | null;
+        };
+        CompleteReservedFirstAccessResponseDto: {
+            success: boolean;
         };
         PlatformMeUserDto: {
             id: string;
@@ -4984,6 +5025,44 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    PlatformController_previewFirstAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReservedFirstAccessPreviewDto"];
+                };
+            };
+        };
+    };
+    PlatformController_completeFirstAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompleteReservedFirstAccessResponseDto"];
+                };
             };
         };
     };
