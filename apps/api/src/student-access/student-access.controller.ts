@@ -1,18 +1,7 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  Inject,
-  Param,
-  Post,
-} from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Inject, Param, Post } from "@nestjs/common";
 import { ApiBody, ApiOkResponse, ApiParam, ApiTags } from "@nestjs/swagger";
-import { acceptStudentInviteSchema } from "@tatamiq/contracts";
 import { AllowAnonymous, OrgRoles, Session } from "@thallesp/nestjs-better-auth";
-import type { z } from "zod";
-import { activeOrganizationId, type SessionWithUser } from "../active-organization";
+import { AcademyId, ActorId } from "../academy-request";
 import {
   AcceptStudentInviteDto,
   AcceptStudentInviteResponseDto,
@@ -32,8 +21,8 @@ export class StudentAccessController {
   @Get("student-access/invites/summary")
   @OrgRoles(["owner"])
   @ApiOkResponse({ type: InviteSummaryResponseDto })
-  inviteSummary(@Session() session: SessionWithUser): Promise<InviteSummaryResponseDto> {
-    return this.studentAccessService.inviteSummary(activeOrganizationId(session));
+  inviteSummary(@AcademyId() academyId: string): Promise<InviteSummaryResponseDto> {
+    return this.studentAccessService.inviteSummary(academyId);
   }
 
   @Post("students/:id/access-invites")
@@ -42,14 +31,11 @@ export class StudentAccessController {
   @ApiParam({ name: "id" })
   @ApiOkResponse({ type: CreateStudentInviteResponseDto })
   createInvite(
-    @Session() session: SessionWithUser,
+    @AcademyId() academyId: string,
+    @ActorId() actorId: string,
     @Param("id") id: string,
   ): Promise<CreateStudentInviteResponseDto> {
-    return this.studentAccessService.createInvite(
-      activeOrganizationId(session),
-      session.user.id,
-      id,
-    );
+    return this.studentAccessService.createInvite(academyId, actorId, id);
   }
 
   @Post("students/:id/access-invites/:inviteId/revoke")
@@ -58,23 +44,23 @@ export class StudentAccessController {
   @ApiParam({ name: "id" })
   @ApiParam({ name: "inviteId" })
   revokeInvite(
-    @Session() session: SessionWithUser,
+    @AcademyId() academyId: string,
     @Param("id") id: string,
     @Param("inviteId") inviteId: string,
   ) {
-    return this.studentAccessService.revokeInvite(activeOrganizationId(session), id, inviteId);
+    return this.studentAccessService.revokeInvite(academyId, id, inviteId);
   }
 
   @Post("students/:id/access/revoke")
   @HttpCode(200)
   @OrgRoles(["owner"])
   @ApiParam({ name: "id" })
-  revokeAccess(@Session() session: SessionWithUser, @Param("id") id: string) {
-    return this.studentAccessService.revokeAccess(
-      activeOrganizationId(session),
-      session.user.id,
-      id,
-    );
+  revokeAccess(
+    @AcademyId() academyId: string,
+    @ActorId() actorId: string,
+    @Param("id") id: string,
+  ) {
+    return this.studentAccessService.revokeAccess(academyId, actorId, id);
   }
 
   @Get("student-invites/:token")
@@ -91,20 +77,10 @@ export class StudentAccessController {
   @ApiBody({ type: AcceptStudentInviteDto })
   @ApiOkResponse({ type: AcceptStudentInviteResponseDto })
   accept(
-    @Session() session: SessionWithUser,
+    @ActorId() actorId: string,
     @Param("token") token: string,
     @Body() body: AcceptStudentInviteDto,
   ): Promise<AcceptStudentInviteResponseDto> {
-    return this.studentAccessService.acceptInvite(
-      token,
-      session.user.id,
-      parseBody(acceptStudentInviteSchema, body),
-    );
+    return this.studentAccessService.acceptInvite(token, actorId, body);
   }
-}
-
-function parseBody<T>(schema: z.ZodType<T>, value: unknown): T {
-  const result = schema.safeParse(value);
-  if (!result.success) throw new BadRequestException("Dados inválidos.");
-  return result.data;
 }

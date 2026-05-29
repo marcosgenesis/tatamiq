@@ -9,10 +9,8 @@ import {
   Post,
 } from "@nestjs/common";
 import { ApiBody, ApiOkResponse, ApiTags } from "@nestjs/swagger";
-import { updateAcademySchema } from "@tatamiq/contracts";
-import { OrgRoles, Session } from "@thallesp/nestjs-better-auth";
-import type { z } from "zod";
-import { activeOrganizationId, type SessionWithOrganization } from "../active-organization";
+import { OrgRoles } from "@thallesp/nestjs-better-auth";
+import { AcademyId } from "../academy-request";
 import { AcademyLogoUploadResponseDto, AcademyProfileDto, UpdateAcademyDto } from "./academy.dto";
 import { AcademyService } from "./academy.service";
 
@@ -24,50 +22,37 @@ export class AcademyController {
 
   @Get()
   @ApiOkResponse({ type: AcademyProfileDto })
-  get(@Session() session: SessionWithOrganization): Promise<AcademyProfileDto> {
-    return this.academyService.get(activeOrganizationId(session));
+  get(@AcademyId() academyId: string): Promise<AcademyProfileDto> {
+    return this.academyService.get(academyId);
   }
 
   @Patch()
   @ApiBody({ type: UpdateAcademyDto })
   @ApiOkResponse({ type: AcademyProfileDto })
   update(
-    @Session() session: SessionWithOrganization,
+    @AcademyId() academyId: string,
     @Body() body: UpdateAcademyDto,
   ): Promise<AcademyProfileDto> {
-    return this.academyService.update(
-      activeOrganizationId(session),
-      parseBody(updateAcademySchema, body),
-    );
+    return this.academyService.update(academyId, body);
   }
 
   @Post("logo/upload-url")
   @HttpCode(200)
   @ApiOkResponse({ type: AcademyLogoUploadResponseDto })
-  logoUploadUrl(
-    @Session() session: SessionWithOrganization,
-  ): Promise<AcademyLogoUploadResponseDto> {
-    return this.academyService.generateLogoUploadUrl(activeOrganizationId(session));
+  logoUploadUrl(@AcademyId() academyId: string): Promise<AcademyLogoUploadResponseDto> {
+    return this.academyService.generateLogoUploadUrl(academyId);
   }
 
   @Post("logo/confirm")
   @HttpCode(200)
   @ApiOkResponse({ type: AcademyProfileDto })
   confirmLogo(
-    @Session() session: SessionWithOrganization,
+    @AcademyId() academyId: string,
     @Body() body: { fileKey: string },
   ): Promise<AcademyProfileDto> {
     if (!body.fileKey) {
       throw new BadRequestException("fileKey é obrigatório.");
     }
-    return this.academyService.confirmLogo(activeOrganizationId(session), body.fileKey);
+    return this.academyService.confirmLogo(academyId, body.fileKey);
   }
-}
-
-function parseBody<T>(schema: z.ZodType<T>, value: unknown): T {
-  const result = schema.safeParse(value);
-  if (!result.success) {
-    throw new BadRequestException("Dados da academia inválidos.");
-  }
-  return result.data;
 }

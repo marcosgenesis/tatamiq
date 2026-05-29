@@ -1,18 +1,7 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  Inject,
-  Param,
-  Post,
-} from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Inject, Param, Post } from "@nestjs/common";
 import { ApiBody, ApiOkResponse, ApiParam, ApiTags } from "@nestjs/swagger";
-import { startRecurringClassSchema } from "@tatamiq/contracts";
-import { OrgRoles, Session } from "@thallesp/nestjs-better-auth";
-import type { z } from "zod";
-import { activeOrganizationId, type SessionWithUser } from "../active-organization";
+import { OrgRoles } from "@thallesp/nestjs-better-auth";
+import { AcademyId, ActorId } from "../academy-request";
 import { ClassSessionDto, QrTokenResponseDto, StartRecurringClassDto } from "./classes.dto";
 import { ClassesService } from "./classes.service";
 
@@ -27,61 +16,46 @@ export class ClassesController {
   @ApiBody({ type: StartRecurringClassDto })
   @ApiOkResponse({ type: ClassSessionDto })
   startRecurring(
-    @Session() session: SessionWithUser,
+    @AcademyId() academyId: string,
+    @ActorId() actorId: string,
     @Body() body: StartRecurringClassDto,
   ): Promise<ClassSessionDto> {
-    return this.classesService.startRecurring(
-      activeOrganizationId(session),
-      session.user.id,
-      parseBody(startRecurringClassSchema, body),
-    );
+    return this.classesService.startRecurring(academyId, actorId, body);
   }
 
   @Post(":id/start-ad-hoc")
   @HttpCode(200)
   @ApiParam({ name: "id" })
   @ApiOkResponse({ type: ClassSessionDto })
-  startAdHoc(
-    @Session() session: SessionWithUser,
-    @Param("id") id: string,
-  ): Promise<ClassSessionDto> {
-    return this.classesService.startAdHoc(activeOrganizationId(session), id);
+  startAdHoc(@AcademyId() academyId: string, @Param("id") id: string): Promise<ClassSessionDto> {
+    return this.classesService.startAdHoc(academyId, id);
   }
 
   @Get("active")
   @ApiOkResponse({ type: ClassSessionDto })
-  async getActive(@Session() session: SessionWithUser): Promise<ClassSessionDto | null> {
-    return this.classesService.getActive(activeOrganizationId(session));
+  async getActive(@AcademyId() academyId: string): Promise<ClassSessionDto | null> {
+    return this.classesService.getActive(academyId);
   }
 
   @Get(":id")
   @ApiParam({ name: "id" })
   @ApiOkResponse({ type: ClassSessionDto })
-  getById(@Session() session: SessionWithUser, @Param("id") id: string): Promise<ClassSessionDto> {
-    return this.classesService.getById(activeOrganizationId(session), id);
+  getById(@AcademyId() academyId: string, @Param("id") id: string): Promise<ClassSessionDto> {
+    return this.classesService.getById(academyId, id);
   }
 
   @Get(":id/qr-token")
   @ApiParam({ name: "id" })
   @ApiOkResponse({ type: QrTokenResponseDto })
-  getQrToken(
-    @Session() session: SessionWithUser,
-    @Param("id") id: string,
-  ): Promise<QrTokenResponseDto> {
-    return this.classesService.getQrToken(activeOrganizationId(session), id);
+  getQrToken(@AcademyId() academyId: string, @Param("id") id: string): Promise<QrTokenResponseDto> {
+    return this.classesService.getQrToken(academyId, id);
   }
 
   @Post(":id/end")
   @HttpCode(200)
   @ApiParam({ name: "id" })
   @ApiOkResponse({ type: ClassSessionDto })
-  end(@Session() session: SessionWithUser, @Param("id") id: string): Promise<ClassSessionDto> {
-    return this.classesService.end(activeOrganizationId(session), id);
+  end(@AcademyId() academyId: string, @Param("id") id: string): Promise<ClassSessionDto> {
+    return this.classesService.end(academyId, id);
   }
-}
-
-function parseBody<T>(schema: z.ZodType<T>, value: unknown): T {
-  const result = schema.safeParse(value);
-  if (!result.success) throw new BadRequestException("Dados inválidos.");
-  return result.data;
 }

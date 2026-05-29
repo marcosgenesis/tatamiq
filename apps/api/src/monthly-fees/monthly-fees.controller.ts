@@ -1,26 +1,7 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  Inject,
-  Param,
-  Post,
-  Query,
-} from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Inject, Param, Post, Query } from "@nestjs/common";
 import { ApiBody, ApiOkResponse, ApiParam, ApiQuery, ApiTags } from "@nestjs/swagger";
-import {
-  adjustMonthlyFeeSchema,
-  confirmReceiptSchema,
-  createMonthlyFeeSchema,
-  manualPaymentSchema,
-  rejectReceiptSchema,
-  waiveMonthlyFeeSchema,
-} from "@tatamiq/contracts";
-import { OrgRoles, Session } from "@thallesp/nestjs-better-auth";
-import type { z } from "zod";
-import { activeOrganizationId, type SessionWithOrganization } from "../active-organization";
+import { OrgRoles } from "@thallesp/nestjs-better-auth";
+import { AcademyId, ActorId } from "../academy-request";
 import { FeeGenerationService } from "./fee-generation.service";
 import {
   AdjustMonthlyFeeDto,
@@ -56,15 +37,14 @@ export class MonthlyFeesController {
   @ApiQuery({ name: "referenceMonth", required: false })
   @ApiOkResponse({ type: ListMonthlyFeesResponseDto })
   async list(
-    @Session() session: SessionWithOrganization,
+    @AcademyId() academyId: string,
     @Query("status") status?: string,
     @Query("studentId") studentId?: string,
     @Query("referenceYear") referenceYear?: string,
     @Query("referenceMonth") referenceMonth?: string,
   ): Promise<ListMonthlyFeesResponseDto> {
-    const orgId = activeOrganizationId(session);
-    await this.feeGenerationService.catchUp(orgId);
-    return this.monthlyFeesService.list(orgId, {
+    await this.feeGenerationService.catchUp(academyId);
+    return this.monthlyFeesService.list(academyId, {
       status,
       studentId,
       referenceYear: referenceYear ? Number(referenceYear) : undefined,
@@ -77,23 +57,17 @@ export class MonthlyFeesController {
   @ApiBody({ type: CreateMonthlyFeeDto })
   @ApiOkResponse({ type: MonthlyFeeDetailDto })
   create(
-    @Session() session: SessionWithOrganization,
+    @AcademyId() academyId: string,
     @Body() body: CreateMonthlyFeeDto,
   ): Promise<MonthlyFeeDetailDto> {
-    return this.monthlyFeesService.create(
-      activeOrganizationId(session),
-      parseBody(createMonthlyFeeSchema, body),
-    );
+    return this.monthlyFeesService.create(academyId, body);
   }
 
   @Get(":id")
   @ApiParam({ name: "id" })
   @ApiOkResponse({ type: MonthlyFeeDetailDto })
-  get(
-    @Session() session: SessionWithOrganization,
-    @Param("id") id: string,
-  ): Promise<MonthlyFeeDetailDto> {
-    return this.monthlyFeesService.get(activeOrganizationId(session), id);
+  get(@AcademyId() academyId: string, @Param("id") id: string): Promise<MonthlyFeeDetailDto> {
+    return this.monthlyFeesService.get(academyId, id);
   }
 
   @Post(":id/upload-url")
@@ -102,15 +76,11 @@ export class MonthlyFeesController {
   @ApiQuery({ name: "contentType", required: true })
   @ApiOkResponse({ type: UploadUrlResponseDto })
   uploadUrl(
-    @Session() session: SessionWithOrganization,
+    @AcademyId() academyId: string,
     @Param("id") id: string,
     @Query("contentType") contentType: string,
   ): Promise<UploadUrlResponseDto> {
-    return this.monthlyFeesService.generateUploadUrl(
-      activeOrganizationId(session),
-      id,
-      contentType,
-    );
+    return this.monthlyFeesService.generateUploadUrl(academyId, id, contentType);
   }
 
   @Post(":id/receipts")
@@ -119,16 +89,12 @@ export class MonthlyFeesController {
   @ApiBody({ type: ConfirmReceiptDto })
   @ApiOkResponse({ type: MonthlyFeeDetailDto })
   confirmReceipt(
-    @Session() session: SessionWithOrganization,
+    @AcademyId() academyId: string,
+    @ActorId() actorId: string,
     @Param("id") id: string,
     @Body() body: ConfirmReceiptDto,
   ): Promise<MonthlyFeeDetailDto> {
-    return this.monthlyFeesService.confirmReceipt(
-      activeOrganizationId(session),
-      id,
-      session.user.id,
-      parseBody(confirmReceiptSchema, body),
-    );
+    return this.monthlyFeesService.confirmReceipt(academyId, id, actorId, body);
   }
 
   @Post(":id/adjust")
@@ -137,16 +103,12 @@ export class MonthlyFeesController {
   @ApiBody({ type: AdjustMonthlyFeeDto })
   @ApiOkResponse({ type: MonthlyFeeDetailDto })
   adjust(
-    @Session() session: SessionWithOrganization,
+    @AcademyId() academyId: string,
+    @ActorId() actorId: string,
     @Param("id") id: string,
     @Body() body: AdjustMonthlyFeeDto,
   ): Promise<MonthlyFeeDetailDto> {
-    return this.monthlyFeesService.adjust(
-      activeOrganizationId(session),
-      id,
-      session.user.id,
-      parseBody(adjustMonthlyFeeSchema, body),
-    );
+    return this.monthlyFeesService.adjust(academyId, id, actorId, body);
   }
 
   @Post(":id/waive")
@@ -155,16 +117,12 @@ export class MonthlyFeesController {
   @ApiBody({ type: WaiveMonthlyFeeDto })
   @ApiOkResponse({ type: MonthlyFeeDetailDto })
   waive(
-    @Session() session: SessionWithOrganization,
+    @AcademyId() academyId: string,
+    @ActorId() actorId: string,
     @Param("id") id: string,
     @Body() body: WaiveMonthlyFeeDto,
   ): Promise<MonthlyFeeDetailDto> {
-    return this.monthlyFeesService.waive(
-      activeOrganizationId(session),
-      id,
-      session.user.id,
-      parseBody(waiveMonthlyFeeSchema, body),
-    );
+    return this.monthlyFeesService.waive(academyId, id, actorId, body);
   }
 
   @Post(":id/manual-payment")
@@ -173,22 +131,18 @@ export class MonthlyFeesController {
   @ApiBody({ type: ManualPaymentDto })
   @ApiOkResponse({ type: MonthlyFeeDetailDto })
   manualPayment(
-    @Session() session: SessionWithOrganization,
+    @AcademyId() academyId: string,
+    @ActorId() actorId: string,
     @Param("id") id: string,
     @Body() body: ManualPaymentDto,
   ): Promise<MonthlyFeeDetailDto> {
-    return this.monthlyFeesService.manualPayment(
-      activeOrganizationId(session),
-      id,
-      session.user.id,
-      parseBody(manualPaymentSchema, body),
-    );
+    return this.monthlyFeesService.manualPayment(academyId, id, actorId, body);
   }
 
   @Get(":id/receipts")
   @ApiParam({ name: "id" })
-  listReceipts(@Session() session: SessionWithOrganization, @Param("id") id: string) {
-    return this.monthlyFeesService.listReceipts(activeOrganizationId(session), id);
+  listReceipts(@AcademyId() academyId: string, @Param("id") id: string) {
+    return this.monthlyFeesService.listReceipts(academyId, id);
   }
 
   @Get(":id/receipts/:receiptId/view-url")
@@ -196,11 +150,11 @@ export class MonthlyFeesController {
   @ApiParam({ name: "receiptId" })
   @ApiOkResponse({ type: ReceiptViewUrlResponseDto })
   receiptViewUrl(
-    @Session() session: SessionWithOrganization,
+    @AcademyId() academyId: string,
     @Param("id") id: string,
     @Param("receiptId") receiptId: string,
   ): Promise<ReceiptViewUrlResponseDto> {
-    return this.monthlyFeesService.receiptViewUrl(activeOrganizationId(session), id, receiptId);
+    return this.monthlyFeesService.receiptViewUrl(academyId, id, receiptId);
   }
 
   @Post(":id/receipts/:receiptId/approve")
@@ -209,16 +163,12 @@ export class MonthlyFeesController {
   @ApiParam({ name: "receiptId" })
   @ApiOkResponse({ type: MonthlyFeeDetailDto })
   approveReceipt(
-    @Session() session: SessionWithOrganization,
+    @AcademyId() academyId: string,
+    @ActorId() actorId: string,
     @Param("id") id: string,
     @Param("receiptId") receiptId: string,
   ): Promise<MonthlyFeeDetailDto> {
-    return this.monthlyFeesService.approveReceipt(
-      activeOrganizationId(session),
-      id,
-      receiptId,
-      session.user.id,
-    );
+    return this.monthlyFeesService.approveReceipt(academyId, id, receiptId, actorId);
   }
 
   @Post(":id/receipts/:receiptId/reject")
@@ -228,25 +178,12 @@ export class MonthlyFeesController {
   @ApiBody({ type: RejectReceiptDto })
   @ApiOkResponse({ type: MonthlyFeeDetailDto })
   rejectReceipt(
-    @Session() session: SessionWithOrganization,
+    @AcademyId() academyId: string,
+    @ActorId() actorId: string,
     @Param("id") id: string,
     @Param("receiptId") receiptId: string,
     @Body() body: RejectReceiptDto,
   ): Promise<MonthlyFeeDetailDto> {
-    return this.monthlyFeesService.rejectReceipt(
-      activeOrganizationId(session),
-      id,
-      receiptId,
-      session.user.id,
-      parseBody(rejectReceiptSchema, body),
-    );
+    return this.monthlyFeesService.rejectReceipt(academyId, id, receiptId, actorId, body);
   }
-}
-
-function parseBody<T>(schema: z.ZodType<T>, value: unknown): T {
-  const result = schema.safeParse(value);
-  if (!result.success) {
-    throw new BadRequestException("Dados da mensalidade inválidos.");
-  }
-  return result.data;
 }
