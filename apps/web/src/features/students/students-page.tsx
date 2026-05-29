@@ -15,6 +15,7 @@ import { DataGrid, DataGridContainer } from "@/components/reui/data-grid/data-gr
 import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination";
 import { DataGridTable } from "@/components/reui/data-grid/data-grid-table";
 import { DatePicker } from "@/components/reui/date-picker";
+import { Tabs, TabsList, TabsTrigger } from "@/components/reui/tabs";
 import { api } from "../../api";
 import { Field, SelectField } from "../../components/form-field";
 import { Button } from "../../components/ui/button";
@@ -433,24 +434,25 @@ export function StudentsPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <div className="flex gap-1.5 items-center">
+    <div className="space-y-5 p-4 sm:space-y-6 sm:p-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5">
             <h1 className="text-2xl">Alunos</h1>{" "}
             <Badge variant={"primary-light"}>{students.length}</Badge>
           </div>
 
-          <p className="max-w-2xl text-base leading-7 text-muted-foreground">
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
             Cadastre alunos, responsáveis, dados de mensalidade e graduação inicial da academia.
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleExportCsv}>
+        <div className="grid w-full grid-cols-1 gap-2 min-[480px]:grid-cols-3 sm:w-auto sm:flex sm:flex-wrap sm:justify-end">
+          <Button variant="outline" onClick={handleExportCsv} className="justify-center">
             <Download04Icon className="size-4" /> Exportar CSV
           </Button>
           <Button
             variant="outline"
+            className="justify-center"
             onClick={() => {
               setIsImportOpen(true);
               setImportPreview(null);
@@ -459,36 +461,29 @@ export function StudentsPage() {
           >
             <Upload04Icon className="size-4" /> Importar CSV
           </Button>
-          <Button onClick={openCreateForm}>
+          <Button onClick={openCreateForm} className="justify-center">
             <PlusSignIcon className="size-4" /> Novo aluno
           </Button>
         </div>
       </div>
 
-      <div className="flex gap-2 border-b border-border">
-        <button
-          type="button"
-          className={`border-b-2 px-3 py-2 text-sm font-medium ${
-            activeTab === "students"
-              ? "border-primary text-foreground"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-          onClick={() => setActiveTab("students")}
-        >
-          Alunos
-        </button>
-        <button
-          type="button"
-          className={`border-b-2 px-3 py-2 text-sm font-medium ${
-            activeTab === "pre-registrations"
-              ? "border-primary text-foreground"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-          onClick={() => setActiveTab("pre-registrations")}
-        >
-          Pré-cadastros
-        </button>
-      </div>
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => {
+          if (value === "students" || value === "pre-registrations") {
+            setActiveTab(value);
+          }
+        }}
+      >
+        <TabsList className="w-full overflow-x-auto sm:w-auto">
+          <TabsTrigger value="students" className="flex-1 sm:flex-none">
+            Alunos
+          </TabsTrigger>
+          <TabsTrigger value="pre-registrations" className="flex-1 sm:flex-none">
+            Pré-cadastros
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {activeTab === "pre-registrations" ? <PreRegistrationsTab /> : null}
 
@@ -681,18 +676,18 @@ export function StudentsPage() {
               <StudentsEmptyState onCreate={openCreateForm} />
             ) : null}
             {hasStudents || studentsQuery.isLoading ? (
-              <DataGridContainer>
+              <DataGridContainer className="overflow-x-auto">
                 <DataGrid
                   table={table}
                   recordCount={serverPagination?.total ?? students.length}
                   isLoading={studentsQuery.isLoading}
                   emptyMessage="Nenhum aluno encontrado."
                   tableLayout={{ headerSticky: true }}
-                  tableClassNames={{ edgeCell: "px-4" }}
+                  tableClassNames={{ base: "min-w-[760px]", edgeCell: "px-4" }}
                 >
                   <DataGridTable />
                   <DataGridPagination
-                    className="px-4 py-2"
+                    className="min-w-[760px] px-4 py-2"
                     rowsPerPageLabel="Linhas por página"
                     info="{from} - {to} de {count}"
                     sizes={[10, 25, 50, 100]}
