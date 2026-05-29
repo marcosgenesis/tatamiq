@@ -9,6 +9,7 @@ import { getPlatformMe } from "../platform/platform-api";
 
 export function ChooseAreaPage() {
   const navigate = useNavigate();
+  const session = authClient.useSession();
   const organizations = authClient.useListOrganizations();
   const studentQuery = useQuery({
     queryKey: ["student", "me"],
@@ -20,14 +21,15 @@ export function ChooseAreaPage() {
     retry: false,
   });
   const platformQuery = useQuery({
-    queryKey: ["platform", "me"],
+    queryKey: ["platform", "me", session.data?.user.id],
     queryFn: getPlatformMe,
     retry: false,
+    enabled: !!session.data?.user.id,
   });
 
   const hasInstructor = (organizations.data?.length ?? 0) > 0;
   const hasStudent = !!studentQuery.data;
-  const hasPlatform = !!platformQuery.data;
+  const hasPlatform = platformQuery.isSuccess && !!platformQuery.data;
 
   useEffect(() => {
     if (organizations.isPending || studentQuery.isLoading || platformQuery.isLoading) return;

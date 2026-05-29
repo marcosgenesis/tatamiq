@@ -141,6 +141,20 @@
       "when": 1780590400000,
       "tag": "0019_platform_admin",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1780676800000,
+      "tag": "0020_admin_audit_logs",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1780763200000,
+      "tag": "0021_platform_support_sessions",
+      "breakpoints": true
     }
   ]
 }

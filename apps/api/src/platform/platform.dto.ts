@@ -67,6 +67,41 @@ export class PlatformAcademyDetailDto extends PlatformAcademySummaryDto {
   instagram!: string | null;
 }
 
+export class ProvisionAcademyBodyDto {
+  @ApiProperty({ type: String })
+  academyName!: string;
+
+  @ApiProperty({ type: String })
+  ownerEmail!: string;
+
+  @ApiProperty({ type: String, required: false })
+  ownerName?: string;
+}
+
+export class ProvisionAcademyResultDto {
+  @ApiProperty({ type: () => PlatformAcademyDetailDto })
+  academy!: PlatformAcademyDetailDto;
+
+  @ApiProperty({ type: String })
+  ownerUserId!: string;
+
+  @ApiProperty({ type: Boolean })
+  ownerWasCreated!: boolean;
+
+  @ApiProperty({ type: String, nullable: true })
+  firstAccessLink!: string | null;
+}
+
+export class TransferAcademyBodyDto {
+  @ApiProperty({ type: String })
+  ownerEmail!: string;
+
+  @ApiProperty({ type: String, required: false })
+  ownerName?: string;
+}
+
+export class TransferAcademyResultDto extends ProvisionAcademyResultDto {}
+
 export class PlatformPaginationDto {
   @ApiProperty({ type: Number })
   page!: number;
@@ -274,6 +309,60 @@ export class PlatformAcademyOperationalSummaryDto {
   promotions!: PlatformPromotionsOperationalSummaryDto;
 }
 
+export class PlatformAuditLogEntryDto {
+  @ApiProperty({ type: String })
+  id!: string;
+
+  @ApiProperty({ type: String })
+  adminUserId!: string;
+
+  @ApiProperty({ type: String, nullable: true })
+  adminName!: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  adminEmail!: string | null;
+
+  @ApiProperty({ type: String })
+  action!: string;
+
+  @ApiProperty({ type: String })
+  targetType!: string;
+
+  @ApiProperty({ type: String, nullable: true })
+  targetId!: string | null;
+
+  @ApiProperty({ type: String })
+  result!: string;
+
+  @ApiProperty({ type: String, nullable: true })
+  reason!: string | null;
+
+  @ApiProperty({ type: Object, nullable: true })
+  metadata!: Record<string, unknown> | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  academyId!: string | null;
+
+  @ApiProperty({ type: String })
+  createdAt!: string;
+}
+
+export class PlatformAuditListResponseDto {
+  @ApiProperty({ type: () => [PlatformAuditLogEntryDto] })
+  items!: PlatformAuditLogEntryDto[];
+
+  @ApiProperty({ type: () => PlatformPaginationDto })
+  pagination!: PlatformPaginationDto;
+}
+
+export class PlatformSensitiveFileUrlDto {
+  @ApiProperty({ type: String })
+  viewUrl!: string;
+
+  @ApiProperty({ type: String })
+  expiresAt!: string;
+}
+
 export class PlatformAcademyOperationalOverviewDto {
   @ApiProperty({ type: () => PlatformAcademyOperationalSummaryDto })
   summary!: PlatformAcademyOperationalSummaryDto;
@@ -292,4 +381,256 @@ export class PlatformAcademyOperationalOverviewDto {
 
   @ApiProperty({ type: () => [PlatformPromotionOperationalDto] })
   promotions!: PlatformPromotionOperationalDto[];
+}
+
+// --- User management DTOs ---
+
+export class PlatformUserSummaryDto {
+  @ApiProperty({ type: String })
+  id!: string;
+
+  @ApiProperty({ type: String })
+  name!: string;
+
+  @ApiProperty({ type: String })
+  email!: string;
+
+  @ApiProperty({ type: String, nullable: true })
+  image!: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  role!: string | null;
+
+  @ApiProperty({ type: Boolean })
+  banned!: boolean;
+
+  @ApiProperty({ type: String, nullable: true })
+  banReason!: string | null;
+
+  @ApiProperty({ type: String })
+  createdAt!: string;
+}
+
+export class PlatformUsersResponseDto {
+  @ApiProperty({ type: () => [PlatformUserSummaryDto] })
+  items!: PlatformUserSummaryDto[];
+
+  @ApiProperty({ type: () => PlatformPaginationDto })
+  pagination!: PlatformPaginationDto;
+}
+
+export class PlatformUserMembershipDto {
+  @ApiProperty({ type: String })
+  memberId!: string;
+
+  @ApiProperty({ type: String })
+  organizationId!: string;
+
+  @ApiProperty({ type: String })
+  organizationName!: string;
+
+  @ApiProperty({ type: String })
+  organizationSlug!: string;
+
+  @ApiProperty({ type: String })
+  role!: string;
+
+  @ApiProperty({ type: String })
+  createdAt!: string;
+}
+
+export class PlatformUserStudentAccessDto {
+  @ApiProperty({ type: String })
+  id!: string;
+
+  @ApiProperty({ type: String })
+  studentId!: string;
+
+  @ApiProperty({ type: String })
+  studentName!: string;
+
+  @ApiProperty({ type: String })
+  organizationId!: string;
+
+  @ApiProperty({ type: String })
+  organizationName!: string;
+
+  @ApiProperty({ type: String })
+  status!: string;
+
+  @ApiProperty({ type: String })
+  createdAt!: string;
+}
+
+export class PlatformUserDetailDto extends PlatformUserSummaryDto {
+  @ApiProperty({ type: Boolean })
+  emailVerified!: boolean;
+
+  @ApiProperty({ type: () => [PlatformUserMembershipDto] })
+  memberships!: PlatformUserMembershipDto[];
+
+  @ApiProperty({ type: () => [PlatformUserStudentAccessDto] })
+  studentAccessLinks!: PlatformUserStudentAccessDto[];
+
+  @ApiProperty({ type: Number })
+  activeSessions!: number;
+}
+
+export class PlatformBanUserBodyDto {
+  @ApiProperty({ type: String, required: false })
+  reason?: string;
+}
+
+export class PlatformActionResultDto {
+  @ApiProperty({ type: Boolean })
+  success!: boolean;
+}
+
+export class PlatformOwnedAcademyImpactDto {
+  @ApiProperty({ type: String })
+  id!: string;
+
+  @ApiProperty({ type: String })
+  name!: string;
+
+  @ApiProperty({ type: String })
+  slug!: string;
+
+  @ApiProperty({ type: Boolean })
+  isOnlyOwner!: boolean;
+}
+
+export class PlatformUserDeletionImpactDto {
+  @ApiProperty({ type: String })
+  userId!: string;
+
+  @ApiProperty({ type: Number })
+  memberships!: number;
+
+  @ApiProperty({ type: () => [PlatformOwnedAcademyImpactDto] })
+  ownedAcademies!: PlatformOwnedAcademyImpactDto[];
+
+  @ApiProperty({ type: Number })
+  studentAccessLinks!: number;
+
+  @ApiProperty({ type: Number })
+  activeSessions!: number;
+
+  @ApiProperty({ type: Boolean })
+  isPlatformAdmin!: boolean;
+}
+
+export class PlatformDeleteUserBodyDto {
+  @ApiProperty({ type: String, enum: ["definitive", "preserve_history"] })
+  mode!: "definitive" | "preserve_history";
+
+  @ApiProperty({ type: String, enum: ["keep_ownerless", "transfer"], required: false })
+  ownerResolution?: "keep_ownerless" | "transfer";
+
+  @ApiProperty({ type: String, required: false })
+  transferOwnerEmail?: string;
+
+  @ApiProperty({ type: String, required: false })
+  transferOwnerName?: string;
+}
+
+export class PlatformAdministratorDto {
+  @ApiProperty({ type: String })
+  id!: string;
+
+  @ApiProperty({ type: String })
+  name!: string;
+
+  @ApiProperty({ type: String })
+  email!: string;
+
+  @ApiProperty({ type: String, nullable: true })
+  role!: string | null;
+
+  @ApiProperty({ type: Boolean })
+  banned!: boolean;
+
+  @ApiProperty({ type: Boolean })
+  configured!: boolean;
+
+  @ApiProperty({ type: String })
+  createdAt!: string;
+}
+
+export class PlatformAdministratorsResponseDto {
+  @ApiProperty({ type: () => [PlatformAdministratorDto] })
+  items!: PlatformAdministratorDto[];
+}
+
+export class AddPlatformAdministratorBodyDto {
+  @ApiProperty({ type: String })
+  email!: string;
+
+  @ApiProperty({ type: String, required: false })
+  name?: string;
+}
+
+export class AddPlatformAdministratorResultDto {
+  @ApiProperty({ type: () => PlatformAdministratorDto })
+  administrator!: PlatformAdministratorDto;
+
+  @ApiProperty({ type: Boolean })
+  userWasCreated!: boolean;
+
+  @ApiProperty({ type: String, nullable: true })
+  firstAccessLink!: string | null;
+}
+
+export class StartPlatformSupportBodyDto {
+  @ApiProperty({ type: String })
+  targetUserId!: string;
+
+  @ApiProperty({ type: String, required: false })
+  academyId?: string;
+
+  @ApiProperty({ type: String, required: false })
+  reason?: string;
+}
+
+export class ActivatePlatformSupportBodyDto {
+  @ApiProperty({ type: String })
+  supportSessionId!: string;
+}
+
+export class PlatformSupportSessionDto {
+  @ApiProperty({ type: String })
+  id!: string;
+
+  @ApiProperty({ type: String })
+  adminUserId!: string;
+
+  @ApiProperty({ type: String })
+  targetUserId!: string;
+
+  @ApiProperty({ type: String, nullable: true })
+  academyId!: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  reason!: string | null;
+
+  @ApiProperty({ type: String })
+  status!: string;
+
+  @ApiProperty({ type: String })
+  startedAt!: string;
+
+  @ApiProperty({ type: String, nullable: true })
+  activatedAt!: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  endedAt!: string | null;
+
+  @ApiProperty({ type: String })
+  expiresAt!: string;
+
+  @ApiProperty({ type: String, nullable: true, required: false })
+  adminName?: string | null;
+
+  @ApiProperty({ type: String, nullable: true, required: false })
+  adminEmail?: string | null;
 }

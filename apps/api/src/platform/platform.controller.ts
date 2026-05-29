@@ -1,12 +1,46 @@
-import { Controller, Get, Inject, Param, Query } from "@nestjs/common";
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Inject,
+  NotFoundException,
+  Param,
+  Post,
+  Query,
+  Req,
+} from "@nestjs/common";
 import { ApiOkResponse, ApiTags } from "@nestjs/swagger";
 import { Session } from "@thallesp/nestjs-better-auth";
+
+type PlatformRequest = { ip?: string; headers: Record<string, string | string[] | undefined> };
+
+import { R2StorageService } from "../monthly-fees/r2-storage.service";
+import { AuditService } from "./audit.service";
 import {
+  type ActivatePlatformSupportBodyDto,
+  type AddPlatformAdministratorBodyDto,
+  AddPlatformAdministratorResultDto,
   PlatformAcademiesResponseDto,
   PlatformAcademyDetailDto,
   PlatformAcademyOperationalOverviewDto,
+  PlatformActionResultDto,
+  PlatformAdministratorsResponseDto,
+  PlatformAuditListResponseDto,
+  type PlatformBanUserBodyDto,
   PlatformDashboardDto,
+  type PlatformDeleteUserBodyDto,
   PlatformMeDto,
+  PlatformSensitiveFileUrlDto,
+  PlatformSupportSessionDto,
+  PlatformUserDeletionImpactDto,
+  PlatformUserDetailDto,
+  PlatformUsersResponseDto,
+  type ProvisionAcademyBodyDto,
+  ProvisionAcademyResultDto,
+  type StartPlatformSupportBodyDto,
+  type TransferAcademyBodyDto,
+  TransferAcademyResultDto,
 } from "./platform.dto";
 import { PlatformService } from "./platform.service";
 import {
@@ -21,6 +55,8 @@ export class PlatformController {
   constructor(
     @Inject(PlatformAdminService) private readonly platformAdminService: PlatformAdminService,
     @Inject(PlatformService) private readonly platformService: PlatformService,
+    @Inject(AuditService) private readonly auditService: AuditService,
+    @Inject(R2StorageService) private readonly r2: R2StorageService,
   ) {}
 
   @Get("me")
@@ -31,9 +67,15 @@ export class PlatformController {
 
   @Get("dashboard")
   @ApiOkResponse({ type: PlatformDashboardDto })
-  dashboard(@Session() session: PlatformSession) {
-    this.platformAdminService.assertPlatformAdmin(session);
-    return this.platformService.dashboard();
+  async dashboard(@Session() session: PlatformSession) {
+    const admin = this.platformAdminService.assertPlatformAdmin(session);
+    const result = await this.platformService.dashboard();
+    await this.auditService.write({
+      adminUserId: admin.user.id,
+      action: "platform.dashboard.viewed",
+      targetType: "platform",
+    });
+    return result;
   }
 
   @Get("academies")
@@ -52,6 +94,53 @@ export class PlatformController {
     });
   }
 
+  @Post("academies/provision")
+  @ApiOkResponse({ type: ProvisionAcademyResultDto })
+  async provisionAcademy(
+    @Session() session: PlatformSession,
+    @Body() body: ProvisionAcademyBodyDto,
+  ) {
+    const admin = this.platformAdminService.assertPlatformAdmin(session);
+    const input = parseProvisionAcademyBody(body);
+    const result = await this.platformService.provisionAcademy(input);
+    await this.auditService.write({
+      adminUserId: admin.user.id,
+      action: "platform.academy.provisioned",
+      targetType: "academy",
+      targetId: result.academy.id,
+      academyId: result.academy.id,
+      metadata: {
+        ownerUserId: result.ownerUserId,
+        ownerWasCreated: result.ownerWasCreated,
+      },
+    });
+    return result;
+  }
+
+  @Post("academies/:id/transfer")
+  @ApiOkResponse({ type: TransferAcademyResultDto })
+  async transferAcademy(
+    @Session() session: PlatformSession,
+    @Param("id") id: string,
+    @Body() body: TransferAcademyBodyDto,
+  ) {
+    const admin = this.platformAdminService.assertPlatformAdmin(session);
+    const input = parseTransferAcademyBody(body);
+    const result = await this.platformService.transferAcademy(id, input);
+    await this.auditService.write({
+      adminUserId: admin.user.id,
+      action: "platform.academy.transferred",
+      targetType: "academy",
+      targetId: id,
+      academyId: id,
+      metadata: {
+        ownerUserId: result.ownerUserId,
+        ownerWasCreated: result.ownerWasCreated,
+      },
+    });
+    return result;
+  }
+
   @Get("academies/:id")
   @ApiOkResponse({ type: PlatformAcademyDetailDto })
   academy(@Session() session: PlatformSession, @Param("id") id: string) {
@@ -65,10 +154,322 @@ export class PlatformController {
     this.platformAdminService.assertPlatformAdmin(session);
     return this.platformService.getAcademyOperationalOverview(id);
   }
+
+  @Get("academies/:academyId/receipts/:receiptId/view-url")
+  @ApiOkResponse({ type: PlatformSensitiveFileUrlDto })
+  async receiptViewUrl(
+    @Session() session: PlatformSession,
+    @Param("academyId") academyId: string,
+    @Param("receiptId") receiptId: string,
+  ) {
+    const admin = this.platformAdminService.assertPlatformAdmin(session);
+    const receipt = await this.platformService.getReceipt(academyId, receiptId);
+    if (!receipt) throw new NotFoundException("Comprovante não encontrado.");
+
+    const viewUrl = await this.r2.generateReadUrl(receipt.fileKey, 5 * 60);
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+
+    await this.auditService.write({
+      adminUserId: admin.user.id,
+      action: "platform.sensitive_file.accessed",
+      targetType: "payment_receipt",
+      targetId: receiptId,
+      academyId,
+      metadata: { fileType: receipt.fileType, studentId: receipt.studentId },
+    });
+
+    return { viewUrl, expiresAt };
+  }
+
+  @Get("administrators")
+  @ApiOkResponse({ type: PlatformAdministratorsResponseDto })
+  administrators(@Session() session: PlatformSession) {
+    this.platformAdminService.assertPlatformAdmin(session);
+    return this.platformService.listAdministrators();
+  }
+
+  @Post("administrators")
+  @ApiOkResponse({ type: AddPlatformAdministratorResultDto })
+  async addAdministrator(
+    @Session() session: PlatformSession,
+    @Body() body: AddPlatformAdministratorBodyDto,
+  ) {
+    const admin = this.platformAdminService.assertPlatformAdmin(session);
+    const input = parseAdministratorBody(body);
+    const result = await this.platformService.addAdministrator(input);
+    await this.auditService.write({
+      adminUserId: admin.user.id,
+      action: "platform.admin.added",
+      targetType: "user",
+      targetId: result.administrator.id,
+      metadata: { userWasCreated: result.userWasCreated },
+    });
+    return result;
+  }
+
+  @Post("administrators/:id/remove")
+  @ApiOkResponse({ type: PlatformActionResultDto })
+  async removeAdministrator(@Session() session: PlatformSession, @Param("id") id: string) {
+    const admin = this.platformAdminService.assertPlatformAdmin(session);
+    const result = await this.platformService.removeAdministrator(id);
+    await this.auditService.write({
+      adminUserId: admin.user.id,
+      action: "platform.admin.removed",
+      targetType: "user",
+      targetId: id,
+    });
+    return result;
+  }
+
+  @Post("support/start")
+  @ApiOkResponse({ type: PlatformSupportSessionDto })
+  async startSupport(
+    @Session() session: PlatformSession,
+    @Body() body: StartPlatformSupportBodyDto,
+    @Req() request: PlatformRequest,
+  ) {
+    const admin = this.platformAdminService.assertPlatformAdmin(session);
+    const userAgentHeader = request.headers["user-agent"];
+    const userAgent = Array.isArray(userAgentHeader) ? userAgentHeader.join(", ") : userAgentHeader;
+    const input = {
+      adminUserId: admin.user.id,
+      targetUserId: body.targetUserId,
+      ...(body.academyId ? { academyId: body.academyId } : {}),
+      ...(body.reason ? { reason: body.reason } : {}),
+      ipAddress: request.ip ?? null,
+      userAgent: userAgent ?? null,
+    };
+    const result = await this.platformService.prepareSupport(input);
+    await this.auditService.write({
+      adminUserId: admin.user.id,
+      action: "platform.support.started",
+      targetType: "user",
+      targetId: body.targetUserId,
+      academyId: body.academyId,
+      reason: body.reason,
+      metadata: {
+        supportSessionId: result.id,
+        ipAddress: request.ip ?? null,
+        userAgent: userAgent ?? null,
+      },
+    });
+    return result;
+  }
+
+  @Post("support/activate")
+  @ApiOkResponse({ type: PlatformSupportSessionDto })
+  async activateSupport(
+    @Session() session: PlatformSession,
+    @Body() body: ActivatePlatformSupportBodyDto,
+  ) {
+    if (!session.session.impersonatedBy) throw new BadRequestException("Não há suporte ativo.");
+    const result = await this.platformService.activateSupport({
+      supportSessionId: body.supportSessionId,
+      adminUserId: session.session.impersonatedBy,
+      targetUserId: session.user.id,
+      impersonationSessionId: session.session.id,
+    });
+    await this.auditService.write({
+      adminUserId: session.session.impersonatedBy,
+      action: "platform.support.activated",
+      targetType: "user",
+      targetId: session.user.id,
+      academyId: result.academyId ?? undefined,
+      reason: result.reason ?? undefined,
+      metadata: { supportSessionId: result.id, impersonationSessionId: session.session.id },
+    });
+    return result;
+  }
+
+  @Get("support/current")
+  @ApiOkResponse({ type: PlatformSupportSessionDto })
+  currentSupport(@Session() session: PlatformSession) {
+    return this.platformService.currentSupport(session.session.id);
+  }
+
+  @Post("support/end")
+  @ApiOkResponse({ type: PlatformSupportSessionDto })
+  async endSupport(@Session() session: PlatformSession) {
+    if (!session.session.impersonatedBy) throw new BadRequestException("Não há suporte ativo.");
+    const result = await this.platformService.endSupport(session.session.id);
+    await this.auditService.write({
+      adminUserId: session.session.impersonatedBy,
+      action: "platform.support.ended",
+      targetType: "user",
+      targetId: session.user.id,
+      academyId: result.academyId ?? undefined,
+      reason: result.reason ?? undefined,
+      metadata: { supportSessionId: result.id, impersonationSessionId: session.session.id },
+    });
+    return result;
+  }
+
+  @Get("audit")
+  @ApiOkResponse({ type: PlatformAuditListResponseDto })
+  audit(
+    @Session() session: PlatformSession,
+    @Query("action") action?: string,
+    @Query("adminUserId") adminUserId?: string,
+    @Query("academyId") academyId?: string,
+    @Query("from") from?: string,
+    @Query("to") to?: string,
+    @Query("page") page?: string,
+    @Query("pageSize") pageSize?: string,
+  ) {
+    this.platformAdminService.assertPlatformAdmin(session);
+    return this.auditService.list({
+      action,
+      adminUserId,
+      academyId,
+      from,
+      to,
+      page: parseOptionalInteger(page),
+      pageSize: parseOptionalInteger(pageSize),
+    });
+  }
+
+  // --- User management ---
+
+  @Get("users")
+  @ApiOkResponse({ type: PlatformUsersResponseDto })
+  users(
+    @Session() session: PlatformSession,
+    @Query("q") query?: string,
+    @Query("page") page?: string,
+    @Query("pageSize") pageSize?: string,
+  ) {
+    this.platformAdminService.assertPlatformAdmin(session);
+    return this.platformService.listUsers({
+      query,
+      page: parseOptionalInteger(page),
+      pageSize: parseOptionalInteger(pageSize),
+    });
+  }
+
+  @Get("users/:id")
+  @ApiOkResponse({ type: PlatformUserDetailDto })
+  user(@Session() session: PlatformSession, @Param("id") id: string) {
+    this.platformAdminService.assertPlatformAdmin(session);
+    return this.platformService.getUser(id);
+  }
+
+  @Get("users/:id/deletion-impact")
+  @ApiOkResponse({ type: PlatformUserDeletionImpactDto })
+  userDeletionImpact(@Session() session: PlatformSession, @Param("id") id: string) {
+    this.platformAdminService.assertPlatformAdmin(session);
+    return this.platformService.userDeletionImpact(id);
+  }
+
+  @Post("users/:id/delete")
+  @ApiOkResponse({ type: PlatformActionResultDto })
+  async deleteUser(
+    @Session() session: PlatformSession,
+    @Param("id") id: string,
+    @Body() body: PlatformDeleteUserBodyDto,
+  ) {
+    const admin = this.platformAdminService.assertPlatformAdmin(session);
+    const result = await this.platformService.deleteUser(id, body);
+    await this.auditService.write({
+      adminUserId: admin.user.id,
+      action:
+        body.mode === "preserve_history"
+          ? "platform.user.deleted_preserving_history"
+          : "platform.user.deleted",
+      targetType: "user",
+      targetId: id,
+      metadata: {
+        mode: body.mode,
+        ownerResolution: body.ownerResolution ?? null,
+      },
+    });
+    return result;
+  }
+
+  @Post("users/:id/ban")
+  @ApiOkResponse({ type: PlatformActionResultDto })
+  async banUser(
+    @Session() session: PlatformSession,
+    @Param("id") id: string,
+    @Body() body: PlatformBanUserBodyDto,
+  ) {
+    const admin = this.platformAdminService.assertPlatformAdmin(session);
+    const result = await this.platformService.banUser(id, body.reason);
+    await this.auditService.write({
+      adminUserId: admin.user.id,
+      action: "platform.user.banned",
+      targetType: "user",
+      targetId: id,
+      reason: body.reason,
+    });
+    return result;
+  }
+
+  @Post("users/:id/unban")
+  @ApiOkResponse({ type: PlatformActionResultDto })
+  async unbanUser(@Session() session: PlatformSession, @Param("id") id: string) {
+    const admin = this.platformAdminService.assertPlatformAdmin(session);
+    const result = await this.platformService.unbanUser(id);
+    await this.auditService.write({
+      adminUserId: admin.user.id,
+      action: "platform.user.unbanned",
+      targetType: "user",
+      targetId: id,
+    });
+    return result;
+  }
+
+  @Post("users/:id/revoke-sessions")
+  @ApiOkResponse({ type: PlatformActionResultDto })
+  async revokeUserSessions(@Session() session: PlatformSession, @Param("id") id: string) {
+    const admin = this.platformAdminService.assertPlatformAdmin(session);
+    const result = await this.platformService.revokeUserSessions(id);
+    await this.auditService.write({
+      adminUserId: admin.user.id,
+      action: "platform.user.sessions_revoked",
+      targetType: "user",
+      targetId: id,
+    });
+    return result;
+  }
 }
 
 function parseOptionalInteger(value: string | undefined): number | undefined {
   if (!value) return undefined;
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function parseProvisionAcademyBody(body: ProvisionAcademyBodyDto) {
+  const academyName = body.academyName?.trim();
+  const owner = parseOwnerInput(body);
+
+  if (!academyName) throw new BadRequestException("Nome da academia é obrigatório.");
+
+  return { academyName, ...owner };
+}
+
+function parseTransferAcademyBody(body: TransferAcademyBodyDto) {
+  return parseOwnerInput(body);
+}
+
+function parseAdministratorBody(body: AddPlatformAdministratorBodyDto) {
+  const email = body.email?.trim();
+  const name = body.name?.trim();
+
+  if (!email?.includes("@")) {
+    throw new BadRequestException("Email do administrador é obrigatório.");
+  }
+
+  return { email, name };
+}
+
+function parseOwnerInput(body: { ownerEmail?: string; ownerName?: string }) {
+  const ownerEmail = body.ownerEmail?.trim();
+  const ownerName = body.ownerName?.trim();
+
+  if (!ownerEmail?.includes("@")) {
+    throw new BadRequestException("Email do dono é obrigatório.");
+  }
+
+  return { ownerEmail, ownerName };
 }

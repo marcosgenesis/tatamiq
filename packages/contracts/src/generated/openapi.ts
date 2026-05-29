@@ -1412,6 +1412,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/platform/academies/provision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PlatformController_provisionAcademy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/platform/academies/{id}/transfer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PlatformController_transferAcademy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/platform/academies/{id}": {
         parameters: {
             query?: never;
@@ -1438,6 +1470,246 @@ export interface paths {
         get: operations["PlatformController_academyOperationalOverview"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/platform/academies/{academyId}/receipts/{receiptId}/view-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PlatformController_receiptViewUrl"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/platform/administrators": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PlatformController_administrators"];
+        put?: never;
+        post: operations["PlatformController_addAdministrator"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/platform/administrators/{id}/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PlatformController_removeAdministrator"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/platform/support/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PlatformController_startSupport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/platform/support/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PlatformController_activateSupport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/platform/support/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PlatformController_currentSupport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/platform/support/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PlatformController_endSupport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/platform/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PlatformController_audit"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/platform/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PlatformController_users"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/platform/users/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PlatformController_user"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/platform/users/{id}/deletion-impact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PlatformController_userDeletionImpact"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/platform/users/{id}/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PlatformController_deleteUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/platform/users/{id}/ban": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PlatformController_banUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/platform/users/{id}/unban": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PlatformController_unbanUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/platform/users/{id}/revoke-sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PlatformController_revokeUserSessions"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2491,6 +2763,18 @@ export interface components {
             phone: string | null;
             instagram: string | null;
         };
+        ProvisionAcademyResultDto: {
+            academy: components["schemas"]["PlatformAcademyDetailDto"];
+            ownerUserId: string;
+            ownerWasCreated: boolean;
+            firstAccessLink: string | null;
+        };
+        TransferAcademyResultDto: {
+            academy: components["schemas"]["PlatformAcademyDetailDto"];
+            ownerUserId: string;
+            ownerWasCreated: boolean;
+            firstAccessLink: string | null;
+        };
         PlatformStudentsOperationalSummaryDto: {
             total: number;
             active: number;
@@ -2568,6 +2852,121 @@ export interface components {
             monthlyFees: components["schemas"]["PlatformMonthlyFeeOperationalDto"][];
             attendances: components["schemas"]["PlatformAttendanceOperationalDto"][];
             promotions: components["schemas"]["PlatformPromotionOperationalDto"][];
+        };
+        PlatformSensitiveFileUrlDto: {
+            viewUrl: string;
+            expiresAt: string;
+        };
+        PlatformAdministratorDto: {
+            id: string;
+            name: string;
+            email: string;
+            role: string | null;
+            banned: boolean;
+            configured: boolean;
+            createdAt: string;
+        };
+        PlatformAdministratorsResponseDto: {
+            items: components["schemas"]["PlatformAdministratorDto"][];
+        };
+        AddPlatformAdministratorResultDto: {
+            administrator: components["schemas"]["PlatformAdministratorDto"];
+            userWasCreated: boolean;
+            firstAccessLink: string | null;
+        };
+        PlatformActionResultDto: {
+            success: boolean;
+        };
+        PlatformSupportSessionDto: {
+            id: string;
+            adminUserId: string;
+            targetUserId: string;
+            academyId: string | null;
+            reason: string | null;
+            status: string;
+            startedAt: string;
+            activatedAt: string | null;
+            endedAt: string | null;
+            expiresAt: string;
+            adminName?: string | null;
+            adminEmail?: string | null;
+        };
+        PlatformAuditLogEntryDto: {
+            id: string;
+            adminUserId: string;
+            adminName: string | null;
+            adminEmail: string | null;
+            action: string;
+            targetType: string;
+            targetId: string | null;
+            result: string;
+            reason: string | null;
+            metadata: Record<string, never> | null;
+            academyId: string | null;
+            createdAt: string;
+        };
+        PlatformAuditListResponseDto: {
+            items: components["schemas"]["PlatformAuditLogEntryDto"][];
+            pagination: components["schemas"]["PlatformPaginationDto"];
+        };
+        PlatformUserSummaryDto: {
+            id: string;
+            name: string;
+            email: string;
+            image: string | null;
+            role: string | null;
+            banned: boolean;
+            banReason: string | null;
+            createdAt: string;
+        };
+        PlatformUsersResponseDto: {
+            items: components["schemas"]["PlatformUserSummaryDto"][];
+            pagination: components["schemas"]["PlatformPaginationDto"];
+        };
+        PlatformUserMembershipDto: {
+            memberId: string;
+            organizationId: string;
+            organizationName: string;
+            organizationSlug: string;
+            role: string;
+            createdAt: string;
+        };
+        PlatformUserStudentAccessDto: {
+            id: string;
+            studentId: string;
+            studentName: string;
+            organizationId: string;
+            organizationName: string;
+            status: string;
+            createdAt: string;
+        };
+        PlatformUserDetailDto: {
+            id: string;
+            name: string;
+            email: string;
+            image: string | null;
+            role: string | null;
+            banned: boolean;
+            banReason: string | null;
+            createdAt: string;
+            emailVerified: boolean;
+            memberships: components["schemas"]["PlatformUserMembershipDto"][];
+            studentAccessLinks: components["schemas"]["PlatformUserStudentAccessDto"][];
+            activeSessions: number;
+        };
+        PlatformOwnedAcademyImpactDto: {
+            id: string;
+            name: string;
+            slug: string;
+            isOnlyOwner: boolean;
+        };
+        PlatformUserDeletionImpactDto: {
+            userId: string;
+            memberships: number;
+            ownedAcademies: components["schemas"]["PlatformOwnedAcademyImpactDto"][];
+            studentAccessLinks: number;
+            activeSessions: number;
+            isPlatformAdmin: boolean;
         };
     };
     responses: never;
@@ -4645,6 +5044,44 @@ export interface operations {
             };
         };
     };
+    PlatformController_provisionAcademy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProvisionAcademyResultDto"];
+                };
+            };
+        };
+    };
+    PlatformController_transferAcademy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferAcademyResultDto"];
+                };
+            };
+        };
+    };
     PlatformController_academy: {
         parameters: {
             query?: never;
@@ -4679,6 +5116,310 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PlatformAcademyOperationalOverviewDto"];
+                };
+            };
+        };
+    };
+    PlatformController_receiptViewUrl: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformSensitiveFileUrlDto"];
+                };
+            };
+        };
+    };
+    PlatformController_administrators: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformAdministratorsResponseDto"];
+                };
+            };
+        };
+    };
+    PlatformController_addAdministrator: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AddPlatformAdministratorResultDto"];
+                };
+            };
+        };
+    };
+    PlatformController_removeAdministrator: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformActionResultDto"];
+                };
+            };
+        };
+    };
+    PlatformController_startSupport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformSupportSessionDto"];
+                };
+            };
+        };
+    };
+    PlatformController_activateSupport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformSupportSessionDto"];
+                };
+            };
+        };
+    };
+    PlatformController_currentSupport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformSupportSessionDto"];
+                };
+            };
+        };
+    };
+    PlatformController_endSupport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformSupportSessionDto"];
+                };
+            };
+        };
+    };
+    PlatformController_audit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformAuditListResponseDto"];
+                };
+            };
+        };
+    };
+    PlatformController_users: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformUsersResponseDto"];
+                };
+            };
+        };
+    };
+    PlatformController_user: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformUserDetailDto"];
+                };
+            };
+        };
+    };
+    PlatformController_userDeletionImpact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformUserDeletionImpactDto"];
+                };
+            };
+        };
+    };
+    PlatformController_deleteUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformActionResultDto"];
+                };
+            };
+        };
+    };
+    PlatformController_banUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformActionResultDto"];
+                };
+            };
+        };
+    };
+    PlatformController_unbanUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformActionResultDto"];
+                };
+            };
+        };
+    };
+    PlatformController_revokeUserSessions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformActionResultDto"];
                 };
             };
         };

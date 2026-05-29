@@ -1,5 +1,6 @@
-import { Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import {
+  account,
   attendances,
   belts,
   classGroups,
@@ -8,12 +9,20 @@ import {
   member,
   monthlyFees,
   organization,
+  paymentReceipts,
+  platformSupportSessions,
   promotions,
+  session,
+  studentAccess,
   students,
   user,
 } from "@tatamiq/database";
-import { and, count, desc, eq, ilike, isNotNull, isNull, or } from "drizzle-orm";
+import { and, count, desc, eq, ilike, inArray, isNotNull, isNull, or } from "drizzle-orm";
+import { platformAdminUserIds } from "../auth";
+import { seedIbjjfBelts } from "../belts/seed-belts";
 import { DATABASE } from "../database/database.module";
+import { isPlatformAdminUser } from "./platform-admin.service";
+import { ReservedAccountService } from "./reserved-account.service";
 
 export type PlatformDashboard = {
   totals: {
@@ -38,6 +47,63 @@ export type PlatformAcademyDetail = PlatformAcademySummary & {
   address: string | null;
   phone: string | null;
   instagram: string | null;
+};
+
+export type ProvisionAcademyInput = {
+  academyName: string;
+  ownerEmail: string;
+  ownerName?: string;
+};
+
+export type ProvisionAcademyResult = {
+  academy: PlatformAcademyDetail;
+  ownerUserId: string;
+  ownerWasCreated: boolean;
+  firstAccessLink: string | null;
+};
+
+export type TransferAcademyInput = {
+  ownerEmail: string;
+  ownerName?: string;
+};
+
+export type TransferAcademyResult = {
+  academy: PlatformAcademyDetail;
+  ownerUserId: string;
+  ownerWasCreated: boolean;
+  firstAccessLink: string | null;
+};
+
+export type PlatformAdministrator = {
+  id: string;
+  name: string;
+  email: string;
+  role: string | null;
+  banned: boolean;
+  configured: boolean;
+  createdAt: string;
+};
+
+export type AddPlatformAdministratorResult = {
+  administrator: PlatformAdministrator;
+  userWasCreated: boolean;
+  firstAccessLink: string | null;
+};
+
+export type UserDeletionImpact = {
+  userId: string;
+  memberships: number;
+  ownedAcademies: Array<{ id: string; name: string; slug: string; isOnlyOwner: boolean }>;
+  studentAccessLinks: number;
+  activeSessions: number;
+  isPlatformAdmin: boolean;
+};
+
+export type DeleteUserInput = {
+  mode: "definitive" | "preserve_history";
+  ownerResolution?: "keep_ownerless" | "transfer";
+  transferOwnerEmail?: string;
+  transferOwnerName?: string;
 };
 
 type PlatformAcademyOwner = {
@@ -95,7 +161,10 @@ export type PlatformAcademyOperationalOverview = {
 
 @Injectable()
 export class PlatformService {
-  constructor(@Inject(DATABASE) private readonly db: Database) {}
+  constructor(
+    @Inject(DATABASE) private readonly db: Database,
+    @Inject(ReservedAccountService) private readonly reservedAccounts: ReservedAccountService,
+  ) {}
 
   async dashboard(): Promise<PlatformDashboard> {
     const [[academyTotal], [userTotal], [adminTotal], [bannedTotal], recentAcademies] =
@@ -116,6 +185,64 @@ export class PlatformService {
       },
       recentAcademies: recentAcademies.items,
     };
+  }
+
+  async listAdministrators(): Promise<{ items: PlatformAdministrator[] }> {
+    const configuredIds = platformAdminUserIds();
+    const roleCondition = eq(user.role, "admin");
+    const where =
+      configuredIds.length > 0 ? or(roleCondition, inArray(user.id, configuredIds)) : roleCondition;
+
+    const rows = await this.db.select().from(user).where(where).orderBy(user.email);
+
+    return {
+      items: rows.map((row) => toAdministrator(row, configuredIds)),
+    };
+  }
+
+  async addAdministrator(input: {
+    email: string;
+    name?: string;
+  }): Promise<AddPlatformAdministratorResult> {
+    const email = input.email.trim().toLowerCase();
+    const name = input.name?.trim() || email;
+    const reserved = await this.reservedAccounts.createOrReuse(email, name);
+
+    const [updated] = await this.db
+      .update(user)
+      .set({ role: "admin", updatedAt: new Date() })
+      .where(eq(user.id, reserved.user.id))
+      .returning();
+
+    return {
+      administrator: toAdministrator(updated ?? reserved.user, platformAdminUserIds()),
+      userWasCreated: reserved.isNew,
+      firstAccessLink: reserved.firstAccessLink
+        ? `${webAppUrl()}/first-access/${reserved.firstAccessLink}`
+        : null,
+    };
+  }
+
+  async removeAdministrator(userId: string): Promise<{ success: true }> {
+    const admins = await this.listAdministrators();
+    const activeAdmins = admins.items.filter((admin) => !admin.banned);
+    const target = admins.items.find((admin) => admin.id === userId);
+
+    if (!target) {
+      throw new NotFoundException("Administrador da Plataforma não encontrado.");
+    }
+
+    if (!target.configured && activeAdmins.length <= 1) {
+      throw new BadRequestException("Não é possível remover o último Administrador da Plataforma.");
+    }
+
+    await this.db
+      .update(user)
+      .set({ role: null, updatedAt: new Date() })
+      .where(eq(user.id, userId));
+    await this.db.delete(session).where(eq(session.userId, userId));
+
+    return { success: true };
   }
 
   async listAcademies(options: { query?: string; page?: number; pageSize?: number } = {}) {
@@ -161,6 +288,80 @@ export class PlatformService {
         total: total ?? 0,
         totalPages: Math.ceil((total ?? 0) / pageSize),
       },
+    };
+  }
+
+  async provisionAcademy(input: ProvisionAcademyInput): Promise<ProvisionAcademyResult> {
+    const academyName = input.academyName.trim();
+    const ownerEmail = input.ownerEmail.trim().toLowerCase();
+    const ownerName = input.ownerName?.trim() || ownerEmail;
+
+    const reserved = await this.reservedAccounts.createOrReuse(ownerEmail, ownerName);
+    const academyId = crypto.randomUUID();
+    const slug = await this.createUniqueAcademySlug(academyName);
+    const now = new Date();
+
+    await this.db.insert(organization).values({
+      id: academyId,
+      name: academyName,
+      slug,
+      createdAt: now,
+    });
+
+    await this.db.insert(member).values({
+      id: crypto.randomUUID(),
+      organizationId: academyId,
+      userId: reserved.user.id,
+      role: "owner",
+      createdAt: now,
+    });
+
+    await seedIbjjfBelts(this.db, academyId);
+
+    const academy = await this.getAcademy(academyId);
+
+    return {
+      academy,
+      ownerUserId: reserved.user.id,
+      ownerWasCreated: reserved.isNew,
+      firstAccessLink: reserved.firstAccessLink
+        ? `${webAppUrl()}/first-access/${reserved.firstAccessLink}`
+        : null,
+    };
+  }
+
+  async transferAcademy(
+    academyId: string,
+    input: TransferAcademyInput,
+  ): Promise<TransferAcademyResult> {
+    await this.getAcademy(academyId);
+
+    const ownerEmail = input.ownerEmail.trim().toLowerCase();
+    const ownerName = input.ownerName?.trim() || ownerEmail;
+    const reserved = await this.reservedAccounts.createOrReuse(ownerEmail, ownerName);
+    const now = new Date();
+
+    await this.db
+      .delete(member)
+      .where(and(eq(member.organizationId, academyId), eq(member.role, "owner")));
+
+    await this.db.insert(member).values({
+      id: crypto.randomUUID(),
+      organizationId: academyId,
+      userId: reserved.user.id,
+      role: "owner",
+      createdAt: now,
+    });
+
+    const academy = await this.getAcademy(academyId);
+
+    return {
+      academy,
+      ownerUserId: reserved.user.id,
+      ownerWasCreated: reserved.isNew,
+      firstAccessLink: reserved.firstAccessLink
+        ? `${webAppUrl()}/first-access/${reserved.firstAccessLink}`
+        : null,
     };
   }
 
@@ -330,6 +531,24 @@ export class PlatformService {
     };
   }
 
+  private async createUniqueAcademySlug(name: string): Promise<string> {
+    const base = slugify(name) || "academia";
+
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const suffix = crypto.randomUUID().slice(0, 6);
+      const candidate = `${base}-${suffix}`;
+      const existing = await this.db
+        .select({ id: organization.id })
+        .from(organization)
+        .where(eq(organization.slug, candidate))
+        .limit(1);
+
+      if (existing.length === 0) return candidate;
+    }
+
+    return `${base}-${crypto.randomUUID()}`;
+  }
+
   private countStudents(organizationId: string, status?: string) {
     return this.db
       .select({ total: count() })
@@ -387,10 +606,427 @@ export class PlatformService {
       .from(promotions)
       .where(eq(promotions.organizationId, organizationId));
   }
+
+  // --- User management ---
+
+  async listUsers(options: { query?: string; page?: number; pageSize?: number } = {}) {
+    const page = Math.max(0, options.page ?? 0);
+    const pageSize = Math.min(50, Math.max(1, options.pageSize ?? 10));
+    const query = options.query?.trim();
+    const where = query
+      ? or(ilike(user.email, `%${query}%`), ilike(user.name, `%${query}%`))
+      : undefined;
+
+    const [rows, [{ total }]] = await Promise.all([
+      this.db
+        .select()
+        .from(user)
+        .where(where)
+        .orderBy(desc(user.createdAt))
+        .limit(pageSize)
+        .offset(page * pageSize),
+      this.db.select({ total: count() }).from(user).where(where),
+    ]);
+
+    return {
+      items: rows.map((row) => toUserSummary(row)),
+      pagination: {
+        page,
+        pageSize,
+        total: total ?? 0,
+        totalPages: Math.ceil((total ?? 0) / pageSize),
+      },
+    };
+  }
+
+  async getUser(id: string) {
+    const [row] = await this.db.select().from(user).where(eq(user.id, id)).limit(1);
+
+    if (!row) {
+      throw new NotFoundException("Usuário não encontrado.");
+    }
+
+    const [memberships, studentAccessLinks, [{ activeSessions }]] = await Promise.all([
+      this.db
+        .select({ member, organization })
+        .from(member)
+        .innerJoin(organization, eq(member.organizationId, organization.id))
+        .where(eq(member.userId, id)),
+      this.db
+        .select({ studentAccess, student: students, organization })
+        .from(studentAccess)
+        .innerJoin(students, eq(studentAccess.studentId, students.id))
+        .innerJoin(organization, eq(studentAccess.organizationId, organization.id))
+        .where(eq(studentAccess.authUserId, id)),
+      this.db.select({ activeSessions: count() }).from(session).where(eq(session.userId, id)),
+    ]);
+
+    return {
+      ...toUserSummary(row),
+      emailVerified: row.emailVerified,
+      memberships: memberships.map((m) => ({
+        memberId: m.member.id,
+        organizationId: m.organization.id,
+        organizationName: m.organization.name,
+        organizationSlug: m.organization.slug,
+        role: m.member.role,
+        createdAt: m.member.createdAt.toISOString(),
+      })),
+      studentAccessLinks: studentAccessLinks.map((sa) => ({
+        id: sa.studentAccess.id,
+        studentId: sa.student.id,
+        studentName: sa.student.name,
+        organizationId: sa.organization.id,
+        organizationName: sa.organization.name,
+        status: sa.studentAccess.status,
+        createdAt: sa.studentAccess.createdAt.toISOString(),
+      })),
+      activeSessions: activeSessions ?? 0,
+    };
+  }
+
+  async banUser(id: string, reason?: string) {
+    const [row] = await this.db.select().from(user).where(eq(user.id, id)).limit(1);
+    if (!row) throw new NotFoundException("Usuário não encontrado.");
+
+    await this.db
+      .update(user)
+      .set({ banned: true, banReason: reason ?? null })
+      .where(eq(user.id, id));
+
+    await this.db.delete(session).where(eq(session.userId, id));
+
+    return { success: true };
+  }
+
+  async unbanUser(id: string) {
+    const [row] = await this.db.select().from(user).where(eq(user.id, id)).limit(1);
+    if (!row) throw new NotFoundException("Usuário não encontrado.");
+
+    await this.db.update(user).set({ banned: false, banReason: null }).where(eq(user.id, id));
+
+    return { success: true };
+  }
+
+  async getReceipt(academyId: string, receiptId: string) {
+    const [receipt] = await this.db
+      .select()
+      .from(paymentReceipts)
+      .where(and(eq(paymentReceipts.organizationId, academyId), eq(paymentReceipts.id, receiptId)))
+      .limit(1);
+    return receipt ?? null;
+  }
+
+  async prepareSupport(input: {
+    adminUserId: string;
+    targetUserId: string;
+    academyId?: string;
+    reason?: string;
+    ipAddress?: string | null;
+    userAgent?: string | null;
+  }) {
+    const [target] = await this.db
+      .select()
+      .from(user)
+      .where(eq(user.id, input.targetUserId))
+      .limit(1);
+    if (!target) throw new NotFoundException("Usuário não encontrado.");
+    if (isPlatformAdminUser(target, platformAdminUserIds())) {
+      throw new BadRequestException(
+        "Suporte Assistido não pode mirar outro Administrador da Plataforma.",
+      );
+    }
+
+    if (input.academyId) {
+      const [academy] = await this.db
+        .select({ id: organization.id })
+        .from(organization)
+        .where(eq(organization.id, input.academyId))
+        .limit(1);
+      if (!academy) throw new NotFoundException("Academia não encontrada.");
+    }
+
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + 60 * 60 * 1000);
+    const id = crypto.randomUUID();
+    await this.db.insert(platformSupportSessions).values({
+      id,
+      adminUserId: input.adminUserId,
+      targetUserId: input.targetUserId,
+      academyId: input.academyId ?? null,
+      reason: input.reason ?? null,
+      status: "pending",
+      ipAddress: input.ipAddress ?? null,
+      userAgent: input.userAgent ?? null,
+      startedAt: now,
+      expiresAt,
+    });
+
+    return {
+      id,
+      targetUserId: input.targetUserId,
+      targetName: target.name,
+      targetEmail: target.email,
+      academyId: input.academyId ?? null,
+      reason: input.reason ?? null,
+      expiresAt: expiresAt.toISOString(),
+    };
+  }
+
+  async activateSupport(input: {
+    supportSessionId: string;
+    adminUserId: string;
+    targetUserId: string;
+    impersonationSessionId: string;
+  }) {
+    const [support] = await this.db
+      .select()
+      .from(platformSupportSessions)
+      .where(eq(platformSupportSessions.id, input.supportSessionId))
+      .limit(1);
+    if (!support) throw new NotFoundException("Sessão de suporte não encontrada.");
+    if (support.adminUserId !== input.adminUserId || support.targetUserId !== input.targetUserId) {
+      throw new BadRequestException("Sessão de suporte não pertence a esta impersonação.");
+    }
+    if (support.expiresAt <= new Date()) {
+      throw new BadRequestException("Sessão de suporte expirada.");
+    }
+
+    const activatedAt = new Date();
+    await this.db
+      .update(platformSupportSessions)
+      .set({
+        status: "active",
+        activatedAt,
+        impersonationSessionId: input.impersonationSessionId,
+      })
+      .where(eq(platformSupportSessions.id, input.supportSessionId));
+
+    return this.supportDto({
+      ...support,
+      status: "active",
+      activatedAt,
+      impersonationSessionId: input.impersonationSessionId,
+    });
+  }
+
+  async currentSupport(impersonationSessionId?: string | null) {
+    if (!impersonationSessionId) return null;
+    const [support] = await this.db
+      .select({ support: platformSupportSessions, admin: user })
+      .from(platformSupportSessions)
+      .leftJoin(user, eq(platformSupportSessions.adminUserId, user.id))
+      .where(eq(platformSupportSessions.impersonationSessionId, impersonationSessionId))
+      .limit(1);
+
+    if (
+      !support ||
+      support.support.status !== "active" ||
+      support.support.expiresAt <= new Date()
+    ) {
+      return null;
+    }
+
+    return {
+      ...this.supportDto(support.support),
+      adminName: support.admin?.name ?? null,
+      adminEmail: support.admin?.email ?? null,
+    };
+  }
+
+  async endSupport(impersonationSessionId?: string | null) {
+    const current = await this.currentSupport(impersonationSessionId);
+    if (!current) throw new BadRequestException("Nenhum Suporte Assistido ativo.");
+    const endedAt = new Date();
+    await this.db
+      .update(platformSupportSessions)
+      .set({ status: "ended", endedAt })
+      .where(eq(platformSupportSessions.id, current.id));
+    return { ...current, status: "ended", endedAt: endedAt.toISOString() };
+  }
+
+  async revokeUserSessions(id: string) {
+    const [row] = await this.db.select().from(user).where(eq(user.id, id)).limit(1);
+    if (!row) throw new NotFoundException("Usuário não encontrado.");
+
+    await this.db.delete(session).where(eq(session.userId, id));
+
+    return { success: true };
+  }
+
+  async userDeletionImpact(id: string): Promise<UserDeletionImpact> {
+    const [row] = await this.db.select().from(user).where(eq(user.id, id)).limit(1);
+    if (!row) throw new NotFoundException("Usuário não encontrado.");
+
+    const [memberships, studentAccessRows, [{ activeSessions }]] = await Promise.all([
+      this.db
+        .select({ member, organization })
+        .from(member)
+        .innerJoin(organization, eq(member.organizationId, organization.id))
+        .where(eq(member.userId, id)),
+      this.db
+        .select({ id: studentAccess.id })
+        .from(studentAccess)
+        .where(eq(studentAccess.authUserId, id)),
+      this.db.select({ activeSessions: count() }).from(session).where(eq(session.userId, id)),
+    ]);
+
+    const ownedMemberships = memberships.filter((item) => item.member.role === "owner");
+    const ownerCounts = await Promise.all(
+      ownedMemberships.map(async (item) => {
+        const [{ total }] = await this.db
+          .select({ total: count() })
+          .from(member)
+          .where(and(eq(member.organizationId, item.organization.id), eq(member.role, "owner")));
+        return { organizationId: item.organization.id, total: total ?? 0 };
+      }),
+    );
+
+    return {
+      userId: id,
+      memberships: memberships.length,
+      ownedAcademies: ownedMemberships.map((item) => ({
+        id: item.organization.id,
+        name: item.organization.name,
+        slug: item.organization.slug,
+        isOnlyOwner:
+          (ownerCounts.find((countRow) => countRow.organizationId === item.organization.id)
+            ?.total ?? 0) <= 1,
+      })),
+      studentAccessLinks: studentAccessRows.length,
+      activeSessions: activeSessions ?? 0,
+      isPlatformAdmin: row.role === "admin" || platformAdminUserIds().includes(row.id),
+    };
+  }
+
+  private supportDto(row: typeof platformSupportSessions.$inferSelect) {
+    return {
+      id: row.id,
+      adminUserId: row.adminUserId,
+      targetUserId: row.targetUserId,
+      academyId: row.academyId,
+      reason: row.reason,
+      status: row.status,
+      startedAt: row.startedAt.toISOString(),
+      activatedAt: row.activatedAt?.toISOString() ?? null,
+      endedAt: row.endedAt?.toISOString() ?? null,
+      expiresAt: row.expiresAt.toISOString(),
+    };
+  }
+
+  async deleteUser(id: string, input: DeleteUserInput) {
+    const impact = await this.userDeletionImpact(id);
+    const onlyOwnerAcademies = impact.ownedAcademies.filter((academy) => academy.isOnlyOwner);
+
+    if (onlyOwnerAcademies.length > 0) {
+      if (!input.ownerResolution) {
+        throw new BadRequestException("Resolva a propriedade da academia antes de excluir.");
+      }
+
+      if (input.ownerResolution === "transfer") {
+        if (!input.transferOwnerEmail) {
+          throw new BadRequestException("Email do novo dono é obrigatório.");
+        }
+        for (const academy of onlyOwnerAcademies) {
+          await this.transferAcademy(academy.id, {
+            ownerEmail: input.transferOwnerEmail,
+            ...(input.transferOwnerName ? { ownerName: input.transferOwnerName } : {}),
+          });
+        }
+      }
+
+      if (input.ownerResolution === "keep_ownerless") {
+        for (const academy of onlyOwnerAcademies) {
+          await this.db
+            .delete(member)
+            .where(
+              and(
+                eq(member.organizationId, academy.id),
+                eq(member.userId, id),
+                eq(member.role, "owner"),
+              ),
+            );
+        }
+      }
+    }
+
+    await this.db.delete(session).where(eq(session.userId, id));
+
+    if (input.mode === "definitive") {
+      await this.db.delete(user).where(eq(user.id, id));
+      return { success: true };
+    }
+
+    await this.db.delete(account).where(eq(account.userId, id));
+    await this.db
+      .update(user)
+      .set({
+        name: "Usuário excluído",
+        email: `deleted+${id}@tatamiq.local`,
+        image: null,
+        role: null,
+        banned: true,
+        banReason: "deleted_preserving_history",
+        updatedAt: new Date(),
+      })
+      .where(eq(user.id, id));
+
+    return { success: true };
+  }
 }
+
+export type PlatformUserSummary = {
+  id: string;
+  name: string;
+  email: string;
+  image: string | null;
+  role: string | null;
+  banned: boolean;
+  banReason: string | null;
+  createdAt: string;
+};
 
 type OrganizationRow = typeof organization.$inferSelect;
 type UserRow = typeof user.$inferSelect;
+
+function toUserSummary(row: UserRow): PlatformUserSummary {
+  return {
+    id: row.id,
+    name: row.name,
+    email: row.email,
+    image: row.image ?? null,
+    role: row.role ?? null,
+    banned: row.banned,
+    banReason: row.banReason ?? null,
+    createdAt: row.createdAt.toISOString(),
+  };
+}
+
+function slugify(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-{2,}/g, "-");
+}
+
+function webAppUrl(): string {
+  return process.env.WEB_APP_URL ?? process.env.CORS_ORIGIN ?? "http://localhost:5173";
+}
+
+function toAdministrator(row: UserRow, configuredIds: string[]): PlatformAdministrator {
+  return {
+    id: row.id,
+    name: row.name,
+    email: row.email,
+    role: row.role,
+    banned: row.banned,
+    configured: configuredIds.includes(row.id),
+    createdAt: row.createdAt.toISOString(),
+  };
+}
 
 function toAcademySummary(org: OrganizationRow, owner: UserRow | null): PlatformAcademySummary {
   return {

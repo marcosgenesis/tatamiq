@@ -10,6 +10,6 @@ import { R2StorageService } from "./r2-storage.service";
   imports: [DatabaseModule, ScheduleModule.forRoot()],
   controllers: [MonthlyFeesController],
   providers: [MonthlyFeesService, FeeGenerationService, R2StorageService],
-  exports: [MonthlyFeesService, FeeGenerationService],
+  exports: [MonthlyFeesService, FeeGenerationService, R2StorageService],
 })
 export class MonthlyFeesModule {}

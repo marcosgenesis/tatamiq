@@ -1,8 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, useNavigate } from "@tanstack/react-router";
 import { Building02Icon, UserMultiple02Icon } from "hugeicons-react";
-import { type ReactNode, useState } from "react";
-import { LogoIcon } from "../../components/logo";
+import { useState } from "react";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
@@ -17,6 +16,7 @@ import {
 } from "../../components/ui/table";
 import { authClient } from "../../lib/auth-client";
 import {
+  activatePlatformSupport,
   getPlatformAcademy,
   getPlatformAcademyOperationalOverview,
   getPlatformDashboard,
@@ -24,11 +24,21 @@ import {
   listPlatformAcademies,
   type PlatformAcademyOperationalOverview,
   type PlatformAcademySummary,
+  provisionPlatformAcademy,
+  startPlatformSupport,
+  transferPlatformAcademy,
 } from "./platform-api";
+import { PlatformLoading, PlatformShell } from "./platform-shell";
 
 export function PlatformPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [academyQuery, setAcademyQuery] = useState("");
+  const [provisionForm, setProvisionForm] = useState({
+    academyName: "",
+    ownerEmail: "",
+    ownerName: "",
+  });
   const platform = useQuery({
     queryKey: ["platform", "me"],
     queryFn: getPlatformMe,
@@ -43,6 +53,16 @@ export function PlatformPage() {
     queryKey: ["platform", "academies", academyQuery],
     queryFn: () => listPlatformAcademies(academyQuery),
     retry: false,
+  });
+  const provision = useMutation({
+    mutationFn: provisionPlatformAcademy,
+    onSuccess: async () => {
+      setProvisionForm({ academyName: "", ownerEmail: "", ownerName: "" });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["platform", "dashboard"] }),
+        queryClient.invalidateQueries({ queryKey: ["platform", "academies"] }),
+      ]);
+    },
   });
 
   if (platform.isLoading) {
@@ -64,12 +84,99 @@ export function PlatformPage() {
       user={user}
       onSignOut={() => authClient.signOut().then(() => navigate({ to: "/sign-in" }))}
     >
+      <div className="flex items-center gap-3">
+        <Link
+          to="/platform/users"
+          className="ml-auto inline-flex h-8 items-center justify-center rounded-lg border border-border bg-background px-3 text-sm font-medium transition-colors hover:bg-muted"
+        >
+          Usuários
+        </Link>
+        <Link
+          to="/platform/administrators"
+          className="inline-flex h-8 items-center justify-center rounded-lg border border-border bg-background px-3 text-sm font-medium transition-colors hover:bg-muted"
+        >
+          Administradores
+        </Link>
+        <Link
+          to="/platform/audit"
+          className="inline-flex h-8 items-center justify-center rounded-lg border border-border bg-background px-3 text-sm font-medium transition-colors hover:bg-muted"
+        >
+          Auditoria
+        </Link>
+      </div>
+
       <section className="grid gap-4 md:grid-cols-4">
         <MetricCard label="Academias" value={dashboard.data?.totals.academies} />
         <MetricCard label="Usuários" value={dashboard.data?.totals.users} />
         <MetricCard label="Administradores" value={dashboard.data?.totals.admins} />
         <MetricCard label="Usuários bloqueados" value={dashboard.data?.totals.bannedUsers} />
       </section>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Provisionar Academia</CardTitle>
+          <p className="text-muted-foreground text-sm">
+            Crie uma Academia para um email existente ou para uma Conta Reservada com link copiável.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <form
+            className="grid gap-3 md:grid-cols-[1fr_1fr_1fr_auto]"
+            onSubmit={(event) => {
+              event.preventDefault();
+              provision.mutate({
+                academyName: provisionForm.academyName,
+                ownerEmail: provisionForm.ownerEmail,
+                ...(provisionForm.ownerName ? { ownerName: provisionForm.ownerName } : {}),
+              });
+            }}
+          >
+            <Input
+              required
+              placeholder="Nome da academia"
+              value={provisionForm.academyName}
+              onChange={(event) =>
+                setProvisionForm((current) => ({ ...current, academyName: event.target.value }))
+              }
+            />
+            <Input
+              required
+              type="email"
+              placeholder="Email do dono"
+              value={provisionForm.ownerEmail}
+              onChange={(event) =>
+                setProvisionForm((current) => ({ ...current, ownerEmail: event.target.value }))
+              }
+            />
+            <Input
+              placeholder="Nome do dono"
+              value={provisionForm.ownerName}
+              onChange={(event) =>
+                setProvisionForm((current) => ({ ...current, ownerName: event.target.value }))
+              }
+            />
+            <Button type="submit" disabled={provision.isPending}>
+              {provision.isPending ? "Criando..." : "Provisionar"}
+            </Button>
+          </form>
+          {provision.data?.firstAccessLink ? (
+            <div className="mt-4 rounded-lg border bg-background p-3 text-sm">
+              <p className="font-medium">Link de primeiro acesso</p>
+              <p className="break-all text-muted-foreground">{provision.data.firstAccessLink}</p>
+            </div>
+          ) : null}
+          {provision.data && !provision.data.firstAccessLink ? (
+            <p className="mt-3 text-muted-foreground text-sm">
+              Academia provisionada para uma conta existente.
+            </p>
+          ) : null}
+          {provision.isError ? (
+            <p className="mt-3 text-destructive text-sm">
+              Não foi possível provisionar a academia.
+            </p>
+          ) : null}
+        </CardContent>
+      </Card>
 
       <section className="grid gap-6 lg:grid-cols-[1fr_0.8fr]">
         <Card>
@@ -117,6 +224,9 @@ export function PlatformPage() {
 
 export function PlatformAcademyPage({ academyId }: { academyId: string }) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [transferForm, setTransferForm] = useState({ ownerEmail: "", ownerName: "" });
+  const [supportReason, setSupportReason] = useState("");
   const platform = useQuery({ queryKey: ["platform", "me"], queryFn: getPlatformMe, retry: false });
   const academy = useQuery({
     queryKey: ["platform", "academies", academyId],
@@ -127,6 +237,42 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
     queryKey: ["platform", "academies", academyId, "operational-overview"],
     queryFn: () => getPlatformAcademyOperationalOverview(academyId),
     retry: false,
+  });
+  const support = useMutation({
+    mutationFn: async () => {
+      if (!academy.data?.owner) throw new Error("Academia sem dono.");
+      const prepared = await startPlatformSupport({
+        targetUserId: academy.data.owner.id,
+        academyId,
+        ...(supportReason ? { reason: supportReason } : {}),
+      });
+      const impersonation = await authClient.admin.impersonateUser({
+        userId: academy.data.owner.id,
+      });
+      if (impersonation.error)
+        throw new Error(impersonation.error.message ?? "Erro ao iniciar suporte.");
+      await activatePlatformSupport(prepared.id);
+    },
+    onSuccess: () => {
+      queryClient.clear();
+      window.location.href = "/choose-area";
+    },
+  });
+
+  const transfer = useMutation({
+    mutationFn: () =>
+      transferPlatformAcademy(academyId, {
+        ownerEmail: transferForm.ownerEmail,
+        ...(transferForm.ownerName ? { ownerName: transferForm.ownerName } : {}),
+      }),
+    onSuccess: async () => {
+      setTransferForm({ ownerEmail: "", ownerName: "" });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["platform", "academies", academyId] }),
+        queryClient.invalidateQueries({ queryKey: ["platform", "dashboard"] }),
+        queryClient.invalidateQueries({ queryKey: ["platform", "academies"] }),
+      ]);
+    },
   });
 
   if (platform.isLoading || academy.isLoading) {
@@ -187,15 +333,83 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
 
         <Card>
           <CardHeader>
-            <CardTitle>Regra de edição</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm text-muted-foreground">
-            <p>
-              Esta visão é completa o suficiente para diagnóstico, mas é somente leitura. Editar
-              alunos, turmas, mensalidades, presenças, Pix ou graduação não é permitido diretamente
-              em /platform.
+            <CardTitle>Suporte Assistido</CardTitle>
+            <p className="text-muted-foreground text-sm">
+              Entre como o dono por até 1 hora para prestar suporte operacional visível e auditado.
             </p>
-            <p>Quando a edição for necessária, ela deve acontecer via Suporte Assistido.</p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Input
+              placeholder="Motivo do suporte (opcional)"
+              value={supportReason}
+              onChange={(event) => setSupportReason(event.target.value)}
+              disabled={!academy.data.owner || support.isPending}
+            />
+            <Button
+              variant="outline"
+              onClick={() => support.mutate()}
+              disabled={!academy.data.owner || support.isPending}
+            >
+              {support.isPending ? "Iniciando..." : "Iniciar suporte como dono"}
+            </Button>
+            {!academy.data.owner ? (
+              <p className="text-muted-foreground text-sm">Academia sem dono para suporte.</p>
+            ) : null}
+            {support.isError ? (
+              <p className="text-destructive text-sm">Não foi possível iniciar o suporte.</p>
+            ) : null}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Transferência de Academia</CardTitle>
+            <p className="text-muted-foreground text-sm">
+              Troque o dono operacional sem acessar senha ou caixa de email do cliente.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <form
+              className="grid gap-3"
+              onSubmit={(event) => {
+                event.preventDefault();
+                transfer.mutate();
+              }}
+            >
+              <Input
+                required
+                type="email"
+                placeholder="Novo email do dono"
+                value={transferForm.ownerEmail}
+                onChange={(event) =>
+                  setTransferForm((current) => ({ ...current, ownerEmail: event.target.value }))
+                }
+              />
+              <Input
+                placeholder="Nome do novo dono"
+                value={transferForm.ownerName}
+                onChange={(event) =>
+                  setTransferForm((current) => ({ ...current, ownerName: event.target.value }))
+                }
+              />
+              <Button type="submit" disabled={transfer.isPending}>
+                {transfer.isPending ? "Transferindo..." : "Transferir Academia"}
+              </Button>
+            </form>
+            {transfer.data?.firstAccessLink ? (
+              <div className="rounded-lg border bg-background p-3 text-sm">
+                <p className="font-medium">Link de primeiro acesso</p>
+                <p className="break-all text-muted-foreground">{transfer.data.firstAccessLink}</p>
+              </div>
+            ) : null}
+            {transfer.data && !transfer.data.firstAccessLink ? (
+              <p className="text-muted-foreground text-sm">
+                Academia transferida para conta existente.
+              </p>
+            ) : null}
+            {transfer.isError ? (
+              <p className="text-destructive text-sm">Não foi possível transferir a academia.</p>
+            ) : null}
           </CardContent>
         </Card>
       </section>
@@ -379,49 +593,6 @@ function SmallMetric({ label, value }: { label: string; value: number }) {
   );
 }
 
-function PlatformShell({
-  user,
-  onSignOut,
-  children,
-}: {
-  user: { name: string | null; email: string | null };
-  onSignOut: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <main className="min-h-screen bg-muted/30 text-foreground">
-      <header className="border-b bg-background">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-3">
-            <LogoIcon className="size-8" />
-            <div>
-              <p className="text-muted-foreground text-sm">Tatamiq</p>
-              <h1 className="font-semibold text-xl">Administração da Plataforma</h1>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="hidden text-right text-sm sm:block">
-              <p className="font-medium">{user.name ?? "Administrador"}</p>
-              <p className="text-muted-foreground">{user.email ?? "Sem email"}</p>
-            </div>
-            <Link
-              to="/choose-area"
-              className="inline-flex h-8 items-center justify-center rounded-lg border border-border bg-background px-2.5 text-sm font-medium transition-colors hover:bg-muted"
-            >
-              Trocar área
-            </Link>
-            <Button variant="ghost" onClick={onSignOut}>
-              Sair
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <div className="mx-auto space-y-6 px-6 py-8 max-w-6xl">{children}</div>
-    </main>
-  );
-}
-
 function MetricCard({ label, value }: { label: string; value: number | undefined }) {
   return (
     <Card>
@@ -512,17 +683,6 @@ function DetailRow({ label, value }: { label: string; value: string }) {
       <span className="text-muted-foreground">{label}</span>
       <span className="text-right font-medium">{value}</span>
     </div>
-  );
-}
-
-function PlatformLoading({ label }: { label: string }) {
-  return (
-    <main className="grid min-h-screen place-items-center bg-background text-foreground">
-      <div className="flex flex-col items-center gap-4">
-        <LogoIcon className="size-12" />
-        <p className="text-muted-foreground text-sm">{label}</p>
-      </div>
-    </main>
   );
 }
 
