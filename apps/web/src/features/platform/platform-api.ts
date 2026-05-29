@@ -124,8 +124,12 @@ export async function getPlatformDashboard(): Promise<PlatformDashboard> {
   return platformFetch("/platform/dashboard");
 }
 
-export async function listPlatformAcademies(query: string): Promise<PlatformAcademiesResponse> {
-  const params = new URLSearchParams({ pageSize: "10" });
+export async function listPlatformAcademies(
+  query: string,
+  page = 0,
+  pageSize = 10,
+): Promise<PlatformAcademiesResponse> {
+  const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
   if (query.trim()) params.set("q", query.trim());
   return platformFetch(`/platform/academies?${params.toString()}`);
 }
@@ -196,8 +200,9 @@ export async function listPlatformAuditLogs(filters: {
   from?: string;
   to?: string;
   page?: number;
+  pageSize?: number;
 }): Promise<PlatformAuditListResponse> {
-  const params = new URLSearchParams({ pageSize: "20" });
+  const params = new URLSearchParams({ pageSize: String(filters.pageSize ?? 20) });
   if (filters.action) params.set("action", filters.action);
   if (filters.adminUserId) params.set("adminUserId", filters.adminUserId);
   if (filters.academyId) params.set("academyId", filters.academyId);
@@ -258,11 +263,11 @@ export type PlatformUserDetail = PlatformUserSummary & {
 
 export async function listPlatformUsers(
   query: string,
-  page?: number,
+  page = 0,
+  pageSize = 10,
 ): Promise<PlatformUsersResponse> {
-  const params = new URLSearchParams({ pageSize: "10" });
+  const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
   if (query.trim()) params.set("q", query.trim());
-  if (page !== undefined) params.set("page", String(page));
   return platformFetch(`/platform/users?${params.toString()}`);
 }
 
@@ -360,6 +365,12 @@ export type PlatformAdministrator = {
 
 export type PlatformAdministratorsResponse = {
   items: PlatformAdministrator[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
 };
 
 export type AddPlatformAdministratorResult = {
@@ -368,8 +379,12 @@ export type AddPlatformAdministratorResult = {
   firstAccessLink: string | null;
 };
 
-export async function listPlatformAdministrators(): Promise<PlatformAdministratorsResponse> {
-  return platformFetch("/platform/administrators");
+export async function listPlatformAdministrators(
+  page = 0,
+  pageSize = 10,
+): Promise<PlatformAdministratorsResponse> {
+  const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+  return platformFetch(`/platform/administrators?${params.toString()}`);
 }
 
 export async function addPlatformAdministrator(input: {

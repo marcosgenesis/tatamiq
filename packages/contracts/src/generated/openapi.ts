@@ -2909,6 +2909,7 @@ export interface components {
         };
         PlatformAdministratorsResponseDto: {
             items: components["schemas"]["PlatformAdministratorDto"][];
+            pagination: components["schemas"]["PlatformPaginationDto"];
         };
         AddPlatformAdministratorResultDto: {
             administrator: components["schemas"]["PlatformAdministratorDto"];

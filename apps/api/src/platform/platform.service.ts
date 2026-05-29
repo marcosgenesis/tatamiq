@@ -187,16 +187,36 @@ export class PlatformService {
     };
   }
 
-  async listAdministrators(): Promise<{ items: PlatformAdministrator[] }> {
+  async listAdministrators(options: { page?: number; pageSize?: number } = {}): Promise<{
+    items: PlatformAdministrator[];
+    pagination: { page: number; pageSize: number; total: number; totalPages: number };
+  }> {
+    const page = Math.max(0, options.page ?? 0);
+    const pageSize = Math.min(50, Math.max(1, options.pageSize ?? 10));
     const configuredIds = platformAdminUserIds();
     const roleCondition = eq(user.role, "admin");
     const where =
       configuredIds.length > 0 ? or(roleCondition, inArray(user.id, configuredIds)) : roleCondition;
 
-    const rows = await this.db.select().from(user).where(where).orderBy(user.email);
+    const [rows, [{ total }]] = await Promise.all([
+      this.db
+        .select()
+        .from(user)
+        .where(where)
+        .orderBy(user.email)
+        .limit(pageSize)
+        .offset(page * pageSize),
+      this.db.select({ total: count() }).from(user).where(where),
+    ]);
 
     return {
       items: rows.map((row) => toAdministrator(row, configuredIds)),
+      pagination: {
+        page,
+        pageSize,
+        total: total ?? 0,
+        totalPages: Math.ceil((total ?? 0) / pageSize),
+      },
     };
   }
 
@@ -224,15 +244,23 @@ export class PlatformService {
   }
 
   async removeAdministrator(userId: string): Promise<{ success: true }> {
-    const admins = await this.listAdministrators();
-    const activeAdmins = admins.items.filter((admin) => !admin.banned);
-    const target = admins.items.find((admin) => admin.id === userId);
+    const configuredIds = platformAdminUserIds();
+    const roleCondition = eq(user.role, "admin");
+    const adminWhere =
+      configuredIds.length > 0 ? or(roleCondition, inArray(user.id, configuredIds)) : roleCondition;
+    const [targetRow] = await this.db.select().from(user).where(eq(user.id, userId)).limit(1);
 
-    if (!target) {
+    if (!targetRow || (targetRow.role !== "admin" && !configuredIds.includes(targetRow.id))) {
       throw new NotFoundException("Administrador da Plataforma não encontrado.");
     }
 
-    if (!target.configured && activeAdmins.length <= 1) {
+    const [{ activeAdmins }] = await this.db
+      .select({ activeAdmins: count() })
+      .from(user)
+      .where(and(adminWhere, eq(user.banned, false)));
+    const target = toAdministrator(targetRow, configuredIds);
+
+    if (!target.configured && (activeAdmins ?? 0) <= 1) {
       throw new BadRequestException("Não é possível remover o último Administrador da Plataforma.");
     }
 

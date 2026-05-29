@@ -209,9 +209,16 @@ export class PlatformController {
 
   @Get("administrators")
   @ApiOkResponse({ type: PlatformAdministratorsResponseDto })
-  administrators(@Session() session: PlatformSession) {
+  administrators(
+    @Session() session: PlatformSession,
+    @Query("page") page?: string,
+    @Query("pageSize") pageSize?: string,
+  ) {
     this.platformAdminService.assertPlatformAdmin(session);
-    return this.platformService.listAdministrators();
+    return this.platformService.listAdministrators({
+      page: parseOptionalInteger(page),
+      pageSize: parseOptionalInteger(pageSize),
+    });
   }
 
   @Post("administrators")

@@ -581,6 +581,9 @@ export class PlatformAdministratorDto {
 export class PlatformAdministratorsResponseDto {
   @ApiProperty({ type: () => [PlatformAdministratorDto] })
   items!: PlatformAdministratorDto[];
+
+  @ApiProperty({ type: () => PlatformPaginationDto })
+  pagination!: PlatformPaginationDto;
 }
 
 export class AddPlatformAdministratorBodyDto {

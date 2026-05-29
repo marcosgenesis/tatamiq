@@ -8328,10 +8328,14 @@
             "items": {
               "$ref": "#/components/schemas/PlatformAdministratorDto"
             }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PlatformPaginationDto"
           }
         },
         "required": [
-          "items"
+          "items",
+          "pagination"
         ]
       },
       "AddPlatformAdministratorResultDto": {

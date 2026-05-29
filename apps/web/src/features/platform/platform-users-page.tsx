@@ -1,18 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, Navigate, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import {
+  type ColumnDef,
+  getCoreRowModel,
+  type PaginationState,
+  useReactTable,
+} from "@tanstack/react-table";
+import { type Dispatch, type SetStateAction, useMemo, useState } from "react";
+import { DataGrid, DataGridContainer } from "@/components/reui/data-grid/data-grid";
+import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination";
+import { DataGridTable } from "@/components/reui/data-grid/data-grid-table";
 import { Badge } from "../../components/ui/badge";
-import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../../components/ui/table";
 import { authClient } from "../../lib/auth-client";
 import { getPlatformMe, listPlatformUsers, type PlatformUserSummary } from "./platform-api";
 import { PlatformLoading, PlatformShell } from "./platform-shell";
@@ -20,7 +20,7 @@ import { PlatformLoading, PlatformShell } from "./platform-shell";
 export function PlatformUsersPage() {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
-  const [page, setPage] = useState(0);
+  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
 
   const platform = useQuery({
     queryKey: ["platform", "me"],
@@ -29,8 +29,8 @@ export function PlatformUsersPage() {
   });
 
   const users = useQuery({
-    queryKey: ["platform", "users", query, page],
-    queryFn: () => listPlatformUsers(query, page),
+    queryKey: ["platform", "users", query, pagination.pageIndex, pagination.pageSize],
+    queryFn: () => listPlatformUsers(query, pagination.pageIndex, pagination.pageSize),
     retry: false,
   });
 
@@ -72,98 +72,126 @@ export function PlatformUsersPage() {
               value={query}
               onChange={(event) => {
                 setQuery(event.target.value);
-                setPage(0);
+                setPagination((current) => ({ ...current, pageIndex: 0 }));
               }}
             />
           </div>
         </CardHeader>
         <CardContent>
-          {users.isLoading ? (
-            <p className="text-muted-foreground text-sm">Carregando...</p>
-          ) : (users.data?.items.length ?? 0) === 0 ? (
-            <p className="text-muted-foreground text-sm">Nenhum usuário encontrado.</p>
-          ) : (
-            <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Usuário</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Papel</TableHead>
-                    <TableHead>Cadastrado em</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users.data?.items.map((u) => (
-                    <UserRow key={u.id} user={u} />
-                  ))}
-                </TableBody>
-              </Table>
-
-              {users.data && users.data.pagination.totalPages > 1 ? (
-                <div className="mt-4 flex items-center justify-between">
-                  <p className="text-muted-foreground text-sm">
-                    Página {users.data.pagination.page + 1} de {users.data.pagination.totalPages} (
-                    {users.data.pagination.total} usuários)
-                  </p>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={page === 0}
-                      onClick={() => setPage((p) => Math.max(0, p - 1))}
-                    >
-                      Anterior
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={page >= users.data.pagination.totalPages - 1}
-                      onClick={() => setPage((p) => p + 1)}
-                    >
-                      Próxima
-                    </Button>
-                  </div>
-                </div>
-              ) : null}
-            </>
-          )}
+          <UsersDataGrid
+            users={users.data?.items ?? []}
+            loading={users.isLoading}
+            pagination={pagination}
+            onPaginationChange={setPagination}
+            rowCount={users.data?.pagination.total ?? 0}
+            pageCount={users.data?.pagination.totalPages ?? -1}
+          />
         </CardContent>
       </Card>
     </PlatformShell>
   );
 }
 
-function UserRow({ user }: { user: PlatformUserSummary }) {
-  return (
-    <TableRow>
-      <TableCell>
-        <Link
-          to="/platform/users/$userId"
-          params={{ userId: user.id }}
-          className="font-medium hover:underline"
-        >
-          {user.name}
-        </Link>
-        <p className="text-muted-foreground text-xs">{user.email}</p>
-      </TableCell>
-      <TableCell>
-        {user.banned ? (
-          <Badge variant="warning">Bloqueado</Badge>
-        ) : (
-          <Badge variant="default">Ativo</Badge>
-        )}
-      </TableCell>
-      <TableCell>
-        {user.role === "admin" ? (
-          <Badge variant="muted">Admin</Badge>
-        ) : (
-          <span className="text-muted-foreground text-sm">Usuário</span>
-        )}
-      </TableCell>
-      <TableCell className="text-sm">
-        {new Intl.DateTimeFormat("pt-BR", { dateStyle: "short" }).format(new Date(user.createdAt))}
-      </TableCell>
-    </TableRow>
+function UsersDataGrid({
+  users,
+  loading,
+  pagination,
+  onPaginationChange,
+  rowCount,
+  pageCount,
+}: {
+  users: PlatformUserSummary[];
+  loading: boolean;
+  pagination: PaginationState;
+  onPaginationChange: Dispatch<SetStateAction<PaginationState>>;
+  rowCount: number;
+  pageCount: number;
+}) {
+  const columns = useMemo<ColumnDef<PlatformUserSummary>[]>(
+    () => [
+      {
+        accessorKey: "name",
+        header: "Usuário",
+        size: 320,
+        cell: ({ row }) => (
+          <div>
+            <Link
+              to="/platform/users/$userId"
+              params={{ userId: row.original.id }}
+              className="font-medium hover:underline"
+            >
+              {row.original.name}
+            </Link>
+            <p className="text-muted-foreground text-xs">{row.original.email}</p>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "banned",
+        header: "Status",
+        size: 120,
+        cell: ({ row }) =>
+          row.original.banned ? (
+            <Badge variant="warning">Bloqueado</Badge>
+          ) : (
+            <Badge variant="default">Ativo</Badge>
+          ),
+      },
+      {
+        accessorKey: "role",
+        header: "Papel",
+        size: 140,
+        cell: ({ row }) =>
+          row.original.role === "admin" ? (
+            <Badge variant="muted">Admin</Badge>
+          ) : (
+            <span className="text-muted-foreground text-sm">Usuário</span>
+          ),
+      },
+      {
+        accessorKey: "createdAt",
+        header: "Cadastrado em",
+        size: 160,
+        cell: ({ row }) => <span>{formatDate(row.original.createdAt)}</span>,
+      },
+    ],
+    [],
   );
+
+  const table = useReactTable({
+    data: users,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    manualPagination: true,
+    pageCount,
+    state: { pagination },
+    onPaginationChange,
+  });
+
+  return (
+    <DataGridContainer>
+      <DataGrid
+        table={table}
+        recordCount={rowCount}
+        isLoading={loading}
+        emptyMessage="Nenhum usuário encontrado."
+        tableLayout={{ headerSticky: true }}
+        tableClassNames={{ edgeCell: "px-4" }}
+      >
+        <DataGridTable />
+        <DataGridPagination
+          className="border-border border-t px-4 py-3 sm:py-3"
+          rowsPerPageLabel="Linhas por página"
+          previousPageLabel="Página anterior"
+          nextPageLabel="Próxima página"
+          info="{from} - {to} de {count}"
+          sizes={[10, 25, 50]}
+        />
+      </DataGrid>
+    </DataGridContainer>
+  );
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short" }).format(new Date(value));
 }
