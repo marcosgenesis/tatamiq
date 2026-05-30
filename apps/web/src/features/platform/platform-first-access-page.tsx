@@ -1,10 +1,10 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { api } from "../../api";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { AuthLayout } from "../auth/auth-layout";
-import { completeReservedFirstAccess, previewReservedFirstAccess } from "./platform-api";
 
 export function PlatformFirstAccessPage({ token }: { token: string }) {
   const navigate = useNavigate();
@@ -13,12 +13,25 @@ export function PlatformFirstAccessPage({ token }: { token: string }) {
 
   const preview = useQuery({
     queryKey: ["platform", "first-access", token],
-    queryFn: () => previewReservedFirstAccess(token),
+    queryFn: async () => {
+      const { data, error } = await api.GET("/platform/first-access/{token}", {
+        params: { path: { token } },
+      });
+      if (error) throw error;
+      return data;
+    },
     retry: false,
   });
 
   const complete = useMutation({
-    mutationFn: () => completeReservedFirstAccess(token, password),
+    mutationFn: async () => {
+      const { data, error } = await api.POST("/platform/first-access/{token}/complete", {
+        params: { path: { token } },
+        body: { password },
+      });
+      if (error) throw error;
+      return data;
+    },
     onSuccess: () => navigate({ to: "/sign-in" }),
   });
 

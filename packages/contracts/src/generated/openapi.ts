@@ -2745,6 +2745,9 @@ export interface components {
             name: string | null;
             email: string | null;
         };
+        CompleteReservedFirstAccessBodyDto: {
+            password: string;
+        };
         CompleteReservedFirstAccessResponseDto: {
             success: boolean;
         };
@@ -2793,6 +2796,11 @@ export interface components {
             items: components["schemas"]["PlatformAcademySummaryDto"][];
             pagination: components["schemas"]["PlatformPaginationDto"];
         };
+        ProvisionAcademyBodyDto: {
+            academyName: string;
+            ownerEmail: string;
+            ownerName?: string;
+        };
         PlatformAcademyDetailDto: {
             id: string;
             name: string;
@@ -2809,6 +2817,10 @@ export interface components {
             ownerUserId: string;
             ownerWasCreated: boolean;
             firstAccessLink: string | null;
+        };
+        TransferAcademyBodyDto: {
+            ownerEmail: string;
+            ownerName?: string;
         };
         TransferAcademyResultDto: {
             academy: components["schemas"]["PlatformAcademyDetailDto"];
@@ -2911,6 +2923,10 @@ export interface components {
             items: components["schemas"]["PlatformAdministratorDto"][];
             pagination: components["schemas"]["PlatformPaginationDto"];
         };
+        AddPlatformAdministratorBodyDto: {
+            email: string;
+            name?: string;
+        };
         AddPlatformAdministratorResultDto: {
             administrator: components["schemas"]["PlatformAdministratorDto"];
             userWasCreated: boolean;
@@ -2918,6 +2934,11 @@ export interface components {
         };
         PlatformActionResultDto: {
             success: boolean;
+        };
+        StartPlatformSupportBodyDto: {
+            targetUserId: string;
+            academyId?: string;
+            reason?: string;
         };
         PlatformSupportSessionDto: {
             id: string;
@@ -2932,6 +2953,9 @@ export interface components {
             expiresAt: string;
             adminName?: string | null;
             adminEmail?: string | null;
+        };
+        ActivatePlatformSupportBodyDto: {
+            supportSessionId: string;
         };
         PlatformAuditLogEntryDto: {
             id: string;
@@ -3009,6 +3033,17 @@ export interface components {
             studentAccessLinks: number;
             activeSessions: number;
             isPlatformAdmin: boolean;
+        };
+        PlatformDeleteUserBodyDto: {
+            /** @enum {string} */
+            mode: "definitive" | "preserve_history";
+            /** @enum {string} */
+            ownerResolution?: "keep_ownerless" | "transfer";
+            transferOwnerEmail?: string;
+            transferOwnerName?: string;
+        };
+        PlatformBanUserBodyDto: {
+            reason?: string;
         };
     };
     responses: never;
@@ -5033,7 +5068,9 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                token: string;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -5052,10 +5089,16 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                token: string;
+            };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompleteReservedFirstAccessBodyDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -5107,7 +5150,11 @@ export interface operations {
     };
     PlatformController_academies: {
         parameters: {
-            query?: never;
+            query?: {
+                pageSize?: number;
+                page?: number;
+                q?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -5131,7 +5178,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProvisionAcademyBodyDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -5147,10 +5198,16 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                id: string;
+            };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransferAcademyBodyDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -5166,7 +5223,9 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                id: string;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -5185,7 +5244,9 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                id: string;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -5204,7 +5265,10 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                receiptId: string;
+                academyId: string;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -5221,7 +5285,10 @@ export interface operations {
     };
     PlatformController_administrators: {
         parameters: {
-            query?: never;
+            query?: {
+                pageSize?: number;
+                page?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -5245,7 +5312,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddPlatformAdministratorBodyDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -5261,7 +5332,9 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                id: string;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -5283,7 +5356,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartPlatformSupportBodyDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -5302,7 +5379,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActivatePlatformSupportBodyDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -5354,7 +5435,15 @@ export interface operations {
     };
     PlatformController_audit: {
         parameters: {
-            query?: never;
+            query?: {
+                pageSize?: number;
+                page?: number;
+                to?: string;
+                from?: string;
+                academyId?: string;
+                adminUserId?: string;
+                action?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -5373,7 +5462,11 @@ export interface operations {
     };
     PlatformController_users: {
         parameters: {
-            query?: never;
+            query?: {
+                pageSize?: number;
+                page?: number;
+                q?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -5394,7 +5487,9 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                id: string;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -5413,7 +5508,9 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                id: string;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -5432,10 +5529,16 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                id: string;
+            };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlatformDeleteUserBodyDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -5451,10 +5554,16 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                id: string;
+            };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlatformBanUserBodyDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -5470,7 +5579,9 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                id: string;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -5489,7 +5600,9 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                id: string;
+            };
             cookie?: never;
         };
         requestBody?: never;

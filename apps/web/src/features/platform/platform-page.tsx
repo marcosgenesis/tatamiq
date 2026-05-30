@@ -6,11 +6,13 @@ import {
   type PaginationState,
   useReactTable,
 } from "@tanstack/react-table";
+import type { components } from "@tatamiq/contracts/generated";
 import { Building02Icon, PlusSignIcon, UserMultiple02Icon } from "hugeicons-react";
 import { type Dispatch, type SetStateAction, useMemo, useState } from "react";
 import { DataGrid, DataGridContainer } from "@/components/reui/data-grid/data-grid";
 import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination";
 import { DataGridTable } from "@/components/reui/data-grid/data-grid-table";
+import { api } from "../../api";
 import { LogoIcon } from "../../components/logo";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
@@ -34,20 +36,11 @@ import {
   TableRow,
 } from "../../components/ui/table";
 import { authClient } from "../../lib/auth-client";
-import {
-  activatePlatformSupport,
-  getPlatformAcademy,
-  getPlatformAcademyOperationalOverview,
-  getPlatformDashboard,
-  getPlatformMe,
-  listPlatformAcademies,
-  type PlatformAcademyOperationalOverview,
-  type PlatformAcademySummary,
-  provisionPlatformAcademy,
-  startPlatformSupport,
-  transferPlatformAcademy,
-} from "./platform-api";
 import { PlatformLoading, PlatformShell } from "./platform-shell";
+
+type PlatformAcademySummary = components["schemas"]["PlatformAcademySummaryDto"];
+type PlatformAcademyOperationalOverview =
+  components["schemas"]["PlatformAcademyOperationalOverviewDto"];
 
 export function PlatformPage() {
   const navigate = useNavigate();
@@ -65,12 +58,20 @@ export function PlatformPage() {
   });
   const platform = useQuery({
     queryKey: ["platform", "me"],
-    queryFn: getPlatformMe,
+    queryFn: async () => {
+      const { data, error } = await api.GET("/platform/me");
+      if (error) throw error;
+      return data;
+    },
     retry: false,
   });
   const dashboard = useQuery({
     queryKey: ["platform", "dashboard"],
-    queryFn: getPlatformDashboard,
+    queryFn: async () => {
+      const { data, error } = await api.GET("/platform/dashboard");
+      if (error) throw error;
+      return data;
+    },
     retry: false,
   });
   const academies = useQuery({
@@ -81,12 +82,29 @@ export function PlatformPage() {
       academyPagination.pageIndex,
       academyPagination.pageSize,
     ],
-    queryFn: () =>
-      listPlatformAcademies(academyQuery, academyPagination.pageIndex, academyPagination.pageSize),
+    queryFn: async () => {
+      const { data, error } = await api.GET("/platform/academies", {
+        params: {
+          query: {
+            ...(academyQuery.trim() ? { q: academyQuery.trim() } : {}),
+            page: academyPagination.pageIndex,
+            pageSize: academyPagination.pageSize,
+          },
+        },
+      });
+      if (error) throw error;
+      return data;
+    },
     retry: false,
   });
   const provision = useMutation({
-    mutationFn: provisionPlatformAcademy,
+    mutationFn: async (input: { academyName: string; ownerEmail: string; ownerName?: string }) => {
+      const { data, error } = await api.POST("/platform/academies/provision", {
+        body: input,
+      });
+      if (error) throw error;
+      return data;
+    },
     onSuccess: async () => {
       setProvisionForm({ academyName: "", ownerEmail: "", ownerName: "" });
       await Promise.all([
@@ -278,9 +296,11 @@ export function PlatformPage() {
             <CardTitle>Atividade recente</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {(dashboard.data?.recentAcademies ?? []).map((academy) => (
-              <AcademyListItem key={academy.id} academy={academy} />
-            ))}
+            {((dashboard.data?.recentAcademies ?? []) as PlatformAcademySummary[]).map(
+              (academy) => (
+                <AcademyListItem key={academy.id} academy={academy} />
+              ),
+            )}
             {dashboard.isLoading ? (
               <p className="text-muted-foreground text-sm">Carregando...</p>
             ) : null}
@@ -301,32 +321,58 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
   const [supportReason, setSupportReason] = useState("");
   const [isSupportOpen, setIsSupportOpen] = useState(false);
   const [isTransferOpen, setIsTransferOpen] = useState(false);
-  const platform = useQuery({ queryKey: ["platform", "me"], queryFn: getPlatformMe, retry: false });
+  const platform = useQuery({
+    queryKey: ["platform", "me"],
+    queryFn: async () => {
+      const { data, error } = await api.GET("/platform/me");
+      if (error) throw error;
+      return data;
+    },
+    retry: false,
+  });
   const academy = useQuery({
     queryKey: ["platform", "academies", academyId],
-    queryFn: () => getPlatformAcademy(academyId),
+    queryFn: async () => {
+      const { data, error } = await api.GET("/platform/academies/{id}", {
+        params: { path: { id: academyId } },
+      });
+      if (error) throw error;
+      return data;
+    },
     retry: false,
   });
   const operational = useQuery({
     queryKey: ["platform", "academies", academyId, "operational-overview"],
-    queryFn: () => getPlatformAcademyOperationalOverview(academyId),
+    queryFn: async () => {
+      const { data, error } = await api.GET("/platform/academies/{id}/operational-overview", {
+        params: { path: { id: academyId } },
+      });
+      if (error) throw error;
+      return data;
+    },
     retry: false,
   });
   const support = useMutation({
     mutationFn: async () => {
       if (!academy.data?.owner) throw new Error("Academia sem dono.");
-      const prepared = await startPlatformSupport({
-        targetUserId: academy.data.owner.id,
-        academyId,
-        ...(supportReason ? { reason: supportReason } : {}),
+      const { data: prepared, error: prepareError } = await api.POST("/platform/support/start", {
+        body: {
+          targetUserId: academy.data.owner.id,
+          academyId,
+          ...(supportReason ? { reason: supportReason } : {}),
+        },
       });
+      if (prepareError) throw prepareError;
       const impersonation = await authClient.admin.impersonateUser({
         userId: academy.data.owner.id,
       });
       if (impersonation.error)
         throw new Error(impersonation.error.message ?? "Erro ao iniciar suporte.");
       try {
-        await activatePlatformSupport(prepared.id);
+        const { error: activateError } = await api.POST("/platform/support/activate", {
+          body: { supportSessionId: prepared.id },
+        });
+        if (activateError) throw activateError;
       } catch {
         await authClient.admin.stopImpersonating();
         throw new Error("Erro ao ativar suporte.");
@@ -339,11 +385,17 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
   });
 
   const transfer = useMutation({
-    mutationFn: () =>
-      transferPlatformAcademy(academyId, {
-        ownerEmail: transferForm.ownerEmail,
-        ...(transferForm.ownerName ? { ownerName: transferForm.ownerName } : {}),
-      }),
+    mutationFn: async () => {
+      const { data, error } = await api.POST("/platform/academies/{id}/transfer", {
+        params: { path: { id: academyId } },
+        body: {
+          ownerEmail: transferForm.ownerEmail,
+          ...(transferForm.ownerName ? { ownerName: transferForm.ownerName } : {}),
+        },
+      });
+      if (error) throw error;
+      return data;
+    },
     onSuccess: async () => {
       setTransferForm({ ownerEmail: "", ownerName: "" });
       await Promise.all([

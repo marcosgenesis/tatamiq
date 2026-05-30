@@ -5,7 +5,6 @@ import { api } from "../../api";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { authClient } from "../../lib/auth-client";
-import { getPlatformMe } from "../platform/platform-api";
 
 export function ChooseAreaPage() {
   const navigate = useNavigate();
@@ -22,7 +21,11 @@ export function ChooseAreaPage() {
   });
   const platformQuery = useQuery({
     queryKey: ["platform", "me", session.data?.user.id],
-    queryFn: getPlatformMe,
+    queryFn: async () => {
+      const { data, error } = await api.GET("/platform/me");
+      if (error) throw error;
+      return data;
+    },
     retry: false,
     enabled: !!session.data?.user.id,
   });

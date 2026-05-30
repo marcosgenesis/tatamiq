@@ -8,8 +8,10 @@ import {
   RouterProvider,
   useNavigate,
 } from "@tanstack/react-router";
+import type { components } from "@tatamiq/contracts/generated";
 import { CheckmarkSquare03Icon } from "hugeicons-react";
 import { useEffect } from "react";
+import { api } from "./api";
 import { AppShell } from "./components/app-shell";
 import { LogoIcon } from "./components/logo";
 import { Button } from "./components/ui/button";
@@ -28,11 +30,6 @@ import { GraduationPage } from "./features/graduation/graduation-page";
 import { MonthlyFeesPage } from "./features/monthly-fees/monthly-fees-page";
 import { PlaceholderPage } from "./features/placeholder/placeholder-page";
 import { PlatformAdministratorsPage } from "./features/platform/platform-administrators-page";
-import {
-  endPlatformSupport,
-  getCurrentPlatformSupport,
-  getPlatformMe,
-} from "./features/platform/platform-api";
 import { PlatformAuditPage } from "./features/platform/platform-audit-page";
 import { PlatformFirstAccessPage } from "./features/platform/platform-first-access-page";
 import { PlatformAcademyPage, PlatformPage } from "./features/platform/platform-page";
@@ -56,6 +53,11 @@ import "./index.css";
 import { authClient } from "./lib/auth-client";
 
 const queryClient = new QueryClient();
+
+type PlatformSupportSession = components["schemas"]["PlatformSupportSessionDto"] & {
+  adminName?: string | null;
+  adminEmail?: string | null;
+};
 
 type OrganizationSummary = {
   id: string;
@@ -454,7 +456,11 @@ function SupportBanner() {
   const navigate = useNavigate();
   const support = useQuery({
     queryKey: ["platform", "support", "current"],
-    queryFn: getCurrentPlatformSupport,
+    queryFn: async (): Promise<PlatformSupportSession | null> => {
+      const { data, error } = await api.GET("/platform/support/current");
+      if (error) throw error;
+      return data;
+    },
     retry: false,
     refetchInterval: 60_000,
   });
@@ -462,7 +468,8 @@ function SupportBanner() {
   if (!support.data) return null;
 
   async function endSupport() {
-    await endPlatformSupport();
+    const { error } = await api.POST("/platform/support/end");
+    if (error) throw error;
     await authClient.admin.stopImpersonating();
     queryClient.clear();
     await support.refetch();
@@ -494,7 +501,11 @@ function SupportBanner() {
 function usePlatformAccess(): "loading" | "allowed" | "denied" {
   const platform = useQuery({
     queryKey: ["platform", "me"],
-    queryFn: getPlatformMe,
+    queryFn: async () => {
+      const { data, error } = await api.GET("/platform/me");
+      if (error) throw error;
+      return data;
+    },
     retry: false,
   });
 

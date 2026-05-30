@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, useNavigate } from "@tanstack/react-router";
+import type { components } from "@tatamiq/contracts/generated";
 import { useState } from "react";
+import { api } from "../../api";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
@@ -14,19 +16,19 @@ import {
   TableRow,
 } from "../../components/ui/table";
 import { authClient } from "../../lib/auth-client";
-import {
-  activatePlatformSupport,
-  banPlatformUser,
-  type DeletePlatformUserInput,
-  deletePlatformUser,
-  getPlatformMe,
-  getPlatformUser,
-  getPlatformUserDeletionImpact,
-  revokePlatformUserSessions,
-  startPlatformSupport,
-  unbanPlatformUser,
-} from "./platform-api";
 import { PlatformLoading, PlatformShell } from "./platform-shell";
+
+type PlatformUserDetail = components["schemas"]["PlatformUserDetailDto"];
+type PlatformUserMembership = components["schemas"]["PlatformUserMembershipDto"];
+type PlatformUserStudentAccess = components["schemas"]["PlatformUserStudentAccessDto"];
+type PlatformUserDeletionImpact = components["schemas"]["PlatformUserDeletionImpactDto"];
+
+type DeletePlatformUserInput = {
+  mode: "definitive" | "preserve_history";
+  ownerResolution?: "keep_ownerless" | "transfer";
+  transferOwnerEmail?: string;
+  transferOwnerName?: string;
+};
 
 export function PlatformUserDetailPage({ userId }: { userId: string }) {
   const navigate = useNavigate();
@@ -41,25 +43,48 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
 
   const platform = useQuery({
     queryKey: ["platform", "me"],
-    queryFn: getPlatformMe,
+    queryFn: async () => {
+      const { data, error } = await api.GET("/platform/me");
+      if (error) throw error;
+      return data;
+    },
     retry: false,
   });
 
   const userDetail = useQuery({
     queryKey: ["platform", "users", userId],
-    queryFn: () => getPlatformUser(userId),
+    queryFn: async () => {
+      const { data, error } = await api.GET("/platform/users/{id}", {
+        params: { path: { id: userId } },
+      });
+      if (error) throw error;
+      return data;
+    },
     retry: false,
   });
 
   const deletionImpact = useQuery({
     queryKey: ["platform", "users", userId, "deletion-impact"],
-    queryFn: () => getPlatformUserDeletionImpact(userId),
+    queryFn: async () => {
+      const { data, error } = await api.GET("/platform/users/{id}/deletion-impact", {
+        params: { path: { id: userId } },
+      });
+      if (error) throw error;
+      return data;
+    },
     retry: false,
     enabled: showDeleteForm,
   });
 
   const banMutation = useMutation({
-    mutationFn: () => banPlatformUser(userId, banReason || undefined),
+    mutationFn: async () => {
+      const { data, error } = await api.POST("/platform/users/{id}/ban", {
+        params: { path: { id: userId } },
+        body: banReason ? { reason: banReason } : {},
+      });
+      if (error) throw error;
+      return data;
+    },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["platform", "users"] });
       setShowBanForm(false);
@@ -68,21 +93,40 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
   });
 
   const unbanMutation = useMutation({
-    mutationFn: () => unbanPlatformUser(userId),
+    mutationFn: async () => {
+      const { data, error } = await api.POST("/platform/users/{id}/unban", {
+        params: { path: { id: userId } },
+      });
+      if (error) throw error;
+      return data;
+    },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["platform", "users"] });
     },
   });
 
   const revokeMutation = useMutation({
-    mutationFn: () => revokePlatformUserSessions(userId),
+    mutationFn: async () => {
+      const { data, error } = await api.POST("/platform/users/{id}/revoke-sessions", {
+        params: { path: { id: userId } },
+      });
+      if (error) throw error;
+      return data;
+    },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["platform", "users"] });
     },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: () => deletePlatformUser(userId, deleteForm),
+    mutationFn: async () => {
+      const { data, error } = await api.POST("/platform/users/{id}/delete", {
+        params: { path: { id: userId } },
+        body: deleteForm,
+      });
+      if (error) throw error;
+      return data;
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["platform", "users"] });
       await navigate({ to: "/platform/users" });
@@ -91,15 +135,21 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
 
   const supportMutation = useMutation({
     mutationFn: async () => {
-      const prepared = await startPlatformSupport({
-        targetUserId: userId,
-        ...(supportReason ? { reason: supportReason } : {}),
+      const { data: prepared, error: prepareError } = await api.POST("/platform/support/start", {
+        body: {
+          targetUserId: userId,
+          ...(supportReason ? { reason: supportReason } : {}),
+        },
       });
+      if (prepareError) throw prepareError;
       const impersonation = await authClient.admin.impersonateUser({ userId });
       if (impersonation.error)
         throw new Error(impersonation.error.message ?? "Erro ao iniciar suporte.");
       try {
-        await activatePlatformSupport(prepared.id);
+        const { error: activateError } = await api.POST("/platform/support/activate", {
+          body: { supportSessionId: prepared.id },
+        });
+        if (activateError) throw activateError;
       } catch {
         await authClient.admin.stopImpersonating();
         throw new Error("Erro ao ativar suporte.");
@@ -135,8 +185,8 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
     );
   }
 
-  const detail = userDetail.data;
-  const ownsAcademy = detail.memberships.some((m) => m.role === "owner");
+  const detail = userDetail.data as PlatformUserDetail;
+  const ownsAcademy = detail.memberships.some((m: PlatformUserMembership) => m.role === "owner");
 
   return (
     <PlatformShell
@@ -327,7 +377,9 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
                     <option value="definitive">Excluir definitivamente</option>
                   </select>
 
-                  {deletionImpact.data?.ownedAcademies.some((academy) => academy.isOnlyOwner) ? (
+                  {(
+                    deletionImpact.data as PlatformUserDeletionImpact | undefined
+                  )?.ownedAcademies.some((academy) => academy.isOnlyOwner) ? (
                     <div className="space-y-2">
                       <select
                         className="h-9 w-full rounded-lg border bg-background px-3 text-sm"
@@ -431,7 +483,7 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {detail.memberships.map((m) => (
+                {detail.memberships.map((m: PlatformUserMembership) => (
                   <TableRow key={m.memberId}>
                     <TableCell>
                       <Link
@@ -475,7 +527,7 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {detail.studentAccessLinks.map((sa) => (
+                {detail.studentAccessLinks.map((sa: PlatformUserStudentAccess) => (
                   <TableRow key={sa.id}>
                     <TableCell className="font-medium">{sa.studentName}</TableCell>
                     <TableCell>

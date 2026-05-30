@@ -6,16 +6,19 @@ import {
   type PaginationState,
   useReactTable,
 } from "@tanstack/react-table";
+import type { components } from "@tatamiq/contracts/generated";
 import { type Dispatch, type SetStateAction, useMemo, useState } from "react";
 import { DataGrid, DataGridContainer } from "@/components/reui/data-grid/data-grid";
 import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination";
 import { DataGridTable } from "@/components/reui/data-grid/data-grid-table";
+import { api } from "../../api";
 import { Badge } from "../../components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
 import { authClient } from "../../lib/auth-client";
-import { getPlatformMe, listPlatformUsers, type PlatformUserSummary } from "./platform-api";
 import { PlatformLoading, PlatformShell } from "./platform-shell";
+
+type PlatformUserSummary = components["schemas"]["PlatformUserSummaryDto"];
 
 export function PlatformUsersPage() {
   const navigate = useNavigate();
@@ -24,13 +27,29 @@ export function PlatformUsersPage() {
 
   const platform = useQuery({
     queryKey: ["platform", "me"],
-    queryFn: getPlatformMe,
+    queryFn: async () => {
+      const { data, error } = await api.GET("/platform/me");
+      if (error) throw error;
+      return data;
+    },
     retry: false,
   });
 
   const users = useQuery({
     queryKey: ["platform", "users", query, pagination.pageIndex, pagination.pageSize],
-    queryFn: () => listPlatformUsers(query, pagination.pageIndex, pagination.pageSize),
+    queryFn: async () => {
+      const { data, error } = await api.GET("/platform/users", {
+        params: {
+          query: {
+            ...(query.trim() ? { q: query.trim() } : {}),
+            page: pagination.pageIndex,
+            pageSize: pagination.pageSize,
+          },
+        },
+      });
+      if (error) throw error;
+      return data;
+    },
     retry: false,
   });
 

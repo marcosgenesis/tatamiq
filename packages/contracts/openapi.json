@@ -2685,7 +2685,16 @@
     "/platform/first-access/{token}": {
       "get": {
         "operationId": "PlatformController_previewFirstAccess",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -2706,7 +2715,26 @@
     "/platform/first-access/{token}/complete": {
       "post": {
         "operationId": "PlatformController_completeFirstAccess",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteReservedFirstAccessBodyDto"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -2769,7 +2797,32 @@
     "/platform/academies": {
       "get": {
         "operationId": "PlatformController_academies",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -2791,6 +2844,16 @@
       "post": {
         "operationId": "PlatformController_provisionAcademy",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProvisionAcademyBodyDto"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -2811,7 +2874,26 @@
     "/platform/academies/{id}/transfer": {
       "post": {
         "operationId": "PlatformController_transferAcademy",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransferAcademyBodyDto"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -2832,7 +2914,16 @@
     "/platform/academies/{id}": {
       "get": {
         "operationId": "PlatformController_academy",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -2853,7 +2944,16 @@
     "/platform/academies/{id}/operational-overview": {
       "get": {
         "operationId": "PlatformController_academyOperationalOverview",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -2874,7 +2974,24 @@
     "/platform/academies/{academyId}/receipts/{receiptId}/view-url": {
       "get": {
         "operationId": "PlatformController_receiptViewUrl",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "receiptId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "academyId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -2895,7 +3012,24 @@
     "/platform/administrators": {
       "get": {
         "operationId": "PlatformController_administrators",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -2915,6 +3049,16 @@
       "post": {
         "operationId": "PlatformController_addAdministrator",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddPlatformAdministratorBodyDto"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -2935,7 +3079,16 @@
     "/platform/administrators/{id}/remove": {
       "post": {
         "operationId": "PlatformController_removeAdministrator",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -2957,6 +3110,16 @@
       "post": {
         "operationId": "PlatformController_startSupport",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartPlatformSupportBodyDto"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -2978,6 +3141,16 @@
       "post": {
         "operationId": "PlatformController_activateSupport",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivatePlatformSupportBodyDto"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -3040,7 +3213,64 @@
     "/platform/audit": {
       "get": {
         "operationId": "PlatformController_audit",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "academyId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "adminUserId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "action",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -3061,7 +3291,32 @@
     "/platform/users": {
       "get": {
         "operationId": "PlatformController_users",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -3082,7 +3337,16 @@
     "/platform/users/{id}": {
       "get": {
         "operationId": "PlatformController_user",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -3103,7 +3367,16 @@
     "/platform/users/{id}/deletion-impact": {
       "get": {
         "operationId": "PlatformController_userDeletionImpact",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -3124,7 +3397,26 @@
     "/platform/users/{id}/delete": {
       "post": {
         "operationId": "PlatformController_deleteUser",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlatformDeleteUserBodyDto"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -3145,7 +3437,26 @@
     "/platform/users/{id}/ban": {
       "post": {
         "operationId": "PlatformController_banUser",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlatformBanUserBodyDto"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -3166,7 +3477,16 @@
     "/platform/users/{id}/unban": {
       "post": {
         "operationId": "PlatformController_unbanUser",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -3187,7 +3507,16 @@
     "/platform/users/{id}/revoke-sessions": {
       "post": {
         "operationId": "PlatformController_revokeUserSessions",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -7654,6 +7983,17 @@
           "email"
         ]
       },
+      "CompleteReservedFirstAccessBodyDto": {
+        "type": "object",
+        "properties": {
+          "password": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "password"
+        ]
+      },
       "CompleteReservedFirstAccessResponseDto": {
         "type": "object",
         "properties": {
@@ -7851,6 +8191,24 @@
           "pagination"
         ]
       },
+      "ProvisionAcademyBodyDto": {
+        "type": "object",
+        "properties": {
+          "academyName": {
+            "type": "string"
+          },
+          "ownerEmail": {
+            "type": "string"
+          },
+          "ownerName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "academyName",
+          "ownerEmail"
+        ]
+      },
       "PlatformAcademyDetailDto": {
         "type": "object",
         "properties": {
@@ -7926,6 +8284,20 @@
           "ownerUserId",
           "ownerWasCreated",
           "firstAccessLink"
+        ]
+      },
+      "TransferAcademyBodyDto": {
+        "type": "object",
+        "properties": {
+          "ownerEmail": {
+            "type": "string"
+          },
+          "ownerName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ownerEmail"
         ]
       },
       "TransferAcademyResultDto": {
@@ -8338,6 +8710,20 @@
           "pagination"
         ]
       },
+      "AddPlatformAdministratorBodyDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
       "AddPlatformAdministratorResultDto": {
         "type": "object",
         "properties": {
@@ -8367,6 +8753,23 @@
         },
         "required": [
           "success"
+        ]
+      },
+      "StartPlatformSupportBodyDto": {
+        "type": "object",
+        "properties": {
+          "targetUserId": {
+            "type": "string"
+          },
+          "academyId": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "targetUserId"
         ]
       },
       "PlatformSupportSessionDto": {
@@ -8426,6 +8829,17 @@
           "activatedAt",
           "endedAt",
           "expiresAt"
+        ]
+      },
+      "ActivatePlatformSupportBodyDto": {
+        "type": "object",
+        "properties": {
+          "supportSessionId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "supportSessionId"
         ]
       },
       "PlatformAuditLogEntryDto": {
@@ -8753,6 +9167,42 @@
           "activeSessions",
           "isPlatformAdmin"
         ]
+      },
+      "PlatformDeleteUserBodyDto": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "definitive",
+              "preserve_history"
+            ]
+          },
+          "ownerResolution": {
+            "type": "string",
+            "enum": [
+              "keep_ownerless",
+              "transfer"
+            ]
+          },
+          "transferOwnerEmail": {
+            "type": "string"
+          },
+          "transferOwnerName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "mode"
+        ]
+      },
+      "PlatformBanUserBodyDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string"
+          }
+        }
       }
     }
   }
