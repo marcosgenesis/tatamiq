@@ -54,6 +54,7 @@ import {
 import { PlatformSupportService } from "./platform-support.service";
 import { PlatformUserService } from "./platform-user.service";
 import { ReservedAccountService } from "./reserved-account.service";
+import { UserDeletionService } from "./user-deletion.service";
 
 @ApiTags("platform")
 @Controller("platform")
@@ -63,6 +64,7 @@ export class PlatformController {
     @Inject(PlatformAcademyService) private readonly platformAcademyService: PlatformAcademyService,
     @Inject(PlatformSupportService) private readonly platformSupportService: PlatformSupportService,
     @Inject(PlatformUserService) private readonly platformUserService: PlatformUserService,
+    @Inject(UserDeletionService) private readonly userDeletionService: UserDeletionService,
     @Inject(AuditService) private readonly auditService: AuditService,
     @Inject(R2StorageService) private readonly r2: R2StorageService,
     @Inject(ReservedAccountService) private readonly reservedAccounts: ReservedAccountService,
@@ -425,7 +427,7 @@ export class PlatformController {
   @ApiOkResponse({ type: PlatformUserDeletionImpactDto })
   userDeletionImpact(@Session() session: PlatformSession, @Param("id") id: string) {
     this.platformAdminService.assertPlatformAdmin(session);
-    return this.platformUserService.userDeletionImpact(id);
+    return this.userDeletionService.impact(id);
   }
 
   @Post("users/:id/delete")
@@ -438,7 +440,7 @@ export class PlatformController {
     @Body() body: PlatformDeleteUserBodyDto,
   ) {
     const admin = this.platformAdminService.assertPlatformAdmin(session);
-    const result = await this.platformUserService.deleteUser(id, body);
+    const result = await this.userDeletionService.delete(id, body);
     await this.auditService.write({
       adminUserId: admin.user.id,
       action:

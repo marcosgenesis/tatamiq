@@ -143,7 +143,9 @@ export class PlatformAdminService {
     return {
       administrator: toAdministrator(updated ?? reserved.user, platformAdminUserIds()),
       userWasCreated: reserved.isNew,
-      firstAccessLink: reserved.firstAccessLink,
+      firstAccessLink: reserved.firstAccessLink
+        ? this.reservedAccountsRequired.firstAccessUrl(reserved.firstAccessLink)
+        : null,
     };
   }
 

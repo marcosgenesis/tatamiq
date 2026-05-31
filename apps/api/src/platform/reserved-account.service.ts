@@ -55,6 +55,10 @@ export class ReservedAccountService {
     return { user: createdUser, isNew: true, firstAccessLink: token };
   }
 
+  firstAccessUrl(token: string): string {
+    return `${webAppUrl()}/first-access/${token}`;
+  }
+
   async regenerateFirstAccessLink(userId: string) {
     const existing = await this.db.select().from(user).where(eq(user.id, userId)).limit(1);
 
@@ -181,4 +185,8 @@ export class ReservedAccountService {
 
     return users[0];
   }
+}
+
+function webAppUrl(): string {
+  return process.env.WEB_APP_URL ?? process.env.CORS_ORIGIN ?? "http://localhost:5173";
 }

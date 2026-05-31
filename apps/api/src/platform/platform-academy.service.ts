@@ -16,7 +16,7 @@ import {
 import { and, count, desc, eq, ilike, isNotNull, isNull, or } from "drizzle-orm";
 import { seedIbjjfBelts } from "../belts/seed-belts";
 import { DATABASE } from "../database/database.module";
-import { ReservedAccountService } from "./reserved-account.service";
+import { AcademyOwnershipService, type AssignAcademyOwnerInput } from "./academy-ownership.service";
 
 export type PlatformDashboard = {
   totals: {
@@ -43,10 +43,8 @@ export type PlatformAcademyDetail = PlatformAcademySummary & {
   instagram: string | null;
 };
 
-export type ProvisionAcademyInput = {
+export type ProvisionAcademyInput = AssignAcademyOwnerInput & {
   academyName: string;
-  ownerEmail: string;
-  ownerName?: string;
 };
 
 export type ProvisionAcademyResult = {
@@ -56,10 +54,7 @@ export type ProvisionAcademyResult = {
   firstAccessLink: string | null;
 };
 
-export type TransferAcademyInput = {
-  ownerEmail: string;
-  ownerName?: string;
-};
+export type TransferAcademyInput = AssignAcademyOwnerInput;
 
 export type TransferAcademyResult = {
   academy: PlatformAcademyDetail;
@@ -125,7 +120,8 @@ export type PlatformAcademyOperationalOverview = {
 export class PlatformAcademyService {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    @Inject(ReservedAccountService) private readonly reservedAccounts: ReservedAccountService,
+    @Inject(AcademyOwnershipService)
+    private readonly academyOwnership: AcademyOwnershipService,
   ) {}
   async dashboard(): Promise<PlatformDashboard> {
     const [[academyTotal], [userTotal], [adminTotal], [bannedTotal], recentAcademies] =
@@ -196,10 +192,6 @@ export class PlatformAcademyService {
 
   async provisionAcademy(input: ProvisionAcademyInput): Promise<ProvisionAcademyResult> {
     const academyName = input.academyName.trim();
-    const ownerEmail = input.ownerEmail.trim().toLowerCase();
-    const ownerName = input.ownerName?.trim() || ownerEmail;
-
-    const reserved = await this.reservedAccounts.createOrReuse(ownerEmail, ownerName);
     const academyId = crypto.randomUUID();
     const slug = await this.createUniqueAcademySlug(academyName);
     const now = new Date();
@@ -211,61 +203,23 @@ export class PlatformAcademyService {
       createdAt: now,
     });
 
-    await this.db.insert(member).values({
-      id: crypto.randomUUID(),
-      organizationId: academyId,
-      userId: reserved.user.id,
-      role: "owner",
-      createdAt: now,
-    });
+    const owner = await this.academyOwnership.assignInitialOwnerByEmail(academyId, input);
 
     await seedIbjjfBelts(this.db, academyId);
 
     const academy = await this.getAcademy(academyId);
 
-    return {
-      academy,
-      ownerUserId: reserved.user.id,
-      ownerWasCreated: reserved.isNew,
-      firstAccessLink: reserved.firstAccessLink
-        ? `${webAppUrl()}/first-access/${reserved.firstAccessLink}`
-        : null,
-    };
+    return { academy, ...owner };
   }
 
   async transferAcademy(
     academyId: string,
     input: TransferAcademyInput,
   ): Promise<TransferAcademyResult> {
-    await this.getAcademy(academyId);
-
-    const ownerEmail = input.ownerEmail.trim().toLowerCase();
-    const ownerName = input.ownerName?.trim() || ownerEmail;
-    const reserved = await this.reservedAccounts.createOrReuse(ownerEmail, ownerName);
-    const now = new Date();
-
-    await this.db
-      .delete(member)
-      .where(and(eq(member.organizationId, academyId), eq(member.role, "owner")));
-
-    await this.db.insert(member).values({
-      id: crypto.randomUUID(),
-      organizationId: academyId,
-      userId: reserved.user.id,
-      role: "owner",
-      createdAt: now,
-    });
-
+    const owner = await this.academyOwnership.transferOwnerByEmail(academyId, input);
     const academy = await this.getAcademy(academyId);
 
-    return {
-      academy,
-      ownerUserId: reserved.user.id,
-      ownerWasCreated: reserved.isNew,
-      firstAccessLink: reserved.firstAccessLink
-        ? `${webAppUrl()}/first-access/${reserved.firstAccessLink}`
-        : null,
-    };
+    return { academy, ...owner };
   }
 
   async getAcademy(id: string): Promise<PlatformAcademyDetail> {
@@ -533,10 +487,6 @@ function slugify(value: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .replace(/-{2,}/g, "-");
-}
-
-function webAppUrl(): string {
-  return process.env.WEB_APP_URL ?? process.env.CORS_ORIGIN ?? "http://localhost:5173";
 }
 
 function toAcademySummary(org: OrganizationRow, owner: UserRow | null): PlatformAcademySummary {
