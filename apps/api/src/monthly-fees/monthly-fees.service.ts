@@ -297,10 +297,7 @@ export class MonthlyFeesService {
     contentType: string,
     studentId?: string,
   ): Promise<UploadUrlResponse> {
-    const fee = studentId
-      ? await this.findStudentFee(organizationId, studentId, feeId)
-      : await this.findFee(organizationId, feeId);
-    this.validateReceiptSubmissionStatus(fee.status);
+    await this.lifecycle.assertCanSubmitReceipt(organizationId, feeId, studentId);
     this.validateReceiptFileType(contentType);
 
     const fileKey = `receipts/${organizationId}/${feeId}/${crypto.randomUUID()}`;
@@ -422,25 +419,10 @@ export class MonthlyFeesService {
     return row;
   }
 
-  private validateReceiptSubmissionStatus(status: string): void {
-    if (status === "paid" || status === "waived") {
-      throw new BadRequestException("Mensalidade paga ou dispensada não aceita comprovante.");
-    }
-    if (status !== "open" && status !== "under_review") {
-      throw new BadRequestException("Status da mensalidade não aceita comprovante.");
-    }
-  }
-
   private validateReceiptFileType(contentType: string): void {
     const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"];
     if (!allowedTypes.includes(contentType)) {
       throw new BadRequestException("Tipo de arquivo não permitido. Use imagem ou PDF.");
-    }
-  }
-
-  private assertActivePendingReceipt(feeStatus: string, receipt: ReceiptRow): void {
-    if (feeStatus !== "under_review" || receipt.status !== "pending") {
-      throw new BadRequestException("Apenas o comprovante pendente ativo pode ser revisado.");
     }
   }
 

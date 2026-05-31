@@ -18,6 +18,17 @@ type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 export class MonthlyFeeLifecycle {
   constructor(@Inject(DATABASE) private readonly db: Database) {}
 
+  async assertCanSubmitReceipt(
+    organizationId: string,
+    feeId: string,
+    studentId?: string,
+  ): Promise<void> {
+    const fee = studentId
+      ? await this.findStudentFee(this.db, organizationId, studentId, feeId)
+      : await this.findFee(this.db, organizationId, feeId);
+    assertCanSubmitReceipt(fee.status);
+  }
+
   async adjust(
     organizationId: string,
     feeId: string,
@@ -244,7 +255,11 @@ export class MonthlyFeeLifecycle {
     });
   }
 
-  private async findFee(tx: Transaction, organizationId: string, id: string): Promise<FeeRow> {
+  private async findFee(
+    tx: Transaction | Database,
+    organizationId: string,
+    id: string,
+  ): Promise<FeeRow> {
     const [row] = await tx
       .select()
       .from(monthlyFees)
@@ -255,7 +270,7 @@ export class MonthlyFeeLifecycle {
   }
 
   private async findStudentFee(
-    tx: Transaction,
+    tx: Transaction | Database,
     organizationId: string,
     studentId: string,
     id: string,
