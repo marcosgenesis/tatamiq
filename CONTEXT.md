@@ -8,6 +8,10 @@ Sistema para apoiar a operação diária de uma academia/tatame pequeno de artes
 Organização local que usa o app para gerir alunos, turmas, aulas, presenças, evolução e mensalidades, com nome, logo, endereço, telefone/WhatsApp e Instagram personalizáveis na V0.
 _Avoid_: equipe, filial, federação, organization como termo de UI/domínio
 
+**Propriedade da Academia**:
+Vínculo operacional que define qual conta de autenticação atua como **Dono/Instrutor Solo** de uma **Academia**, implementado tecnicamente pelo `member.role = owner`; pode ser atribuída no **Provisionamento de Academia**, alterada por **Transferência de Academia** ou removida temporariamente para deixar a **Academia** sem dono após **Exclusão de Usuário**.
+_Avoid_: membro genérico, equipe administrativa, posse informal sem vínculo técnico
+
 **Dono/Instrutor Solo**:
 Pessoa responsável por administrar e conduzir a maior parte da operação da **Academia**; na V0, todo cadastro público cria esse tipo de conta.
 _Avoid_: administrador genérico, operador, gestor como papel separado

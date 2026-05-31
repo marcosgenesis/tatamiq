@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import {
   BadRequestException,
   ForbiddenException,
@@ -22,7 +22,6 @@ import {
   classSessions,
   type Database,
   organization,
-  studentAcceptances,
   studentAccess,
   studentAccessInvites,
   studentClassGroups,
@@ -31,7 +30,9 @@ import {
 import { and, eq, gte, inArray, isNull, lt } from "drizzle-orm";
 import { parseClassStatus } from "../class-status";
 import { DATABASE } from "../database/database.module";
+import { StudentAccessActivationService } from "./student-access-activation.service";
 import {
+  hashToken,
   invitePreviewStatus,
   STUDENT_ACCESS_TERMS_VERSION,
   studentReadState,
@@ -45,7 +46,11 @@ type AccessRow = typeof studentAccess.$inferSelect;
 
 @Injectable()
 export class StudentAccessService {
-  constructor(@Inject(DATABASE) private readonly db: Database) {}
+  constructor(
+    @Inject(DATABASE) private readonly db: Database,
+    @Inject(StudentAccessActivationService)
+    private readonly activationService: StudentAccessActivationService,
+  ) {}
 
   async accessStatesForStudents(studentIds: string[]): Promise<Map<string, StudentAccessState>> {
     const result = new Map<string, StudentAccessState>();
@@ -252,8 +257,7 @@ export class StudentAccessService {
 
     const studentId = found.student.id;
     const organizationId = found.student.organizationId;
-    const accessId = crypto.randomUUID();
-    const acceptanceId = crypto.randomUUID();
+    let accessId = "";
     const now = new Date();
 
     await this.db.transaction(async (tx) => {
@@ -278,42 +282,13 @@ export class StudentAccessService {
         .limit(1);
       if (!currentStudent) throw new BadRequestException("Aluno inativo não pode aceitar convite.");
 
-      const [studentExistingAccess] = await tx
-        .select()
-        .from(studentAccess)
-        .where(and(eq(studentAccess.studentId, studentId), eq(studentAccess.status, "active")))
-        .limit(1);
-      if (studentExistingAccess)
-        throw new BadRequestException("Este aluno já possui acesso ativo.");
-
-      const [userExistingAccess] = await tx
-        .select()
-        .from(studentAccess)
-        .where(and(eq(studentAccess.authUserId, userId), eq(studentAccess.status, "active")))
-        .limit(1);
-      if (userExistingAccess)
-        throw new BadRequestException("Esta conta já está vinculada a outro aluno.");
-
-      await tx.insert(studentAccess).values({
-        id: accessId,
+      const activation = await this.activationService.activate(tx, {
         organizationId,
-        studentId,
-        authUserId: userId,
-        status: "active",
-        revokedAt: null,
-        revokedByUserId: null,
-        createdAt: now,
-        updatedAt: now,
-      });
-      await tx.insert(studentAcceptances).values({
-        id: acceptanceId,
-        organizationId,
-        studentAccessId: accessId,
         studentId,
         authUserId: userId,
         termsVersion: input.termsVersion,
-        acceptedAt: now,
       });
+      accessId = activation.accessId;
       await tx
         .update(studentAccessInvites)
         .set({ status: "accepted", acceptedAt: now, acceptedByUserId: userId, updatedAt: now })
@@ -554,10 +529,6 @@ export class StudentAccessService {
 
 function emptyAccessState(): StudentAccessState {
   return { status: "none", inviteId: null, expiresAt: null, accessId: null };
-}
-
-function hashToken(token: string): string {
-  return createHash("sha256").update(token).digest("hex");
 }
 
 function webAppUrl(): string {

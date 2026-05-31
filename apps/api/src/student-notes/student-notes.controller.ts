@@ -1,19 +1,7 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  Inject,
-  Param,
-  Patch,
-  Post,
-} from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Inject, Param, Patch, Post } from "@nestjs/common";
 import { ApiBody, ApiOkResponse, ApiParam, ApiTags } from "@nestjs/swagger";
-import { createStudentNoteSchema, updateStudentNoteSchema } from "@tatamiq/contracts";
-import { OrgRoles, Session } from "@thallesp/nestjs-better-auth";
-import type { z } from "zod";
-import { activeOrganizationId, type SessionWithOrganization } from "../active-organization";
+import { OrgRoles } from "@thallesp/nestjs-better-auth";
+import { AcademyId, ActorId } from "../academy-request";
 import {
   CreateStudentNoteDto,
   ListStudentNotesResponseDto,
@@ -34,10 +22,10 @@ export class StudentNotesController {
   @ApiParam({ name: "id" })
   @ApiOkResponse({ type: ListStudentNotesResponseDto })
   list(
-    @Session() session: SessionWithOrganization,
+    @AcademyId() academyId: string,
     @Param("id") id: string,
   ): Promise<ListStudentNotesResponseDto> {
-    return this.studentNotesService.listAll(activeOrganizationId(session), id);
+    return this.studentNotesService.listAll(academyId, id);
   }
 
   @Post(":id/notes")
@@ -46,16 +34,12 @@ export class StudentNotesController {
   @ApiBody({ type: CreateStudentNoteDto })
   @ApiOkResponse({ type: StudentNoteDto })
   create(
-    @Session() session: SessionWithOrganization,
+    @AcademyId() academyId: string,
+    @ActorId() actorId: string,
     @Param("id") id: string,
     @Body() body: CreateStudentNoteDto,
   ): Promise<StudentNoteDto> {
-    return this.studentNotesService.create(
-      activeOrganizationId(session),
-      id,
-      session.user.id,
-      parseBody(createStudentNoteSchema, body),
-    );
+    return this.studentNotesService.create(academyId, id, actorId, body);
   }
 
   @Patch(":id/notes/:noteId")
@@ -64,16 +48,12 @@ export class StudentNotesController {
   @ApiBody({ type: UpdateStudentNoteDto })
   @ApiOkResponse({ type: StudentNoteDto })
   update(
-    @Session() session: SessionWithOrganization,
+    @AcademyId() academyId: string,
     @Param("id") _id: string,
     @Param("noteId") noteId: string,
     @Body() body: UpdateStudentNoteDto,
   ): Promise<StudentNoteDto> {
-    return this.studentNotesService.update(
-      activeOrganizationId(session),
-      noteId,
-      parseBody(updateStudentNoteSchema, body),
-    );
+    return this.studentNotesService.update(academyId, noteId, body);
   }
 
   @Post(":id/notes/:noteId/archive")
@@ -82,16 +62,10 @@ export class StudentNotesController {
   @ApiParam({ name: "noteId" })
   @ApiOkResponse({ type: StudentNoteDto })
   archive(
-    @Session() session: SessionWithOrganization,
+    @AcademyId() academyId: string,
     @Param("id") _id: string,
     @Param("noteId") noteId: string,
   ): Promise<StudentNoteDto> {
-    return this.studentNotesService.archive(activeOrganizationId(session), noteId);
+    return this.studentNotesService.archive(academyId, noteId);
   }
-}
-
-function parseBody<T>(schema: z.ZodType<T>, value: unknown): T {
-  const result = schema.safeParse(value);
-  if (!result.success) throw new BadRequestException("Dados inválidos.");
-  return result.data;
 }

@@ -1,8 +1,8 @@
 import { Body, Controller, Get, Inject, Param, Post, Query } from "@nestjs/common";
 import { ApiOkResponse, ApiQuery, ApiTags } from "@nestjs/swagger";
 import type { EligibilityType } from "@tatamiq/contracts";
-import { OrgRoles, Session } from "@thallesp/nestjs-better-auth";
-import { activeOrganizationId, type SessionWithUser } from "../active-organization";
+import { OrgRoles } from "@thallesp/nestjs-better-auth";
+import { AcademyId, ActorId } from "../academy-request";
 import {
   type CreatePromotionDto,
   type DismissEligibilityDto,
@@ -24,51 +24,43 @@ export class GraduationController {
   createPromotion(
     @Param("id") studentId: string,
     @Body() body: CreatePromotionDto,
-    @Session() session: SessionWithUser,
+    @AcademyId() academyId: string,
+    @ActorId() actorId: string,
   ): Promise<PromotionDto> {
-    return this.graduationService.createPromotion(
-      activeOrganizationId(session),
-      studentId,
-      session.user.id,
-      body,
-    );
+    return this.graduationService.createPromotion(academyId, studentId, actorId, body);
   }
 
   @Get("students/:id/promotions")
   @ApiOkResponse({ type: ListPromotionsResponseDto })
   listPromotions(
     @Param("id") studentId: string,
-    @Session() session: SessionWithUser,
+    @AcademyId() academyId: string,
   ): Promise<ListPromotionsResponseDto> {
-    return this.graduationService.listPromotions(activeOrganizationId(session), studentId);
+    return this.graduationService.listPromotions(academyId, studentId);
   }
 
   @Get("graduation/eligible")
   @ApiQuery({ name: "type", required: false, enum: ["degree", "belt", "transition"] })
   @ApiOkResponse({ type: ListEligibleStudentsResponseDto })
   listEligible(
-    @Session() session: SessionWithUser,
+    @AcademyId() academyId: string,
     @Query("type") type?: EligibilityType,
   ): Promise<ListEligibleStudentsResponseDto> {
-    return this.graduationService.listEligibleStudents(activeOrganizationId(session), type);
+    return this.graduationService.listEligibleStudents(academyId, type);
   }
 
   @Get("graduation/summary")
   @ApiOkResponse({ type: GraduationSummaryResponseDto })
-  summary(@Session() session: SessionWithUser): Promise<GraduationSummaryResponseDto> {
-    return this.graduationService.summary(activeOrganizationId(session));
+  summary(@AcademyId() academyId: string): Promise<GraduationSummaryResponseDto> {
+    return this.graduationService.summary(academyId);
   }
 
   @Post("students/:id/dismiss-eligibility")
   dismissEligibility(
     @Param("id") studentId: string,
     @Body() body: DismissEligibilityDto,
-    @Session() session: SessionWithUser,
+    @AcademyId() academyId: string,
   ): Promise<void> {
-    return this.graduationService.dismissEligibility(
-      activeOrganizationId(session),
-      studentId,
-      body,
-    );
+    return this.graduationService.dismissEligibility(academyId, studentId, body);
   }
 }

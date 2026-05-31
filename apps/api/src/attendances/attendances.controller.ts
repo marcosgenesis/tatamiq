@@ -1,18 +1,7 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  Inject,
-  Param,
-  Post,
-} from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Inject, Param, Post } from "@nestjs/common";
 import { ApiBody, ApiOkResponse, ApiParam, ApiTags } from "@nestjs/swagger";
-import { addManualAttendanceSchema, invalidateAttendanceSchema } from "@tatamiq/contracts";
-import { OrgRoles, Session } from "@thallesp/nestjs-better-auth";
-import type { z } from "zod";
-import { activeOrganizationId, type SessionWithUser } from "../active-organization";
+import { OrgRoles } from "@thallesp/nestjs-better-auth";
+import { AcademyId, ActorId } from "../academy-request";
 import {
   AddManualAttendanceDto,
   AttendanceDto,
@@ -33,10 +22,10 @@ export class AttendancesController {
   @ApiParam({ name: "classSessionId", type: String })
   @ApiOkResponse({ type: AttendanceRosterResponseDto })
   roster(
-    @Session() session: SessionWithUser,
+    @AcademyId() academyId: string,
     @Param("classSessionId") classSessionId: string,
   ): Promise<AttendanceRosterResponseDto> {
-    return this.attendancesService.roster(activeOrganizationId(session), classSessionId);
+    return this.attendancesService.roster(academyId, classSessionId);
   }
 
   @Post()
@@ -45,16 +34,12 @@ export class AttendancesController {
   @ApiBody({ type: AddManualAttendanceDto })
   @ApiOkResponse({ type: AttendanceDto })
   addManual(
-    @Session() session: SessionWithUser,
+    @AcademyId() academyId: string,
+    @ActorId() actorId: string,
     @Param("classSessionId") classSessionId: string,
     @Body() body: AddManualAttendanceDto,
   ): Promise<AttendanceDto> {
-    return this.attendancesService.addManual(
-      activeOrganizationId(session),
-      session.user.id,
-      classSessionId,
-      parseBody(addManualAttendanceSchema, body),
-    );
+    return this.attendancesService.addManual(academyId, actorId, classSessionId, body);
   }
 
   @Post(":attendanceId/invalidate")
@@ -64,23 +49,18 @@ export class AttendancesController {
   @ApiBody({ type: InvalidateAttendanceDto })
   @ApiOkResponse({ type: AttendanceDto })
   invalidate(
-    @Session() session: SessionWithUser,
+    @AcademyId() academyId: string,
+    @ActorId() actorId: string,
     @Param("classSessionId") classSessionId: string,
     @Param("attendanceId") attendanceId: string,
     @Body() body: InvalidateAttendanceDto,
   ): Promise<AttendanceDto> {
     return this.attendancesService.invalidate(
-      activeOrganizationId(session),
-      session.user.id,
+      academyId,
+      actorId,
       classSessionId,
       attendanceId,
-      parseBody(invalidateAttendanceSchema, body),
+      body,
     );
   }
-}
-
-function parseBody<T>(schema: z.ZodType<T>, value: unknown): T {
-  const result = schema.safeParse(value);
-  if (!result.success) throw new BadRequestException("Dados inválidos.");
-  return result.data;
 }

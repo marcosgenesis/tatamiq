@@ -1,7 +1,7 @@
 import { Body, Controller, Get, HttpCode, Inject, Param, Patch, Post } from "@nestjs/common";
 import { ApiOkResponse, ApiTags } from "@nestjs/swagger";
-import { OrgRoles, Session } from "@thallesp/nestjs-better-auth";
-import { activeOrganizationId, type SessionWithOrganization } from "../active-organization";
+import { OrgRoles } from "@thallesp/nestjs-better-auth";
+import { AcademyId } from "../academy-request";
 import { BeltDto, ListBeltsResponseDto, type UpdateBeltDto } from "./belts.dto";
 import { BeltsService } from "./belts.service";
 
@@ -13,8 +13,8 @@ export class BeltsController {
 
   @Get()
   @ApiOkResponse({ type: ListBeltsResponseDto })
-  list(@Session() session: SessionWithOrganization): Promise<ListBeltsResponseDto> {
-    return this.beltsService.list(activeOrganizationId(session));
+  list(@AcademyId() academyId: string): Promise<ListBeltsResponseDto> {
+    return this.beltsService.list(academyId);
   }
 
   @Patch(":id")
@@ -22,15 +22,15 @@ export class BeltsController {
   update(
     @Param("id") id: string,
     @Body() body: UpdateBeltDto,
-    @Session() session: SessionWithOrganization,
+    @AcademyId() academyId: string,
   ): Promise<BeltDto> {
-    return this.beltsService.update(activeOrganizationId(session), id, body);
+    return this.beltsService.update(academyId, id, body);
   }
 
   @Post("seed")
   @HttpCode(200)
   @ApiOkResponse({ type: ListBeltsResponseDto })
-  seed(@Session() session: SessionWithOrganization): Promise<ListBeltsResponseDto> {
-    return this.beltsService.seedIbjjfBelts(activeOrganizationId(session));
+  seed(@AcademyId() academyId: string): Promise<ListBeltsResponseDto> {
+    return this.beltsService.seedIbjjfBelts(academyId);
   }
 }

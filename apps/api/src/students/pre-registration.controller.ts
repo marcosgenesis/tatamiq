@@ -1,23 +1,7 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  Inject,
-  Param,
-  Post,
-} from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Inject, Param, Post } from "@nestjs/common";
 import { ApiBody, ApiOkResponse, ApiParam, ApiTags } from "@nestjs/swagger";
-import {
-  approvePreRegistrationRequestSchema,
-  completeFirstAccessSchema,
-  createPreRegistrationRequestSchema,
-  rejectPreRegistrationRequestSchema,
-} from "@tatamiq/contracts";
-import { AllowAnonymous, OrgRoles, Session } from "@thallesp/nestjs-better-auth";
-import type { z } from "zod";
-import { activeOrganizationId, type SessionWithOrganization } from "../active-organization";
+import { AllowAnonymous, OrgRoles } from "@thallesp/nestjs-better-auth";
+import { AcademyId, ActorId } from "../academy-request";
 import { PreRegistrationService } from "./pre-registration.service";
 import {
   ApprovePreRegistrationRequestDto,
@@ -62,10 +46,7 @@ export class PreRegistrationController {
     @Param("token") token: string,
     @Body() body: CreatePreRegistrationRequestDto,
   ): Promise<PreRegistrationRequestDto> {
-    return this.preRegistrationService.createRequest(
-      token,
-      parseBody(createPreRegistrationRequestSchema, body),
-    );
+    return this.preRegistrationService.createRequest(token, body);
   }
 
   // --- First access (anonymous) ---
@@ -88,10 +69,7 @@ export class PreRegistrationController {
     @Param("token") token: string,
     @Body() body: CompleteFirstAccessDto,
   ): Promise<CompleteFirstAccessResponseDto> {
-    return this.preRegistrationService.completeFirstAccess(
-      token,
-      parseBody(completeFirstAccessSchema, body),
-    );
+    return this.preRegistrationService.completeFirstAccess(token, body);
   }
 
   // --- Instructor: link management ---
@@ -99,32 +77,32 @@ export class PreRegistrationController {
   @Get("students/pre-registration-link")
   @OrgRoles(["owner"])
   @ApiOkResponse({ type: PreRegistrationLinkDto })
-  getLink(@Session() session: SessionWithOrganization): Promise<PreRegistrationLinkDto> {
-    return this.preRegistrationService.getOrCreateLink(activeOrganizationId(session));
+  getLink(@AcademyId() academyId: string): Promise<PreRegistrationLinkDto> {
+    return this.preRegistrationService.getOrCreateLink(academyId);
   }
 
   @Post("students/pre-registration-link/pause")
   @OrgRoles(["owner"])
   @HttpCode(200)
   @ApiOkResponse({ type: PreRegistrationLinkDto })
-  pauseLink(@Session() session: SessionWithOrganization): Promise<PreRegistrationLinkDto> {
-    return this.preRegistrationService.pauseLink(activeOrganizationId(session));
+  pauseLink(@AcademyId() academyId: string): Promise<PreRegistrationLinkDto> {
+    return this.preRegistrationService.pauseLink(academyId);
   }
 
   @Post("students/pre-registration-link/reactivate")
   @OrgRoles(["owner"])
   @HttpCode(200)
   @ApiOkResponse({ type: PreRegistrationLinkDto })
-  reactivateLink(@Session() session: SessionWithOrganization): Promise<PreRegistrationLinkDto> {
-    return this.preRegistrationService.reactivateLink(activeOrganizationId(session));
+  reactivateLink(@AcademyId() academyId: string): Promise<PreRegistrationLinkDto> {
+    return this.preRegistrationService.reactivateLink(academyId);
   }
 
   @Post("students/pre-registration-link/regenerate")
   @OrgRoles(["owner"])
   @HttpCode(200)
   @ApiOkResponse({ type: PreRegistrationLinkDto })
-  regenerateLink(@Session() session: SessionWithOrganization): Promise<PreRegistrationLinkDto> {
-    return this.preRegistrationService.regenerateLink(activeOrganizationId(session));
+  regenerateLink(@AcademyId() academyId: string): Promise<PreRegistrationLinkDto> {
+    return this.preRegistrationService.regenerateLink(academyId);
   }
 
   // --- Instructor: request queue ---
@@ -132,10 +110,8 @@ export class PreRegistrationController {
   @Get("students/pre-registrations")
   @OrgRoles(["owner"])
   @ApiOkResponse({ type: ListPreRegistrationRequestsResponseDto })
-  listRequests(
-    @Session() session: SessionWithOrganization,
-  ): Promise<ListPreRegistrationRequestsResponseDto> {
-    return this.preRegistrationService.listRequests(activeOrganizationId(session));
+  listRequests(@AcademyId() academyId: string): Promise<ListPreRegistrationRequestsResponseDto> {
+    return this.preRegistrationService.listRequests(academyId);
   }
 
   @Post("students/pre-registrations/:id/reject")
@@ -145,16 +121,12 @@ export class PreRegistrationController {
   @ApiBody({ type: RejectPreRegistrationRequestDto })
   @ApiOkResponse({ type: PreRegistrationRequestDto })
   rejectRequest(
-    @Session() session: SessionWithOrganization,
+    @AcademyId() academyId: string,
+    @ActorId() actorId: string,
     @Param("id") id: string,
     @Body() body: RejectPreRegistrationRequestDto,
   ): Promise<PreRegistrationRequestDto> {
-    return this.preRegistrationService.rejectRequest(
-      activeOrganizationId(session),
-      id,
-      session.user.id,
-      parseBody(rejectPreRegistrationRequestSchema, body),
-    );
+    return this.preRegistrationService.rejectRequest(academyId, id, actorId, body);
   }
 
   @Post("students/pre-registrations/:id/approve")
@@ -164,16 +136,12 @@ export class PreRegistrationController {
   @ApiBody({ type: ApprovePreRegistrationRequestDto })
   @ApiOkResponse({ type: ApprovePreRegistrationResponseDto })
   approveRequest(
-    @Session() session: SessionWithOrganization,
+    @AcademyId() academyId: string,
+    @ActorId() actorId: string,
     @Param("id") id: string,
     @Body() body: ApprovePreRegistrationRequestDto,
   ): Promise<ApprovePreRegistrationResponseDto> {
-    return this.preRegistrationService.approveRequest(
-      activeOrganizationId(session),
-      id,
-      session.user.id,
-      parseBody(approvePreRegistrationRequestSchema, body),
-    );
+    return this.preRegistrationService.approveRequest(academyId, id, actorId, body);
   }
 
   // --- Instructor: email ---
@@ -184,15 +152,9 @@ export class PreRegistrationController {
   @ApiParam({ name: "id" })
   @ApiOkResponse({ type: SendFirstAccessEmailResponseDto })
   sendFirstAccessEmail(
-    @Session() session: SessionWithOrganization,
+    @AcademyId() academyId: string,
     @Param("id") id: string,
   ): Promise<SendFirstAccessEmailResponseDto> {
-    return this.preRegistrationService.sendFirstAccessEmail(activeOrganizationId(session), id);
+    return this.preRegistrationService.sendFirstAccessEmail(academyId, id);
   }
-}
-
-function parseBody<T>(schema: z.ZodType<T>, value: unknown): T {
-  const result = schema.safeParse(value);
-  if (!result.success) throw new BadRequestException("Dados de pré-cadastro inválidos.");
-  return result.data;
 }

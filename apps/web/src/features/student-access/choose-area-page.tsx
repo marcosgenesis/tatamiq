@@ -5,7 +5,7 @@ import { api } from "../../api";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { authClient } from "../../lib/auth-client";
-import { getPlatformMe } from "../platform/platform-api";
+import { platformMeQuery } from "../platform/platform-queries";
 
 export function ChooseAreaPage() {
   const navigate = useNavigate();
@@ -20,12 +20,7 @@ export function ChooseAreaPage() {
     },
     retry: false,
   });
-  const platformQuery = useQuery({
-    queryKey: ["platform", "me", session.data?.user.id],
-    queryFn: getPlatformMe,
-    retry: false,
-    enabled: !!session.data?.user.id,
-  });
+  const platformQuery = useQuery({ ...platformMeQuery(), enabled: !!session.data?.user.id });
 
   const hasInstructor = (organizations.data?.length ?? 0) > 0;
   const hasStudent = !!studentQuery.data;
@@ -34,8 +29,8 @@ export function ChooseAreaPage() {
   useEffect(() => {
     if (organizations.isPending || studentQuery.isLoading || platformQuery.isLoading) return;
     if (hasPlatform) void navigate({ to: "/platform" });
-    if (!hasPlatform && hasInstructor && !hasStudent) void navigate({ to: "/" });
-    if (!hasPlatform && !hasInstructor && hasStudent) void navigate({ to: "/student" });
+    else if (hasInstructor) void navigate({ to: "/" });
+    else if (hasStudent) void navigate({ to: "/student" });
   }, [
     hasPlatform,
     hasInstructor,

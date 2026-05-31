@@ -102,6 +102,27 @@ export class TransferAcademyBodyDto {
 
 export class TransferAcademyResultDto extends ProvisionAcademyResultDto {}
 
+export class ReservedFirstAccessPreviewDto {
+  @ApiProperty({ type: String, enum: ["valid", "invalid", "expired"] })
+  status!: "valid" | "invalid" | "expired";
+
+  @ApiProperty({ type: String, nullable: true })
+  name!: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  email!: string | null;
+}
+
+export class CompleteReservedFirstAccessBodyDto {
+  @ApiProperty({ type: String })
+  password!: string;
+}
+
+export class CompleteReservedFirstAccessResponseDto {
+  @ApiProperty({ type: Boolean })
+  success!: boolean;
+}
+
 export class PlatformPaginationDto {
   @ApiProperty({ type: Number })
   page!: number;
@@ -560,6 +581,9 @@ export class PlatformAdministratorDto {
 export class PlatformAdministratorsResponseDto {
   @ApiProperty({ type: () => [PlatformAdministratorDto] })
   items!: PlatformAdministratorDto[];
+
+  @ApiProperty({ type: () => PlatformPaginationDto })
+  pagination!: PlatformPaginationDto;
 }
 
 export class AddPlatformAdministratorBodyDto {

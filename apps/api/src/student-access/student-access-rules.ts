@@ -1,4 +1,10 @@
+import { createHash } from "node:crypto";
+
 export const STUDENT_ACCESS_TERMS_VERSION = "student-access-v1" as const;
+
+export function hashToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
+}
 
 export type InviteAcceptability = "valid" | "expired" | "revoked" | "accepted" | "unavailable";
 
