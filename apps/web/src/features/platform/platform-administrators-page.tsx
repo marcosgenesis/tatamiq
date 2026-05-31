@@ -6,7 +6,6 @@ import {
   type PaginationState,
   useReactTable,
 } from "@tanstack/react-table";
-import type { components } from "@tatamiq/contracts/generated";
 import { type Dispatch, type SetStateAction, useMemo, useState } from "react";
 import { DataGrid, DataGridContainer } from "@/components/reui/data-grid/data-grid";
 import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination";
@@ -17,35 +16,22 @@ import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
 import { authClient } from "../../lib/auth-client";
+import {
+  type PlatformAdministrator,
+  platformAdministratorsQuery,
+  platformMeQuery,
+} from "./platform-queries";
 import { PlatformLoading, PlatformShell } from "./platform-shell";
-
-type PlatformAdministrator = components["schemas"]["PlatformAdministratorDto"];
 
 export function PlatformAdministratorsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [form, setForm] = useState({ email: "", name: "" });
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
-  const platform = useQuery({
-    queryKey: ["platform", "me"],
-    queryFn: async () => {
-      const { data, error } = await api.GET("/platform/me");
-      if (error) throw error;
-      return data;
-    },
-    retry: false,
-  });
-  const administrators = useQuery({
-    queryKey: ["platform", "administrators", pagination.pageIndex, pagination.pageSize],
-    queryFn: async () => {
-      const { data, error } = await api.GET("/platform/administrators", {
-        params: { query: { page: pagination.pageIndex, pageSize: pagination.pageSize } },
-      });
-      if (error) throw error;
-      return data;
-    },
-    retry: false,
-  });
+  const platform = useQuery(platformMeQuery());
+  const administrators = useQuery(
+    platformAdministratorsQuery(pagination.pageIndex, pagination.pageSize),
+  );
   const addAdmin = useMutation({
     mutationFn: async (input: { email: string; name?: string }) => {
       const { data, error } = await api.POST("/platform/administrators", { body: input });

@@ -6,7 +6,6 @@ import {
   type PaginationState,
   useReactTable,
 } from "@tanstack/react-table";
-import type { components } from "@tatamiq/contracts/generated";
 import { Building02Icon, PlusSignIcon, UserMultiple02Icon } from "hugeicons-react";
 import { type Dispatch, type SetStateAction, useMemo, useState } from "react";
 import { DataGrid, DataGridContainer } from "@/components/reui/data-grid/data-grid";
@@ -27,9 +26,14 @@ import {
 } from "../../components/ui/dialog";
 import { Input } from "../../components/ui/input";
 import { authClient } from "../../lib/auth-client";
+import {
+  type PlatformAcademySummary,
+  platformAcademiesQuery,
+  platformDashboardQuery,
+  platformKeys,
+  platformMeQuery,
+} from "./platform-queries";
 import { PlatformLoading, PlatformShell } from "./platform-shell";
-
-type PlatformAcademySummary = components["schemas"]["PlatformAcademySummaryDto"];
 
 export function PlatformPage() {
   const navigate = useNavigate();
@@ -45,47 +49,11 @@ export function PlatformPage() {
     ownerEmail: "",
     ownerName: "",
   });
-  const platform = useQuery({
-    queryKey: ["platform", "me"],
-    queryFn: async () => {
-      const { data, error } = await api.GET("/platform/me");
-      if (error) throw error;
-      return data;
-    },
-    retry: false,
-  });
-  const dashboard = useQuery({
-    queryKey: ["platform", "dashboard"],
-    queryFn: async () => {
-      const { data, error } = await api.GET("/platform/dashboard");
-      if (error) throw error;
-      return data;
-    },
-    retry: false,
-  });
-  const academies = useQuery({
-    queryKey: [
-      "platform",
-      "academies",
-      academyQuery,
-      academyPagination.pageIndex,
-      academyPagination.pageSize,
-    ],
-    queryFn: async () => {
-      const { data, error } = await api.GET("/platform/academies", {
-        params: {
-          query: {
-            ...(academyQuery.trim() ? { q: academyQuery.trim() } : {}),
-            page: academyPagination.pageIndex,
-            pageSize: academyPagination.pageSize,
-          },
-        },
-      });
-      if (error) throw error;
-      return data;
-    },
-    retry: false,
-  });
+  const platform = useQuery(platformMeQuery());
+  const dashboard = useQuery(platformDashboardQuery());
+  const academies = useQuery(
+    platformAcademiesQuery(academyQuery, academyPagination.pageIndex, academyPagination.pageSize),
+  );
   const provision = useMutation({
     mutationFn: async (input: { academyName: string; ownerEmail: string; ownerName?: string }) => {
       const { data, error } = await api.POST("/platform/academies/provision", {
@@ -97,7 +65,7 @@ export function PlatformPage() {
     onSuccess: async () => {
       setProvisionForm({ academyName: "", ownerEmail: "", ownerName: "" });
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["platform", "dashboard"] }),
+        queryClient.invalidateQueries({ queryKey: platformKeys.dashboard }),
         queryClient.invalidateQueries({ queryKey: ["platform", "academies"] }),
       ]);
     },

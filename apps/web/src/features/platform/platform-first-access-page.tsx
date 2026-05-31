@@ -5,23 +5,14 @@ import { api } from "../../api";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { AuthLayout } from "../auth/auth-layout";
+import { reservedFirstAccessPreviewQuery } from "./platform-queries";
 
 export function PlatformFirstAccessPage({ token }: { token: string }) {
   const navigate = useNavigate();
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
 
-  const preview = useQuery({
-    queryKey: ["platform", "first-access", token],
-    queryFn: async () => {
-      const { data, error } = await api.GET("/platform/first-access/{token}", {
-        params: { path: { token } },
-      });
-      if (error) throw error;
-      return data;
-    },
-    retry: false,
-  });
+  const preview = useQuery(reservedFirstAccessPreviewQuery(token));
 
   const complete = useMutation({
     mutationFn: async () => {

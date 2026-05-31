@@ -8,7 +8,6 @@ import {
   RouterProvider,
   useNavigate,
 } from "@tanstack/react-router";
-import type { components } from "@tatamiq/contracts/generated";
 import { CheckmarkSquare03Icon } from "hugeicons-react";
 import { useEffect } from "react";
 import { api } from "./api";
@@ -34,6 +33,7 @@ import { PlatformAdministratorsPage } from "./features/platform/platform-adminis
 import { PlatformAuditPage } from "./features/platform/platform-audit-page";
 import { PlatformFirstAccessPage } from "./features/platform/platform-first-access-page";
 import { PlatformPage } from "./features/platform/platform-page";
+import { currentPlatformSupportQuery, platformMeQuery } from "./features/platform/platform-queries";
 import { PlatformUserDetailPage } from "./features/platform/platform-user-detail-page";
 import { PlatformUsersPage } from "./features/platform/platform-users-page";
 import { SchedulePage } from "./features/schedule/schedule-page";
@@ -54,11 +54,6 @@ import "./index.css";
 import { authClient } from "./lib/auth-client";
 
 const queryClient = new QueryClient();
-
-type PlatformSupportSession = components["schemas"]["PlatformSupportSessionDto"] & {
-  adminName?: string | null;
-  adminEmail?: string | null;
-};
 
 type OrganizationSummary = {
   id: string;
@@ -455,16 +450,7 @@ function InstructorLayout() {
 
 function SupportBanner() {
   const navigate = useNavigate();
-  const support = useQuery({
-    queryKey: ["platform", "support", "current"],
-    queryFn: async (): Promise<PlatformSupportSession | null> => {
-      const { data, error } = await api.GET("/platform/support/current");
-      if (error) throw error;
-      return data;
-    },
-    retry: false,
-    refetchInterval: 60_000,
-  });
+  const support = useQuery(currentPlatformSupportQuery());
 
   if (!support.data) return null;
 
@@ -500,15 +486,7 @@ function SupportBanner() {
 }
 
 function usePlatformAccess(): "loading" | "allowed" | "denied" {
-  const platform = useQuery({
-    queryKey: ["platform", "me"],
-    queryFn: async () => {
-      const { data, error } = await api.GET("/platform/me");
-      if (error) throw error;
-      return data;
-    },
-    retry: false,
-  });
+  const platform = useQuery(platformMeQuery());
 
   if (platform.isLoading) return "loading";
   if (platform.isSuccess) return "allowed";

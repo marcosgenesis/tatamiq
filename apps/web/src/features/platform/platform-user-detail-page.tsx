@@ -16,6 +16,11 @@ import {
   TableRow,
 } from "../../components/ui/table";
 import { authClient } from "../../lib/auth-client";
+import {
+  platformMeQuery,
+  platformUserDeletionImpactQuery,
+  platformUserQuery,
+} from "./platform-queries";
 import { PlatformLoading, PlatformShell } from "./platform-shell";
 
 type PlatformUserDetail = components["schemas"]["PlatformUserDetailDto"];
@@ -41,40 +46,11 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
     mode: "preserve_history",
   });
 
-  const platform = useQuery({
-    queryKey: ["platform", "me"],
-    queryFn: async () => {
-      const { data, error } = await api.GET("/platform/me");
-      if (error) throw error;
-      return data;
-    },
-    retry: false,
-  });
+  const platform = useQuery(platformMeQuery());
 
-  const userDetail = useQuery({
-    queryKey: ["platform", "users", userId],
-    queryFn: async () => {
-      const { data, error } = await api.GET("/platform/users/{id}", {
-        params: { path: { id: userId } },
-      });
-      if (error) throw error;
-      return data;
-    },
-    retry: false,
-  });
+  const userDetail = useQuery(platformUserQuery(userId));
 
-  const deletionImpact = useQuery({
-    queryKey: ["platform", "users", userId, "deletion-impact"],
-    queryFn: async () => {
-      const { data, error } = await api.GET("/platform/users/{id}/deletion-impact", {
-        params: { path: { id: userId } },
-      });
-      if (error) throw error;
-      return data;
-    },
-    retry: false,
-    enabled: showDeleteForm,
-  });
+  const deletionImpact = useQuery(platformUserDeletionImpactQuery(userId, showDeleteForm));
 
   const banMutation = useMutation({
     mutationFn: async () => {

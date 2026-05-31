@@ -6,18 +6,19 @@ import {
   type PaginationState,
   useReactTable,
 } from "@tanstack/react-table";
-import type { components } from "@tatamiq/contracts/generated";
 import { type Dispatch, type SetStateAction, useMemo, useState } from "react";
 import { DataGrid, DataGridContainer } from "@/components/reui/data-grid/data-grid";
 import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination";
 import { DataGridTable } from "@/components/reui/data-grid/data-grid-table";
-import { api } from "../../api";
 import { Badge } from "../../components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { authClient } from "../../lib/auth-client";
+import {
+  type PlatformAuditLogEntry,
+  platformAuditQuery,
+  platformMeQuery,
+} from "./platform-queries";
 import { PlatformShell } from "./platform-shell";
-
-type PlatformAuditLogEntry = components["schemas"]["PlatformAuditLogEntryDto"];
 
 const ACTION_LABELS: Record<string, string> = {
   "platform.dashboard.viewed": "Dashboard visualizado",
@@ -42,33 +43,11 @@ export function PlatformAuditPage() {
   const [actionFilter, setActionFilter] = useState("");
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
 
-  const platform = useQuery({
-    queryKey: ["platform", "me"],
-    queryFn: async () => {
-      const { data, error } = await api.GET("/platform/me");
-      if (error) throw error;
-      return data;
-    },
-    retry: false,
-  });
+  const platform = useQuery(platformMeQuery());
 
-  const audit = useQuery({
-    queryKey: ["platform", "audit", actionFilter, pagination.pageIndex, pagination.pageSize],
-    queryFn: async () => {
-      const { data, error } = await api.GET("/platform/audit", {
-        params: {
-          query: {
-            ...(actionFilter ? { action: actionFilter } : {}),
-            page: pagination.pageIndex,
-            pageSize: pagination.pageSize,
-          },
-        },
-      });
-      if (error) throw error;
-      return data;
-    },
-    retry: false,
-  });
+  const audit = useQuery(
+    platformAuditQuery(actionFilter, pagination.pageIndex, pagination.pageSize),
+  );
 
   if (platform.isLoading) return null;
   if (platform.isError) return <Navigate to="/choose-area" />;

@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, useNavigate } from "@tanstack/react-router";
-import type { components } from "@tatamiq/contracts/generated";
 import { useState } from "react";
 import { api } from "../../api";
 import { LogoIcon } from "../../components/logo";
@@ -25,10 +24,14 @@ import {
   TableRow,
 } from "../../components/ui/table";
 import { authClient } from "../../lib/auth-client";
+import {
+  type PlatformAcademyOperationalOverview,
+  platformAcademyOperationalOverviewQuery,
+  platformAcademyQuery,
+  platformKeys,
+  platformMeQuery,
+} from "./platform-queries";
 import { PlatformLoading, PlatformShell } from "./platform-shell";
-
-type PlatformAcademyOperationalOverview =
-  components["schemas"]["PlatformAcademyOperationalOverviewDto"];
 
 export function PlatformAcademyPage({ academyId }: { academyId: string }) {
   const navigate = useNavigate();
@@ -37,37 +40,9 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
   const [supportReason, setSupportReason] = useState("");
   const [isSupportOpen, setIsSupportOpen] = useState(false);
   const [isTransferOpen, setIsTransferOpen] = useState(false);
-  const platform = useQuery({
-    queryKey: ["platform", "me"],
-    queryFn: async () => {
-      const { data, error } = await api.GET("/platform/me");
-      if (error) throw error;
-      return data;
-    },
-    retry: false,
-  });
-  const academy = useQuery({
-    queryKey: ["platform", "academies", academyId],
-    queryFn: async () => {
-      const { data, error } = await api.GET("/platform/academies/{id}", {
-        params: { path: { id: academyId } },
-      });
-      if (error) throw error;
-      return data;
-    },
-    retry: false,
-  });
-  const operational = useQuery({
-    queryKey: ["platform", "academies", academyId, "operational-overview"],
-    queryFn: async () => {
-      const { data, error } = await api.GET("/platform/academies/{id}/operational-overview", {
-        params: { path: { id: academyId } },
-      });
-      if (error) throw error;
-      return data;
-    },
-    retry: false,
-  });
+  const platform = useQuery(platformMeQuery());
+  const academy = useQuery(platformAcademyQuery(academyId));
+  const operational = useQuery(platformAcademyOperationalOverviewQuery(academyId));
   const support = useMutation({
     mutationFn: async () => {
       if (!academy.data?.owner) throw new Error("Academia sem dono.");
@@ -115,8 +90,8 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
     onSuccess: async () => {
       setTransferForm({ ownerEmail: "", ownerName: "" });
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["platform", "academies", academyId] }),
-        queryClient.invalidateQueries({ queryKey: ["platform", "dashboard"] }),
+        queryClient.invalidateQueries({ queryKey: platformKeys.academy(academyId) }),
+        queryClient.invalidateQueries({ queryKey: platformKeys.dashboard }),
         queryClient.invalidateQueries({ queryKey: ["platform", "academies"] }),
       ]);
     },
