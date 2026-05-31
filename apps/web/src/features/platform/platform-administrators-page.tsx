@@ -10,16 +10,18 @@ import { type Dispatch, type SetStateAction, useMemo, useState } from "react";
 import { DataGrid, DataGridContainer } from "@/components/reui/data-grid/data-grid";
 import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination";
 import { DataGridTable } from "@/components/reui/data-grid/data-grid-table";
-import { api } from "../../api";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
 import { authClient } from "../../lib/auth-client";
 import {
+  type AddPlatformAdministratorInput,
+  addPlatformAdministrator,
   type PlatformAdministrator,
   platformAdministratorsQuery,
   platformMeQuery,
+  removePlatformAdministrator,
 } from "./platform-queries";
 import { PlatformLoading, PlatformShell } from "./platform-shell";
 
@@ -33,11 +35,7 @@ export function PlatformAdministratorsPage() {
     platformAdministratorsQuery(pagination.pageIndex, pagination.pageSize),
   );
   const addAdmin = useMutation({
-    mutationFn: async (input: { email: string; name?: string }) => {
-      const { data, error } = await api.POST("/platform/administrators", { body: input });
-      if (error) throw error;
-      return data;
-    },
+    mutationFn: (input: AddPlatformAdministratorInput) => addPlatformAdministrator(input),
     onSuccess: async () => {
       setForm({ email: "", name: "" });
       setPagination((current) => ({ ...current, pageIndex: 0 }));
@@ -45,13 +43,7 @@ export function PlatformAdministratorsPage() {
     },
   });
   const removeAdmin = useMutation({
-    mutationFn: async (id: string) => {
-      const { data, error } = await api.POST("/platform/administrators/{id}/remove", {
-        params: { path: { id } },
-      });
-      if (error) throw error;
-      return data;
-    },
+    mutationFn: (id: string) => removePlatformAdministrator(id),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["platform", "administrators"] });
     },

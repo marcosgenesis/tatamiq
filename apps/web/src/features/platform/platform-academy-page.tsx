@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { api } from "../../api";
 import { LogoIcon } from "../../components/logo";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
@@ -25,11 +24,14 @@ import {
 } from "../../components/ui/table";
 import { authClient } from "../../lib/auth-client";
 import {
+  activatePlatformSupport,
   type PlatformAcademyOperationalOverview,
   platformAcademyOperationalOverviewQuery,
   platformAcademyQuery,
   platformKeys,
   platformMeQuery,
+  startPlatformSupport,
+  transferPlatformAcademy,
 } from "./platform-queries";
 import { PlatformLoading, PlatformShell } from "./platform-shell";
 
@@ -46,24 +48,18 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
   const support = useMutation({
     mutationFn: async () => {
       if (!academy.data?.owner) throw new Error("Academia sem dono.");
-      const { data: prepared, error: prepareError } = await api.POST("/platform/support/start", {
-        body: {
-          targetUserId: academy.data.owner.id,
-          academyId,
-          ...(supportReason ? { reason: supportReason } : {}),
-        },
+      const prepared = await startPlatformSupport({
+        targetUserId: academy.data.owner.id,
+        academyId,
+        ...(supportReason ? { reason: supportReason } : {}),
       });
-      if (prepareError) throw prepareError;
       const impersonation = await authClient.admin.impersonateUser({
         userId: academy.data.owner.id,
       });
       if (impersonation.error)
         throw new Error(impersonation.error.message ?? "Erro ao iniciar suporte.");
       try {
-        const { error: activateError } = await api.POST("/platform/support/activate", {
-          body: { supportSessionId: prepared.id },
-        });
-        if (activateError) throw activateError;
+        await activatePlatformSupport(prepared.id);
       } catch {
         await authClient.admin.stopImpersonating();
         throw new Error("Erro ao ativar suporte.");
@@ -77,15 +73,11 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
 
   const transfer = useMutation({
     mutationFn: async () => {
-      const { data, error } = await api.POST("/platform/academies/{id}/transfer", {
-        params: { path: { id: academyId } },
-        body: {
-          ownerEmail: transferForm.ownerEmail,
-          ...(transferForm.ownerName ? { ownerName: transferForm.ownerName } : {}),
-        },
+      return transferPlatformAcademy({
+        academyId,
+        ownerEmail: transferForm.ownerEmail,
+        ...(transferForm.ownerName ? { ownerName: transferForm.ownerName } : {}),
       });
-      if (error) throw error;
-      return data;
     },
     onSuccess: async () => {
       setTransferForm({ ownerEmail: "", ownerName: "" });

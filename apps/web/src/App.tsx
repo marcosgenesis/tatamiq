@@ -10,7 +10,6 @@ import {
 } from "@tanstack/react-router";
 import { CheckmarkSquare03Icon } from "hugeicons-react";
 import { useEffect } from "react";
-import { api } from "./api";
 import { AppShell } from "./components/app-shell";
 import { LogoIcon } from "./components/logo";
 import { Button } from "./components/ui/button";
@@ -33,7 +32,11 @@ import { PlatformAdministratorsPage } from "./features/platform/platform-adminis
 import { PlatformAuditPage } from "./features/platform/platform-audit-page";
 import { PlatformFirstAccessPage } from "./features/platform/platform-first-access-page";
 import { PlatformPage } from "./features/platform/platform-page";
-import { currentPlatformSupportQuery, platformMeQuery } from "./features/platform/platform-queries";
+import {
+  currentPlatformSupportQuery,
+  endPlatformSupport,
+  platformMeQuery,
+} from "./features/platform/platform-queries";
 import { PlatformUserDetailPage } from "./features/platform/platform-user-detail-page";
 import { PlatformUsersPage } from "./features/platform/platform-users-page";
 import { SchedulePage } from "./features/schedule/schedule-page";
@@ -455,8 +458,7 @@ function SupportBanner() {
   if (!support.data) return null;
 
   async function endSupport() {
-    const { error } = await api.POST("/platform/support/end");
-    if (error) throw error;
+    await endPlatformSupport();
     await authClient.admin.stopImpersonating();
     queryClient.clear();
     await support.refetch();

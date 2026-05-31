@@ -51,6 +51,7 @@ import {
   type PlatformMe,
   type PlatformSession,
 } from "./platform-admin.service";
+import { PlatformAuditedActionService } from "./platform-audited-action.service";
 import { PlatformSupportService } from "./platform-support.service";
 import { PlatformUserService } from "./platform-user.service";
 import { ReservedAccountService } from "./reserved-account.service";
@@ -66,6 +67,8 @@ export class PlatformController {
     @Inject(PlatformUserService) private readonly platformUserService: PlatformUserService,
     @Inject(UserDeletionService) private readonly userDeletionService: UserDeletionService,
     @Inject(AuditService) private readonly auditService: AuditService,
+    @Inject(PlatformAuditedActionService)
+    private readonly auditedAction: PlatformAuditedActionService,
     @Inject(R2StorageService) private readonly r2: R2StorageService,
     @Inject(ReservedAccountService) private readonly reservedAccounts: ReservedAccountService,
   ) {}
@@ -104,13 +107,11 @@ export class PlatformController {
   @ApiOkResponse({ type: PlatformDashboardDto })
   async dashboard(@Session() session: PlatformSession) {
     const admin = this.platformAdminService.assertPlatformAdmin(session);
-    const result = await this.platformAcademyService.dashboard();
-    await this.auditService.write({
-      adminUserId: admin.user.id,
-      action: "platform.dashboard.viewed",
-      targetType: "platform",
-    });
-    return result;
+    return this.auditedAction.run(
+      admin.user.id,
+      { action: "platform.dashboard.viewed", targetType: "platform" },
+      () => this.platformAcademyService.dashboard(),
+    );
   }
 
   @Get("academies")
@@ -141,19 +142,20 @@ export class PlatformController {
   ) {
     const admin = this.platformAdminService.assertPlatformAdmin(session);
     const input = parseProvisionAcademyBody(body);
-    const result = await this.platformAcademyService.provisionAcademy(input);
-    await this.auditService.write({
-      adminUserId: admin.user.id,
-      action: "platform.academy.provisioned",
-      targetType: "academy",
-      targetId: result.academy.id,
-      academyId: result.academy.id,
-      metadata: {
-        ownerUserId: result.ownerUserId,
-        ownerWasCreated: result.ownerWasCreated,
+    return this.auditedAction.run(
+      admin.user.id,
+      {
+        action: "platform.academy.provisioned",
+        targetType: "academy",
+        targetId: (result) => result.academy.id,
+        academyId: (result) => result.academy.id,
+        metadata: (result) => ({
+          ownerUserId: result.ownerUserId,
+          ownerWasCreated: result.ownerWasCreated,
+        }),
       },
-    });
-    return result;
+      () => this.platformAcademyService.provisionAcademy(input),
+    );
   }
 
   @Post("academies/:id/transfer")
@@ -167,19 +169,20 @@ export class PlatformController {
   ) {
     const admin = this.platformAdminService.assertPlatformAdmin(session);
     const input = parseTransferAcademyBody(body);
-    const result = await this.platformAcademyService.transferAcademy(id, input);
-    await this.auditService.write({
-      adminUserId: admin.user.id,
-      action: "platform.academy.transferred",
-      targetType: "academy",
-      targetId: id,
-      academyId: id,
-      metadata: {
-        ownerUserId: result.ownerUserId,
-        ownerWasCreated: result.ownerWasCreated,
+    return this.auditedAction.run(
+      admin.user.id,
+      {
+        action: "platform.academy.transferred",
+        targetType: "academy",
+        targetId: id,
+        academyId: id,
+        metadata: (result) => ({
+          ownerUserId: result.ownerUserId,
+          ownerWasCreated: result.ownerWasCreated,
+        }),
       },
-    });
-    return result;
+      () => this.platformAcademyService.transferAcademy(id, input),
+    );
   }
 
   @Get("academies/:id")
@@ -251,15 +254,16 @@ export class PlatformController {
   ) {
     const admin = this.platformAdminService.assertPlatformAdmin(session);
     const input = parseAdministratorBody(body);
-    const result = await this.platformAdminService.addAdministrator(input);
-    await this.auditService.write({
-      adminUserId: admin.user.id,
-      action: "platform.admin.added",
-      targetType: "user",
-      targetId: result.administrator.id,
-      metadata: { userWasCreated: result.userWasCreated },
-    });
-    return result;
+    return this.auditedAction.run(
+      admin.user.id,
+      {
+        action: "platform.admin.added",
+        targetType: "user",
+        targetId: (result) => result.administrator.id,
+        metadata: (result) => ({ userWasCreated: result.userWasCreated }),
+      },
+      () => this.platformAdminService.addAdministrator(input),
+    );
   }
 
   @Post("administrators/:id/remove")
@@ -267,14 +271,11 @@ export class PlatformController {
   @ApiOkResponse({ type: PlatformActionResultDto })
   async removeAdministrator(@Session() session: PlatformSession, @Param("id") id: string) {
     const admin = this.platformAdminService.assertPlatformAdmin(session);
-    const result = await this.platformAdminService.removeAdministrator(id);
-    await this.auditService.write({
-      adminUserId: admin.user.id,
-      action: "platform.admin.removed",
-      targetType: "user",
-      targetId: id,
-    });
-    return result;
+    return this.auditedAction.run(
+      admin.user.id,
+      { action: "platform.admin.removed", targetType: "user", targetId: id },
+      () => this.platformAdminService.removeAdministrator(id),
+    );
   }
 
   @Post("support/start")
@@ -296,21 +297,22 @@ export class PlatformController {
       ipAddress: request.ip ?? null,
       userAgent: userAgent ?? null,
     };
-    const result = await this.platformSupportService.prepareSupport(input);
-    await this.auditService.write({
-      adminUserId: admin.user.id,
-      action: "platform.support.started",
-      targetType: "user",
-      targetId: body.targetUserId,
-      academyId: body.academyId,
-      reason: body.reason,
-      metadata: {
-        supportSessionId: result.id,
-        ipAddress: request.ip ?? null,
-        userAgent: userAgent ?? null,
+    return this.auditedAction.run(
+      admin.user.id,
+      {
+        action: "platform.support.started",
+        targetType: "user",
+        targetId: body.targetUserId,
+        academyId: body.academyId,
+        reason: body.reason,
+        metadata: (result) => ({
+          supportSessionId: result.id,
+          ipAddress: request.ip ?? null,
+          userAgent: userAgent ?? null,
+        }),
       },
-    });
-    return result;
+      () => this.platformSupportService.prepareSupport(input),
+    );
   }
 
   @Post("support/activate")
@@ -321,22 +323,28 @@ export class PlatformController {
     @Body() body: ActivatePlatformSupportBodyDto,
   ) {
     if (!session.session.impersonatedBy) throw new BadRequestException("Não há suporte ativo.");
-    const result = await this.platformSupportService.activateSupport({
-      supportSessionId: body.supportSessionId,
-      adminUserId: session.session.impersonatedBy,
-      targetUserId: session.user.id,
-      impersonationSessionId: session.session.id,
-    });
-    await this.auditService.write({
-      adminUserId: session.session.impersonatedBy,
-      action: "platform.support.activated",
-      targetType: "user",
-      targetId: session.user.id,
-      academyId: result.academyId ?? undefined,
-      reason: result.reason ?? undefined,
-      metadata: { supportSessionId: result.id, impersonationSessionId: session.session.id },
-    });
-    return result;
+    const adminUserId = session.session.impersonatedBy;
+    return this.auditedAction.run(
+      adminUserId,
+      {
+        action: "platform.support.activated",
+        targetType: "user",
+        targetId: session.user.id,
+        academyId: (result) => result.academyId ?? undefined,
+        reason: (result) => result.reason ?? undefined,
+        metadata: (result) => ({
+          supportSessionId: result.id,
+          impersonationSessionId: session.session.id,
+        }),
+      },
+      () =>
+        this.platformSupportService.activateSupport({
+          supportSessionId: body.supportSessionId,
+          adminUserId,
+          targetUserId: session.user.id,
+          impersonationSessionId: session.session.id,
+        }),
+    );
   }
 
   @Get("support/current")
@@ -349,17 +357,22 @@ export class PlatformController {
   @ApiOkResponse({ type: PlatformSupportSessionDto })
   async endSupport(@Session() session: PlatformSession) {
     if (!session.session.impersonatedBy) throw new BadRequestException("Não há suporte ativo.");
-    const result = await this.platformSupportService.endSupport(session.session.id);
-    await this.auditService.write({
-      adminUserId: session.session.impersonatedBy,
-      action: "platform.support.ended",
-      targetType: "user",
-      targetId: session.user.id,
-      academyId: result.academyId ?? undefined,
-      reason: result.reason ?? undefined,
-      metadata: { supportSessionId: result.id, impersonationSessionId: session.session.id },
-    });
-    return result;
+    const adminUserId = session.session.impersonatedBy;
+    return this.auditedAction.run(
+      adminUserId,
+      {
+        action: "platform.support.ended",
+        targetType: "user",
+        targetId: session.user.id,
+        academyId: (result) => result.academyId ?? undefined,
+        reason: (result) => result.reason ?? undefined,
+        metadata: (result) => ({
+          supportSessionId: result.id,
+          impersonationSessionId: session.session.id,
+        }),
+      },
+      () => this.platformSupportService.endSupport(session.session.id),
+    );
   }
 
   @Get("audit")
@@ -440,21 +453,22 @@ export class PlatformController {
     @Body() body: PlatformDeleteUserBodyDto,
   ) {
     const admin = this.platformAdminService.assertPlatformAdmin(session);
-    const result = await this.userDeletionService.delete(id, body);
-    await this.auditService.write({
-      adminUserId: admin.user.id,
-      action:
-        body.mode === "preserve_history"
-          ? "platform.user.deleted_preserving_history"
-          : "platform.user.deleted",
-      targetType: "user",
-      targetId: id,
-      metadata: {
-        mode: body.mode,
-        ownerResolution: body.ownerResolution ?? null,
+    return this.auditedAction.run(
+      admin.user.id,
+      {
+        action:
+          body.mode === "preserve_history"
+            ? "platform.user.deleted_preserving_history"
+            : "platform.user.deleted",
+        targetType: "user",
+        targetId: id,
+        metadata: {
+          mode: body.mode,
+          ownerResolution: body.ownerResolution ?? null,
+        },
       },
-    });
-    return result;
+      () => this.userDeletionService.delete(id, body),
+    );
   }
 
   @Post("users/:id/ban")
@@ -467,15 +481,11 @@ export class PlatformController {
     @Body() body: PlatformBanUserBodyDto,
   ) {
     const admin = this.platformAdminService.assertPlatformAdmin(session);
-    const result = await this.platformUserService.banUser(id, body.reason);
-    await this.auditService.write({
-      adminUserId: admin.user.id,
-      action: "platform.user.banned",
-      targetType: "user",
-      targetId: id,
-      reason: body.reason,
-    });
-    return result;
+    return this.auditedAction.run(
+      admin.user.id,
+      { action: "platform.user.banned", targetType: "user", targetId: id, reason: body.reason },
+      () => this.platformUserService.banUser(id, body.reason),
+    );
   }
 
   @Post("users/:id/unban")
@@ -483,14 +493,11 @@ export class PlatformController {
   @ApiOkResponse({ type: PlatformActionResultDto })
   async unbanUser(@Session() session: PlatformSession, @Param("id") id: string) {
     const admin = this.platformAdminService.assertPlatformAdmin(session);
-    const result = await this.platformUserService.unbanUser(id);
-    await this.auditService.write({
-      adminUserId: admin.user.id,
-      action: "platform.user.unbanned",
-      targetType: "user",
-      targetId: id,
-    });
-    return result;
+    return this.auditedAction.run(
+      admin.user.id,
+      { action: "platform.user.unbanned", targetType: "user", targetId: id },
+      () => this.platformUserService.unbanUser(id),
+    );
   }
 
   @Post("users/:id/revoke-sessions")
@@ -498,14 +505,11 @@ export class PlatformController {
   @ApiOkResponse({ type: PlatformActionResultDto })
   async revokeUserSessions(@Session() session: PlatformSession, @Param("id") id: string) {
     const admin = this.platformAdminService.assertPlatformAdmin(session);
-    const result = await this.platformUserService.revokeUserSessions(id);
-    await this.auditService.write({
-      adminUserId: admin.user.id,
-      action: "platform.user.sessions_revoked",
-      targetType: "user",
-      targetId: id,
-    });
-    return result;
+    return this.auditedAction.run(
+      admin.user.id,
+      { action: "platform.user.sessions_revoked", targetType: "user", targetId: id },
+      () => this.platformUserService.revokeUserSessions(id),
+    );
   }
 }
 

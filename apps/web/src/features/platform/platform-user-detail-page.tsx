@@ -2,7 +2,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, useNavigate } from "@tanstack/react-router";
 import type { components } from "@tatamiq/contracts/generated";
 import { useState } from "react";
-import { api } from "../../api";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
@@ -17,9 +16,15 @@ import {
 } from "../../components/ui/table";
 import { authClient } from "../../lib/auth-client";
 import {
+  activatePlatformSupport,
+  banPlatformUser,
+  deletePlatformUser,
   platformMeQuery,
   platformUserDeletionImpactQuery,
   platformUserQuery,
+  revokePlatformUserSessions,
+  startPlatformSupport,
+  unbanPlatformUser,
 } from "./platform-queries";
 import { PlatformLoading, PlatformShell } from "./platform-shell";
 
@@ -54,12 +59,7 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
 
   const banMutation = useMutation({
     mutationFn: async () => {
-      const { data, error } = await api.POST("/platform/users/{id}/ban", {
-        params: { path: { id: userId } },
-        body: banReason ? { reason: banReason } : {},
-      });
-      if (error) throw error;
-      return data;
+      return banPlatformUser({ userId, ...(banReason ? { reason: banReason } : {}) });
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["platform", "users"] });
@@ -70,11 +70,7 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
 
   const unbanMutation = useMutation({
     mutationFn: async () => {
-      const { data, error } = await api.POST("/platform/users/{id}/unban", {
-        params: { path: { id: userId } },
-      });
-      if (error) throw error;
-      return data;
+      return unbanPlatformUser(userId);
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["platform", "users"] });
@@ -83,11 +79,7 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
 
   const revokeMutation = useMutation({
     mutationFn: async () => {
-      const { data, error } = await api.POST("/platform/users/{id}/revoke-sessions", {
-        params: { path: { id: userId } },
-      });
-      if (error) throw error;
-      return data;
+      return revokePlatformUserSessions(userId);
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["platform", "users"] });
@@ -96,12 +88,7 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
-      const { data, error } = await api.POST("/platform/users/{id}/delete", {
-        params: { path: { id: userId } },
-        body: deleteForm,
-      });
-      if (error) throw error;
-      return data;
+      return deletePlatformUser({ userId, ...deleteForm });
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["platform", "users"] });
@@ -111,21 +98,15 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
 
   const supportMutation = useMutation({
     mutationFn: async () => {
-      const { data: prepared, error: prepareError } = await api.POST("/platform/support/start", {
-        body: {
-          targetUserId: userId,
-          ...(supportReason ? { reason: supportReason } : {}),
-        },
+      const prepared = await startPlatformSupport({
+        targetUserId: userId,
+        ...(supportReason ? { reason: supportReason } : {}),
       });
-      if (prepareError) throw prepareError;
       const impersonation = await authClient.admin.impersonateUser({ userId });
       if (impersonation.error)
         throw new Error(impersonation.error.message ?? "Erro ao iniciar suporte.");
       try {
-        const { error: activateError } = await api.POST("/platform/support/activate", {
-          body: { supportSessionId: prepared.id },
-        });
-        if (activateError) throw activateError;
+        await activatePlatformSupport(prepared.id);
       } catch {
         await authClient.admin.stopImpersonating();
         throw new Error("Erro ao ativar suporte.");

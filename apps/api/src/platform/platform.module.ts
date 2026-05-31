@@ -6,6 +6,7 @@ import { AuditService } from "./audit.service";
 import { PlatformController } from "./platform.controller";
 import { PlatformAcademyService } from "./platform-academy.service";
 import { PlatformAdminService } from "./platform-admin.service";
+import { PlatformAuditedActionService } from "./platform-audited-action.service";
 import { PlatformSupportService } from "./platform-support.service";
 import { PlatformUserService } from "./platform-user.service";
 import { ReservedAccountService } from "./reserved-account.service";
@@ -22,6 +23,7 @@ import { UserDeletionService } from "./user-deletion.service";
     PlatformUserService,
     UserDeletionService,
     AuditService,
+    PlatformAuditedActionService,
     ReservedAccountService,
   ],
   exports: [
@@ -32,6 +34,7 @@ import { UserDeletionService } from "./user-deletion.service";
     PlatformUserService,
     UserDeletionService,
     AuditService,
+    PlatformAuditedActionService,
     ReservedAccountService,
   ],
 })

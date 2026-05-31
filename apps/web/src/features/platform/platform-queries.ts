@@ -15,6 +15,37 @@ export type PlatformSupportSession = components["schemas"]["PlatformSupportSessi
   adminEmail?: string | null;
 };
 
+export type ProvisionPlatformAcademyInput = {
+  academyName: string;
+  ownerEmail: string;
+  ownerName?: string;
+};
+
+export type TransferPlatformAcademyInput = {
+  academyId: string;
+  ownerEmail: string;
+  ownerName?: string;
+};
+
+export type AddPlatformAdministratorInput = {
+  email: string;
+  name?: string;
+};
+
+export type DeletePlatformUserInput = {
+  userId: string;
+  mode: "definitive" | "preserve_history";
+  ownerResolution?: "keep_ownerless" | "transfer";
+  transferOwnerEmail?: string;
+  transferOwnerName?: string;
+};
+
+export type StartPlatformSupportInput = {
+  targetUserId: string;
+  academyId?: string;
+  reason?: string;
+};
+
 export const platformKeys = {
   me: ["platform", "me"] as const,
   dashboard: ["platform", "dashboard"] as const,
@@ -209,4 +240,100 @@ export function reservedFirstAccessPreviewQuery(token: string) {
     },
     retry: false,
   });
+}
+
+export async function provisionPlatformAcademy(input: ProvisionPlatformAcademyInput) {
+  const { data, error } = await api.POST("/platform/academies/provision", { body: input });
+  if (error) throw error;
+  return data;
+}
+
+export async function transferPlatformAcademy(input: TransferPlatformAcademyInput) {
+  const { data, error } = await api.POST("/platform/academies/{id}/transfer", {
+    params: { path: { id: input.academyId } },
+    body: {
+      ownerEmail: input.ownerEmail,
+      ...(input.ownerName ? { ownerName: input.ownerName } : {}),
+    },
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function addPlatformAdministrator(input: AddPlatformAdministratorInput) {
+  const { data, error } = await api.POST("/platform/administrators", { body: input });
+  if (error) throw error;
+  return data;
+}
+
+export async function removePlatformAdministrator(id: string) {
+  const { data, error } = await api.POST("/platform/administrators/{id}/remove", {
+    params: { path: { id } },
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function banPlatformUser(input: { userId: string; reason?: string }) {
+  const { data, error } = await api.POST("/platform/users/{id}/ban", {
+    params: { path: { id: input.userId } },
+    body: input.reason ? { reason: input.reason } : {},
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function unbanPlatformUser(userId: string) {
+  const { data, error } = await api.POST("/platform/users/{id}/unban", {
+    params: { path: { id: userId } },
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function revokePlatformUserSessions(userId: string) {
+  const { data, error } = await api.POST("/platform/users/{id}/revoke-sessions", {
+    params: { path: { id: userId } },
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function deletePlatformUser(input: DeletePlatformUserInput) {
+  const { userId, ...body } = input;
+  const { data, error } = await api.POST("/platform/users/{id}/delete", {
+    params: { path: { id: userId } },
+    body,
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function startPlatformSupport(input: StartPlatformSupportInput) {
+  const { data, error } = await api.POST("/platform/support/start", { body: input });
+  if (error) throw error;
+  return data;
+}
+
+export async function activatePlatformSupport(supportSessionId: string) {
+  const { data, error } = await api.POST("/platform/support/activate", {
+    body: { supportSessionId },
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function endPlatformSupport() {
+  const { data, error } = await api.POST("/platform/support/end");
+  if (error) throw error;
+  return data;
+}
+
+export async function completeReservedFirstAccess(token: string, password: string) {
+  const { data, error } = await api.POST("/platform/first-access/{token}/complete", {
+    params: { path: { token } },
+    body: { password },
+  });
+  if (error) throw error;
+  return data;
 }

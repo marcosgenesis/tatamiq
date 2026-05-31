@@ -11,7 +11,6 @@ import { type Dispatch, type SetStateAction, useMemo, useState } from "react";
 import { DataGrid, DataGridContainer } from "@/components/reui/data-grid/data-grid";
 import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination";
 import { DataGridTable } from "@/components/reui/data-grid/data-grid-table";
-import { api } from "../../api";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
@@ -28,10 +27,12 @@ import { Input } from "../../components/ui/input";
 import { authClient } from "../../lib/auth-client";
 import {
   type PlatformAcademySummary,
+  type ProvisionPlatformAcademyInput,
   platformAcademiesQuery,
   platformDashboardQuery,
   platformKeys,
   platformMeQuery,
+  provisionPlatformAcademy,
 } from "./platform-queries";
 import { PlatformLoading, PlatformShell } from "./platform-shell";
 
@@ -55,13 +56,7 @@ export function PlatformPage() {
     platformAcademiesQuery(academyQuery, academyPagination.pageIndex, academyPagination.pageSize),
   );
   const provision = useMutation({
-    mutationFn: async (input: { academyName: string; ownerEmail: string; ownerName?: string }) => {
-      const { data, error } = await api.POST("/platform/academies/provision", {
-        body: input,
-      });
-      if (error) throw error;
-      return data;
-    },
+    mutationFn: (input: ProvisionPlatformAcademyInput) => provisionPlatformAcademy(input),
     onSuccess: async () => {
       setProvisionForm({ academyName: "", ownerEmail: "", ownerName: "" });
       await Promise.all([
