@@ -1,5 +1,13 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { AuditService, type WriteAuditEntry } from "./audit.service";
+import {
+  PlatformAdminService,
+  type PlatformMe,
+  type PlatformSession,
+} from "./platform-admin.service";
+
+type AsyncCommand<T> = () => Promise<T>;
+type AdminCommand<T> = (admin: PlatformMe) => Promise<T>;
 
 type AuditDescriptor<T> = Omit<
   WriteAuditEntry,
@@ -13,14 +21,34 @@ type AuditDescriptor<T> = Omit<
 
 @Injectable()
 export class PlatformAuditedActionService {
-  constructor(@Inject(AuditService) private readonly auditService: AuditService) {}
+  constructor(
+    @Inject(AuditService) private readonly auditService: AuditService,
+    @Inject(PlatformAdminService) private readonly platformAdminService: PlatformAdminService,
+  ) {}
 
   async run<T>(
-    adminUserId: string,
+    session: PlatformSession,
+    command: AdminCommand<T>,
     audit: AuditDescriptor<T>,
-    command: () => Promise<T>,
   ): Promise<T> {
-    const result = await command();
+    const admin = this.platformAdminService.assertPlatformAdmin(session);
+    return this.writeSuccessfulAudit(admin.user.id, command(admin), audit);
+  }
+
+  async runForImpersonatedAdmin<T>(
+    adminUserId: string,
+    command: AsyncCommand<T>,
+    audit: AuditDescriptor<T>,
+  ): Promise<T> {
+    return this.writeSuccessfulAudit(adminUserId, command(), audit);
+  }
+
+  private async writeSuccessfulAudit<T>(
+    adminUserId: string,
+    resultPromise: Promise<T>,
+    audit: AuditDescriptor<T>,
+  ): Promise<T> {
+    const result = await resultPromise;
     await this.auditService.write({
       ...audit,
       adminUserId,
