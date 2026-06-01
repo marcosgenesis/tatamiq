@@ -26,7 +26,7 @@ import { AcademiaScope } from "../academy-scope/academia-scope.service";
 import { DATABASE } from "../database/database.module";
 import { projectMonthlyFeeDetail } from "./monthly-fee-detail-projection";
 import { MonthlyFeeLifecycle } from "./monthly-fee-lifecycle";
-import { filterMonthlyFeeListRows, summarizeMonthlyFeeRows } from "./monthly-fee-list-projection";
+import { projectMonthlyFeeList } from "./monthly-fee-list-projection";
 import { projectMonthlyFeeStatus } from "./monthly-fee-status-projection";
 import { R2StorageService } from "./r2-storage.service";
 import {
@@ -87,16 +87,14 @@ export class MonthlyFeesService {
       .from(monthlyFees)
       .where(eq(monthlyFees.organizationId, organizationId));
 
-    const today = new Date();
-    const filteredRows = filterMonthlyFeeListRows(rows, {
+    const listProjection = projectMonthlyFeeList(rows, allRows, {
       organizationId,
       status: filters.status,
-      today,
     });
 
     return {
-      fees: filteredRows.map((r) => toFeeDto(r.fee, r.studentName)),
-      summary: summarizeMonthlyFeeRows(allRows, organizationId, today),
+      fees: listProjection.rows.map((r) => toFeeDto(r.fee, r.studentName)),
+      summary: listProjection.summary,
     };
   }
 

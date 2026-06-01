@@ -3,6 +3,7 @@ import {
   filterMonthlyFeeListRows,
   type MonthlyFeeListProjectionFee,
   monthlyFeeMatchesStatusFilter,
+  projectMonthlyFeeList,
   summarizeMonthlyFeeRows,
 } from "./monthly-fee-list-projection";
 
@@ -95,6 +96,29 @@ describe("filterMonthlyFeeListRows", () => {
         (item) => item.fee.id,
       ),
     ).toEqual(["overdue"]);
+  });
+});
+
+describe("projectMonthlyFeeList", () => {
+  it("projects instructor list rows and summary through one read projection", () => {
+    const rows = [
+      row("current-open", { organizationId: "academy-1", status: "open" }),
+      row("other-open", { organizationId: "academy-2", status: "open" }),
+      row("current-paid", { organizationId: "academy-1", status: "paid" }),
+    ];
+
+    const projection = projectMonthlyFeeList(
+      rows,
+      rows.map((item) => item.fee),
+      {
+        organizationId: "academy-1",
+        status: "open",
+        today,
+      },
+    );
+
+    expect(projection.rows.map((item) => item.fee.id)).toEqual(["current-open"]);
+    expect(projection.summary).toMatchObject({ open: 1, paid: 1, total: 2 });
   });
 });
 

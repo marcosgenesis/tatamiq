@@ -18,6 +18,22 @@ export interface MonthlyFeeListProjectionFilters {
   today?: Date;
 }
 
+export function projectMonthlyFeeList<TFee extends MonthlyFeeListProjectionFee>(
+  rows: MonthlyFeeListProjectionRow<TFee>[],
+  summaryRows: MonthlyFeeListProjectionFee[],
+  filters: MonthlyFeeListProjectionFilters,
+): {
+  rows: MonthlyFeeListProjectionRow<TFee>[];
+  summary: ListMonthlyFeesResponse["summary"];
+} {
+  const today = filters.today ?? new Date();
+
+  return {
+    rows: filterMonthlyFeeListRows(rows, { ...filters, today }),
+    summary: summarizeMonthlyFeeRows(summaryRows, filters.organizationId, today),
+  };
+}
+
 export function filterMonthlyFeeListRows<TFee extends MonthlyFeeListProjectionFee>(
   rows: MonthlyFeeListProjectionRow<TFee>[],
   filters: MonthlyFeeListProjectionFilters,
