@@ -1,10 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from "@nestjs/common";
+import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type {
   AdjustMonthlyFeeInput,
   ConfirmReceiptInput,
@@ -30,7 +24,7 @@ import {
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
 import { MonthlyFeeLifecycle } from "./monthly-fee-lifecycle";
-import { clampDueDay, formatDueDate, isOverdue, validateCanCreateFee } from "./monthly-fee-rules";
+import { isOverdue } from "./monthly-fee-rules";
 import { R2StorageService } from "./r2-storage.service";
 
 type FeeRow = typeof monthlyFees.$inferSelect;
@@ -121,35 +115,7 @@ export class MonthlyFeesService {
   }
 
   async create(organizationId: string, input: CreateMonthlyFeeInput): Promise<MonthlyFeeDetail> {
-    const student = await this.findStudent(organizationId, input.studentId);
-    validateCanCreateFee(student);
-
-    const dueDate = clampDueDay(input.dueDay, input.referenceYear, input.referenceMonth);
-    const feeId = crypto.randomUUID();
-    const now = new Date();
-
-    try {
-      await this.db.insert(monthlyFees).values({
-        id: feeId,
-        organizationId,
-        studentId: input.studentId,
-        referenceYear: input.referenceYear,
-        referenceMonth: input.referenceMonth,
-        amountInCents: input.amountInCents,
-        originalAmountInCents: null,
-        dueDate: formatDueDate(dueDate),
-        status: "open",
-        paidAt: null,
-        createdAt: now,
-        updatedAt: now,
-      });
-    } catch (error: unknown) {
-      if (isUniqueViolation(error)) {
-        throw new ConflictException("Já existe uma mensalidade para este aluno neste mês.");
-      }
-      throw error;
-    }
-
+    const { feeId } = await this.lifecycle.create(organizationId, input);
     return this.get(organizationId, feeId);
   }
 
@@ -439,20 +405,6 @@ export class MonthlyFeesService {
 
     return row;
   }
-
-  private async findStudent(organizationId: string, studentId: string) {
-    const [student] = await this.db
-      .select()
-      .from(students)
-      .where(and(eq(students.id, studentId), eq(students.organizationId, organizationId)))
-      .limit(1);
-
-    if (!student) {
-      throw new NotFoundException("Aluno não encontrado.");
-    }
-
-    return student;
-  }
 }
 
 function toFeeDto(row: FeeRow, studentName: string): MonthlyFee {
@@ -526,13 +478,4 @@ function parseReceiptStatus(value: string) {
   const valid = ["pending", "approved", "rejected", "replaced"];
   if (valid.includes(value)) return value as MonthlyFeeDetail["receipts"][number]["status"];
   throw new BadRequestException("Status de comprovante inválido.");
-}
-
-function isUniqueViolation(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    (error as { code: string }).code === "23505"
-  );
 }

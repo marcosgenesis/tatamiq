@@ -77,11 +77,66 @@ function receipt(overrides: MockRow = {}): MockRow {
   };
 }
 
+function student(overrides: MockRow = {}): MockRow {
+  return {
+    id: "student-1",
+    organizationId: "org-1",
+    status: "active",
+    monthlyAmountInCents: 10000,
+    monthlyDueDay: 10,
+    ...overrides,
+  };
+}
+
 describe("MonthlyFeeLifecycle", () => {
   let service: MonthlyFeeLifecycle;
 
   beforeEach(() => {
     vi.restoreAllMocks();
+  });
+
+  it("creates an open Mensalidade with due date and initial lifecycle fields", async () => {
+    const mock = createMockDb([[student()]]);
+    service = new MonthlyFeeLifecycle(mock.db as never);
+
+    const result = await service.create("org-1", {
+      studentId: "student-1",
+      referenceYear: 2026,
+      referenceMonth: 2,
+      amountInCents: 15000,
+      dueDay: 31,
+    });
+
+    expect(result.feeId).toBeTruthy();
+    expect(mock.inserted[0]).toMatchObject({
+      id: result.feeId,
+      organizationId: "org-1",
+      studentId: "student-1",
+      referenceYear: 2026,
+      referenceMonth: 2,
+      amountInCents: 15000,
+      originalAmountInCents: null,
+      dueDate: "2026-02-28",
+      status: "open",
+      paidAt: null,
+    });
+  });
+
+  it("rejects Mensalidade creation when the Aluno has no configured monthly amount", async () => {
+    const mock = createMockDb([[student({ monthlyAmountInCents: null })]]);
+    service = new MonthlyFeeLifecycle(mock.db as never);
+
+    await expect(
+      service.create("org-1", {
+        studentId: "student-1",
+        referenceYear: 2026,
+        referenceMonth: 2,
+        amountInCents: 15000,
+        dueDay: 10,
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    expect(mock.inserted).toHaveLength(0);
   });
 
   it("adjusts an open Mensalidade, preserving the original amount and writing an Evento de Mensalidade", async () => {

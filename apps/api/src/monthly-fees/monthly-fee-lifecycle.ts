@@ -1,22 +1,73 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ConflictException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import type {
   AdjustMonthlyFeeInput,
   ConfirmReceiptInput,
+  CreateMonthlyFeeInput,
   ManualPaymentInput,
   RejectReceiptInput,
   WaiveMonthlyFeeInput,
 } from "@tatamiq/contracts";
-import { type Database, monthlyFeeEvents, monthlyFees, paymentReceipts } from "@tatamiq/database";
+import {
+  type Database,
+  monthlyFeeEvents,
+  monthlyFees,
+  paymentReceipts,
+  students,
+} from "@tatamiq/database";
 import { and, desc, eq } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
+import { clampDueDay, formatDueDate, validateCanCreateFee } from "./monthly-fee-rules";
 
 type FeeRow = typeof monthlyFees.$inferSelect;
 type ReceiptRow = typeof paymentReceipts.$inferSelect;
+type StudentRow = typeof students.$inferSelect;
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 
 @Injectable()
 export class MonthlyFeeLifecycle {
   constructor(@Inject(DATABASE) private readonly db: Database) {}
+
+  async create(organizationId: string, input: CreateMonthlyFeeInput): Promise<{ feeId: string }> {
+    const feeId = crypto.randomUUID();
+
+    try {
+      await this.db.transaction(async (tx) => {
+        const student = await this.findStudent(tx, organizationId, input.studentId);
+        validateCanCreateFee(student);
+
+        const dueDate = clampDueDay(input.dueDay, input.referenceYear, input.referenceMonth);
+        const now = new Date();
+
+        await tx.insert(monthlyFees).values({
+          id: feeId,
+          organizationId,
+          studentId: input.studentId,
+          referenceYear: input.referenceYear,
+          referenceMonth: input.referenceMonth,
+          amountInCents: input.amountInCents,
+          originalAmountInCents: null,
+          dueDate: formatDueDate(dueDate),
+          status: "open",
+          paidAt: null,
+          createdAt: now,
+          updatedAt: now,
+        });
+      });
+    } catch (error: unknown) {
+      if (isUniqueViolation(error)) {
+        throw new ConflictException("Já existe uma mensalidade para este aluno neste mês.");
+      }
+      throw error;
+    }
+
+    return { feeId };
+  }
 
   async assertCanSubmitReceipt(
     organizationId: string,
@@ -255,6 +306,20 @@ export class MonthlyFeeLifecycle {
     });
   }
 
+  private async findStudent(
+    tx: Transaction,
+    organizationId: string,
+    studentId: string,
+  ): Promise<StudentRow> {
+    const [student] = await tx
+      .select()
+      .from(students)
+      .where(and(eq(students.id, studentId), eq(students.organizationId, organizationId)))
+      .limit(1);
+    if (!student) throw new NotFoundException("Aluno não encontrado.");
+    return student;
+  }
+
   private async findFee(
     tx: Transaction | Database,
     organizationId: string,
@@ -361,4 +426,13 @@ function assertActivePendingReceipt(feeStatus: string, receipt: ReceiptRow): voi
   if (feeStatus !== "under_review" || receipt.status !== "pending") {
     throw new BadRequestException("Apenas o comprovante pendente ativo pode ser revisado.");
   }
+}
+
+function isUniqueViolation(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code: string }).code === "23505"
+  );
 }
