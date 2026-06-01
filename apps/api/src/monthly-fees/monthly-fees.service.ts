@@ -24,7 +24,8 @@ import {
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
 import { MonthlyFeeLifecycle } from "./monthly-fee-lifecycle";
-import { projectMonthlyFeeStatus, todayInSaoPaulo } from "./monthly-fee-status-projection";
+import { filterMonthlyFeeListRows, summarizeMonthlyFeeRows } from "./monthly-fee-list-projection";
+import { projectMonthlyFeeStatus } from "./monthly-fee-status-projection";
 import { R2StorageService } from "./r2-storage.service";
 
 type FeeRow = typeof monthlyFees.$inferSelect;
@@ -60,13 +61,6 @@ export class MonthlyFeesService {
       conditions.push(eq(monthlyFees.referenceMonth, filters.referenceMonth));
     }
 
-    if (filters.status === "overdue") {
-      conditions.push(eq(monthlyFees.status, "open"));
-      conditions.push(sql`${monthlyFees.dueDate} < ${todayInSaoPaulo()}`);
-    } else if (filters.status && filters.status !== "all") {
-      conditions.push(eq(monthlyFees.status, filters.status));
-    }
-
     const rows = await this.db
       .select({
         fee: monthlyFees,
@@ -79,6 +73,7 @@ export class MonthlyFeesService {
 
     const allRows = await this.db
       .select({
+        organizationId: monthlyFees.organizationId,
         status: monthlyFees.status,
         dueDate: monthlyFees.dueDate,
       })
@@ -86,30 +81,15 @@ export class MonthlyFeesService {
       .where(eq(monthlyFees.organizationId, organizationId));
 
     const today = new Date();
-    let open = 0;
-    let overdue = 0;
-    let underReview = 0;
-    let paid = 0;
-    let waived = 0;
-    for (const r of allRows) {
-      const projection = projectMonthlyFeeStatus(r, today);
-      if (projection.projectedStatus === "paid") paid++;
-      else if (projection.projectedStatus === "waived") waived++;
-      else if (projection.projectedStatus === "under_review") underReview++;
-      else if (projection.projectedStatus === "overdue") overdue++;
-      else open++;
-    }
+    const filteredRows = filterMonthlyFeeListRows(rows, {
+      organizationId,
+      status: filters.status,
+      today,
+    });
 
     return {
-      fees: rows.map((r) => toFeeDto(r.fee, r.studentName)),
-      summary: {
-        open,
-        overdue,
-        underReview,
-        paid,
-        waived,
-        total: allRows.length,
-      },
+      fees: filteredRows.map((r) => toFeeDto(r.fee, r.studentName)),
+      summary: summarizeMonthlyFeeRows(allRows, organizationId, today),
     };
   }
 
