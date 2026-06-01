@@ -26,9 +26,12 @@ import { DATABASE } from "../database/database.module";
 import { projectMonthlyFeeDetail } from "./monthly-fee-detail-projection";
 import { MonthlyFeeLifecycle } from "./monthly-fee-lifecycle";
 import { filterMonthlyFeeListRows, summarizeMonthlyFeeRows } from "./monthly-fee-list-projection";
-import { projectMonthlyFeeReceipts } from "./monthly-fee-receipt-projection";
 import { projectMonthlyFeeStatus } from "./monthly-fee-status-projection";
 import { R2StorageService } from "./r2-storage.service";
+import {
+  projectStudentMonthlyFeeHistory,
+  studentMonthlyFeeHistoryCutoffDate,
+} from "./student-monthly-fee-history-projection";
 
 type FeeRow = typeof monthlyFees.$inferSelect;
 type EventRow = typeof monthlyFeeEvents.$inferSelect;
@@ -179,8 +182,7 @@ export class MonthlyFeesService {
     organizationId: string,
   ): Promise<StudentMonthlyFeesResponse> {
     const now = new Date();
-    const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1);
-    const cutoffDate = `${twelveMonthsAgo.getFullYear()}-${String(twelveMonthsAgo.getMonth() + 1).padStart(2, "0")}-01`;
+    const cutoffDate = studentMonthlyFeeHistoryCutoffDate(now);
 
     const rows = await this.db
       .select()
@@ -216,10 +218,17 @@ export class MonthlyFeesService {
       receiptsByFee.set(r.monthlyFeeId, list);
     }
 
+    const historyProjection = projectStudentMonthlyFeeHistory({
+      rows,
+      receiptsByFee,
+      organizationId,
+      studentId,
+      today: now,
+    });
+
     return {
-      fees: rows.map((row) => {
-        const feeReceipts = receiptsByFee.get(row.id) ?? [];
-        const { studentRelevantReceipt: lastRelevant } = projectMonthlyFeeReceipts(feeReceipts);
+      fees: historyProjection.map(({ fee: row, status, receipts }) => {
+        const lastRelevant = receipts.studentRelevantReceipt;
 
         return {
           id: row.id,
@@ -227,8 +236,8 @@ export class MonthlyFeesService {
           referenceMonth: row.referenceMonth,
           amountInCents: row.amountInCents,
           dueDate: row.dueDate,
-          status: parseStatus(row.status),
-          isOverdue: projectMonthlyFeeStatus(row).isOverdue,
+          status: status.persistedStatus,
+          isOverdue: status.isOverdue,
           paidAt: row.paidAt?.toISOString() ?? null,
           lastReceipt: lastRelevant
             ? {
