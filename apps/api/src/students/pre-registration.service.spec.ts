@@ -126,12 +126,7 @@ describe("PreRegistrationService", () => {
   });
 
   it("creates a public Solicitação de Pré-Cadastro through an active link", async () => {
-    mock.setSelectResults([
-      [{ link: linkRow, academy: academyRow }],
-      [],
-      [],
-      [],
-    ]);
+    mock.setSelectResults([[{ link: linkRow, academy: academyRow }], [], [], []]);
 
     const result = await service.createRequest("public-token", {
       name: "  Aluno Teste  ",
