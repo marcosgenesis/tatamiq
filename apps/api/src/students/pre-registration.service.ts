@@ -38,6 +38,8 @@ import { DATABASE } from "../database/database.module";
 import { StudentAccessActivationService } from "../student-access/student-access-activation.service";
 import { hashToken, STUDENT_ACCESS_TERMS_VERSION } from "../student-access/student-access-rules";
 import { EmailService } from "./email.service";
+import { PreRegistrationLinkLifecycle } from "./pre-registration-link-lifecycle";
+import { parseLinkStatus } from "./pre-registration-link-rules";
 import { isMinor } from "./student-rules";
 
 const FIRST_ACCESS_DAYS = 7;
@@ -54,103 +56,54 @@ export class PreRegistrationService {
     @Inject(EmailService) private readonly emailService: EmailService,
     @Inject(StudentAccessActivationService)
     private readonly activationService: StudentAccessActivationService,
+    @Inject(PreRegistrationLinkLifecycle)
+    private readonly linkLifecycle: PreRegistrationLinkLifecycle,
   ) {}
 
-  // --- Link management ---
+  // --- Link management (delegated to lifecycle) ---
 
   async getOrCreateLink(organizationId: string): Promise<PreRegistrationLink> {
-    const existing = await this.findLinkByOrganization(organizationId);
-    if (existing) return this.toLinkDto(existing);
-
-    const now = new Date();
-    const [created] = await this.db
-      .insert(academyPreRegistrationLinks)
-      .values({
-        id: crypto.randomUUID(),
-        organizationId,
-        token: createToken(),
-        status: "active",
-        regeneratedAt: null,
-        createdAt: now,
-        updatedAt: now,
-      })
-      .returning();
-
-    return this.toLinkDto(created);
+    await this.linkLifecycle.getOrCreateLink(organizationId);
+    return this.fetchLinkDto(organizationId);
   }
 
   async pauseLink(organizationId: string): Promise<PreRegistrationLink> {
-    await this.getOrCreateLink(organizationId);
-    const [updated] = await this.db
-      .update(academyPreRegistrationLinks)
-      .set({ status: "paused", updatedAt: new Date() })
-      .where(eq(academyPreRegistrationLinks.organizationId, organizationId))
-      .returning();
-    return this.toLinkDto(updated);
+    await this.linkLifecycle.pauseLink(organizationId);
+    return this.fetchLinkDto(organizationId);
   }
 
   async reactivateLink(organizationId: string): Promise<PreRegistrationLink> {
-    await this.getOrCreateLink(organizationId);
-    const [updated] = await this.db
-      .update(academyPreRegistrationLinks)
-      .set({ status: "active", updatedAt: new Date() })
-      .where(eq(academyPreRegistrationLinks.organizationId, organizationId))
-      .returning();
-    return this.toLinkDto(updated);
+    await this.linkLifecycle.reactivateLink(organizationId);
+    return this.fetchLinkDto(organizationId);
   }
 
   async regenerateLink(organizationId: string): Promise<PreRegistrationLink> {
-    await this.getOrCreateLink(organizationId);
-    const now = new Date();
-    const [updated] = await this.db
-      .update(academyPreRegistrationLinks)
-      .set({ token: createToken(), status: "active", regeneratedAt: now, updatedAt: now })
-      .where(eq(academyPreRegistrationLinks.organizationId, organizationId))
-      .returning();
-    return this.toLinkDto(updated);
+    await this.linkLifecycle.regenerateLink(organizationId);
+    return this.fetchLinkDto(organizationId);
   }
 
-  // --- Public form ---
+  // --- Public form (link resolution delegated to lifecycle) ---
 
   async publicProfile(token: string): Promise<PreRegistrationPublicProfile> {
-    const found = await this.findPublicLink(token);
-    if (!found) throw new NotFoundException("Link de pré-cadastro não encontrado.");
-
-    return {
-      academy: {
-        name: found.academy.name,
-        logo: found.academy.logo ?? null,
-        address: found.academy.address ?? null,
-        phone: found.academy.phone ?? null,
-        instagram: found.academy.instagram ?? null,
-      },
-      link: { status: parseLinkStatus(found.link.status) },
-    };
+    return this.linkLifecycle.resolvePublicProfile(token);
   }
 
   async createRequest(
     token: string,
     input: CreatePreRegistrationRequestInput,
   ): Promise<PreRegistrationRequest> {
-    const found = await this.findPublicLink(token);
-    if (!found) throw new NotFoundException("Link de pré-cadastro não encontrado.");
-    if (found.link.status !== "active") {
-      throw new BadRequestException("Este link de pré-cadastro está pausado.");
-    }
+    const { linkId, organizationId } = await this.linkLifecycle.resolveActiveLink(token);
 
     this.validateRequest(input);
 
     const normalizedEmail = input.email.trim().toLowerCase();
-    const duplicateEmail = await this.findOpenRequestByEmail(
-      found.link.organizationId,
-      normalizedEmail,
-    );
+    const duplicateEmail = await this.findOpenRequestByEmail(organizationId, normalizedEmail);
     if (duplicateEmail) {
       throw new ConflictException("Já existe uma solicitação em análise para este email.");
     }
 
     const duplicateStudent = await this.findDuplicateStudent(
-      found.link.organizationId,
+      organizationId,
       input.name,
       input.birthDate,
     );
@@ -160,8 +113,8 @@ export class PreRegistrationService {
       .insert(preRegistrationRequests)
       .values({
         id: crypto.randomUUID(),
-        organizationId: found.link.organizationId,
-        linkId: found.link.id,
+        organizationId,
+        linkId,
         status: "pending_review",
         name: input.name.trim(),
         birthDate: input.birthDate,
@@ -508,15 +461,21 @@ export class PreRegistrationService {
     return { sent: true };
   }
 
+  // --- Private: link DTO projection ---
+
+  private async fetchLinkDto(organizationId: string): Promise<PreRegistrationLink> {
+    const [row] = await this.db
+      .select()
+      .from(academyPreRegistrationLinks)
+      .where(eq(academyPreRegistrationLinks.organizationId, organizationId))
+      .limit(1);
+    if (!row) throw new NotFoundException("Link de pré-cadastro não encontrado.");
+    return this.toLinkDto(row);
+  }
+
   // --- Private helpers ---
 
   private async findWhiteBelt(organizationId: string, birthDate: string) {
-    const [_org] = await this.db
-      .select({ childToAdultAge: organization.childToAdultAge })
-      .from(organization)
-      .where(eq(organization.id, organizationId))
-      .limit(1);
-
     const path = isMinor(birthDate) ? "child" : "adult";
     const slug = `${path}-white`;
 
@@ -607,25 +566,6 @@ export class PreRegistrationService {
       .from(preRegistrationRequests)
       .innerJoin(organization, eq(preRegistrationRequests.organizationId, organization.id))
       .where(eq(preRegistrationRequests.firstAccessTokenHash, tokenHash))
-      .limit(1);
-    return row ?? null;
-  }
-
-  private async findLinkByOrganization(organizationId: string): Promise<LinkRow | null> {
-    const [row] = await this.db
-      .select()
-      .from(academyPreRegistrationLinks)
-      .where(eq(academyPreRegistrationLinks.organizationId, organizationId))
-      .limit(1);
-    return row ?? null;
-  }
-
-  private async findPublicLink(token: string) {
-    const [row] = await this.db
-      .select({ link: academyPreRegistrationLinks, academy: organization })
-      .from(academyPreRegistrationLinks)
-      .innerJoin(organization, eq(academyPreRegistrationLinks.organizationId, organization.id))
-      .where(eq(academyPreRegistrationLinks.token, token))
       .limit(1);
     return row ?? null;
   }
@@ -739,18 +679,9 @@ export class PreRegistrationService {
   }
 }
 
-function parseLinkStatus(value: string): "active" | "paused" {
-  if (value === "active" || value === "paused") return value;
-  throw new BadRequestException("Status do link de pré-cadastro inválido.");
-}
-
 function parseRequestStatus(value: string): "pending_review" | "approved" | "rejected" {
   if (value === "pending_review" || value === "approved" || value === "rejected") return value;
   throw new BadRequestException("Status da solicitação de pré-cadastro inválido.");
-}
-
-function createToken(): string {
-  return randomBytes(24).toString("base64url");
 }
 
 function emptyToNull(value?: string): string | null {
