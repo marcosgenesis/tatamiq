@@ -1,20 +1,7 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  Inject,
-  Param,
-  Patch,
-  Post,
-  Query,
-} from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Inject, Param, Patch, Post, Query } from "@nestjs/common";
 import { ApiBody, ApiOkResponse, ApiParam, ApiQuery, ApiTags } from "@nestjs/swagger";
-import { createClassGroupSchema, updateClassGroupSchema } from "@tatamiq/contracts";
-import { OrgRoles, Session } from "@thallesp/nestjs-better-auth";
-import type { z } from "zod";
-import { activeOrganizationId, type SessionWithOrganization } from "../active-organization";
+import { OrgRoles } from "@thallesp/nestjs-better-auth";
+import { AcademyId } from "../academy-request";
 import {
   ClassGroupDto,
   CreateClassGroupDto,
@@ -35,10 +22,10 @@ export class ClassGroupsController {
   @ApiQuery({ name: "status", required: false, enum: ["active", "archived", "all"] })
   @ApiOkResponse({ type: ListClassGroupsResponseDto })
   list(
-    @Session() session: SessionWithOrganization,
+    @AcademyId() academyId: string,
     @Query("status") status?: "active" | "archived" | "all",
   ): Promise<ListClassGroupsResponseDto> {
-    return this.classGroupsService.list(activeOrganizationId(session), status ?? "active");
+    return this.classGroupsService.list(academyId, status ?? "active");
   }
 
   @Post()
@@ -46,23 +33,17 @@ export class ClassGroupsController {
   @ApiBody({ type: CreateClassGroupDto })
   @ApiOkResponse({ type: ClassGroupDto })
   create(
-    @Session() session: SessionWithOrganization,
+    @AcademyId() academyId: string,
     @Body() body: CreateClassGroupDto,
   ): Promise<ClassGroupDto> {
-    return this.classGroupsService.create(
-      activeOrganizationId(session),
-      parseBody(createClassGroupSchema, body),
-    );
+    return this.classGroupsService.create(academyId, body);
   }
 
   @Get(":id")
   @ApiParam({ name: "id" })
   @ApiOkResponse({ type: ClassGroupDto })
-  get(
-    @Session() session: SessionWithOrganization,
-    @Param("id") id: string,
-  ): Promise<ClassGroupDto> {
-    return this.classGroupsService.get(activeOrganizationId(session), id);
+  get(@AcademyId() academyId: string, @Param("id") id: string): Promise<ClassGroupDto> {
+    return this.classGroupsService.get(academyId, id);
   }
 
   @Patch(":id")
@@ -70,42 +51,26 @@ export class ClassGroupsController {
   @ApiBody({ type: UpdateClassGroupDto })
   @ApiOkResponse({ type: ClassGroupDto })
   update(
-    @Session() session: SessionWithOrganization,
+    @AcademyId() academyId: string,
     @Param("id") id: string,
     @Body() body: UpdateClassGroupDto,
   ): Promise<ClassGroupDto> {
-    return this.classGroupsService.update(
-      activeOrganizationId(session),
-      id,
-      parseBody(updateClassGroupSchema, body),
-    );
+    return this.classGroupsService.update(academyId, id, body);
   }
 
   @Post(":id/archive")
   @HttpCode(200)
   @ApiParam({ name: "id" })
   @ApiOkResponse({ type: ClassGroupDto })
-  archive(
-    @Session() session: SessionWithOrganization,
-    @Param("id") id: string,
-  ): Promise<ClassGroupDto> {
-    return this.classGroupsService.archive(activeOrganizationId(session), id);
+  archive(@AcademyId() academyId: string, @Param("id") id: string): Promise<ClassGroupDto> {
+    return this.classGroupsService.archive(academyId, id);
   }
 
   @Post(":id/reactivate")
   @HttpCode(200)
   @ApiParam({ name: "id" })
   @ApiOkResponse({ type: ClassGroupDto })
-  reactivate(
-    @Session() session: SessionWithOrganization,
-    @Param("id") id: string,
-  ): Promise<ClassGroupDto> {
-    return this.classGroupsService.reactivate(activeOrganizationId(session), id);
+  reactivate(@AcademyId() academyId: string, @Param("id") id: string): Promise<ClassGroupDto> {
+    return this.classGroupsService.reactivate(academyId, id);
   }
-}
-
-function parseBody<T>(schema: z.ZodType<T>, value: unknown): T {
-  const result = schema.safeParse(value);
-  if (!result.success) throw new BadRequestException("Dados da turma inválidos.");
-  return result.data;
 }

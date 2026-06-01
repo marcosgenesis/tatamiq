@@ -1,10 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from "@nestjs/common";
+import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type {
   AdjustMonthlyFeeInput,
   ConfirmReceiptInput,
@@ -29,13 +23,8 @@ import {
 } from "@tatamiq/database";
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
-import {
-  clampDueDay,
-  formatDueDate,
-  isOverdue,
-  validateCanCreateFee,
-  validateStatusTransition,
-} from "./monthly-fee-rules";
+import { MonthlyFeeLifecycle } from "./monthly-fee-lifecycle";
+import { isOverdue } from "./monthly-fee-rules";
 import { R2StorageService } from "./r2-storage.service";
 
 type FeeRow = typeof monthlyFees.$inferSelect;
@@ -47,6 +36,7 @@ export class MonthlyFeesService {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
     @Inject(R2StorageService) private readonly r2: R2StorageService,
+    @Inject(MonthlyFeeLifecycle) private readonly lifecycle: MonthlyFeeLifecycle,
   ) {}
 
   async list(
@@ -125,35 +115,7 @@ export class MonthlyFeesService {
   }
 
   async create(organizationId: string, input: CreateMonthlyFeeInput): Promise<MonthlyFeeDetail> {
-    const student = await this.findStudent(organizationId, input.studentId);
-    validateCanCreateFee(student);
-
-    const dueDate = clampDueDay(input.dueDay, input.referenceYear, input.referenceMonth);
-    const feeId = crypto.randomUUID();
-    const now = new Date();
-
-    try {
-      await this.db.insert(monthlyFees).values({
-        id: feeId,
-        organizationId,
-        studentId: input.studentId,
-        referenceYear: input.referenceYear,
-        referenceMonth: input.referenceMonth,
-        amountInCents: input.amountInCents,
-        originalAmountInCents: null,
-        dueDate: formatDueDate(dueDate),
-        status: "open",
-        paidAt: null,
-        createdAt: now,
-        updatedAt: now,
-      });
-    } catch (error: unknown) {
-      if (isUniqueViolation(error)) {
-        throw new ConflictException("Já existe uma mensalidade para este aluno neste mês.");
-      }
-      throw error;
-    }
-
+    const { feeId } = await this.lifecycle.create(organizationId, input);
     return this.get(organizationId, feeId);
   }
 
@@ -197,33 +159,7 @@ export class MonthlyFeesService {
     userId: string,
     input: AdjustMonthlyFeeInput,
   ): Promise<MonthlyFeeDetail> {
-    const fee = await this.findFee(organizationId, id);
-    validateStatusTransition(fee.status, "adjust");
-
-    const now = new Date();
-    await this.db
-      .update(monthlyFees)
-      .set({
-        amountInCents: input.amountInCents,
-        originalAmountInCents: fee.originalAmountInCents ?? fee.amountInCents,
-        updatedAt: now,
-      })
-      .where(and(eq(monthlyFees.id, id), eq(monthlyFees.organizationId, organizationId)));
-
-    await this.db.insert(monthlyFeeEvents).values({
-      id: crypto.randomUUID(),
-      monthlyFeeId: id,
-      organizationId,
-      type: "adjusted",
-      reason: input.reason,
-      metadata: {
-        previousAmountInCents: fee.amountInCents,
-        newAmountInCents: input.amountInCents,
-      },
-      createdByUserId: userId,
-      createdAt: now,
-    });
-
+    await this.lifecycle.adjust(organizationId, id, userId, input);
     return this.get(organizationId, id);
   }
 
@@ -233,26 +169,7 @@ export class MonthlyFeesService {
     userId: string,
     input: WaiveMonthlyFeeInput,
   ): Promise<MonthlyFeeDetail> {
-    const fee = await this.findFee(organizationId, id);
-    validateStatusTransition(fee.status, "waive");
-
-    const now = new Date();
-    await this.db
-      .update(monthlyFees)
-      .set({ status: "waived", updatedAt: now })
-      .where(and(eq(monthlyFees.id, id), eq(monthlyFees.organizationId, organizationId)));
-
-    await this.db.insert(monthlyFeeEvents).values({
-      id: crypto.randomUUID(),
-      monthlyFeeId: id,
-      organizationId,
-      type: "waived",
-      reason: input.reason,
-      metadata: null,
-      createdByUserId: userId,
-      createdAt: now,
-    });
-
+    await this.lifecycle.waive(organizationId, id, userId, input);
     return this.get(organizationId, id);
   }
 
@@ -262,27 +179,7 @@ export class MonthlyFeesService {
     userId: string,
     input: ManualPaymentInput,
   ): Promise<MonthlyFeeDetail> {
-    const fee = await this.findFee(organizationId, id);
-    validateStatusTransition(fee.status, "manual_payment");
-
-    const now = new Date();
-    await this.db
-      .update(monthlyFees)
-      .set({ status: "paid", paidAt: now, updatedAt: now })
-      .where(and(eq(monthlyFees.id, id), eq(monthlyFees.organizationId, organizationId)));
-
-    const note = input.note?.trim() || null;
-    await this.db.insert(monthlyFeeEvents).values({
-      id: crypto.randomUUID(),
-      monthlyFeeId: id,
-      organizationId,
-      type: "manual_payment",
-      reason: note,
-      metadata: null,
-      createdByUserId: userId,
-      createdAt: now,
-    });
-
+    await this.lifecycle.recordManualPayment(organizationId, id, userId, input);
     return this.get(organizationId, id);
   }
 
@@ -366,10 +263,7 @@ export class MonthlyFeesService {
     contentType: string,
     studentId?: string,
   ): Promise<UploadUrlResponse> {
-    const fee = studentId
-      ? await this.findStudentFee(organizationId, studentId, feeId)
-      : await this.findFee(organizationId, feeId);
-    this.validateReceiptSubmissionStatus(fee.status);
+    await this.lifecycle.assertCanSubmitReceipt(organizationId, feeId, studentId);
     this.validateReceiptFileType(contentType);
 
     const fileKey = `receipts/${organizationId}/${feeId}/${crypto.randomUUID()}`;
@@ -385,69 +279,13 @@ export class MonthlyFeesService {
     input: ConfirmReceiptInput,
     studentId?: string,
   ): Promise<MonthlyFeeDetail> {
-    const fee = studentId
-      ? await this.findStudentFee(organizationId, studentId, feeId)
-      : await this.findFee(organizationId, feeId);
-    this.validateReceiptSubmissionStatus(fee.status);
     this.validateReceiptFileType(input.fileType);
 
     if (input.fileSizeBytes > 10 * 1024 * 1024) {
       throw new BadRequestException("Arquivo excede o limite de 10 MB.");
     }
 
-    const [pendingReceipt] = await this.db
-      .select()
-      .from(paymentReceipts)
-      .where(and(eq(paymentReceipts.monthlyFeeId, feeId), eq(paymentReceipts.status, "pending")))
-      .orderBy(desc(paymentReceipts.createdAt))
-      .limit(1);
-
-    const now = new Date();
-    const newReceiptId = crypto.randomUUID();
-    await this.db.transaction(async (tx) => {
-      if (pendingReceipt) {
-        await tx
-          .update(paymentReceipts)
-          .set({ status: "replaced", replacedAt: now })
-          .where(eq(paymentReceipts.id, pendingReceipt.id));
-      }
-
-      await tx.insert(paymentReceipts).values({
-        id: newReceiptId,
-        monthlyFeeId: feeId,
-        organizationId,
-        studentId: fee.studentId,
-        fileKey: input.fileKey,
-        fileUrl: null,
-        fileType: input.fileType,
-        fileSizeBytes: input.fileSizeBytes,
-        note: input.note?.trim() || null,
-        status: "pending",
-        rejectionReason: null,
-        replacedAt: null,
-        createdByUserId: userId,
-        createdAt: now,
-      });
-
-      await tx
-        .update(monthlyFees)
-        .set({ status: "under_review", updatedAt: now })
-        .where(eq(monthlyFees.id, feeId));
-
-      if (pendingReceipt) {
-        await tx.insert(monthlyFeeEvents).values({
-          id: crypto.randomUUID(),
-          monthlyFeeId: feeId,
-          organizationId,
-          type: "receipt_replaced",
-          reason: null,
-          metadata: { previousReceiptId: pendingReceipt.id, newReceiptId },
-          createdByUserId: userId,
-          createdAt: now,
-        });
-      }
-    });
-
+    await this.lifecycle.submitReceipt(organizationId, feeId, userId, input, studentId);
     return this.get(organizationId, feeId);
   }
 
@@ -493,32 +331,7 @@ export class MonthlyFeesService {
     receiptId: string,
     userId: string,
   ): Promise<MonthlyFeeDetail> {
-    const fee = await this.findFee(organizationId, feeId);
-    const receipt = await this.findReceipt(organizationId, feeId, receiptId);
-    this.assertActivePendingReceipt(fee.status, receipt);
-
-    const now = new Date();
-    await this.db
-      .update(paymentReceipts)
-      .set({ status: "approved" })
-      .where(eq(paymentReceipts.id, receiptId));
-
-    await this.db
-      .update(monthlyFees)
-      .set({ status: "paid", paidAt: now, updatedAt: now })
-      .where(eq(monthlyFees.id, feeId));
-
-    await this.db.insert(monthlyFeeEvents).values({
-      id: crypto.randomUUID(),
-      monthlyFeeId: feeId,
-      organizationId,
-      type: "receipt_approved",
-      reason: null,
-      metadata: { receiptId },
-      createdByUserId: userId,
-      createdAt: now,
-    });
-
+    await this.lifecycle.approveReceipt(organizationId, feeId, receiptId, userId);
     return this.get(organizationId, feeId);
   }
 
@@ -529,32 +342,7 @@ export class MonthlyFeesService {
     userId: string,
     input: RejectReceiptInput,
   ): Promise<MonthlyFeeDetail> {
-    const fee = await this.findFee(organizationId, feeId);
-    const receipt = await this.findReceipt(organizationId, feeId, receiptId);
-    this.assertActivePendingReceipt(fee.status, receipt);
-
-    const now = new Date();
-    await this.db
-      .update(paymentReceipts)
-      .set({ status: "rejected", rejectionReason: input.reason })
-      .where(eq(paymentReceipts.id, receiptId));
-
-    await this.db
-      .update(monthlyFees)
-      .set({ status: "open", updatedAt: now })
-      .where(eq(monthlyFees.id, feeId));
-
-    await this.db.insert(monthlyFeeEvents).values({
-      id: crypto.randomUUID(),
-      monthlyFeeId: feeId,
-      organizationId,
-      type: "receipt_rejected",
-      reason: input.reason,
-      metadata: { receiptId },
-      createdByUserId: userId,
-      createdAt: now,
-    });
-
+    await this.lifecycle.rejectReceipt(organizationId, feeId, receiptId, userId, input);
     return this.get(organizationId, feeId);
   }
 
@@ -597,25 +385,10 @@ export class MonthlyFeesService {
     return row;
   }
 
-  private validateReceiptSubmissionStatus(status: string): void {
-    if (status === "paid" || status === "waived") {
-      throw new BadRequestException("Mensalidade paga ou dispensada não aceita comprovante.");
-    }
-    if (status !== "open" && status !== "under_review") {
-      throw new BadRequestException("Status da mensalidade não aceita comprovante.");
-    }
-  }
-
   private validateReceiptFileType(contentType: string): void {
     const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"];
     if (!allowedTypes.includes(contentType)) {
       throw new BadRequestException("Tipo de arquivo não permitido. Use imagem ou PDF.");
-    }
-  }
-
-  private assertActivePendingReceipt(feeStatus: string, receipt: ReceiptRow): void {
-    if (feeStatus !== "under_review" || receipt.status !== "pending") {
-      throw new BadRequestException("Apenas o comprovante pendente ativo pode ser revisado.");
     }
   }
 
@@ -631,20 +404,6 @@ export class MonthlyFeesService {
     }
 
     return row;
-  }
-
-  private async findStudent(organizationId: string, studentId: string) {
-    const [student] = await this.db
-      .select()
-      .from(students)
-      .where(and(eq(students.id, studentId), eq(students.organizationId, organizationId)))
-      .limit(1);
-
-    if (!student) {
-      throw new NotFoundException("Aluno não encontrado.");
-    }
-
-    return student;
   }
 }
 
@@ -719,13 +478,4 @@ function parseReceiptStatus(value: string) {
   const valid = ["pending", "approved", "rejected", "replaced"];
   if (valid.includes(value)) return value as MonthlyFeeDetail["receipts"][number]["status"];
   throw new BadRequestException("Status de comprovante inválido.");
-}
-
-function isUniqueViolation(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    (error as { code: string }).code === "23505"
-  );
 }

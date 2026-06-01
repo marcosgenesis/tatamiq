@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   ForbiddenException,
@@ -10,12 +9,9 @@ import {
   Patch,
   Post,
   Query,
-  Session,
 } from "@nestjs/common";
 import { ApiBody, ApiOkResponse, ApiParam, ApiQuery, ApiTags } from "@nestjs/swagger";
-import { confirmQrAttendanceSchema, confirmReceiptSchema } from "@tatamiq/contracts";
-import type { z } from "zod";
-import type { SessionWithUser } from "../active-organization";
+import { ActorId } from "../academy-request";
 import { GraduationService } from "../graduation/graduation.service";
 import {
   ConfirmReceiptDto,
@@ -58,27 +54,22 @@ export class StudentPortalController {
   @ApiBody({ type: ConfirmQrAttendanceDto })
   @ApiOkResponse({ type: ConfirmQrAttendanceResponseDto })
   confirmQrAttendance(
-    @Session() session: SessionWithUser,
+    @ActorId() actorId: string,
     @Body() body: ConfirmQrAttendanceDto,
   ): Promise<ConfirmQrAttendanceResponseDto> {
-    return this.qrAttendanceService.confirmQrAttendance(
-      session.user.id,
-      parseBody(confirmQrAttendanceSchema, body),
-    );
+    return this.qrAttendanceService.confirmQrAttendance(actorId, body);
   }
 
   @Get("me")
   @ApiOkResponse({ type: StudentMeResponseDto })
-  me(@Session() session: SessionWithUser): Promise<StudentMeResponseDto> {
-    return this.studentAccessService.me(session.user.id);
+  me(@ActorId() actorId: string): Promise<StudentMeResponseDto> {
+    return this.studentAccessService.me(actorId);
   }
 
   @Get("monthly-fees")
   @ApiOkResponse({ type: StudentMonthlyFeesResponseDto })
-  async studentMonthlyFees(
-    @Session() session: SessionWithUser,
-  ): Promise<StudentMonthlyFeesResponseDto> {
-    const meData = await this.studentAccessService.me(session.user.id);
+  async studentMonthlyFees(@ActorId() actorId: string): Promise<StudentMonthlyFeesResponseDto> {
+    const meData = await this.studentAccessService.me(actorId);
     return this.monthlyFeesService.studentFees(meData.student.id, meData.academy.id);
   }
 
@@ -88,11 +79,11 @@ export class StudentPortalController {
   @ApiQuery({ name: "contentType", required: true })
   @ApiOkResponse({ type: UploadUrlResponseDto })
   async studentReceiptUploadUrl(
-    @Session() session: SessionWithUser,
+    @ActorId() actorId: string,
     @Param("id") id: string,
     @Query("contentType") contentType: string,
   ): Promise<UploadUrlResponseDto> {
-    const meData = await this.studentAccessService.me(session.user.id);
+    const meData = await this.studentAccessService.me(actorId);
     assertStudentCanSubmitReceipts(meData.student.readOnly);
     return this.monthlyFeesService.generateUploadUrl(
       meData.academy.id,
@@ -108,17 +99,17 @@ export class StudentPortalController {
   @ApiBody({ type: ConfirmReceiptDto })
   @ApiOkResponse({ type: MonthlyFeeDetailDto })
   async studentConfirmReceipt(
-    @Session() session: SessionWithUser,
+    @ActorId() actorId: string,
     @Param("id") id: string,
     @Body() body: ConfirmReceiptDto,
   ): Promise<MonthlyFeeDetailDto> {
-    const meData = await this.studentAccessService.me(session.user.id);
+    const meData = await this.studentAccessService.me(actorId);
     assertStudentCanSubmitReceipts(meData.student.readOnly);
     return this.monthlyFeesService.confirmReceipt(
       meData.academy.id,
       id,
-      session.user.id,
-      parseBody(confirmReceiptSchema, body),
+      actorId,
+      body,
       meData.student.id,
     );
   }
@@ -128,11 +119,11 @@ export class StudentPortalController {
   @ApiParam({ name: "receiptId" })
   @ApiOkResponse({ type: ReceiptViewUrlResponseDto })
   async studentReceiptViewUrl(
-    @Session() session: SessionWithUser,
+    @ActorId() actorId: string,
     @Param("id") id: string,
     @Param("receiptId") receiptId: string,
   ): Promise<ReceiptViewUrlResponseDto> {
-    const meData = await this.studentAccessService.me(session.user.id);
+    const meData = await this.studentAccessService.me(actorId);
     return this.monthlyFeesService.receiptViewUrl(
       meData.academy.id,
       id,
@@ -142,66 +133,54 @@ export class StudentPortalController {
   }
 
   @Get("notes")
-  async studentNotes(@Session() session: SessionWithUser) {
-    const meData = await this.studentAccessService.me(session.user.id);
+  async studentNotes(@ActorId() actorId: string) {
+    const meData = await this.studentAccessService.me(actorId);
     return this.studentNotesService.listVisibleNotes(meData.student.id);
   }
 
   @Get("schedule")
   @ApiOkResponse({ type: StudentScheduleResponseDto })
-  async studentSchedule(@Session() session: SessionWithUser): Promise<StudentScheduleResponseDto> {
-    const meData = await this.studentAccessService.me(session.user.id);
+  async studentSchedule(@ActorId() actorId: string): Promise<StudentScheduleResponseDto> {
+    const meData = await this.studentAccessService.me(actorId);
     return this.portalService.schedule(meData.student.id);
   }
 
   @Get("attendances")
   @ApiOkResponse({ type: StudentAttendancesResponseDto })
-  async studentAttendances(
-    @Session() session: SessionWithUser,
-  ): Promise<StudentAttendancesResponseDto> {
-    const meData = await this.studentAccessService.me(session.user.id);
+  async studentAttendances(@ActorId() actorId: string): Promise<StudentAttendancesResponseDto> {
+    const meData = await this.studentAccessService.me(actorId);
     return this.portalService.attendanceHistory(meData.student.id);
   }
 
   @Patch("profile")
   async updateStudentProfile(
-    @Session() session: SessionWithUser,
+    @ActorId() actorId: string,
     @Body() body: UpdateStudentProfileDto,
   ): Promise<void> {
-    const meData = await this.studentAccessService.me(session.user.id);
-    return this.portalService.updateProfile(meData.student.id, session.user.id, body);
+    const meData = await this.studentAccessService.me(actorId);
+    return this.portalService.updateProfile(meData.student.id, actorId, body);
   }
 
   @Get("graduation")
   @ApiOkResponse({ type: StudentGraduationResponseDto })
-  async studentGraduation(
-    @Session() session: SessionWithUser,
-  ): Promise<StudentGraduationResponseDto> {
-    const meData = await this.studentAccessService.me(session.user.id);
+  async studentGraduation(@ActorId() actorId: string): Promise<StudentGraduationResponseDto> {
+    const meData = await this.studentAccessService.me(actorId);
     return this.graduationService.studentGraduation(meData.student.id);
   }
 
   @Get("indicators")
   @ApiOkResponse({ type: StudentIndicatorsResponseDto })
-  async studentIndicators(
-    @Session() session: SessionWithUser,
-  ): Promise<StudentIndicatorsResponseDto> {
-    const meData = await this.studentAccessService.me(session.user.id);
-    return this.portalService.indicators(meData.student.id, session.user.id);
+  async studentIndicators(@ActorId() actorId: string): Promise<StudentIndicatorsResponseDto> {
+    const meData = await this.studentAccessService.me(actorId);
+    return this.portalService.indicators(meData.student.id, actorId);
   }
 
   @Post("indicators/mark-seen")
   @HttpCode(200)
-  async markSeen(@Session() session: SessionWithUser, @Body() body: MarkSeenDto): Promise<void> {
-    const meData = await this.studentAccessService.me(session.user.id);
+  async markSeen(@ActorId() actorId: string, @Body() body: MarkSeenDto): Promise<void> {
+    const meData = await this.studentAccessService.me(actorId);
     return this.portalService.markSeen(meData.student.id, body);
   }
-}
-
-function parseBody<T>(schema: z.ZodType<T>, value: unknown): T {
-  const result = schema.safeParse(value);
-  if (!result.success) throw new BadRequestException("Dados inválidos.");
-  return result.data;
 }
 
 function assertStudentCanSubmitReceipts(readOnly: boolean): void {

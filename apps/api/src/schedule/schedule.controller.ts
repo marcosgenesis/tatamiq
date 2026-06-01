@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -11,10 +10,8 @@ import {
   Query,
 } from "@nestjs/common";
 import { ApiBody, ApiOkResponse, ApiParam, ApiQuery, ApiTags } from "@nestjs/swagger";
-import { createAdHocClassSchema, createRecurringCancellationSchema } from "@tatamiq/contracts";
-import { OrgRoles, Session } from "@thallesp/nestjs-better-auth";
-import type { z } from "zod";
-import { activeOrganizationId, type SessionWithOrganization } from "../active-organization";
+import { OrgRoles } from "@thallesp/nestjs-better-auth";
+import { AcademyId, ActorId } from "../academy-request";
 import {
   CreateAdHocClassDto,
   CreateRecurringCancellationDto,
@@ -34,16 +31,16 @@ export class ScheduleController {
   @ApiQuery({ name: "weekStart", required: false })
   @ApiOkResponse({ type: WeeklyScheduleResponseDto })
   week(
-    @Session() session: SessionWithOrganization,
+    @AcademyId() academyId: string,
     @Query("weekStart") weekStart?: string,
   ): Promise<WeeklyScheduleResponseDto> {
-    return this.scheduleService.week(activeOrganizationId(session), weekStart);
+    return this.scheduleService.week(academyId, weekStart);
   }
 
   @Get("today")
   @ApiOkResponse({ type: TodayScheduleResponseDto })
-  today(@Session() session: SessionWithOrganization): Promise<TodayScheduleResponseDto> {
-    return this.scheduleService.today(activeOrganizationId(session));
+  today(@AcademyId() academyId: string): Promise<TodayScheduleResponseDto> {
+    return this.scheduleService.today(academyId);
   }
 
   @Post("ad-hoc-classes")
@@ -51,14 +48,11 @@ export class ScheduleController {
   @ApiBody({ type: CreateAdHocClassDto })
   @ApiOkResponse({ type: ScheduleOccurrenceDto })
   createAdHoc(
-    @Session() session: SessionWithOrganization,
+    @AcademyId() academyId: string,
+    @ActorId() actorId: string,
     @Body() body: CreateAdHocClassDto,
   ): Promise<ScheduleOccurrenceDto> {
-    return this.scheduleService.createAdHoc(
-      activeOrganizationId(session),
-      session.user.id,
-      parseBody(createAdHocClassSchema, body),
-    );
+    return this.scheduleService.createAdHoc(academyId, actorId, body);
   }
 
   @Post("ad-hoc-classes/:id/cancel")
@@ -66,20 +60,18 @@ export class ScheduleController {
   @ApiParam({ name: "id" })
   @ApiOkResponse({ type: ScheduleOccurrenceDto })
   cancelAdHoc(
-    @Session() session: SessionWithOrganization,
+    @AcademyId() academyId: string,
+    @ActorId() actorId: string,
     @Param("id") id: string,
   ): Promise<ScheduleOccurrenceDto> {
-    return this.scheduleService.cancelAdHoc(activeOrganizationId(session), session.user.id, id);
+    return this.scheduleService.cancelAdHoc(academyId, actorId, id);
   }
 
   @Delete("ad-hoc-classes/:id")
   @HttpCode(204)
   @ApiParam({ name: "id" })
-  async deleteAdHoc(
-    @Session() session: SessionWithOrganization,
-    @Param("id") id: string,
-  ): Promise<void> {
-    await this.scheduleService.deleteAdHoc(activeOrganizationId(session), id);
+  async deleteAdHoc(@AcademyId() academyId: string, @Param("id") id: string): Promise<void> {
+    await this.scheduleService.deleteAdHoc(academyId, id);
   }
 
   @Post("ad-hoc-classes/:id/reactivate")
@@ -87,10 +79,10 @@ export class ScheduleController {
   @ApiParam({ name: "id" })
   @ApiOkResponse({ type: ScheduleOccurrenceDto })
   reactivateAdHoc(
-    @Session() session: SessionWithOrganization,
+    @AcademyId() academyId: string,
     @Param("id") id: string,
   ): Promise<ScheduleOccurrenceDto> {
-    return this.scheduleService.reactivateAdHoc(activeOrganizationId(session), id);
+    return this.scheduleService.reactivateAdHoc(academyId, id);
   }
 
   @Post("recurring-cancellations")
@@ -98,14 +90,11 @@ export class ScheduleController {
   @ApiBody({ type: CreateRecurringCancellationDto })
   @ApiOkResponse({ type: ScheduleOccurrenceDto })
   cancelRecurring(
-    @Session() session: SessionWithOrganization,
+    @AcademyId() academyId: string,
+    @ActorId() actorId: string,
     @Body() body: CreateRecurringCancellationDto,
   ): Promise<ScheduleOccurrenceDto> {
-    return this.scheduleService.cancelRecurring(
-      activeOrganizationId(session),
-      session.user.id,
-      parseBody(createRecurringCancellationSchema, body),
-    );
+    return this.scheduleService.cancelRecurring(academyId, actorId, body);
   }
 
   @Post("recurring-cancellations/:id/revert")
@@ -113,15 +102,10 @@ export class ScheduleController {
   @ApiParam({ name: "id" })
   @ApiOkResponse({ type: ScheduleOccurrenceDto })
   revertRecurring(
-    @Session() session: SessionWithOrganization,
+    @AcademyId() academyId: string,
+    @ActorId() actorId: string,
     @Param("id") id: string,
   ): Promise<ScheduleOccurrenceDto> {
-    return this.scheduleService.revertRecurring(activeOrganizationId(session), session.user.id, id);
+    return this.scheduleService.revertRecurring(academyId, actorId, id);
   }
-}
-
-function parseBody<T>(schema: z.ZodType<T>, value: unknown): T {
-  const result = schema.safeParse(value);
-  if (!result.success) throw new BadRequestException("Dados da agenda inválidos.");
-  return result.data;
 }

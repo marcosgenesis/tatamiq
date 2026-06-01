@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Inject, Post, Query, Res } from "@nestjs/common";
 import { ApiQuery, ApiTags } from "@nestjs/swagger";
-import { OrgRoles, Session } from "@thallesp/nestjs-better-auth";
-import { activeOrganizationId, type SessionWithOrganization } from "../active-organization";
+import { OrgRoles } from "@thallesp/nestjs-better-auth";
+import { AcademyId } from "../academy-request";
 import { CsvService } from "./csv.service";
 
 type CsvResponse = {
@@ -24,21 +24,18 @@ export class CsvController {
   }
 
   @Post("students/import-csv")
-  async importPreview(@Body() body: { csv: string }, @Session() session: SessionWithOrganization) {
-    return this.csvService.previewImport(activeOrganizationId(session), body.csv);
+  async importPreview(@Body() body: { csv: string }, @AcademyId() academyId: string) {
+    return this.csvService.previewImport(academyId, body.csv);
   }
 
   @Post("students/import-csv/confirm")
-  async importConfirm(
-    @Body() body: { previewToken: string },
-    @Session() session: SessionWithOrganization,
-  ) {
-    return this.csvService.confirmImport(activeOrganizationId(session), body.previewToken);
+  async importConfirm(@Body() body: { previewToken: string }, @AcademyId() academyId: string) {
+    return this.csvService.confirmImport(academyId, body.previewToken);
   }
 
   @Get("students/export.csv")
-  async exportStudents(@Session() session: SessionWithOrganization, @Res() res: CsvResponse) {
-    const csv = await this.csvService.exportStudents(activeOrganizationId(session));
+  async exportStudents(@AcademyId() academyId: string, @Res() res: CsvResponse) {
+    const csv = await this.csvService.exportStudents(academyId);
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
     res.setHeader("Content-Disposition", "attachment; filename=alunos.csv");
     res.send(csv);
@@ -50,14 +47,14 @@ export class CsvController {
   @ApiQuery({ name: "classGroupId", required: false })
   @ApiQuery({ name: "studentId", required: false })
   async exportAttendances(
-    @Session() session: SessionWithOrganization,
+    @AcademyId() academyId: string,
     @Res() res: CsvResponse,
     @Query("dateFrom") dateFrom?: string,
     @Query("dateTo") dateTo?: string,
     @Query("classGroupId") classGroupId?: string,
     @Query("studentId") studentId?: string,
   ) {
-    const csv = await this.csvService.exportAttendances(activeOrganizationId(session), {
+    const csv = await this.csvService.exportAttendances(academyId, {
       dateFrom,
       dateTo,
       classGroupId,
@@ -74,14 +71,14 @@ export class CsvController {
   @ApiQuery({ name: "referenceMonth", required: false })
   @ApiQuery({ name: "studentId", required: false })
   async exportMonthlyFees(
-    @Session() session: SessionWithOrganization,
+    @AcademyId() academyId: string,
     @Res() res: CsvResponse,
     @Query("status") status?: string,
     @Query("referenceYear") referenceYear?: string,
     @Query("referenceMonth") referenceMonth?: string,
     @Query("studentId") studentId?: string,
   ) {
-    const csv = await this.csvService.exportMonthlyFees(activeOrganizationId(session), {
+    const csv = await this.csvService.exportMonthlyFees(academyId, {
       status,
       referenceYear: referenceYear ? Number.parseInt(referenceYear, 10) : undefined,
       referenceMonth: referenceMonth ? Number.parseInt(referenceMonth, 10) : undefined,

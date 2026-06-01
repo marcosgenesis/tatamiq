@@ -1,11 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  clampDueDay,
-  formatDueDate,
-  isOverdue,
-  validateCanCreateFee,
-  validateStatusTransition,
-} from "./monthly-fee-rules";
+import { clampDueDay, formatDueDate, isOverdue, validateCanCreateFee } from "./monthly-fee-rules";
 
 describe("clampDueDay", () => {
   it("returns the requested day when it exists in the month", () => {
@@ -96,37 +90,5 @@ describe("validateCanCreateFee", () => {
         monthlyDueDay: null,
       }),
     ).toThrow("Aluno precisa ter valor mensal e dia de vencimento configurados.");
-  });
-});
-
-describe("validateStatusTransition", () => {
-  it("allows adjust on open fee", () => {
-    expect(() => validateStatusTransition("open", "adjust")).not.toThrow();
-  });
-
-  it("allows waive on open fee", () => {
-    expect(() => validateStatusTransition("open", "waive")).not.toThrow();
-  });
-
-  it("allows manual_payment on open fee", () => {
-    expect(() => validateStatusTransition("open", "manual_payment")).not.toThrow();
-  });
-
-  it("rejects adjust on paid fee", () => {
-    expect(() => validateStatusTransition("paid", "adjust")).toThrow(
-      "Mensalidade só pode ser ajustada quando está em aberto.",
-    );
-  });
-
-  it("rejects waive on under_review fee", () => {
-    expect(() => validateStatusTransition("under_review", "waive")).toThrow(
-      "Mensalidade só pode ser dispensada quando está em aberto.",
-    );
-  });
-
-  it("rejects manual_payment on waived fee", () => {
-    expect(() => validateStatusTransition("waived", "manual_payment")).toThrow(
-      "Mensalidade só pode ser marcada como paga quando está em aberto.",
-    );
   });
 });

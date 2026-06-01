@@ -1,46 +1,49 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import {
+  type ColumnDef,
+  getCoreRowModel,
+  type PaginationState,
+  useReactTable,
+} from "@tanstack/react-table";
+import { type Dispatch, type SetStateAction, useMemo, useState } from "react";
+import { DataGrid, DataGridContainer } from "@/components/reui/data-grid/data-grid";
+import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination";
+import { DataGridTable } from "@/components/reui/data-grid/data-grid-table";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../../components/ui/table";
 import { authClient } from "../../lib/auth-client";
 import {
+  type AddPlatformAdministratorInput,
   addPlatformAdministrator,
-  getPlatformMe,
-  listPlatformAdministrators,
+  type PlatformAdministrator,
+  platformAdministratorsQuery,
+  platformMeQuery,
   removePlatformAdministrator,
-} from "./platform-api";
+} from "./platform-queries";
 import { PlatformLoading, PlatformShell } from "./platform-shell";
 
 export function PlatformAdministratorsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [form, setForm] = useState({ email: "", name: "" });
-  const platform = useQuery({ queryKey: ["platform", "me"], queryFn: getPlatformMe, retry: false });
-  const administrators = useQuery({
-    queryKey: ["platform", "administrators"],
-    queryFn: listPlatformAdministrators,
-    retry: false,
-  });
+  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
+  const platform = useQuery(platformMeQuery());
+  const administrators = useQuery(
+    platformAdministratorsQuery(pagination.pageIndex, pagination.pageSize),
+  );
   const addAdmin = useMutation({
-    mutationFn: addPlatformAdministrator,
+    mutationFn: (input: AddPlatformAdministratorInput) => addPlatformAdministrator(input),
     onSuccess: async () => {
       setForm({ email: "", name: "" });
+      setPagination((current) => ({ ...current, pageIndex: 0 }));
       await queryClient.invalidateQueries({ queryKey: ["platform", "administrators"] });
     },
   });
   const removeAdmin = useMutation({
-    mutationFn: removePlatformAdministrator,
+    mutationFn: (id: string) => removePlatformAdministrator(id),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["platform", "administrators"] });
     },
@@ -108,47 +111,16 @@ export function PlatformAdministratorsPage() {
           <CardTitle>Admins atuais</CardTitle>
         </CardHeader>
         <CardContent>
-          {administrators.isLoading ? (
-            <p className="text-muted-foreground text-sm">Carregando...</p>
-          ) : null}
-          {administrators.data ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Usuário</TableHead>
-                  <TableHead>Origem</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {administrators.data.items.map((admin) => (
-                  <TableRow key={admin.id}>
-                    <TableCell>
-                      <p className="font-medium">{admin.name}</p>
-                      <p className="text-muted-foreground text-xs">{admin.email}</p>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={admin.configured ? "warning" : "muted"}>
-                        {admin.configured ? "Configuração" : "Role admin"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{admin.banned ? "Bloqueado" : "Ativo"}</TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        disabled={admin.configured || removeAdmin.isPending}
-                        onClick={() => removeAdmin.mutate(admin.id)}
-                      >
-                        Remover admin
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : null}
+          <AdministratorsDataGrid
+            administrators={administrators.data?.items ?? []}
+            loading={administrators.isLoading}
+            pagination={pagination}
+            onPaginationChange={setPagination}
+            rowCount={administrators.data?.pagination.total ?? 0}
+            pageCount={administrators.data?.pagination.totalPages ?? -1}
+            removing={removeAdmin.isPending}
+            onRemove={(adminId) => removeAdmin.mutate(adminId)}
+          />
           {removeAdmin.isError ? (
             <p className="mt-3 text-destructive text-sm">
               Não foi possível remover este administrador. O último admin ativo não pode ser
@@ -158,5 +130,108 @@ export function PlatformAdministratorsPage() {
         </CardContent>
       </Card>
     </PlatformShell>
+  );
+}
+
+function AdministratorsDataGrid({
+  administrators,
+  loading,
+  pagination,
+  onPaginationChange,
+  rowCount,
+  pageCount,
+  removing,
+  onRemove,
+}: {
+  administrators: PlatformAdministrator[];
+  loading: boolean;
+  pagination: PaginationState;
+  onPaginationChange: Dispatch<SetStateAction<PaginationState>>;
+  rowCount: number;
+  pageCount: number;
+  removing: boolean;
+  onRemove: (adminId: string) => void;
+}) {
+  const columns = useMemo<ColumnDef<PlatformAdministrator>[]>(
+    () => [
+      {
+        accessorKey: "name",
+        header: "Usuário",
+        size: 320,
+        cell: ({ row }) => (
+          <div>
+            <p className="font-medium">{row.original.name}</p>
+            <p className="text-muted-foreground text-xs">{row.original.email}</p>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "configured",
+        header: "Origem",
+        size: 160,
+        cell: ({ row }) => (
+          <Badge variant={row.original.configured ? "warning" : "muted"}>
+            {row.original.configured ? "Configuração" : "Role admin"}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "banned",
+        header: "Status",
+        size: 120,
+        cell: ({ row }) => (row.original.banned ? "Bloqueado" : "Ativo"),
+      },
+      {
+        id: "actions",
+        header: "Ações",
+        size: 180,
+        cell: ({ row }) => (
+          <div className="flex justify-end">
+            <Button
+              variant="destructive"
+              size="sm"
+              disabled={row.original.configured || removing}
+              onClick={() => onRemove(row.original.id)}
+            >
+              Remover admin
+            </Button>
+          </div>
+        ),
+      },
+    ],
+    [onRemove, removing],
+  );
+
+  const table = useReactTable({
+    data: administrators,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    manualPagination: true,
+    pageCount,
+    state: { pagination },
+    onPaginationChange,
+  });
+
+  return (
+    <DataGridContainer>
+      <DataGrid
+        table={table}
+        recordCount={rowCount}
+        isLoading={loading}
+        emptyMessage="Nenhum administrador encontrado."
+        tableLayout={{ headerSticky: true }}
+        tableClassNames={{ edgeCell: "px-4" }}
+      >
+        <DataGridTable />
+        <DataGridPagination
+          className="border-border border-t px-4 py-3 sm:py-3"
+          rowsPerPageLabel="Linhas por página"
+          previousPageLabel="Página anterior"
+          nextPageLabel="Próxima página"
+          info="{from} - {to} de {count}"
+          sizes={[10, 25, 50]}
+        />
+      </DataGrid>
+    </DataGridContainer>
   );
 }

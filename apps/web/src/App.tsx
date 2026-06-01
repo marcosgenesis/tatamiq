@@ -27,14 +27,16 @@ import { DashboardPage } from "./features/dashboard/dashboard-page";
 import { GraduationPage } from "./features/graduation/graduation-page";
 import { MonthlyFeesPage } from "./features/monthly-fees/monthly-fees-page";
 import { PlaceholderPage } from "./features/placeholder/placeholder-page";
+import { PlatformAcademyPage } from "./features/platform/platform-academy-page";
 import { PlatformAdministratorsPage } from "./features/platform/platform-administrators-page";
-import {
-  endPlatformSupport,
-  getCurrentPlatformSupport,
-  getPlatformMe,
-} from "./features/platform/platform-api";
 import { PlatformAuditPage } from "./features/platform/platform-audit-page";
-import { PlatformAcademyPage, PlatformPage } from "./features/platform/platform-page";
+import { PlatformFirstAccessPage } from "./features/platform/platform-first-access-page";
+import { PlatformPage } from "./features/platform/platform-page";
+import {
+  currentPlatformSupportQuery,
+  endPlatformSupport,
+  platformMeQuery,
+} from "./features/platform/platform-queries";
 import { PlatformUserDetailPage } from "./features/platform/platform-user-detail-page";
 import { PlatformUsersPage } from "./features/platform/platform-users-page";
 import { SchedulePage } from "./features/schedule/schedule-page";
@@ -152,6 +154,15 @@ const firstAccessRoute = createRoute({
   component: function FirstAccessRoute() {
     const { token } = firstAccessRoute.useParams();
     return <FirstAccessPage token={token} />;
+  },
+});
+
+const platformFirstAccessRoute = createRoute({
+  getParentRoute: () => openLayout,
+  path: "/first-access/$token",
+  component: function PlatformFirstAccessRoute() {
+    const { token } = platformFirstAccessRoute.useParams();
+    return <PlatformFirstAccessPage token={token} />;
   },
 });
 
@@ -303,6 +314,7 @@ const routeTree = rootRoute.addChildren([
     studentCheckInRoute,
     preRegistrationRoute,
     firstAccessRoute,
+    platformFirstAccessRoute,
   ]),
   authBareLayout.addChildren([
     chooseAreaRoute,
@@ -441,12 +453,7 @@ function InstructorLayout() {
 
 function SupportBanner() {
   const navigate = useNavigate();
-  const support = useQuery({
-    queryKey: ["platform", "support", "current"],
-    queryFn: getCurrentPlatformSupport,
-    retry: false,
-    refetchInterval: 60_000,
-  });
+  const support = useQuery(currentPlatformSupportQuery());
 
   if (!support.data) return null;
 
@@ -481,11 +488,7 @@ function SupportBanner() {
 }
 
 function usePlatformAccess(): "loading" | "allowed" | "denied" {
-  const platform = useQuery({
-    queryKey: ["platform", "me"],
-    queryFn: getPlatformMe,
-    retry: false,
-  });
+  const platform = useQuery(platformMeQuery());
 
   if (platform.isLoading) return "loading";
   if (platform.isSuccess) return "allowed";

@@ -1,19 +1,23 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, Navigate, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
-import { Badge } from "../../components/ui/badge";
-import { Button } from "../../components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../../components/ui/table";
+  type ColumnDef,
+  getCoreRowModel,
+  type PaginationState,
+  useReactTable,
+} from "@tanstack/react-table";
+import { type Dispatch, type SetStateAction, useMemo, useState } from "react";
+import { DataGrid, DataGridContainer } from "@/components/reui/data-grid/data-grid";
+import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination";
+import { DataGridTable } from "@/components/reui/data-grid/data-grid-table";
+import { Badge } from "../../components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { authClient } from "../../lib/auth-client";
-import { getPlatformMe, listPlatformAuditLogs, type PlatformAuditLogEntry } from "./platform-api";
+import {
+  type PlatformAuditLogEntry,
+  platformAuditQuery,
+  platformMeQuery,
+} from "./platform-queries";
 import { PlatformShell } from "./platform-shell";
 
 const ACTION_LABELS: Record<string, string> = {
@@ -37,23 +41,13 @@ const ACTION_LABELS: Record<string, string> = {
 export function PlatformAuditPage() {
   const navigate = useNavigate();
   const [actionFilter, setActionFilter] = useState("");
-  const [page, setPage] = useState(0);
+  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
 
-  const platform = useQuery({
-    queryKey: ["platform", "me"],
-    queryFn: getPlatformMe,
-    retry: false,
-  });
+  const platform = useQuery(platformMeQuery());
 
-  const audit = useQuery({
-    queryKey: ["platform", "audit", actionFilter, page],
-    queryFn: () =>
-      listPlatformAuditLogs({
-        ...(actionFilter ? { action: actionFilter } : {}),
-        page,
-      }),
-    retry: false,
-  });
+  const audit = useQuery(
+    platformAuditQuery(actionFilter, pagination.pageIndex, pagination.pageSize),
+  );
 
   if (platform.isLoading) return null;
   if (platform.isError) return <Navigate to="/choose-area" />;
@@ -87,7 +81,7 @@ export function PlatformAuditPage() {
               value={actionFilter}
               onChange={(e) => {
                 setActionFilter(e.target.value);
-                setPage(0);
+                setPagination((current) => ({ ...current, pageIndex: 0 }));
               }}
             >
               <option value="">Todas as ações</option>
@@ -100,91 +94,138 @@ export function PlatformAuditPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {audit.isLoading ? (
-            <p className="text-muted-foreground text-sm">Carregando...</p>
-          ) : (audit.data?.items.length ?? 0) === 0 ? (
-            <p className="text-muted-foreground text-sm">Nenhum registro encontrado.</p>
-          ) : (
-            <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Administrador</TableHead>
-                    <TableHead>Ação</TableHead>
-                    <TableHead>Alvo</TableHead>
-                    <TableHead>Resultado</TableHead>
-                    <TableHead>Motivo</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {audit.data?.items.map((entry) => (
-                    <AuditRow key={entry.id} entry={entry} />
-                  ))}
-                </TableBody>
-              </Table>
-
-              {audit.data && audit.data.pagination.totalPages > 1 ? (
-                <div className="mt-4 flex items-center justify-between">
-                  <p className="text-muted-foreground text-sm">
-                    Página {audit.data.pagination.page + 1} de {audit.data.pagination.totalPages}
-                  </p>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={page === 0}
-                      onClick={() => setPage((p) => Math.max(0, p - 1))}
-                    >
-                      Anterior
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={page >= audit.data.pagination.totalPages - 1}
-                      onClick={() => setPage((p) => p + 1)}
-                    >
-                      Próxima
-                    </Button>
-                  </div>
-                </div>
-              ) : null}
-            </>
-          )}
+          <AuditDataGrid
+            entries={audit.data?.items ?? []}
+            loading={audit.isLoading}
+            pagination={pagination}
+            onPaginationChange={setPagination}
+            rowCount={audit.data?.pagination.total ?? 0}
+            pageCount={audit.data?.pagination.totalPages ?? -1}
+          />
         </CardContent>
       </Card>
     </PlatformShell>
   );
 }
 
-function AuditRow({ entry }: { entry: PlatformAuditLogEntry }) {
-  return (
-    <TableRow>
-      <TableCell className="whitespace-nowrap text-xs">
-        {new Intl.DateTimeFormat("pt-BR", {
-          dateStyle: "short",
-          timeStyle: "short",
-        }).format(new Date(entry.createdAt))}
-      </TableCell>
-      <TableCell>
-        <p className="text-sm">{entry.adminName ?? "—"}</p>
-        <p className="text-muted-foreground text-xs">{entry.adminEmail ?? "—"}</p>
-      </TableCell>
-      <TableCell>
-        <Badge variant="muted">{ACTION_LABELS[entry.action] ?? entry.action}</Badge>
-      </TableCell>
-      <TableCell className="text-sm">
-        {entry.targetType}
-        {entry.targetId ? (
-          <span className="text-muted-foreground text-xs block">{entry.targetId}</span>
-        ) : null}
-      </TableCell>
-      <TableCell>
-        <Badge variant={entry.result === "success" ? "default" : "warning"}>{entry.result}</Badge>
-      </TableCell>
-      <TableCell className="max-w-[200px] truncate text-sm text-muted-foreground">
-        {entry.reason ?? "—"}
-      </TableCell>
-    </TableRow>
+function AuditDataGrid({
+  entries,
+  loading,
+  pagination,
+  onPaginationChange,
+  rowCount,
+  pageCount,
+}: {
+  entries: PlatformAuditLogEntry[];
+  loading: boolean;
+  pagination: PaginationState;
+  onPaginationChange: Dispatch<SetStateAction<PaginationState>>;
+  rowCount: number;
+  pageCount: number;
+}) {
+  const columns = useMemo<ColumnDef<PlatformAuditLogEntry>[]>(
+    () => [
+      {
+        accessorKey: "createdAt",
+        header: "Data",
+        size: 170,
+        cell: ({ row }) => (
+          <span className="text-xs">{formatDateTime(row.original.createdAt)}</span>
+        ),
+      },
+      {
+        id: "admin",
+        header: "Administrador",
+        size: 260,
+        cell: ({ row }) => (
+          <div>
+            <p className="text-sm">{row.original.adminName ?? "—"}</p>
+            <p className="text-muted-foreground text-xs">{row.original.adminEmail ?? "—"}</p>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "action",
+        header: "Ação",
+        size: 260,
+        cell: ({ row }) => (
+          <Badge variant="muted">{ACTION_LABELS[row.original.action] ?? row.original.action}</Badge>
+        ),
+      },
+      {
+        id: "target",
+        header: "Alvo",
+        size: 220,
+        cell: ({ row }) => (
+          <div className="text-sm">
+            {row.original.targetType}
+            {row.original.targetId ? (
+              <span className="block text-muted-foreground text-xs">{row.original.targetId}</span>
+            ) : null}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "result",
+        header: "Resultado",
+        size: 130,
+        cell: ({ row }) => (
+          <Badge variant={row.original.result === "success" ? "default" : "warning"}>
+            {row.original.result}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "reason",
+        header: "Motivo",
+        size: 240,
+        cell: ({ row }) => (
+          <span className="block truncate text-muted-foreground text-sm">
+            {row.original.reason ?? "—"}
+          </span>
+        ),
+      },
+    ],
+    [],
   );
+
+  const table = useReactTable({
+    data: entries,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    manualPagination: true,
+    pageCount,
+    state: { pagination },
+    onPaginationChange,
+  });
+
+  return (
+    <DataGridContainer>
+      <DataGrid
+        table={table}
+        recordCount={rowCount}
+        isLoading={loading}
+        emptyMessage="Nenhum registro encontrado."
+        tableLayout={{ headerSticky: true }}
+        tableClassNames={{ edgeCell: "px-4" }}
+      >
+        <DataGridTable />
+        <DataGridPagination
+          className="border-border border-t px-4 py-3 sm:py-3"
+          rowsPerPageLabel="Linhas por página"
+          previousPageLabel="Página anterior"
+          nextPageLabel="Próxima página"
+          info="{from} - {to} de {count}"
+          sizes={[10, 20, 50]}
+        />
+      </DataGrid>
+    </DataGridContainer>
+  );
+}
+
+function formatDateTime(value: string) {
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(new Date(value));
 }

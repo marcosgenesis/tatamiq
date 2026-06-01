@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { invitePreviewStatus, studentReadState } from "./student-access-rules";
+import { hashToken, invitePreviewStatus, studentReadState } from "./student-access-rules";
 
 describe("student access rules", () => {
+  it("hashes tokens with SHA-256 hex", () => {
+    expect(hashToken("token")).toBe(
+      "3c469e9d6c5875d37a43f353d4f88e61fcf812c66eee3457465a40b0da4153e0",
+    );
+  });
+
   it("treats pending invites past expiresAt as expired without changing stored status", () => {
     expect(
       invitePreviewStatus({

@@ -32,21 +32,6 @@ export function validateCanCreateFee(student: {
   }
 }
 
-export type FeeStatusTransition = "adjust" | "waive" | "manual_payment";
-
-export function validateStatusTransition(currentStatus: string, action: FeeStatusTransition): void {
-  if (currentStatus !== "open") {
-    const labels: Record<FeeStatusTransition, string> = {
-      adjust: "ajustada",
-      waive: "dispensada",
-      manual_payment: "marcada como paga",
-    };
-    throw new BadRequestException(
-      `Mensalidade só pode ser ${labels[action]} quando está em aberto.`,
-    );
-  }
-}
-
 function parseDateOnly(value: string): Date {
   const [year, month, day] = value.split("-").map(Number);
   return new Date(year, month - 1, day);

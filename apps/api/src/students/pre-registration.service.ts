@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import {
   BadRequestException,
   ConflictException,
@@ -28,7 +28,6 @@ import {
   member,
   organization,
   preRegistrationRequests,
-  studentAcceptances,
   studentAccess,
   studentGuardians,
   students,
@@ -36,11 +35,12 @@ import {
 } from "@tatamiq/database";
 import { and, eq, sql } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
+import { StudentAccessActivationService } from "../student-access/student-access-activation.service";
+import { hashToken, STUDENT_ACCESS_TERMS_VERSION } from "../student-access/student-access-rules";
 import { EmailService } from "./email.service";
 import { isMinor } from "./student-rules";
 
 const FIRST_ACCESS_DAYS = 7;
-const STUDENT_ACCESS_TERMS_VERSION = "student-access-v1";
 
 type LinkRow = typeof academyPreRegistrationLinks.$inferSelect;
 type RequestRow = typeof preRegistrationRequests.$inferSelect;
@@ -52,6 +52,8 @@ export class PreRegistrationService {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
     @Inject(EmailService) private readonly emailService: EmailService,
+    @Inject(StudentAccessActivationService)
+    private readonly activationService: StudentAccessActivationService,
   ) {}
 
   // --- Link management ---
@@ -273,8 +275,8 @@ export class PreRegistrationService {
     const linkToExisting =
       existing.duplicateStudentId && input.duplicateDecision === "link_to_existing";
 
-    if (linkToExisting) {
-      const existingAccess = await this.findActiveAccessForStudent(existing.duplicateStudentId!);
+    if (linkToExisting && existing.duplicateStudentId) {
+      const existingAccess = await this.findActiveAccessForStudent(existing.duplicateStudentId);
       if (existingAccess) {
         throw new BadRequestException(
           "Este aluno já possui acesso ativo. Não é possível vincular.",
@@ -290,8 +292,9 @@ export class PreRegistrationService {
     expiresAt.setDate(expiresAt.getDate() + FIRST_ACCESS_DAYS);
     const todayStr = now.toISOString().slice(0, 10);
 
-    const studentId = linkToExisting ? existing.duplicateStudentId! : crypto.randomUUID();
-    const accessId = crypto.randomUUID();
+    const studentId = linkToExisting ? existing.duplicateStudentId : crypto.randomUUID();
+    if (!studentId) throw new BadRequestException("Aluno duplicado não encontrado.");
+    let accessId = "";
     const authUser = await this.findOrCreateAuthUser(existing.name, existing.email);
 
     await this.db.transaction(async (tx) => {
@@ -327,27 +330,13 @@ export class PreRegistrationService {
         }
       }
 
-      await tx.insert(studentAccess).values({
-        id: accessId,
+      const activation = await this.activationService.activate(tx, {
         organizationId,
-        studentId,
-        authUserId: authUser.id,
-        status: "active",
-        revokedAt: null,
-        revokedByUserId: null,
-        createdAt: now,
-        updatedAt: now,
-      });
-
-      await tx.insert(studentAcceptances).values({
-        id: crypto.randomUUID(),
-        organizationId,
-        studentAccessId: accessId,
         studentId,
         authUserId: authUser.id,
         termsVersion: STUDENT_ACCESS_TERMS_VERSION,
-        acceptedAt: now,
       });
+      accessId = activation.accessId;
 
       await tx
         .update(preRegistrationRequests)
@@ -522,7 +511,7 @@ export class PreRegistrationService {
   // --- Private helpers ---
 
   private async findWhiteBelt(organizationId: string, birthDate: string) {
-    const [org] = await this.db
+    const [_org] = await this.db
       .select({ childToAdultAge: organization.childToAdultAge })
       .from(organization)
       .where(eq(organization.id, organizationId))
@@ -762,10 +751,6 @@ function parseRequestStatus(value: string): "pending_review" | "approved" | "rej
 
 function createToken(): string {
   return randomBytes(24).toString("base64url");
-}
-
-function hashToken(token: string): string {
-  return createHash("sha256").update(token).digest("hex");
 }
 
 function emptyToNull(value?: string): string | null {
