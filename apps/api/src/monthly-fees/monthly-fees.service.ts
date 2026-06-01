@@ -25,6 +25,7 @@ import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
 import { MonthlyFeeLifecycle } from "./monthly-fee-lifecycle";
 import { filterMonthlyFeeListRows, summarizeMonthlyFeeRows } from "./monthly-fee-list-projection";
+import { projectMonthlyFeeReceipts } from "./monthly-fee-receipt-projection";
 import { projectMonthlyFeeStatus } from "./monthly-fee-status-projection";
 import { R2StorageService } from "./r2-storage.service";
 
@@ -125,10 +126,12 @@ export class MonthlyFeesService {
       .where(eq(paymentReceipts.monthlyFeeId, id))
       .orderBy(paymentReceipts.createdAt);
 
+    const receiptProjection = projectMonthlyFeeReceipts(receipts);
+
     return {
       ...toFeeDto(row.fee, row.studentName),
       events: events.map(toEventDto),
-      receipts: receipts.map(toReceiptDto),
+      receipts: receiptProjection.history.map(toReceiptDto),
     };
   }
 
@@ -207,11 +210,7 @@ export class MonthlyFeesService {
     return {
       fees: rows.map((row) => {
         const feeReceipts = receiptsByFee.get(row.id) ?? [];
-        const lastRelevant =
-          feeReceipts.find((r) => r.status === "pending") ??
-          feeReceipts.find((r) => r.status === "approved") ??
-          feeReceipts.find((r) => r.status === "rejected") ??
-          null;
+        const { studentRelevantReceipt: lastRelevant } = projectMonthlyFeeReceipts(feeReceipts);
 
         return {
           id: row.id,
