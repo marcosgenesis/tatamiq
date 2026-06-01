@@ -18,118 +18,56 @@ import {
 } from "@tatamiq/database";
 import { and, eq, gte, inArray, isNull, lt } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
-import { findActiveRecurringCancellation } from "./schedule-cancellations";
 import {
-  getMondayWeekStart,
-  listWeekDates,
-  toScheduledStartAt,
-  weekdayForDate,
-} from "./schedule-rules";
-
-type ClassGroupScheduleJoin = {
-  scheduleId: string;
-  weekday: number;
-  startTime: string;
-  classGroupId: string;
-  classGroupName: string;
-  durationMinutes: number;
-};
-
-type AdHocSessionJoin = {
-  id: string;
-  classGroupId: string;
-  classGroupName: string;
-  scheduledStartAt: Date;
-  durationMinutes: number;
-  status: string;
-};
-
-type RecurringCancellationRow = typeof classCancellations.$inferSelect;
+  type AgendaAdHocRow,
+  type AgendaRecurringCancellationRow,
+  type AgendaScheduleRow,
+  projectWeeklyAgenda,
+  toAdHocOccurrence,
+  toRecurringOccurrence,
+  weeklyAgendaRange,
+} from "./weekly-agenda-projection";
 
 @Injectable()
 export class ScheduleService {
   constructor(@Inject(DATABASE) private readonly db: Database) {}
 
   async week(organizationId: string, weekStartInput?: string): Promise<WeeklyScheduleResponse> {
-    const weekStart = getMondayWeekStart(weekStartInput ?? new Date().toISOString().slice(0, 10));
-    const days = listWeekDates(weekStart);
-    const weekEndExclusive = addDays(weekStart, 7);
-    const scheduleRows = await this.activeScheduleRows(organizationId);
-    const adHocRows = await this.adHocRows(organizationId, weekStart, weekEndExclusive);
-    const recurringCancellations = await this.recurringCancellations(
-      organizationId,
-      weekStart,
-      weekEndExclusive,
-    );
+    const range = weeklyAgendaRange(weekStartInput ?? new Date().toISOString().slice(0, 10));
+    const [scheduleRows, adHocRows, recurringCancellations, recurringSessionRows] =
+      await Promise.all([
+        this.activeScheduleRows(organizationId),
+        this.adHocRows(organizationId, range.weekStart, range.weekEndExclusive),
+        this.recurringCancellations(organizationId, range.weekStart, range.weekEndExclusive),
+        this.recurringSessionRows(organizationId, range.weekStart, range.weekEndExclusive),
+      ]);
     const classGroupIds = [
       ...new Set([
         ...scheduleRows.map((row) => row.classGroupId),
         ...adHocRows.map((row) => row.classGroupId),
       ]),
     ];
-    const tagsByClassGroup = await this.tagsByClassGroup(classGroupIds);
-    const studentCountByClassGroup = await this.studentCountByClassGroup(
-      organizationId,
-      classGroupIds,
-    );
-
     const sessionIds = adHocRows
       .filter((row) => row.status === "active" || row.status === "ended")
       .map((row) => row.id);
-    const recurringSessionRows = await this.recurringSessionRows(
-      organizationId,
-      weekStart,
-      weekEndExclusive,
-    );
     const allSessionIds = [...sessionIds, ...recurringSessionRows.map((row) => row.id)];
-    const attendanceCountBySession = await this.attendanceCountBySession(allSessionIds);
+    const [tagsByClassGroup, studentCountByClassGroup, attendanceCountBySession] =
+      await Promise.all([
+        this.tagsByClassGroup(classGroupIds),
+        this.studentCountByClassGroup(organizationId, classGroupIds),
+        this.attendanceCountBySession(allSessionIds),
+      ]);
 
-    const recurringSessionMap = new Map<
-      string,
-      { id: string; status: string; attendanceCount: number }
-    >();
-    for (const row of recurringSessionRows) {
-      const key = `${row.classGroupId}:${row.scheduledStartAt.toISOString().slice(0, 10)}`;
-      recurringSessionMap.set(key, {
-        id: row.id,
-        status: row.status,
-        attendanceCount: attendanceCountBySession.get(row.id) ?? 0,
-      });
-    }
-
-    return {
-      weekStart,
-      days: days.map((date) => ({
-        date,
-        weekday: weekdayForDate(date),
-        occurrences: [
-          ...scheduleRows
-            .filter((row) => row.weekday === weekdayForDate(date))
-            .map((row) => {
-              const sessionKey = `${row.classGroupId}:${date}`;
-              const sessionInfo = recurringSessionMap.get(sessionKey);
-              return toRecurringOccurrence(
-                row,
-                date,
-                tagsByClassGroup,
-                studentCountByClassGroup,
-                findActiveRecurringCancellation(recurringCancellations, row.scheduleId, date),
-                sessionInfo ?? null,
-              );
-            }),
-          ...adHocRows
-            .filter((row) => row.scheduledStartAt.toISOString().slice(0, 10) === date)
-            .map((row) =>
-              toAdHocOccurrence(
-                row,
-                tagsByClassGroup,
-                studentCountByClassGroup,
-                attendanceCountBySession.get(row.id) ?? null,
-              ),
-            ),
-        ].sort((a, b) => a.startTime.localeCompare(b.startTime)),
-      })),
-    };
+    return projectWeeklyAgenda({
+      range,
+      scheduleRows,
+      adHocRows,
+      recurringCancellations,
+      recurringSessionRows,
+      tagsByClassGroup,
+      studentCountByClassGroup,
+      attendanceCountBySession,
+    });
   }
 
   async today(organizationId: string): Promise<TodayScheduleResponse> {
@@ -301,7 +239,7 @@ export class ScheduleService {
     );
   }
 
-  private async activeScheduleRows(organizationId: string): Promise<ClassGroupScheduleJoin[]> {
+  private async activeScheduleRows(organizationId: string): Promise<AgendaScheduleRow[]> {
     return this.db
       .select({
         scheduleId: classGroupSchedules.id,
@@ -320,7 +258,7 @@ export class ScheduleService {
     organizationId: string,
     fromDate: string,
     toDateExclusive: string,
-  ): Promise<AdHocSessionJoin[]> {
+  ): Promise<AgendaAdHocRow[]> {
     return this.db
       .select({
         id: classSessions.id,
@@ -346,7 +284,7 @@ export class ScheduleService {
     organizationId: string,
     fromDate: string,
     toDateExclusive: string,
-  ) {
+  ): Promise<AgendaRecurringCancellationRow[]> {
     return this.db
       .select()
       .from(classCancellations)
@@ -379,7 +317,7 @@ export class ScheduleService {
     organizationId: string,
     scheduleId: string,
     classGroupId: string,
-  ): Promise<ClassGroupScheduleJoin> {
+  ): Promise<AgendaScheduleRow> {
     const rows = await this.activeScheduleRows(organizationId);
     const schedule = rows.find(
       (row) => row.scheduleId === scheduleId && row.classGroupId === classGroupId,
@@ -507,67 +445,4 @@ export class ScheduleService {
     for (const link of links) map.set(link.classGroupId, (map.get(link.classGroupId) ?? 0) + 1);
     return map;
   }
-}
-
-function toRecurringOccurrence(
-  row: ClassGroupScheduleJoin,
-  date: string,
-  tagsByClassGroup: Map<string, string[]>,
-  studentCountByClassGroup: Map<string, number>,
-  cancellation: RecurringCancellationRow | undefined,
-  sessionInfo: { id: string; status: string; attendanceCount: number } | null,
-): ScheduleOccurrence {
-  const status = cancellation
-    ? "cancelled"
-    : sessionInfo
-      ? (sessionInfo.status as "active" | "ended")
-      : "scheduled";
-  return {
-    id: `${row.classGroupId}:${row.scheduleId}:${date}`,
-    source: "recurring",
-    status,
-    classGroupId: row.classGroupId,
-    classGroupName: row.classGroupName,
-    scheduleId: row.scheduleId,
-    classSessionId: sessionInfo?.id ?? null,
-    cancellationId: cancellation?.id ?? null,
-    scheduledDate: date,
-    scheduledStartAt: toScheduledStartAt(date, row.startTime),
-    startTime: row.startTime,
-    durationMinutes: row.durationMinutes,
-    studentCount: studentCountByClassGroup.get(row.classGroupId) ?? 0,
-    attendanceCount: sessionInfo?.attendanceCount ?? null,
-    tags: tagsByClassGroup.get(row.classGroupId) ?? [],
-  };
-}
-
-function toAdHocOccurrence(
-  row: AdHocSessionJoin,
-  tagsByClassGroup: Map<string, string[]>,
-  studentCountByClassGroup: Map<string, number>,
-  attendanceCount: number | null,
-): ScheduleOccurrence {
-  return {
-    id: row.id,
-    source: "ad_hoc",
-    status: row.status as "scheduled" | "active" | "ended" | "cancelled",
-    classGroupId: row.classGroupId,
-    classGroupName: row.classGroupName,
-    scheduleId: null,
-    classSessionId: row.id,
-    cancellationId: null,
-    scheduledDate: row.scheduledStartAt.toISOString().slice(0, 10),
-    scheduledStartAt: row.scheduledStartAt.toISOString(),
-    startTime: row.scheduledStartAt.toISOString().slice(11, 16),
-    durationMinutes: row.durationMinutes,
-    studentCount: studentCountByClassGroup.get(row.classGroupId) ?? 0,
-    attendanceCount,
-    tags: tagsByClassGroup.get(row.classGroupId) ?? [],
-  };
-}
-
-function addDays(date: string, days: number): string {
-  const value = new Date(`${date}T00:00:00.000Z`);
-  value.setUTCDate(value.getUTCDate() + days);
-  return value.toISOString().slice(0, 10);
 }
