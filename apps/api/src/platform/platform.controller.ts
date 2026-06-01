@@ -106,12 +106,10 @@ export class PlatformController {
   @Get("dashboard")
   @ApiOkResponse({ type: PlatformDashboardDto })
   async dashboard(@Session() session: PlatformSession) {
-    const admin = this.platformAdminService.assertPlatformAdmin(session);
-    return this.auditedAction.run(
-      admin.user.id,
-      { action: "platform.dashboard.viewed", targetType: "platform" },
-      () => this.platformAcademyService.dashboard(),
-    );
+    return this.auditedAction.run(session, () => this.platformAcademyService.dashboard(), {
+      action: "platform.dashboard.viewed",
+      targetType: "platform",
+    });
   }
 
   @Get("academies")
@@ -140,10 +138,9 @@ export class PlatformController {
     @Session() session: PlatformSession,
     @Body() body: ProvisionAcademyBodyDto,
   ) {
-    const admin = this.platformAdminService.assertPlatformAdmin(session);
-    const input = parseProvisionAcademyBody(body);
     return this.auditedAction.run(
-      admin.user.id,
+      session,
+      () => this.platformAcademyService.provisionAcademy(parseProvisionAcademyBody(body)),
       {
         action: "platform.academy.provisioned",
         targetType: "academy",
@@ -154,7 +151,6 @@ export class PlatformController {
           ownerWasCreated: result.ownerWasCreated,
         }),
       },
-      () => this.platformAcademyService.provisionAcademy(input),
     );
   }
 
@@ -167,10 +163,9 @@ export class PlatformController {
     @Param("id") id: string,
     @Body() body: TransferAcademyBodyDto,
   ) {
-    const admin = this.platformAdminService.assertPlatformAdmin(session);
-    const input = parseTransferAcademyBody(body);
     return this.auditedAction.run(
-      admin.user.id,
+      session,
+      () => this.platformAcademyService.transferAcademy(id, parseTransferAcademyBody(body)),
       {
         action: "platform.academy.transferred",
         targetType: "academy",
@@ -181,7 +176,6 @@ export class PlatformController {
           ownerWasCreated: result.ownerWasCreated,
         }),
       },
-      () => this.platformAcademyService.transferAcademy(id, input),
     );
   }
 
@@ -252,17 +246,15 @@ export class PlatformController {
     @Session() session: PlatformSession,
     @Body() body: AddPlatformAdministratorBodyDto,
   ) {
-    const admin = this.platformAdminService.assertPlatformAdmin(session);
-    const input = parseAdministratorBody(body);
     return this.auditedAction.run(
-      admin.user.id,
+      session,
+      () => this.platformAdminService.addAdministrator(parseAdministratorBody(body)),
       {
         action: "platform.admin.added",
         targetType: "user",
         targetId: (result) => result.administrator.id,
         metadata: (result) => ({ userWasCreated: result.userWasCreated }),
       },
-      () => this.platformAdminService.addAdministrator(input),
     );
   }
 
@@ -270,11 +262,10 @@ export class PlatformController {
   @ApiParam({ name: "id", type: String })
   @ApiOkResponse({ type: PlatformActionResultDto })
   async removeAdministrator(@Session() session: PlatformSession, @Param("id") id: string) {
-    const admin = this.platformAdminService.assertPlatformAdmin(session);
     return this.auditedAction.run(
-      admin.user.id,
-      { action: "platform.admin.removed", targetType: "user", targetId: id },
+      session,
       () => this.platformAdminService.removeAdministrator(id),
+      { action: "platform.admin.removed", targetType: "user", targetId: id },
     );
   }
 
@@ -286,19 +277,19 @@ export class PlatformController {
     @Body() body: StartPlatformSupportBodyDto,
     @Req() request: PlatformRequest,
   ) {
-    const admin = this.platformAdminService.assertPlatformAdmin(session);
     const userAgentHeader = request.headers["user-agent"];
     const userAgent = Array.isArray(userAgentHeader) ? userAgentHeader.join(", ") : userAgentHeader;
-    const input = {
-      adminUserId: admin.user.id,
-      targetUserId: body.targetUserId,
-      ...(body.academyId ? { academyId: body.academyId } : {}),
-      ...(body.reason ? { reason: body.reason } : {}),
-      ipAddress: request.ip ?? null,
-      userAgent: userAgent ?? null,
-    };
     return this.auditedAction.run(
-      admin.user.id,
+      session,
+      (admin) =>
+        this.platformSupportService.prepareSupport({
+          adminUserId: admin.user.id,
+          targetUserId: body.targetUserId,
+          ...(body.academyId ? { academyId: body.academyId } : {}),
+          ...(body.reason ? { reason: body.reason } : {}),
+          ipAddress: request.ip ?? null,
+          userAgent: userAgent ?? null,
+        }),
       {
         action: "platform.support.started",
         targetType: "user",
@@ -311,7 +302,6 @@ export class PlatformController {
           userAgent: userAgent ?? null,
         }),
       },
-      () => this.platformSupportService.prepareSupport(input),
     );
   }
 
@@ -324,8 +314,15 @@ export class PlatformController {
   ) {
     if (!session.session.impersonatedBy) throw new BadRequestException("Não há suporte ativo.");
     const adminUserId = session.session.impersonatedBy;
-    return this.auditedAction.run(
+    return this.auditedAction.runForImpersonatedAdmin(
       adminUserId,
+      () =>
+        this.platformSupportService.activateSupport({
+          supportSessionId: body.supportSessionId,
+          adminUserId,
+          targetUserId: session.user.id,
+          impersonationSessionId: session.session.id,
+        }),
       {
         action: "platform.support.activated",
         targetType: "user",
@@ -337,13 +334,6 @@ export class PlatformController {
           impersonationSessionId: session.session.id,
         }),
       },
-      () =>
-        this.platformSupportService.activateSupport({
-          supportSessionId: body.supportSessionId,
-          adminUserId,
-          targetUserId: session.user.id,
-          impersonationSessionId: session.session.id,
-        }),
     );
   }
 
@@ -358,8 +348,9 @@ export class PlatformController {
   async endSupport(@Session() session: PlatformSession) {
     if (!session.session.impersonatedBy) throw new BadRequestException("Não há suporte ativo.");
     const adminUserId = session.session.impersonatedBy;
-    return this.auditedAction.run(
+    return this.auditedAction.runForImpersonatedAdmin(
       adminUserId,
+      () => this.platformSupportService.endSupport(session.session.id),
       {
         action: "platform.support.ended",
         targetType: "user",
@@ -371,7 +362,6 @@ export class PlatformController {
           impersonationSessionId: session.session.id,
         }),
       },
-      () => this.platformSupportService.endSupport(session.session.id),
     );
   }
 
@@ -452,23 +442,18 @@ export class PlatformController {
     @Param("id") id: string,
     @Body() body: PlatformDeleteUserBodyDto,
   ) {
-    const admin = this.platformAdminService.assertPlatformAdmin(session);
-    return this.auditedAction.run(
-      admin.user.id,
-      {
-        action:
-          body.mode === "preserve_history"
-            ? "platform.user.deleted_preserving_history"
-            : "platform.user.deleted",
-        targetType: "user",
-        targetId: id,
-        metadata: {
-          mode: body.mode,
-          ownerResolution: body.ownerResolution ?? null,
-        },
+    return this.auditedAction.run(session, () => this.userDeletionService.delete(id, body), {
+      action:
+        body.mode === "preserve_history"
+          ? "platform.user.deleted_preserving_history"
+          : "platform.user.deleted",
+      targetType: "user",
+      targetId: id,
+      metadata: {
+        mode: body.mode,
+        ownerResolution: body.ownerResolution ?? null,
       },
-      () => this.userDeletionService.delete(id, body),
-    );
+    });
   }
 
   @Post("users/:id/ban")
@@ -480,11 +465,10 @@ export class PlatformController {
     @Param("id") id: string,
     @Body() body: PlatformBanUserBodyDto,
   ) {
-    const admin = this.platformAdminService.assertPlatformAdmin(session);
     return this.auditedAction.run(
-      admin.user.id,
-      { action: "platform.user.banned", targetType: "user", targetId: id, reason: body.reason },
+      session,
       () => this.platformUserService.banUser(id, body.reason),
+      { action: "platform.user.banned", targetType: "user", targetId: id, reason: body.reason },
     );
   }
 
@@ -492,24 +476,22 @@ export class PlatformController {
   @ApiParam({ name: "id", type: String })
   @ApiOkResponse({ type: PlatformActionResultDto })
   async unbanUser(@Session() session: PlatformSession, @Param("id") id: string) {
-    const admin = this.platformAdminService.assertPlatformAdmin(session);
-    return this.auditedAction.run(
-      admin.user.id,
-      { action: "platform.user.unbanned", targetType: "user", targetId: id },
-      () => this.platformUserService.unbanUser(id),
-    );
+    return this.auditedAction.run(session, () => this.platformUserService.unbanUser(id), {
+      action: "platform.user.unbanned",
+      targetType: "user",
+      targetId: id,
+    });
   }
 
   @Post("users/:id/revoke-sessions")
   @ApiParam({ name: "id", type: String })
   @ApiOkResponse({ type: PlatformActionResultDto })
   async revokeUserSessions(@Session() session: PlatformSession, @Param("id") id: string) {
-    const admin = this.platformAdminService.assertPlatformAdmin(session);
-    return this.auditedAction.run(
-      admin.user.id,
-      { action: "platform.user.sessions_revoked", targetType: "user", targetId: id },
-      () => this.platformUserService.revokeUserSessions(id),
-    );
+    return this.auditedAction.run(session, () => this.platformUserService.revokeUserSessions(id), {
+      action: "platform.user.sessions_revoked",
+      targetType: "user",
+      targetId: id,
+    });
   }
 }
 
