@@ -23,6 +23,7 @@ import {
 } from "@tatamiq/database";
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
+import { projectMonthlyFeeDetail } from "./monthly-fee-detail-projection";
 import { MonthlyFeeLifecycle } from "./monthly-fee-lifecycle";
 import { filterMonthlyFeeListRows, summarizeMonthlyFeeRows } from "./monthly-fee-list-projection";
 import { projectMonthlyFeeReceipts } from "./monthly-fee-receipt-projection";
@@ -126,12 +127,20 @@ export class MonthlyFeesService {
       .where(eq(paymentReceipts.monthlyFeeId, id))
       .orderBy(paymentReceipts.createdAt);
 
-    const receiptProjection = projectMonthlyFeeReceipts(receipts);
+    const detailProjection = projectMonthlyFeeDetail({
+      organizationId,
+      fee: row.fee,
+      events,
+      receipts,
+    });
+    if (!detailProjection) {
+      throw new NotFoundException("Mensalidade não encontrada.");
+    }
 
     return {
-      ...toFeeDto(row.fee, row.studentName),
-      events: events.map(toEventDto),
-      receipts: receiptProjection.history.map(toReceiptDto),
+      ...toFeeDto(detailProjection.fee, row.studentName),
+      events: detailProjection.events.map(toEventDto),
+      receipts: detailProjection.receipts.history.map(toReceiptDto),
     };
   }
 
