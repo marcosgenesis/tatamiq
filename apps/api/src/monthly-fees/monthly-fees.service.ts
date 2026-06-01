@@ -24,7 +24,7 @@ import {
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
 import { MonthlyFeeLifecycle } from "./monthly-fee-lifecycle";
-import { isOverdue } from "./monthly-fee-rules";
+import { projectMonthlyFeeStatus, todayInSaoPaulo } from "./monthly-fee-status-projection";
 import { R2StorageService } from "./r2-storage.service";
 
 type FeeRow = typeof monthlyFees.$inferSelect;
@@ -62,7 +62,7 @@ export class MonthlyFeesService {
 
     if (filters.status === "overdue") {
       conditions.push(eq(monthlyFees.status, "open"));
-      conditions.push(sql`${monthlyFees.dueDate} < CURRENT_DATE`);
+      conditions.push(sql`${monthlyFees.dueDate} < ${todayInSaoPaulo()}`);
     } else if (filters.status && filters.status !== "all") {
       conditions.push(eq(monthlyFees.status, filters.status));
     }
@@ -92,13 +92,12 @@ export class MonthlyFeesService {
     let paid = 0;
     let waived = 0;
     for (const r of allRows) {
-      if (r.status === "paid") paid++;
-      else if (r.status === "waived") waived++;
-      else if (r.status === "under_review") underReview++;
-      else if (r.status === "open") {
-        if (isOverdue(r.status, r.dueDate, today)) overdue++;
-        else open++;
-      }
+      const projection = projectMonthlyFeeStatus(r, today);
+      if (projection.projectedStatus === "paid") paid++;
+      else if (projection.projectedStatus === "waived") waived++;
+      else if (projection.projectedStatus === "under_review") underReview++;
+      else if (projection.projectedStatus === "overdue") overdue++;
+      else open++;
     }
 
     return {
@@ -241,7 +240,7 @@ export class MonthlyFeesService {
           amountInCents: row.amountInCents,
           dueDate: row.dueDate,
           status: parseStatus(row.status),
-          isOverdue: isOverdue(row.status, row.dueDate),
+          isOverdue: projectMonthlyFeeStatus(row).isOverdue,
           paidAt: row.paidAt?.toISOString() ?? null,
           lastReceipt: lastRelevant
             ? {
@@ -418,7 +417,7 @@ function toFeeDto(row: FeeRow, studentName: string): MonthlyFee {
     originalAmountInCents: row.originalAmountInCents,
     dueDate: row.dueDate,
     status: parseStatus(row.status),
-    isOverdue: isOverdue(row.status, row.dueDate),
+    isOverdue: projectMonthlyFeeStatus(row).isOverdue,
     paidAt: row.paidAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),

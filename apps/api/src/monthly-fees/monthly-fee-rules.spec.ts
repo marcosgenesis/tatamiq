@@ -37,27 +37,29 @@ describe("formatDueDate", () => {
 
 describe("isOverdue", () => {
   it("returns true when open and past due date", () => {
-    expect(isOverdue("open", "2026-01-10", new Date(2026, 0, 11))).toBe(true);
+    expect(isOverdue("open", "2026-01-10", new Date("2026-01-11T15:00:00.000Z"))).toBe(true);
   });
 
   it("returns false when open and on due date", () => {
-    expect(isOverdue("open", "2026-01-10", new Date(2026, 0, 10))).toBe(false);
+    expect(isOverdue("open", "2026-01-10", new Date("2026-01-10T15:00:00.000Z"))).toBe(false);
   });
 
   it("returns false when open and before due date", () => {
-    expect(isOverdue("open", "2026-01-10", new Date(2026, 0, 9))).toBe(false);
+    expect(isOverdue("open", "2026-01-10", new Date("2026-01-09T15:00:00.000Z"))).toBe(false);
   });
 
   it("returns false for under_review even if past due", () => {
-    expect(isOverdue("under_review", "2026-01-10", new Date(2026, 0, 15))).toBe(false);
+    expect(isOverdue("under_review", "2026-01-10", new Date("2026-01-15T15:00:00.000Z"))).toBe(
+      false,
+    );
   });
 
   it("returns false for paid fees", () => {
-    expect(isOverdue("paid", "2026-01-10", new Date(2026, 0, 15))).toBe(false);
+    expect(isOverdue("paid", "2026-01-10", new Date("2026-01-15T15:00:00.000Z"))).toBe(false);
   });
 
   it("returns false for waived fees", () => {
-    expect(isOverdue("waived", "2026-01-10", new Date(2026, 0, 15))).toBe(false);
+    expect(isOverdue("waived", "2026-01-10", new Date("2026-01-15T15:00:00.000Z"))).toBe(false);
   });
 });
 
