@@ -122,6 +122,13 @@ describe("PreRegistrationService", () => {
       mock.db as never,
       { send: vi.fn() } as never,
       { completeActivation: vi.fn() } as never,
+      {
+        getOrCreateLink: vi.fn(),
+        pauseLink: vi.fn(),
+        reactivateLink: vi.fn(),
+        regenerateLink: vi.fn(),
+        resolvePublicProfile: vi.fn(),
+      } as never,
     );
   });
 
