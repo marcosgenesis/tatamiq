@@ -22,6 +22,7 @@ import {
   students,
 } from "@tatamiq/database";
 import { and, desc, eq, gte, sql } from "drizzle-orm";
+import { AcademiaScope } from "../academy-scope/academia-scope.service";
 import { DATABASE } from "../database/database.module";
 import { projectMonthlyFeeDetail } from "./monthly-fee-detail-projection";
 import { MonthlyFeeLifecycle } from "./monthly-fee-lifecycle";
@@ -43,6 +44,7 @@ export class MonthlyFeesService {
     @Inject(DATABASE) private readonly db: Database,
     @Inject(R2StorageService) private readonly r2: R2StorageService,
     @Inject(MonthlyFeeLifecycle) private readonly lifecycle: MonthlyFeeLifecycle,
+    @Inject(AcademiaScope) private readonly academiaScope: AcademiaScope,
   ) {}
 
   async list(
@@ -104,6 +106,8 @@ export class MonthlyFeesService {
   }
 
   async get(organizationId: string, id: string): Promise<MonthlyFeeDetail> {
+    await this.academiaScope.assertMonthlyFeeBelongsToAcademia(organizationId, id);
+
     const [row] = await this.db
       .select({
         fee: monthlyFees,
@@ -181,6 +185,8 @@ export class MonthlyFeesService {
     studentId: string,
     organizationId: string,
   ): Promise<StudentMonthlyFeesResponse> {
+    await this.academiaScope.assertStudentBelongsToAcademia(organizationId, studentId);
+
     const now = new Date();
     const cutoffDate = studentMonthlyFeeHistoryCutoffDate(now);
 
@@ -286,7 +292,7 @@ export class MonthlyFeesService {
   }
 
   async listReceipts(organizationId: string, feeId: string): Promise<PaymentReceipt[]> {
-    await this.findFee(organizationId, feeId);
+    await this.academiaScope.assertMonthlyFeeBelongsToAcademia(organizationId, feeId);
     const rows = await this.db
       .select()
       .from(paymentReceipts)
@@ -306,10 +312,21 @@ export class MonthlyFeesService {
     receiptId: string,
     studentId?: string,
   ): Promise<ReceiptViewUrlResponse> {
-    if (studentId) await this.findStudentFee(organizationId, studentId, feeId);
-    else await this.findFee(organizationId, feeId);
+    if (studentId) {
+      await this.academiaScope.assertStudentMonthlyFeeBelongsToAcademia(
+        organizationId,
+        studentId,
+        feeId,
+      );
+    } else {
+      await this.academiaScope.assertMonthlyFeeBelongsToAcademia(organizationId, feeId);
+    }
 
-    const receipt = await this.findReceipt(organizationId, feeId, receiptId);
+    const receipt = await this.academiaScope.assertPixReceiptBelongsToAcademia(
+      organizationId,
+      receiptId,
+      feeId,
+    );
     if (studentId && receipt.studentId !== studentId) {
       throw new NotFoundException("Comprovante não encontrado.");
     }
@@ -342,64 +359,11 @@ export class MonthlyFeesService {
     return this.get(organizationId, feeId);
   }
 
-  private async findReceipt(organizationId: string, feeId: string, receiptId: string) {
-    const [row] = await this.db
-      .select()
-      .from(paymentReceipts)
-      .where(
-        and(
-          eq(paymentReceipts.id, receiptId),
-          eq(paymentReceipts.monthlyFeeId, feeId),
-          eq(paymentReceipts.organizationId, organizationId),
-        ),
-      )
-      .limit(1);
-
-    if (!row) {
-      throw new NotFoundException("Comprovante não encontrado.");
-    }
-    return row;
-  }
-
-  private async findStudentFee(organizationId: string, studentId: string, id: string) {
-    const [row] = await this.db
-      .select()
-      .from(monthlyFees)
-      .where(
-        and(
-          eq(monthlyFees.id, id),
-          eq(monthlyFees.organizationId, organizationId),
-          eq(monthlyFees.studentId, studentId),
-        ),
-      )
-      .limit(1);
-
-    if (!row) {
-      throw new NotFoundException("Mensalidade não encontrada.");
-    }
-
-    return row;
-  }
-
   private validateReceiptFileType(contentType: string): void {
     const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"];
     if (!allowedTypes.includes(contentType)) {
       throw new BadRequestException("Tipo de arquivo não permitido. Use imagem ou PDF.");
     }
-  }
-
-  private async findFee(organizationId: string, id: string) {
-    const [row] = await this.db
-      .select()
-      .from(monthlyFees)
-      .where(and(eq(monthlyFees.id, id), eq(monthlyFees.organizationId, organizationId)))
-      .limit(1);
-
-    if (!row) {
-      throw new NotFoundException("Mensalidade não encontrada.");
-    }
-
-    return row;
   }
 }
 
