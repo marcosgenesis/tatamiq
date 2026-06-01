@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { AuditService, type WriteAuditEntry } from "./audit.service";
+import { describe, expect, it, vi } from "vitest";
+import { AuditService } from "./audit.service";
 
 function createMockDb() {
   const insertedValues: Record<string, unknown>[] = [];
