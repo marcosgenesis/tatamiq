@@ -4,7 +4,6 @@ import {
   Controller,
   Get,
   Inject,
-  NotFoundException,
   Param,
   Post,
   Query,
@@ -15,7 +14,6 @@ import { AllowAnonymous, Session } from "@thallesp/nestjs-better-auth";
 
 type PlatformRequest = { ip?: string; headers: Record<string, string | string[] | undefined> };
 
-import { R2StorageService } from "../monthly-fees/r2-storage.service";
 import { AuditService } from "./audit.service";
 import {
   ActivatePlatformSupportBodyDto,
@@ -52,6 +50,7 @@ import {
   type PlatformSession,
 } from "./platform-admin.service";
 import { PlatformAuditedActionService } from "./platform-audited-action.service";
+import { PlatformSensitiveFileAccessService } from "./platform-sensitive-file-access.service";
 import { PlatformSupportService } from "./platform-support.service";
 import { PlatformUserService } from "./platform-user.service";
 import { ReservedAccountService } from "./reserved-account.service";
@@ -69,7 +68,8 @@ export class PlatformController {
     @Inject(AuditService) private readonly auditService: AuditService,
     @Inject(PlatformAuditedActionService)
     private readonly auditedAction: PlatformAuditedActionService,
-    @Inject(R2StorageService) private readonly r2: R2StorageService,
+    @Inject(PlatformSensitiveFileAccessService)
+    private readonly sensitiveFileAccess: PlatformSensitiveFileAccessService,
     @Inject(ReservedAccountService) private readonly reservedAccounts: ReservedAccountService,
   ) {}
 
@@ -204,23 +204,7 @@ export class PlatformController {
     @Param("academyId") academyId: string,
     @Param("receiptId") receiptId: string,
   ) {
-    const admin = this.platformAdminService.assertPlatformAdmin(session);
-    const receipt = await this.platformAcademyService.getReceipt(academyId, receiptId);
-    if (!receipt) throw new NotFoundException("Comprovante não encontrado.");
-
-    const viewUrl = await this.r2.generateReadUrl(receipt.fileKey, 5 * 60);
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
-
-    await this.auditService.write({
-      adminUserId: admin.user.id,
-      action: "platform.sensitive_file.accessed",
-      targetType: "payment_receipt",
-      targetId: receiptId,
-      academyId,
-      metadata: { fileType: receipt.fileType, studentId: receipt.studentId },
-    });
-
-    return { viewUrl, expiresAt };
+    return this.sensitiveFileAccess.receiptViewUrl(session, academyId, receiptId);
   }
 
   @Get("administrators")
