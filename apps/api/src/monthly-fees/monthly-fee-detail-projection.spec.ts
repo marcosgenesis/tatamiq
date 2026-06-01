@@ -13,9 +13,10 @@ function fee(overrides = {}) {
   };
 }
 
-function event(id: string, createdAt: string) {
+function event(id: string, createdAt: string, type = id) {
   return {
     id,
+    type,
     createdAt: new Date(createdAt),
   };
 }
@@ -53,6 +54,19 @@ describe("projectMonthlyFeeDetail", () => {
     expect(projection?.events.map((item) => item.id)).toEqual(["adjusted", "receipt-replaced"]);
     expect(projection?.receipts.history.map((item) => item.id)).toEqual(["replaced", "pending"]);
     expect(projection?.receipts.activePendingReceipt?.id).toBe("pending");
+    expect(projection?.paymentOrigin).toBeNull();
+  });
+
+  it("derives payment origin from Evento de Mensalidade", () => {
+    const projection = projectMonthlyFeeDetail({
+      organizationId: "academy-1",
+      fee: fee({ status: "paid" }),
+      events: [event("event-1", "2026-01-02T10:00:00.000Z", "manual_payment")],
+      receipts: [],
+      today,
+    });
+
+    expect(projection?.paymentOrigin).toBe("manual_payment");
   });
 
   it("keeps approved and rejected Comprovante Pix history in the expected order", () => {

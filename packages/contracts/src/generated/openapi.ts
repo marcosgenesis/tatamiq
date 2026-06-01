@@ -2265,6 +2265,8 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
+            /** @enum {string|null} */
+            paymentOrigin: "manual_payment" | "receipt_approved" | null;
             events: {
                 id: string;
                 monthlyFeeId: string;

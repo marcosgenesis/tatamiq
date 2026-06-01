@@ -146,6 +146,7 @@ export class MonthlyFeesService {
 
     return {
       ...toFeeDto(detailProjection.fee, row.studentName),
+      paymentOrigin: detailProjection.paymentOrigin,
       events: detailProjection.events.map(toEventDto),
       receipts: detailProjection.receipts.history.map(toReceiptDto),
     };

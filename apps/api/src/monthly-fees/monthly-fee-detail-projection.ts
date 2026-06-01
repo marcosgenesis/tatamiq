@@ -1,3 +1,4 @@
+import { projectMonthlyFeePaymentOrigin } from "./monthly-fee-payment-origin-projection";
 import {
   type MonthlyFeeReceiptProjectionRow,
   projectMonthlyFeeReceipts,
@@ -13,6 +14,7 @@ export interface MonthlyFeeDetailProjectionFee {
 
 export interface MonthlyFeeDetailProjectionEvent {
   id: string;
+  type: string;
   createdAt: Date;
 }
 
@@ -38,6 +40,7 @@ export function projectMonthlyFeeDetail<
   return {
     fee: input.fee,
     status: projectMonthlyFeeStatus(input.fee, input.today),
+    paymentOrigin: projectMonthlyFeePaymentOrigin(input.fee, input.events),
     events: input.events,
     receipts: projectMonthlyFeeReceipts(input.receipts),
   };
