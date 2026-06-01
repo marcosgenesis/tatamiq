@@ -207,6 +207,7 @@ export function PreRegistrationsTab() {
           {requestsQuery.data ? (
             <p className="text-sm text-muted-foreground">
               {requestsQuery.data.summary.pendingReview} em análise ·{" "}
+              {requestsQuery.data.summary.approved} aprovadas ·{" "}
               {requestsQuery.data.summary.rejected} rejeitadas
             </p>
           ) : null}
