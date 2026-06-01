@@ -71,4 +71,66 @@ describe("RequestCard", () => {
     expect(html).toContain("Copiar link de primeiro acesso");
     expect(html).toContain("Enviar por email");
   });
+
+  it("surfaces duplicate and instructor-account warnings", () => {
+    const html = renderToStaticMarkup(
+      <RequestCard
+        request={{
+          ...baseRequest,
+          isInstructorAccount: true,
+          duplicateStudent: { id: "student-1", name: "Aluno Teste" },
+          duplicateStudentHasActiveAccess: true,
+        }}
+        rejecting={false}
+        rejectReason=""
+        approving={false}
+        approvalResult={null}
+        approvePending={false}
+        sendEmailPending={false}
+        onStartReject={vi.fn()}
+        onCancelReject={vi.fn()}
+        onRejectReasonChange={vi.fn()}
+        onReject={vi.fn()}
+        onApprove={vi.fn()}
+        onCancelApprove={vi.fn()}
+        onCopyFirstAccess={vi.fn()}
+        onSendEmail={vi.fn()}
+      />,
+    );
+
+    expect(html).toContain("Este email pertence a uma conta de instrutor.");
+    expect(html).toContain("Possível duplicidade com Aluno Teste");
+    expect(html).toContain("já possui acesso ativo");
+  });
+
+  it("renders rejection support with internal reason", () => {
+    const html = renderToStaticMarkup(
+      <RequestCard
+        request={{
+          ...baseRequest,
+          status: "rejected",
+          rejectionReason: "Sem vaga no horário",
+          reviewedAt: "2026-05-27T01:00:00.000Z",
+        }}
+        rejecting={true}
+        rejectReason="Sem vaga no horário"
+        approving={false}
+        approvalResult={null}
+        approvePending={false}
+        sendEmailPending={false}
+        onStartReject={vi.fn()}
+        onCancelReject={vi.fn()}
+        onRejectReasonChange={vi.fn()}
+        onReject={vi.fn()}
+        onApprove={vi.fn()}
+        onCancelApprove={vi.fn()}
+        onCopyFirstAccess={vi.fn()}
+        onSendEmail={vi.fn()}
+      />,
+    );
+
+    expect(html).toContain("Motivo interno: Sem vaga no horário");
+    expect(html).toContain("Motivo interno opcional");
+    expect(html).toContain("Confirmar rejeição");
+  });
 });
