@@ -22,10 +22,17 @@ import {
   students,
 } from "@tatamiq/database";
 import { and, desc, eq, gte, sql } from "drizzle-orm";
+import { AcademiaScope } from "../academy-scope/academia-scope.service";
 import { DATABASE } from "../database/database.module";
+import { projectMonthlyFeeDetail } from "./monthly-fee-detail-projection";
 import { MonthlyFeeLifecycle } from "./monthly-fee-lifecycle";
-import { isOverdue } from "./monthly-fee-rules";
+import { projectMonthlyFeeList } from "./monthly-fee-list-projection";
+import { projectMonthlyFeeStatus } from "./monthly-fee-status-projection";
 import { R2StorageService } from "./r2-storage.service";
+import {
+  projectStudentMonthlyFeeHistory,
+  studentMonthlyFeeHistoryCutoffDate,
+} from "./student-monthly-fee-history-projection";
 
 type FeeRow = typeof monthlyFees.$inferSelect;
 type EventRow = typeof monthlyFeeEvents.$inferSelect;
@@ -37,6 +44,7 @@ export class MonthlyFeesService {
     @Inject(DATABASE) private readonly db: Database,
     @Inject(R2StorageService) private readonly r2: R2StorageService,
     @Inject(MonthlyFeeLifecycle) private readonly lifecycle: MonthlyFeeLifecycle,
+    @Inject(AcademiaScope) private readonly academiaScope: AcademiaScope,
   ) {}
 
   async list(
@@ -60,13 +68,6 @@ export class MonthlyFeesService {
       conditions.push(eq(monthlyFees.referenceMonth, filters.referenceMonth));
     }
 
-    if (filters.status === "overdue") {
-      conditions.push(eq(monthlyFees.status, "open"));
-      conditions.push(sql`${monthlyFees.dueDate} < CURRENT_DATE`);
-    } else if (filters.status && filters.status !== "all") {
-      conditions.push(eq(monthlyFees.status, filters.status));
-    }
-
     const rows = await this.db
       .select({
         fee: monthlyFees,
@@ -79,38 +80,21 @@ export class MonthlyFeesService {
 
     const allRows = await this.db
       .select({
+        organizationId: monthlyFees.organizationId,
         status: monthlyFees.status,
         dueDate: monthlyFees.dueDate,
       })
       .from(monthlyFees)
       .where(eq(monthlyFees.organizationId, organizationId));
 
-    const today = new Date();
-    let open = 0;
-    let overdue = 0;
-    let underReview = 0;
-    let paid = 0;
-    let waived = 0;
-    for (const r of allRows) {
-      if (r.status === "paid") paid++;
-      else if (r.status === "waived") waived++;
-      else if (r.status === "under_review") underReview++;
-      else if (r.status === "open") {
-        if (isOverdue(r.status, r.dueDate, today)) overdue++;
-        else open++;
-      }
-    }
+    const listProjection = projectMonthlyFeeList(rows, allRows, {
+      organizationId,
+      status: filters.status,
+    });
 
     return {
-      fees: rows.map((r) => toFeeDto(r.fee, r.studentName)),
-      summary: {
-        open,
-        overdue,
-        underReview,
-        paid,
-        waived,
-        total: allRows.length,
-      },
+      fees: listProjection.rows.map((r) => toFeeDto(r.fee, r.studentName)),
+      summary: listProjection.summary,
     };
   }
 
@@ -120,6 +104,8 @@ export class MonthlyFeesService {
   }
 
   async get(organizationId: string, id: string): Promise<MonthlyFeeDetail> {
+    await this.academiaScope.assertMonthlyFeeBelongsToAcademia(organizationId, id);
+
     const [row] = await this.db
       .select({
         fee: monthlyFees,
@@ -146,10 +132,21 @@ export class MonthlyFeesService {
       .where(eq(paymentReceipts.monthlyFeeId, id))
       .orderBy(paymentReceipts.createdAt);
 
+    const detailProjection = projectMonthlyFeeDetail({
+      organizationId,
+      fee: row.fee,
+      events,
+      receipts,
+    });
+    if (!detailProjection) {
+      throw new NotFoundException("Mensalidade não encontrada.");
+    }
+
     return {
-      ...toFeeDto(row.fee, row.studentName),
-      events: events.map(toEventDto),
-      receipts: receipts.map(toReceiptDto),
+      ...toFeeDto(detailProjection.fee, row.studentName),
+      paymentOrigin: detailProjection.paymentOrigin,
+      events: detailProjection.events.map(toEventDto),
+      receipts: detailProjection.receipts.history.map(toReceiptDto),
     };
   }
 
@@ -187,9 +184,10 @@ export class MonthlyFeesService {
     studentId: string,
     organizationId: string,
   ): Promise<StudentMonthlyFeesResponse> {
+    await this.academiaScope.assertStudentBelongsToAcademia(organizationId, studentId);
+
     const now = new Date();
-    const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1);
-    const cutoffDate = `${twelveMonthsAgo.getFullYear()}-${String(twelveMonthsAgo.getMonth() + 1).padStart(2, "0")}-01`;
+    const cutoffDate = studentMonthlyFeeHistoryCutoffDate(now);
 
     const rows = await this.db
       .select()
@@ -225,14 +223,17 @@ export class MonthlyFeesService {
       receiptsByFee.set(r.monthlyFeeId, list);
     }
 
+    const historyProjection = projectStudentMonthlyFeeHistory({
+      rows,
+      receiptsByFee,
+      organizationId,
+      studentId,
+      today: now,
+    });
+
     return {
-      fees: rows.map((row) => {
-        const feeReceipts = receiptsByFee.get(row.id) ?? [];
-        const lastRelevant =
-          feeReceipts.find((r) => r.status === "pending") ??
-          feeReceipts.find((r) => r.status === "approved") ??
-          feeReceipts.find((r) => r.status === "rejected") ??
-          null;
+      fees: historyProjection.map(({ fee: row, status, receipts }) => {
+        const lastRelevant = receipts.studentRelevantReceipt;
 
         return {
           id: row.id,
@@ -240,8 +241,8 @@ export class MonthlyFeesService {
           referenceMonth: row.referenceMonth,
           amountInCents: row.amountInCents,
           dueDate: row.dueDate,
-          status: parseStatus(row.status),
-          isOverdue: isOverdue(row.status, row.dueDate),
+          status: status.persistedStatus,
+          isOverdue: status.isOverdue,
           paidAt: row.paidAt?.toISOString() ?? null,
           lastReceipt: lastRelevant
             ? {
@@ -290,7 +291,7 @@ export class MonthlyFeesService {
   }
 
   async listReceipts(organizationId: string, feeId: string): Promise<PaymentReceipt[]> {
-    await this.findFee(organizationId, feeId);
+    await this.academiaScope.assertMonthlyFeeBelongsToAcademia(organizationId, feeId);
     const rows = await this.db
       .select()
       .from(paymentReceipts)
@@ -310,10 +311,21 @@ export class MonthlyFeesService {
     receiptId: string,
     studentId?: string,
   ): Promise<ReceiptViewUrlResponse> {
-    if (studentId) await this.findStudentFee(organizationId, studentId, feeId);
-    else await this.findFee(organizationId, feeId);
+    if (studentId) {
+      await this.academiaScope.assertStudentMonthlyFeeBelongsToAcademia(
+        organizationId,
+        studentId,
+        feeId,
+      );
+    } else {
+      await this.academiaScope.assertMonthlyFeeBelongsToAcademia(organizationId, feeId);
+    }
 
-    const receipt = await this.findReceipt(organizationId, feeId, receiptId);
+    const receipt = await this.academiaScope.assertPixReceiptBelongsToAcademia(
+      organizationId,
+      receiptId,
+      feeId,
+    );
     if (studentId && receipt.studentId !== studentId) {
       throw new NotFoundException("Comprovante não encontrado.");
     }
@@ -346,64 +358,11 @@ export class MonthlyFeesService {
     return this.get(organizationId, feeId);
   }
 
-  private async findReceipt(organizationId: string, feeId: string, receiptId: string) {
-    const [row] = await this.db
-      .select()
-      .from(paymentReceipts)
-      .where(
-        and(
-          eq(paymentReceipts.id, receiptId),
-          eq(paymentReceipts.monthlyFeeId, feeId),
-          eq(paymentReceipts.organizationId, organizationId),
-        ),
-      )
-      .limit(1);
-
-    if (!row) {
-      throw new NotFoundException("Comprovante não encontrado.");
-    }
-    return row;
-  }
-
-  private async findStudentFee(organizationId: string, studentId: string, id: string) {
-    const [row] = await this.db
-      .select()
-      .from(monthlyFees)
-      .where(
-        and(
-          eq(monthlyFees.id, id),
-          eq(monthlyFees.organizationId, organizationId),
-          eq(monthlyFees.studentId, studentId),
-        ),
-      )
-      .limit(1);
-
-    if (!row) {
-      throw new NotFoundException("Mensalidade não encontrada.");
-    }
-
-    return row;
-  }
-
   private validateReceiptFileType(contentType: string): void {
     const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"];
     if (!allowedTypes.includes(contentType)) {
       throw new BadRequestException("Tipo de arquivo não permitido. Use imagem ou PDF.");
     }
-  }
-
-  private async findFee(organizationId: string, id: string) {
-    const [row] = await this.db
-      .select()
-      .from(monthlyFees)
-      .where(and(eq(monthlyFees.id, id), eq(monthlyFees.organizationId, organizationId)))
-      .limit(1);
-
-    if (!row) {
-      throw new NotFoundException("Mensalidade não encontrada.");
-    }
-
-    return row;
   }
 }
 
@@ -418,7 +377,7 @@ function toFeeDto(row: FeeRow, studentName: string): MonthlyFee {
     originalAmountInCents: row.originalAmountInCents,
     dueDate: row.dueDate,
     status: parseStatus(row.status),
-    isOverdue: isOverdue(row.status, row.dueDate),
+    isOverdue: projectMonthlyFeeStatus(row).isOverdue,
     paidAt: row.paidAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),

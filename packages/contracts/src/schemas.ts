@@ -546,6 +546,8 @@ export const monthlyFeeEventTypeSchema = z.enum([
 
 export const paymentReceiptStatusSchema = z.enum(["pending", "approved", "rejected", "replaced"]);
 
+export const monthlyFeePaymentOriginSchema = z.enum(["manual_payment", "receipt_approved"]);
+
 export const monthlyFeeEventSchema = z.object({
   id: z.string(),
   monthlyFeeId: z.string(),
@@ -589,6 +591,7 @@ export const monthlyFeeSchema = z.object({
 });
 
 export const monthlyFeeDetailSchema = monthlyFeeSchema.extend({
+  paymentOrigin: monthlyFeePaymentOriginSchema.nullable(),
   events: z.array(monthlyFeeEventSchema),
   receipts: z.array(paymentReceiptSchema),
 });
@@ -689,6 +692,7 @@ export type StudentMonthlyFee = z.infer<typeof studentMonthlyFeeSchema>;
 export type StudentMonthlyFeesResponse = z.infer<typeof studentMonthlyFeesResponseSchema>;
 
 export type MonthlyFeeStatus = z.infer<typeof monthlyFeeStatusSchema>;
+export type MonthlyFeePaymentOrigin = z.infer<typeof monthlyFeePaymentOriginSchema>;
 export type MonthlyFeeEventType = z.infer<typeof monthlyFeeEventTypeSchema>;
 export type PaymentReceiptStatus = z.infer<typeof paymentReceiptStatusSchema>;
 export type MonthlyFee = z.infer<typeof monthlyFeeSchema>;

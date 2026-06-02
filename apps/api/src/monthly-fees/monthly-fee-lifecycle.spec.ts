@@ -1,5 +1,6 @@
-import { BadRequestException } from "@nestjs/common";
+import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { AcademiaScope } from "../academy-scope/academia-scope.service";
 import { MonthlyFeeLifecycle } from "./monthly-fee-lifecycle";
 
 type MockRow = Record<string, unknown>;
@@ -97,7 +98,7 @@ describe("MonthlyFeeLifecycle", () => {
 
   it("creates an open Mensalidade with due date and initial lifecycle fields", async () => {
     const mock = createMockDb([[student()]]);
-    service = new MonthlyFeeLifecycle(mock.db as never);
+    service = new MonthlyFeeLifecycle(mock.db as never, new AcademiaScope(mock.db as never));
 
     const result = await service.create("org-1", {
       studentId: "student-1",
@@ -124,7 +125,7 @@ describe("MonthlyFeeLifecycle", () => {
 
   it("rejects Mensalidade creation when the Aluno has no configured monthly amount", async () => {
     const mock = createMockDb([[student({ monthlyAmountInCents: null })]]);
-    service = new MonthlyFeeLifecycle(mock.db as never);
+    service = new MonthlyFeeLifecycle(mock.db as never, new AcademiaScope(mock.db as never));
 
     await expect(
       service.create("org-1", {
@@ -141,7 +142,7 @@ describe("MonthlyFeeLifecycle", () => {
 
   it("adjusts an open Mensalidade, preserving the original amount and writing an Evento de Mensalidade", async () => {
     const mock = createMockDb([[fee()]]);
-    service = new MonthlyFeeLifecycle(mock.db as never);
+    service = new MonthlyFeeLifecycle(mock.db as never, new AcademiaScope(mock.db as never));
 
     await service.adjust("org-1", "fee-1", "user-1", {
       amountInCents: 12000,
@@ -164,7 +165,7 @@ describe("MonthlyFeeLifecycle", () => {
 
   it("does not overwrite originalAmountInCents on a second Ajuste de Mensalidade", async () => {
     const mock = createMockDb([[fee({ amountInCents: 12000, originalAmountInCents: 10000 })]]);
-    service = new MonthlyFeeLifecycle(mock.db as never);
+    service = new MonthlyFeeLifecycle(mock.db as never, new AcademiaScope(mock.db as never));
 
     await service.adjust("org-1", "fee-1", "user-1", {
       amountInCents: 9000,
@@ -179,7 +180,7 @@ describe("MonthlyFeeLifecycle", () => {
 
   it("waives an open Mensalidade without marking it as paid", async () => {
     const mock = createMockDb([[fee()]]);
-    service = new MonthlyFeeLifecycle(mock.db as never);
+    service = new MonthlyFeeLifecycle(mock.db as never, new AcademiaScope(mock.db as never));
 
     await service.waive("org-1", "fee-1", "user-1", { reason: "Cortesia" });
 
@@ -193,7 +194,7 @@ describe("MonthlyFeeLifecycle", () => {
 
   it("records Pagamento Manual as paid with an Evento de Mensalidade", async () => {
     const mock = createMockDb([[fee()]]);
-    service = new MonthlyFeeLifecycle(mock.db as never);
+    service = new MonthlyFeeLifecycle(mock.db as never, new AcademiaScope(mock.db as never));
 
     await service.recordManualPayment("org-1", "fee-1", "user-1", { note: "Pago em dinheiro" });
 
@@ -208,7 +209,7 @@ describe("MonthlyFeeLifecycle", () => {
 
   it("submits Comprovante Pix and moves Mensalidade to Verificação de Pagamento", async () => {
     const mock = createMockDb([[fee()], []]);
-    service = new MonthlyFeeLifecycle(mock.db as never);
+    service = new MonthlyFeeLifecycle(mock.db as never, new AcademiaScope(mock.db as never));
 
     await service.submitReceipt("org-1", "fee-1", "user-1", {
       fileKey: "receipts/org-1/fee-1/file",
@@ -234,7 +235,7 @@ describe("MonthlyFeeLifecycle", () => {
       [fee({ status: "under_review" })],
       [receipt({ id: "old-receipt" })],
     ]);
-    service = new MonthlyFeeLifecycle(mock.db as never);
+    service = new MonthlyFeeLifecycle(mock.db as never, new AcademiaScope(mock.db as never));
 
     await service.submitReceipt("org-1", "fee-1", "user-1", {
       fileKey: "receipts/org-1/fee-1/new-file",
@@ -256,9 +257,61 @@ describe("MonthlyFeeLifecycle", () => {
     expect((mock.inserted[1].metadata as Record<string, unknown>).newReceiptId).toBeTruthy();
   });
 
+  it("replaces only the student's own pending Comprovante Pix", async () => {
+    const mock = createMockDb([
+      [fee({ status: "under_review" })],
+      [receipt({ id: "old-receipt" })],
+    ]);
+    service = new MonthlyFeeLifecycle(mock.db as never, new AcademiaScope(mock.db as never));
+
+    await service.submitReceipt(
+      "org-1",
+      "fee-1",
+      "user-1",
+      {
+        fileKey: "receipts/org-1/fee-1/new-file",
+        fileType: "application/pdf",
+        fileSizeBytes: 2000,
+        note: undefined,
+      },
+      "student-1",
+    );
+
+    expect(mock.updates[0]).toMatchObject({ status: "replaced" });
+    expect(mock.inserted[0]).toMatchObject({
+      monthlyFeeId: "fee-1",
+      studentId: "student-1",
+      fileKey: "receipts/org-1/fee-1/new-file",
+      status: "pending",
+    });
+  });
+
+  it("blocks student Comprovante Pix submission for another student or Academia", async () => {
+    const mock = createMockDb([[]]);
+    service = new MonthlyFeeLifecycle(mock.db as never, new AcademiaScope(mock.db as never));
+
+    await expect(
+      service.submitReceipt(
+        "org-1",
+        "fee-other",
+        "user-1",
+        {
+          fileKey: "receipts/org-1/fee-other/file",
+          fileType: "application/pdf",
+          fileSizeBytes: 2000,
+          note: undefined,
+        },
+        "student-1",
+      ),
+    ).rejects.toBeInstanceOf(NotFoundException);
+
+    expect(mock.updates).toHaveLength(0);
+    expect(mock.inserted).toHaveLength(0);
+  });
+
   it("approves a pending Comprovante Pix and marks the Mensalidade as paid", async () => {
     const mock = createMockDb([[fee({ status: "under_review" })], [receipt()]]);
-    service = new MonthlyFeeLifecycle(mock.db as never);
+    service = new MonthlyFeeLifecycle(mock.db as never, new AcademiaScope(mock.db as never));
 
     await service.approveReceipt("org-1", "fee-1", "receipt-1", "user-1");
 
@@ -273,7 +326,7 @@ describe("MonthlyFeeLifecycle", () => {
 
   it("rejects a pending Comprovante Pix and returns the Mensalidade to open", async () => {
     const mock = createMockDb([[fee({ status: "under_review" })], [receipt()]]);
-    service = new MonthlyFeeLifecycle(mock.db as never);
+    service = new MonthlyFeeLifecycle(mock.db as never, new AcademiaScope(mock.db as never));
 
     await service.rejectReceipt("org-1", "fee-1", "receipt-1", "user-1", {
       reason: "Valor divergente",
@@ -293,7 +346,7 @@ describe("MonthlyFeeLifecycle", () => {
 
   it("rejects open-only actions for a Mensalidade outside open status before writing", async () => {
     const mock = createMockDb([[fee({ status: "paid" })]]);
-    service = new MonthlyFeeLifecycle(mock.db as never);
+    service = new MonthlyFeeLifecycle(mock.db as never, new AcademiaScope(mock.db as never));
 
     await expect(
       service.waive("org-1", "fee-1", "user-1", { reason: "Tentativa inválida" }),
@@ -305,11 +358,72 @@ describe("MonthlyFeeLifecycle", () => {
 
   it("rejects receipt review unless the Mensalidade is under review and the receipt is pending", async () => {
     const mock = createMockDb([[fee({ status: "open" })], [receipt()]]);
-    service = new MonthlyFeeLifecycle(mock.db as never);
+    service = new MonthlyFeeLifecycle(mock.db as never, new AcademiaScope(mock.db as never));
 
     await expect(
       service.approveReceipt("org-1", "fee-1", "receipt-1", "user-1"),
     ).rejects.toBeInstanceOf(BadRequestException);
+
+    expect(mock.updates).toHaveLength(0);
+    expect(mock.inserted).toHaveLength(0);
+  });
+
+  it.each([
+    [
+      "create",
+      async (s: MonthlyFeeLifecycle) =>
+        s.create("org-1", {
+          studentId: "student-other",
+          referenceYear: 2026,
+          referenceMonth: 2,
+          amountInCents: 15000,
+          dueDay: 10,
+        }),
+    ],
+    [
+      "adjust",
+      async (s: MonthlyFeeLifecycle) =>
+        s.adjust("org-1", "fee-other", "user-1", {
+          amountInCents: 12000,
+          reason: "Correção",
+        }),
+    ],
+    [
+      "waive",
+      async (s: MonthlyFeeLifecycle) =>
+        s.waive("org-1", "fee-other", "user-1", { reason: "Cortesia" }),
+    ],
+    [
+      "manual payment",
+      async (s: MonthlyFeeLifecycle) =>
+        s.recordManualPayment("org-1", "fee-other", "user-1", { note: "Pago" }),
+    ],
+  ])("blocks cross-academy instructor write before mutation: %s", async (_label, action) => {
+    const mock = createMockDb([[]]);
+    service = new MonthlyFeeLifecycle(mock.db as never, new AcademiaScope(mock.db as never));
+
+    await expect(action(service)).rejects.toBeInstanceOf(NotFoundException);
+
+    expect(mock.updates).toHaveLength(0);
+    expect(mock.inserted).toHaveLength(0);
+  });
+
+  it.each([
+    [
+      "approve",
+      async (s: MonthlyFeeLifecycle) =>
+        s.approveReceipt("org-1", "fee-1", "receipt-other", "user-1"),
+    ],
+    [
+      "reject",
+      async (s: MonthlyFeeLifecycle) =>
+        s.rejectReceipt("org-1", "fee-1", "receipt-other", "user-1", { reason: "Incorreto" }),
+    ],
+  ])("blocks cross-academy Comprovante Pix write before mutation: %s", async (_label, action) => {
+    const mock = createMockDb([[fee({ status: "under_review" })], []]);
+    service = new MonthlyFeeLifecycle(mock.db as never, new AcademiaScope(mock.db as never));
+
+    await expect(action(service)).rejects.toBeInstanceOf(NotFoundException);
 
     expect(mock.updates).toHaveLength(0);
     expect(mock.inserted).toHaveLength(0);

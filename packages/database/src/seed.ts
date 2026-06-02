@@ -34,8 +34,6 @@ const academySlug = "academia-de-teste-dev";
 
 const now = new Date();
 const today = now.toISOString().slice(0, 10);
-const currentYear = now.getFullYear();
-const currentMonth = now.getMonth() + 1;
 
 function daysAgo(n: number): Date {
   const d = new Date(now);
@@ -59,6 +57,14 @@ function scheduledStartAt(date: string, time: string): Date {
 
 function weekdayOf(date: string): number {
   return new Date(`${date}T12:00:00.000Z`).getUTCDay();
+}
+
+function requireArrayItem<T>(items: readonly T[], index: number, label: string): T {
+  const item = items[index];
+  if (!item) {
+    throw new Error(`Missing seed ${label} at index ${index}`);
+  }
+  return item;
 }
 
 // --- Auth user & org ---
@@ -295,12 +301,12 @@ await db.insert(belts).values(
   })),
 );
 
-const whiteBelt = beltData[0]!;
-const blueBelt = beltData[1]!;
-const purpleBelt = beltData[2]!;
-const brownBelt = beltData[3]!;
-const childWhiteBelt = beltChildData[0]!;
-const childGreyBelt = beltChildData[1]!;
+const whiteBelt = requireArrayItem(beltData, 0, "adult belt");
+const blueBelt = requireArrayItem(beltData, 1, "adult belt");
+const purpleBelt = requireArrayItem(beltData, 2, "adult belt");
+const brownBelt = requireArrayItem(beltData, 3, "adult belt");
+const childWhiteBelt = requireArrayItem(beltChildData, 0, "child belt");
+const childGreyBelt = requireArrayItem(beltChildData, 1, "child belt");
 
 // --- Students ---
 
@@ -517,6 +523,16 @@ const studentList = [
   },
 ];
 
+const lucasStudent = requireArrayItem(studentList, 0, "student");
+const pedroStudent = requireArrayItem(studentList, 2, "student");
+const rafaelStudent = requireArrayItem(studentList, 4, "student");
+const anaBeatrizStudent = requireArrayItem(studentList, 5, "student");
+const felipeStudent = requireArrayItem(studentList, 6, "student");
+const julianaStudent = requireArrayItem(studentList, 7, "student");
+const diegoStudent = requireArrayItem(studentList, 12, "student");
+const miguelStudent = requireArrayItem(studentList, 14, "student");
+const sofiaStudent = requireArrayItem(studentList, 15, "student");
+
 await db.insert(students).values(
   studentList.map((s) => ({
     id: s.id,
@@ -542,7 +558,7 @@ await db.insert(students).values(
 await db.insert(studentGuardians).values([
   {
     id: randomUUID(),
-    studentId: studentList[14]!.id,
+    studentId: miguelStudent.id,
     name: "Carlos Souza",
     phone: "(85) 98888-2001",
     email: "carlos.souza@email.com",
@@ -550,7 +566,7 @@ await db.insert(studentGuardians).values([
   },
   {
     id: randomUUID(),
-    studentId: studentList[15]!.id,
+    studentId: sofiaStudent.id,
     name: "Maria Pereira",
     phone: "(85) 98888-2002",
     email: "maria.pereira@email.com",
@@ -587,6 +603,12 @@ const classGroupList = [
   },
 ];
 
+const fundamentosClassGroup = requireArrayItem(classGroupList, 0, "class group");
+const noGiClassGroup = requireArrayItem(classGroupList, 1, "class group");
+const avancadoClassGroup = requireArrayItem(classGroupList, 2, "class group");
+const kidsClassGroup = requireArrayItem(classGroupList, 3, "class group");
+const openMatClassGroup = requireArrayItem(classGroupList, 4, "class group");
+
 await db.insert(classGroups).values(
   classGroupList.map((cg) => ({
     id: cg.id,
@@ -613,21 +635,21 @@ await db.insert(classGroupTags).values(
 
 const scheduleList = [
   // Fundamentos Manhã: Mon/Wed/Fri 07:00
-  { id: randomUUID(), groupId: classGroupList[0]!.id, weekday: 1, time: "07:00" },
-  { id: randomUUID(), groupId: classGroupList[0]!.id, weekday: 3, time: "07:00" },
-  { id: randomUUID(), groupId: classGroupList[0]!.id, weekday: 5, time: "07:00" },
+  { id: randomUUID(), groupId: fundamentosClassGroup.id, weekday: 1, time: "07:00" },
+  { id: randomUUID(), groupId: fundamentosClassGroup.id, weekday: 3, time: "07:00" },
+  { id: randomUUID(), groupId: fundamentosClassGroup.id, weekday: 5, time: "07:00" },
   // No-Gi Noite: Mon/Wed/Fri 19:00
-  { id: randomUUID(), groupId: classGroupList[1]!.id, weekday: 1, time: "19:00" },
-  { id: randomUUID(), groupId: classGroupList[1]!.id, weekday: 3, time: "19:00" },
-  { id: randomUUID(), groupId: classGroupList[1]!.id, weekday: 5, time: "19:00" },
+  { id: randomUUID(), groupId: noGiClassGroup.id, weekday: 1, time: "19:00" },
+  { id: randomUUID(), groupId: noGiClassGroup.id, weekday: 3, time: "19:00" },
+  { id: randomUUID(), groupId: noGiClassGroup.id, weekday: 5, time: "19:00" },
   // Avançado: Tue/Thu 19:00
-  { id: randomUUID(), groupId: classGroupList[2]!.id, weekday: 2, time: "19:00" },
-  { id: randomUUID(), groupId: classGroupList[2]!.id, weekday: 4, time: "19:00" },
+  { id: randomUUID(), groupId: avancadoClassGroup.id, weekday: 2, time: "19:00" },
+  { id: randomUUID(), groupId: avancadoClassGroup.id, weekday: 4, time: "19:00" },
   // Kids: Tue/Thu 17:00
-  { id: randomUUID(), groupId: classGroupList[3]!.id, weekday: 2, time: "17:00" },
-  { id: randomUUID(), groupId: classGroupList[3]!.id, weekday: 4, time: "17:00" },
+  { id: randomUUID(), groupId: kidsClassGroup.id, weekday: 2, time: "17:00" },
+  { id: randomUUID(), groupId: kidsClassGroup.id, weekday: 4, time: "17:00" },
   // Open Mat: Sat 10:00
-  { id: randomUUID(), groupId: classGroupList[4]!.id, weekday: 6, time: "10:00" },
+  { id: randomUUID(), groupId: openMatClassGroup.id, weekday: 6, time: "10:00" },
 ];
 
 await db.insert(classGroupSchedules).values(
@@ -655,7 +677,7 @@ for (const s of adultActive) {
     enrollments.push({
       id: randomUUID(),
       studentId: s.id,
-      classGroupId: classGroupList[0]!.id,
+      classGroupId: fundamentosClassGroup.id,
       from: s.enrolled,
     });
   }
@@ -664,7 +686,7 @@ for (const s of adultActive) {
     enrollments.push({
       id: randomUUID(),
       studentId: s.id,
-      classGroupId: classGroupList[2]!.id,
+      classGroupId: avancadoClassGroup.id,
       from: s.enrolled,
     });
   }
@@ -672,7 +694,7 @@ for (const s of adultActive) {
   enrollments.push({
     id: randomUUID(),
     studentId: s.id,
-    classGroupId: classGroupList[1]!.id,
+    classGroupId: noGiClassGroup.id,
     from: s.enrolled,
   });
 }
@@ -681,7 +703,7 @@ for (const s of childActive) {
   enrollments.push({
     id: randomUUID(),
     studentId: s.id,
-    classGroupId: classGroupList[3]!.id,
+    classGroupId: kidsClassGroup.id,
     from: s.enrolled,
   });
 }
@@ -923,7 +945,7 @@ if (feeInserts.length > 0) {
 const promotionInserts = [
   // Pedro: white -> blue (1 year ago)
   {
-    studentId: studentList[2]!.id,
+    studentId: pedroStudent.id,
     prevBelt: whiteBelt,
     prevDegree: 4,
     newBelt: blueBelt,
@@ -933,7 +955,7 @@ const promotionInserts = [
   },
   // Rafael: blue -> purple (2 years ago)
   {
-    studentId: studentList[4]!.id,
+    studentId: rafaelStudent.id,
     prevBelt: blueBelt,
     prevDegree: 4,
     newBelt: purpleBelt,
@@ -943,7 +965,7 @@ const promotionInserts = [
   },
   // Ana Beatriz: white -> blue (6 months ago)
   {
-    studentId: studentList[5]!.id,
+    studentId: anaBeatrizStudent.id,
     prevBelt: whiteBelt,
     prevDegree: 4,
     newBelt: blueBelt,
@@ -953,7 +975,7 @@ const promotionInserts = [
   },
   // Felipe: purple -> brown (1 year ago)
   {
-    studentId: studentList[6]!.id,
+    studentId: felipeStudent.id,
     prevBelt: purpleBelt,
     prevDegree: 4,
     newBelt: brownBelt,
@@ -985,7 +1007,7 @@ await db.insert(studentNotes).values([
   {
     id: randomUUID(),
     organizationId,
-    studentId: studentList[0]!.id,
+    studentId: lucasStudent.id,
     content: "Muito dedicado, nunca falta aos treinos. Potencial para competir.",
     isVisible: true,
     archivedAt: null,
@@ -996,7 +1018,7 @@ await db.insert(studentNotes).values([
   {
     id: randomUUID(),
     organizationId,
-    studentId: studentList[2]!.id,
+    studentId: pedroStudent.id,
     content: "Precisa trabalhar mais o jogo por cima. Conversar sobre competição estadual.",
     isVisible: true,
     archivedAt: null,
@@ -1007,7 +1029,7 @@ await db.insert(studentNotes).values([
   {
     id: randomUUID(),
     organizationId,
-    studentId: studentList[4]!.id,
+    studentId: rafaelStudent.id,
     content: "Lesão no joelho, liberado para treinar com restrições. Acompanhar evolução.",
     isVisible: true,
     archivedAt: null,
@@ -1018,7 +1040,7 @@ await db.insert(studentNotes).values([
   {
     id: randomUUID(),
     organizationId,
-    studentId: studentList[7]!.id,
+    studentId: julianaStudent.id,
     content: "Aluna nova, está se adaptando bem. Colocar para treinar com a Mariana.",
     isVisible: true,
     archivedAt: null,
@@ -1029,7 +1051,7 @@ await db.insert(studentNotes).values([
   {
     id: randomUUID(),
     organizationId,
-    studentId: studentList[12]!.id,
+    studentId: diegoStudent.id,
     content: "Ficou inativo por questões financeiras. Manter contato para possível retorno.",
     isVisible: false,
     archivedAt: null,

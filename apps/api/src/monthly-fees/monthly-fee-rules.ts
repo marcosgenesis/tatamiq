@@ -1,4 +1,5 @@
 import { BadRequestException } from "@nestjs/common";
+import { isMonthlyFeeOverdue } from "./monthly-fee-status-projection";
 
 export function clampDueDay(dueDay: number, year: number, month: number): Date {
   const lastDayOfMonth = new Date(year, month, 0).getDate();
@@ -14,10 +15,7 @@ export function formatDueDate(dueDate: Date): string {
 }
 
 export function isOverdue(status: string, dueDate: string, today = new Date()): boolean {
-  if (status !== "open") return false;
-  const due = parseDateOnly(dueDate);
-  const current = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  return current > due;
+  return isMonthlyFeeOverdue(status, dueDate, today);
 }
 
 export function validateCanCreateFee(student: {
@@ -30,9 +28,4 @@ export function validateCanCreateFee(student: {
       "Aluno precisa ter valor mensal e dia de vencimento configurados.",
     );
   }
-}
-
-function parseDateOnly(value: string): Date {
-  const [year, month, day] = value.split("-").map(Number);
-  return new Date(year, month - 1, day);
 }

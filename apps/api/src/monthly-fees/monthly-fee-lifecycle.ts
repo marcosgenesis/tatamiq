@@ -1,10 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from "@nestjs/common";
+import { BadRequestException, ConflictException, Inject, Injectable } from "@nestjs/common";
 import type {
   AdjustMonthlyFeeInput,
   ConfirmReceiptInput,
@@ -18,9 +12,10 @@ import {
   monthlyFeeEvents,
   monthlyFees,
   paymentReceipts,
-  students,
+  type students,
 } from "@tatamiq/database";
 import { and, desc, eq } from "drizzle-orm";
+import { AcademiaScope } from "../academy-scope/academia-scope.service";
 import { DATABASE } from "../database/database.module";
 import { clampDueDay, formatDueDate, validateCanCreateFee } from "./monthly-fee-rules";
 
@@ -31,7 +26,10 @@ type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 
 @Injectable()
 export class MonthlyFeeLifecycle {
-  constructor(@Inject(DATABASE) private readonly db: Database) {}
+  constructor(
+    @Inject(DATABASE) private readonly db: Database,
+    @Inject(AcademiaScope) private readonly academiaScope: AcademiaScope,
+  ) {}
 
   async create(organizationId: string, input: CreateMonthlyFeeInput): Promise<{ feeId: string }> {
     const feeId = crypto.randomUUID();
@@ -311,13 +309,7 @@ export class MonthlyFeeLifecycle {
     organizationId: string,
     studentId: string,
   ): Promise<StudentRow> {
-    const [student] = await tx
-      .select()
-      .from(students)
-      .where(and(eq(students.id, studentId), eq(students.organizationId, organizationId)))
-      .limit(1);
-    if (!student) throw new NotFoundException("Aluno não encontrado.");
-    return student;
+    return this.academiaScope.assertStudentBelongsToAcademia(organizationId, studentId, tx);
   }
 
   private async findFee(
@@ -325,13 +317,7 @@ export class MonthlyFeeLifecycle {
     organizationId: string,
     id: string,
   ): Promise<FeeRow> {
-    const [row] = await tx
-      .select()
-      .from(monthlyFees)
-      .where(and(eq(monthlyFees.id, id), eq(monthlyFees.organizationId, organizationId)))
-      .limit(1);
-    if (!row) throw new NotFoundException("Mensalidade não encontrada.");
-    return row;
+    return this.academiaScope.assertMonthlyFeeBelongsToAcademia(organizationId, id, tx);
   }
 
   private async findStudentFee(
@@ -340,19 +326,12 @@ export class MonthlyFeeLifecycle {
     studentId: string,
     id: string,
   ): Promise<FeeRow> {
-    const [row] = await tx
-      .select()
-      .from(monthlyFees)
-      .where(
-        and(
-          eq(monthlyFees.id, id),
-          eq(monthlyFees.organizationId, organizationId),
-          eq(monthlyFees.studentId, studentId),
-        ),
-      )
-      .limit(1);
-    if (!row) throw new NotFoundException("Mensalidade não encontrada.");
-    return row;
+    return this.academiaScope.assertStudentMonthlyFeeBelongsToAcademia(
+      organizationId,
+      studentId,
+      id,
+      tx,
+    );
   }
 
   private async findReceipt(
@@ -361,19 +340,12 @@ export class MonthlyFeeLifecycle {
     feeId: string,
     receiptId: string,
   ): Promise<ReceiptRow> {
-    const [row] = await tx
-      .select()
-      .from(paymentReceipts)
-      .where(
-        and(
-          eq(paymentReceipts.id, receiptId),
-          eq(paymentReceipts.monthlyFeeId, feeId),
-          eq(paymentReceipts.organizationId, organizationId),
-        ),
-      )
-      .limit(1);
-    if (!row) throw new NotFoundException("Comprovante não encontrado.");
-    return row;
+    return this.academiaScope.assertPixReceiptBelongsToAcademia(
+      organizationId,
+      receiptId,
+      feeId,
+      tx,
+    );
   }
 
   private async writeEvent(
