@@ -115,12 +115,14 @@ const requestRow = {
 describe("PreRegistrationService", () => {
   let mock: ReturnType<typeof createMockDb>;
   let service: PreRegistrationService;
+  let emailService: { send: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
     mock = createMockDb();
+    emailService = { send: vi.fn() };
     service = new PreRegistrationService(
       mock.db as never,
-      { send: vi.fn() } as never,
+      emailService as never,
       { completeActivation: vi.fn() } as never,
       {
         getOrCreateLink: vi.fn(),
@@ -248,5 +250,42 @@ describe("PreRegistrationService", () => {
     });
     expect(result.status).toBe("rejected");
     expect(result.rejectionReason).toBe("Duplicado");
+  });
+
+  it("rejects first-access email for non-approved requests", async () => {
+    mock.setSelectResults([[requestRow]]);
+
+    await expect(service.sendFirstAccessEmail("academy-1", "request-1")).rejects.toThrow(
+      "Email só pode ser enviado para solicitações aprovadas.",
+    );
+
+    expect(emailService.send).not.toHaveBeenCalled();
+  });
+
+  it("regenerates a fresh first-access link before sending email", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-27T12:00:00.000Z"));
+    try {
+      mock.setSelectResults([[{ ...requestRow, status: "approved" }], [academyRow]]);
+
+      await expect(service.sendFirstAccessEmail("academy-1", "request-1")).resolves.toEqual({
+        sent: true,
+      });
+
+      expect(mock.updatedSets[0]).toMatchObject({
+        firstAccessTokenHash: expect.any(String),
+        firstAccessTokenExpiresAt: new Date("2026-06-03T12:00:00.000Z"),
+        firstAccessConsumedAt: null,
+      });
+      expect(emailService.send).toHaveBeenCalledWith({
+        to: "aluno@example.com",
+        subject: "Seu acesso ao Tatame Central no Tatamiq",
+        html: expect.stringContaining("Tatame Central"),
+      });
+      expect(emailService.send.mock.calls[0]?.[0].html).toContain("Aluno Teste");
+      expect(emailService.send.mock.calls[0]?.[0].html).toContain("/student/first-access/");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

@@ -83,6 +83,9 @@ export function PlatformShell({
             </div>
             <Badge>BETA</Badge>
           </div>
+          <div>
+            <PlatformTabs />
+          </div>
           <div className="flex items-center gap-3">
             <Button
               render={
@@ -102,7 +105,6 @@ export function PlatformShell({
 
       <div className="mx-auto space-y-6 px-6 py-8 max-w-6xl">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <PlatformTabs />
           {actions}
         </div>
         {children}
