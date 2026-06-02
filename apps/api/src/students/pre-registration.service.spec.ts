@@ -128,12 +128,15 @@ describe("PreRegistrationService", () => {
         reactivateLink: vi.fn(),
         regenerateLink: vi.fn(),
         resolvePublicProfile: vi.fn(),
+        resolveActiveLink: vi
+          .fn()
+          .mockResolvedValue({ linkId: linkRow.id, organizationId: linkRow.organizationId }),
       } as never,
     );
   });
 
   it("creates a public Solicitação de Pré-Cadastro through an active link", async () => {
-    mock.setSelectResults([[{ link: linkRow, academy: academyRow }], [], [], []]);
+    mock.setSelectResults([[], []]);
 
     const result = await service.createRequest("public-token", {
       name: "  Aluno Teste  ",
@@ -159,7 +162,7 @@ describe("PreRegistrationService", () => {
   });
 
   it("requires Consentimento de Pré-Cadastro", async () => {
-    mock.setSelectResults([[{ link: linkRow, academy: academyRow }]]);
+    mock.setSelectResults([]);
 
     await expect(
       service.createRequest("public-token", {
@@ -173,7 +176,7 @@ describe("PreRegistrationService", () => {
   });
 
   it("requires Responsável information for a minor request", async () => {
-    mock.setSelectResults([[{ link: linkRow, academy: academyRow }]]);
+    mock.setSelectResults([]);
 
     await expect(
       service.createRequest("public-token", {
@@ -187,7 +190,7 @@ describe("PreRegistrationService", () => {
   });
 
   it("blocks duplicate pending or approved requests by email", async () => {
-    mock.setSelectResults([[{ link: linkRow, academy: academyRow }], [{ id: "existing" }]]);
+    mock.setSelectResults([[{ id: "existing" }]]);
 
     await expect(
       service.createRequest("public-token", {
