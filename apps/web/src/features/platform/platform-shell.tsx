@@ -1,6 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "@tanstack/react-router";
-import { Building02Icon, ManagerIcon, SecurityCheckIcon, UserListIcon } from "hugeicons-react";
+import {
+  Building02Icon,
+  Logout01Icon,
+  ManagerIcon,
+  SecurityCheckIcon,
+  UserListIcon,
+} from "hugeicons-react";
+import { GitBranch } from "lucide-react";
 import type { ReactNode } from "react";
 import { LogoIcon } from "../../components/logo";
 import { Tabs, TabsList, TabsTrigger } from "../../components/reui/tabs";
@@ -66,27 +73,27 @@ export function PlatformShell({
 }) {
   return (
     <main className="min-h-screen bg-muted/30 text-foreground">
-      <header className="border-b bg-background">
+      <header>
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
-            <LogoIcon className="size-8" />
+            <LogoIcon className="size-12" />
             <div>
-              <p className="text-muted-foreground text-sm">Tatamiq</p>
-              <h1 className="font-semibold text-xl">Administração da Plataforma</h1>
+              <p className="text-xs">Bem vindo de volta</p>
+              <p className="font-medium text-lg">{user.name}! 👋🏼</p>
             </div>
+            <Badge>BETA</Badge>
           </div>
           <div className="flex items-center gap-3">
-            <div className="hidden text-right text-sm sm:block">
-              <p className="font-medium">{user.name ?? "Administrador"}</p>
-              <p className="text-muted-foreground">{user.email ?? "Sem email"}</p>
-            </div>
-            <Link
-              to="/choose-area"
-              className="inline-flex h-8 items-center justify-center rounded-lg border border-border bg-background px-2.5 text-sm font-medium transition-colors hover:bg-muted"
-            >
-              Trocar área
-            </Link>
-            <Button variant="ghost" onClick={onSignOut}>
+            <Button
+              render={
+                <Link to="/choose-area">
+                  <GitBranch size={12} />
+                  Trocar área
+                </Link>
+              }
+            />
+            <Button variant="destructive" onClick={onSignOut}>
+              <Logout01Icon />
               Sair
             </Button>
           </div>
