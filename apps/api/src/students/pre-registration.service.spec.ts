@@ -17,7 +17,7 @@ function createMockDb() {
     return Promise.resolve(result);
   }
 
-  const db = {
+  const db: Record<string, unknown> = {
     insert: vi.fn().mockImplementation(() => ({
       values: vi.fn().mockImplementation((values) => {
         insertedRows.push(values);
@@ -50,6 +50,8 @@ function createMockDb() {
       }),
     })),
   };
+
+  db.transaction = vi.fn().mockImplementation(async (callback) => callback(db));
 
   return {
     db,
@@ -85,6 +87,13 @@ const academyRow = {
   instagram: null,
 };
 
+const whiteBeltRow = {
+  id: "belt-white",
+  organizationId: "academy-1",
+  slug: "adult-white",
+  name: "Branca",
+};
+
 const requestRow = {
   id: "request-1",
   organizationId: "academy-1",
@@ -106,7 +115,7 @@ const requestRow = {
   duplicateStudentId: null,
   firstAccessTokenHash: null,
   firstAccessTokenExpiresAt: null,
-  firstAccessTokenConsumedAt: null,
+  firstAccessConsumedAt: null,
   firstAccessEmailSentAt: null,
   createdAt: new Date("2026-05-27T00:00:00.000Z"),
   updatedAt: new Date("2026-05-27T00:00:00.000Z"),
@@ -116,14 +125,16 @@ describe("PreRegistrationService", () => {
   let mock: ReturnType<typeof createMockDb>;
   let service: PreRegistrationService;
   let emailService: { send: ReturnType<typeof vi.fn> };
+  let activationService: { activate: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
     mock = createMockDb();
     emailService = { send: vi.fn() };
+    activationService = { activate: vi.fn().mockResolvedValue({ accessId: "access-1" }) };
     service = new PreRegistrationService(
       mock.db as never,
       emailService as never,
-      { completeActivation: vi.fn() } as never,
+      activationService as never,
       {
         getOrCreateLink: vi.fn(),
         pauseLink: vi.fn(),
@@ -250,6 +261,139 @@ describe("PreRegistrationService", () => {
     });
     expect(result.status).toBe("rejected");
     expect(result.rejectionReason).toBe("Duplicado");
+  });
+
+  it("approves a non-duplicate request by creating Aluno, access, and first-access link", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-27T12:00:00.000Z"));
+    try {
+      const approvedRow = {
+        ...requestRow,
+        status: "approved",
+        reviewedByUserId: "owner-1",
+        reviewedAt: new Date("2026-05-27T12:00:00.000Z"),
+        approvedStudentId: "student-new",
+        approvedStudentAccessId: "access-1",
+      };
+      mock.setSelectResults([[requestRow], [whiteBeltRow], [], [approvedRow], [], []]);
+
+      const result = await service.approveRequest("academy-1", "request-1", "owner-1", {});
+
+      expect(mock.insertedRows).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            organizationId: "academy-1",
+            name: "Aluno Teste",
+            enrollmentDate: "2026-05-27",
+            status: "active",
+            currentBeltId: "belt-white",
+            currentDegree: 0,
+          }),
+          expect.objectContaining({ providerId: "credential", password: null }),
+        ]),
+      );
+      expect(activationService.activate).toHaveBeenCalledWith(expect.anything(), {
+        organizationId: "academy-1",
+        studentId: expect.any(String),
+        authUserId: expect.any(String),
+        termsVersion: expect.any(String),
+      });
+      expect(mock.updatedSets[0]).toMatchObject({
+        status: "approved",
+        reviewedByUserId: "owner-1",
+        approvedStudentAccessId: "access-1",
+        firstAccessTokenHash: expect.any(String),
+        firstAccessTokenExpiresAt: new Date("2026-06-03T12:00:00.000Z"),
+      });
+      expect(result.request.status).toBe("approved");
+      expect(result.firstAccessLink).toContain("/student/first-access/");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("links a duplicate request to an existing Aluno when access is not active", async () => {
+    const duplicateRequest = { ...requestRow, duplicateStudentId: "student-existing" };
+    const approvedRow = {
+      ...duplicateRequest,
+      status: "approved",
+      approvedStudentId: "student-existing",
+      approvedStudentAccessId: "access-1",
+    };
+    mock.setSelectResults([
+      [duplicateRequest],
+      [],
+      [whiteBeltRow],
+      [{ id: "auth-existing", email: "aluno@example.com", name: "Aluno Teste" }],
+      [approvedRow],
+      [{ id: "student-existing", name: "Aluno Teste" }],
+      [{ id: "auth-existing", email: "aluno@example.com", name: "Aluno Teste" }],
+      [],
+      [],
+    ]);
+
+    const result = await service.approveRequest("academy-1", "request-1", "owner-1", {
+      duplicateDecision: "link_to_existing",
+    });
+
+    expect(mock.insertedRows).toEqual([]);
+    expect(activationService.activate).toHaveBeenCalledWith(expect.anything(), {
+      organizationId: "academy-1",
+      studentId: "student-existing",
+      authUserId: "auth-existing",
+      termsVersion: expect.any(String),
+    });
+    expect(result.studentId).toBe("student-existing");
+    expect(result.request.duplicateStudent).toEqual({
+      id: "student-existing",
+      name: "Aluno Teste",
+    });
+  });
+
+  it("blocks linking a duplicate request when the existing Aluno already has active access", async () => {
+    mock.setSelectResults([
+      [{ ...requestRow, duplicateStudentId: "student-existing" }],
+      [{ id: "access-existing" }],
+    ]);
+
+    await expect(
+      service.approveRequest("academy-1", "request-1", "owner-1", {
+        duplicateDecision: "link_to_existing",
+      }),
+    ).rejects.toThrow("Este aluno já possui acesso ativo. Não é possível vincular.");
+
+    expect(activationService.activate).not.toHaveBeenCalled();
+  });
+
+  it("rejects a duplicate request without creating Aluno or access", async () => {
+    const duplicateRequest = { ...requestRow, duplicateStudentId: "student-existing" };
+    mock.setSelectResults([
+      [duplicateRequest],
+      [{ id: "student-existing", name: "Aluno Teste" }],
+      [],
+      [],
+    ]);
+    mock.setUpdateResults([
+      [
+        {
+          ...duplicateRequest,
+          status: "rejected",
+          rejectionReason: "Rejeitada como duplicata.",
+        },
+      ],
+    ]);
+
+    const result = await service.approveRequest("academy-1", "request-1", "owner-1", {
+      duplicateDecision: "reject_as_duplicate",
+    });
+
+    expect(mock.insertedRows).toEqual([]);
+    expect(activationService.activate).not.toHaveBeenCalled();
+    expect(result).toMatchObject({
+      firstAccessLink: "",
+      studentId: "",
+      request: { status: "rejected", rejectionReason: "Rejeitada como duplicata." },
+    });
   });
 
   it("rejects first-access email for non-approved requests", async () => {
