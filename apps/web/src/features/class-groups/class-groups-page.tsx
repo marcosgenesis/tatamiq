@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ClassGroup } from "@tatamiq/contracts";
 import type { components } from "@tatamiq/contracts/generated";
-import { PlusSignIcon } from "hugeicons-react";
+import { Delete02Icon, PlusSignIcon } from "hugeicons-react";
 import {
   type Dispatch,
   type FormEvent,
@@ -22,6 +22,15 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "../../components/ui/drawer";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../components/ui/select";
+import { TagInput } from "../../components/ui/tag-input";
+import { TimeField } from "../../components/ui/time-field";
 
 type ClassGroupStatusFilter = "active" | "archived" | "all";
 type ClassGroupPayload = components["schemas"]["UpdateClassGroupDto"];
@@ -31,7 +40,7 @@ type ClassGroupFormState = {
   defaultDurationMinutes: string;
   status: ClassGroup["status"];
   schedules: ScheduleFormRow[];
-  tags: string;
+  tags: string[];
   studentIds: string[];
 };
 
@@ -41,7 +50,7 @@ const emptyForm: ClassGroupFormState = {
   defaultDurationMinutes: "60",
   status: "active",
   schedules: [{ id: crypto.randomUUID(), weekday: "1", startTime: "19:00" }],
-  tags: "",
+  tags: [],
   studentIds: [],
 };
 
@@ -118,6 +127,10 @@ export function ClassGroupsPage() {
 
   const classGroups = classGroupsQuery.data?.classGroups ?? [];
   const summary = classGroupsQuery.data?.summary;
+  const tagSuggestions = useMemo(
+    () => Array.from(new Set(classGroups.flatMap((classGroup) => classGroup.tags))).sort(),
+    [classGroups],
+  );
   const title = useMemo(() => {
     if (status === "active") return "Turmas ativas";
     if (status === "archived") return "Turmas arquivadas";
@@ -142,7 +155,7 @@ export function ClassGroupsPage() {
         weekday: String(schedule.weekday),
         startTime: schedule.startTime,
       })),
-      tags: classGroup.tags.join(", "),
+      tags: classGroup.tags,
       studentIds: classGroup.students.map((student) => student.id),
     });
     setError(null);
@@ -175,10 +188,7 @@ export function ClassGroupsPage() {
         weekday: Number(schedule.weekday),
         startTime: schedule.startTime,
       })),
-      tags: form.tags
-        .split(",")
-        .map((tag) => tag.trim())
-        .filter(Boolean),
+      tags: form.tags,
       studentIds: form.studentIds,
     };
 
@@ -219,6 +229,7 @@ export function ClassGroupsPage() {
             form={form}
             isSaving={saveMutation.isPending}
             students={studentsQuery.data ?? []}
+            tagSuggestions={tagSuggestions}
             setForm={setForm}
             onCancel={closeForm}
             onSubmit={submitForm}
@@ -265,6 +276,7 @@ function ClassGroupForm(props: {
   form: ClassGroupFormState;
   isSaving: boolean;
   students: Array<{ id: string; name: string }>;
+  tagSuggestions: string[];
   setForm: Dispatch<SetStateAction<ClassGroupFormState>>;
   onCancel: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
@@ -299,11 +311,12 @@ function ClassGroupForm(props: {
               props.setForm((current) => ({ ...current, defaultDurationMinutes: value }))
             }
           />
-          <TextField
+          <TagInput
             label="Etiquetas"
             placeholder="No Gi, Iniciante"
             value={props.form.tags}
-            onChange={(value) => props.setForm((current) => ({ ...current, tags: value }))}
+            suggestions={props.tagSuggestions}
+            onChange={(tags) => props.setForm((current) => ({ ...current, tags }))}
           />
           {props.editingClassGroup ? (
             <label className="space-y-2 text-sm font-medium">
@@ -352,31 +365,26 @@ function ClassGroupForm(props: {
           </div>
           <div className="mt-4 grid gap-3">
             {props.form.schedules.map((schedule, index) => (
-              <div key={schedule.id} className="grid grid-cols-[1fr_1fr_auto] gap-3">
-                <label className="space-y-2 text-sm font-medium">
-                  <span>Dia</span>
-                  <select
-                    value={schedule.weekday}
-                    onChange={(event) => props.updateSchedule(index, "weekday", event.target.value)}
-                    className="h-11 w-full rounded-2xl border border-border bg-background px-3 text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-                  >
-                    {weekdays.map((weekday, weekdayIndex) => (
-                      <option key={weekday} value={weekdayIndex}>
-                        {weekday}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <TextField
+              <div
+                key={schedule.id}
+                className="grid grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_2.75rem] items-end gap-2"
+              >
+                <WeekdaySelect
+                  value={schedule.weekday}
+                  onChange={(value) => props.updateSchedule(index, "weekday", value)}
+                />
+                <TimeField
                   label="Horário"
-                  placeholder="HH:mm"
                   value={schedule.startTime}
                   onChange={(value) => props.updateSchedule(index, "startTime", value)}
                 />
                 <Button
                   type="button"
                   variant="ghost"
-                  className="self-end"
+                  size="icon-lg"
+                  aria-label="Remover horário"
+                  title="Remover horário"
+                  className="size-11 rounded-2xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                   onClick={() =>
                     props.setForm((current) => ({
                       ...current,
@@ -386,7 +394,7 @@ function ClassGroupForm(props: {
                     }))
                   }
                 >
-                  Remover
+                  <Delete02Icon className="size-4" aria-hidden />
                 </Button>
               </div>
             ))}
@@ -437,6 +445,55 @@ function ClassGroupForm(props: {
         </Button>
       </DrawerFooter>
     </form>
+  );
+}
+
+function WeekdaySelect({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="min-w-0 space-y-2 text-sm font-medium">
+      <span>Dia</span>
+      <Select
+        modal={false}
+        open={open}
+        value={value}
+        onOpenChange={setOpen}
+        onValueChange={(nextValue) => {
+          if (nextValue) onChange(nextValue);
+        }}
+      >
+        <SelectTrigger
+          className="h-11 w-full rounded-2xl border-border bg-background px-3 text-foreground focus-visible:border-primary focus-visible:ring-primary/20"
+          onPointerDown={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setOpen((current) => !current);
+          }}
+        >
+          <SelectValue placeholder="Dia">{weekdays[Number(value)] ?? "Dia"}</SelectValue>
+        </SelectTrigger>
+        <SelectContent align="start" className="rounded-2xl">
+          {weekdays.map((weekday, weekdayIndex) => {
+            const weekdayValue = String(weekdayIndex);
+            return (
+              <SelectItem
+                key={weekday}
+                value={weekdayValue}
+                onPointerDown={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onChange(weekdayValue);
+                  setOpen(false);
+                }}
+              >
+                {weekday}
+              </SelectItem>
+            );
+          })}
+        </SelectContent>
+      </Select>
+    </div>
   );
 }
 

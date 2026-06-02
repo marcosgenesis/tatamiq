@@ -47,42 +47,20 @@ export function PlatformUsersPage() {
     >
       <div className="flex items-center justify-between">
         <div>
-          <Link to="/platform" className="text-muted-foreground text-sm hover:text-foreground">
-            ← Voltar para Administração da Plataforma
-          </Link>
           <h2 className="mt-2 font-semibold text-2xl">Usuários</h2>
           <p className="text-muted-foreground text-sm">
             Busque por nome ou email. Clique em um usuário para ver detalhes.
           </p>
         </div>
       </div>
-
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <CardTitle>Lista de Usuários</CardTitle>
-            <Input
-              className="sm:max-w-xs"
-              placeholder="Buscar por nome ou email..."
-              value={query}
-              onChange={(event) => {
-                setQuery(event.target.value);
-                setPagination((current) => ({ ...current, pageIndex: 0 }));
-              }}
-            />
-          </div>
-        </CardHeader>
-        <CardContent>
-          <UsersDataGrid
-            users={users.data?.items ?? []}
-            loading={users.isLoading}
-            pagination={pagination}
-            onPaginationChange={setPagination}
-            rowCount={users.data?.pagination.total ?? 0}
-            pageCount={users.data?.pagination.totalPages ?? -1}
-          />
-        </CardContent>
-      </Card>
+      <UsersDataGrid
+        users={users.data?.items ?? []}
+        loading={users.isLoading}
+        pagination={pagination}
+        onPaginationChange={setPagination}
+        rowCount={users.data?.pagination.total ?? 0}
+        pageCount={users.data?.pagination.totalPages ?? -1}
+      />
     </PlatformShell>
   );
 }

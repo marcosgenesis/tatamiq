@@ -58,9 +58,6 @@ export function PlatformAdministratorsPage() {
       onSignOut={() => authClient.signOut().then(() => navigate({ to: "/sign-in" }))}
     >
       <div>
-        <Link to="/platform" className="text-muted-foreground text-sm hover:text-foreground">
-          ← Voltar para Administração da Plataforma
-        </Link>
         <h2 className="mt-2 font-semibold text-2xl">Administradores da Plataforma</h2>
         <p className="text-muted-foreground text-sm">
           Gerencie quem tem permissão global no Tatamiq.
@@ -106,29 +103,21 @@ export function PlatformAdministratorsPage() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Admins atuais</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <AdministratorsDataGrid
-            administrators={administrators.data?.items ?? []}
-            loading={administrators.isLoading}
-            pagination={pagination}
-            onPaginationChange={setPagination}
-            rowCount={administrators.data?.pagination.total ?? 0}
-            pageCount={administrators.data?.pagination.totalPages ?? -1}
-            removing={removeAdmin.isPending}
-            onRemove={(adminId) => removeAdmin.mutate(adminId)}
-          />
-          {removeAdmin.isError ? (
-            <p className="mt-3 text-destructive text-sm">
-              Não foi possível remover este administrador. O último admin ativo não pode ser
-              removido.
-            </p>
-          ) : null}
-        </CardContent>
-      </Card>
+      <AdministratorsDataGrid
+        administrators={administrators.data?.items ?? []}
+        loading={administrators.isLoading}
+        pagination={pagination}
+        onPaginationChange={setPagination}
+        rowCount={administrators.data?.pagination.total ?? 0}
+        pageCount={administrators.data?.pagination.totalPages ?? -1}
+        removing={removeAdmin.isPending}
+        onRemove={(adminId) => removeAdmin.mutate(adminId)}
+      />
+      {removeAdmin.isError ? (
+        <p className="mt-3 text-destructive text-sm">
+          Não foi possível remover este administrador. O último admin ativo não pode ser removido.
+        </p>
+      ) : null}
     </PlatformShell>
   );
 }

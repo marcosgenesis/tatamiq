@@ -11,6 +11,7 @@ import { type Dispatch, type SetStateAction, useMemo, useState } from "react";
 import { DataGrid, DataGridContainer } from "@/components/reui/data-grid/data-grid";
 import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination";
 import { DataGridTable } from "@/components/reui/data-grid/data-grid-table";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
@@ -84,38 +85,7 @@ export function PlatformPage() {
     <PlatformShell
       user={user}
       onSignOut={() => authClient.signOut().then(() => navigate({ to: "/sign-in" }))}
-    >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <nav
-          aria-label="Seções da plataforma"
-          className="inline-flex w-fit rounded-xl border border-border bg-background/80 p-1 shadow-sm"
-        >
-          <Link
-            to="/platform"
-            className="inline-flex h-8 items-center justify-center rounded-lg bg-primary px-3 text-primary-foreground text-sm font-medium shadow-sm"
-          >
-            Academias
-          </Link>
-          <Link
-            to="/platform/users"
-            className="inline-flex h-8 items-center justify-center rounded-lg px-3 text-muted-foreground text-sm font-medium transition-colors hover:bg-muted hover:text-foreground"
-          >
-            Usuários
-          </Link>
-          <Link
-            to="/platform/administrators"
-            className="inline-flex h-8 items-center justify-center rounded-lg px-3 text-muted-foreground text-sm font-medium transition-colors hover:bg-muted hover:text-foreground"
-          >
-            Administradores
-          </Link>
-          <Link
-            to="/platform/audit"
-            className="inline-flex h-8 items-center justify-center rounded-lg px-3 text-muted-foreground text-sm font-medium transition-colors hover:bg-muted hover:text-foreground"
-          >
-            Auditoria
-          </Link>
-        </nav>
-
+      actions={
         <Dialog open={isProvisionOpen} onOpenChange={setIsProvisionOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => provision.reset()}>
@@ -193,55 +163,19 @@ export function PlatformPage() {
             </form>
           </DialogContent>
         </Dialog>
-      </div>
-
-      <section className="grid gap-4 md:grid-cols-4">
-        <MetricCard label="Academias" value={dashboard.data?.totals.academies} to="/platform" />
-        <MetricCard label="Usuários" value={dashboard.data?.totals.users} to="/platform/users" />
-        <MetricCard
-          label="Administradores"
-          value={dashboard.data?.totals.admins}
-          to="/platform/administrators"
-        />
-        <MetricCard
-          label="Usuários bloqueados"
-          value={dashboard.data?.totals.bannedUsers}
-          to="/platform/users"
-        />
-      </section>
-
+      }
+    >
       <section className="grid gap-6">
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <CardTitle>Academias</CardTitle>
-                <p className="text-muted-foreground text-sm">
-                  Busque por nome, slug ou email do dono.
-                </p>
-              </div>
-              <Input
-                className="sm:max-w-xs"
-                placeholder="Buscar academia..."
-                value={academyQuery}
-                onChange={(event) => {
-                  setAcademyQuery(event.target.value);
-                  setAcademyPagination((current) => ({ ...current, pageIndex: 0 }));
-                }}
-              />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <AcademiesDataGrid
-              academies={academies.data?.items ?? []}
-              loading={academies.isLoading}
-              pagination={academyPagination}
-              onPaginationChange={setAcademyPagination}
-              rowCount={academies.data?.pagination.total ?? 0}
-              pageCount={academies.data?.pagination.totalPages ?? -1}
-            />
-          </CardContent>
-        </Card>
+        <div>
+          <AcademiesDataGrid
+            academies={academies.data?.items ?? []}
+            loading={academies.isLoading}
+            pagination={academyPagination}
+            onPaginationChange={setAcademyPagination}
+            rowCount={academies.data?.pagination.total ?? 0}
+            pageCount={academies.data?.pagination.totalPages ?? -1}
+          />
+        </div>
 
         <Card>
           <CardHeader>
@@ -320,15 +254,21 @@ function AcademiesDataGrid({
         header: "Academia",
         size: 260,
         cell: ({ row }) => (
-          <div>
-            <Link
-              to="/platform/academies/$academyId"
-              params={{ academyId: row.original.id }}
-              className="font-medium hover:underline"
-            >
-              {row.original.name}
-            </Link>
-            <p className="text-muted-foreground text-xs">/{row.original.slug}</p>
+          <div className="flex gap-1.5 items-center">
+            <Avatar>
+              <AvatarImage src={row.original.logo ?? undefined} />
+              <AvatarFallback>{row.original.name.charAt(0)}</AvatarFallback>
+            </Avatar>
+            <div>
+              <Link
+                to="/platform/academies/$academyId"
+                params={{ academyId: row.original.id }}
+                className="font-medium hover:underline"
+              >
+                {row.original.name}
+              </Link>
+              <p className="text-muted-foreground text-xs">/{row.original.slug}</p>
+            </div>
           </div>
         ),
       },
@@ -338,9 +278,14 @@ function AcademiesDataGrid({
         size: 260,
         cell: ({ row }) =>
           row.original.owner ? (
-            <div>
-              <p>{row.original.owner.name}</p>
-              <p className="text-muted-foreground text-xs">{row.original.owner.email}</p>
+            <div className="flex gap-1.5">
+              <Avatar>
+                <AvatarFallback>{row.original.owner.name.charAt(0)}</AvatarFallback>
+              </Avatar>
+              <div>
+                <p>{row.original.owner.name}</p>
+                <p className="text-muted-foreground text-xs">{row.original.owner.email}</p>
+              </div>
             </div>
           ) : (
             <Badge variant="muted">Sem dono</Badge>

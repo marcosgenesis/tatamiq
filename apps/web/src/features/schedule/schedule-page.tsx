@@ -8,6 +8,7 @@ import { api } from "../../api";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { DateTimeField } from "../../components/ui/date-time-field";
 import {
   Drawer,
   DrawerClose,
@@ -740,15 +741,11 @@ function AdHocForm(props: {
             ))}
           </select>
         </label>
-        <label className="block space-y-2 text-sm font-medium">
-          <span className="text-muted-foreground">Data e hora</span>
-          <input
-            type="datetime-local"
-            value={props.form.scheduledStartAt}
-            onChange={(e) => props.setForm((c) => ({ ...c, scheduledStartAt: e.target.value }))}
-            className="h-11 w-full rounded-xl border border-border bg-background px-3 text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-          />
-        </label>
+        <DateTimeField
+          label="Data e hora"
+          value={props.form.scheduledStartAt}
+          onChange={(value) => props.setForm((c) => ({ ...c, scheduledStartAt: value }))}
+        />
         <label className="block space-y-2 text-sm font-medium">
           <span className="text-muted-foreground">Duração (min)</span>
           <input
