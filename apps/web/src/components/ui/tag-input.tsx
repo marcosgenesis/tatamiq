@@ -1,15 +1,28 @@
 "use client";
 
-import { Combobox } from "@base-ui/react/combobox";
-import { Cancel01Icon, Tick02Icon } from "hugeicons-react";
-import { useId, useMemo, useState } from "react";
-import { cn } from "@/lib/utils";
+import { PlusIcon, XIcon } from "lucide-react";
+import { useId, useMemo, useRef, useState } from "react";
+import { Badge, BadgeButton } from "@/components/ui/badge";
+import { Button, ButtonArrow } from "@/components/ui/button";
+import {
+  Command,
+  CommandCheck,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export function TagInput({
   value,
   onChange,
   suggestions = [],
   placeholder = "Adicione etiquetas",
+  searchPlaceholder = "Buscar etiqueta...",
+  emptyMessage = "Nenhuma etiqueta encontrada.",
+  createLabel = "Criar",
   label,
   id,
 }: {
@@ -17,112 +30,176 @@ export function TagInput({
   onChange: (value: string[]) => void;
   suggestions?: string[];
   placeholder?: string;
+  searchPlaceholder?: string;
+  emptyMessage?: string;
+  createLabel?: string;
   label?: string;
   id?: string;
 }) {
   const generatedId = useId();
   const fieldId = id ?? generatedId;
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
 
   const options = useMemo(() => {
     const seen = new Set<string>();
     const result: string[] = [];
+
     for (const tag of [...suggestions, ...value]) {
-      const key = tag.toLowerCase();
-      if (tag && !seen.has(key)) {
-        seen.add(key);
-        result.push(tag);
-      }
+      const normalized = tag.trim().replace(/\s+/g, " ");
+      const key = normalized.toLocaleLowerCase("pt-BR");
+      if (!normalized || seen.has(key)) continue;
+      seen.add(key);
+      result.push(normalized);
     }
+
     return result;
   }, [suggestions, value]);
 
-  const trimmedQuery = query.trim();
+  const trimmedQuery = query.trim().replace(/\s+/g, " ");
   const canCreate =
     trimmedQuery.length > 0 &&
-    !options.some((option) => option.toLowerCase() === trimmedQuery.toLowerCase());
-  const items = canCreate ? [trimmedQuery, ...options] : options;
-  console.log("[TagInput] render value=", JSON.stringify(value), "items=", JSON.stringify(items));
+    !options.some(
+      (option) => option.toLocaleLowerCase("pt-BR") === trimmedQuery.toLocaleLowerCase("pt-BR"),
+    );
+  const items: Array<{ value: string; creatable?: string }> = [
+    ...options.map((option) => ({ value: option })),
+    ...(canCreate ? [{ value: `${createLabel} "${trimmedQuery}"`, creatable: trimmedQuery }] : []),
+  ];
+
+  function toggleSelection(nextValue: string) {
+    const existingValue = value.find(
+      (tag) => tag.toLocaleLowerCase("pt-BR") === nextValue.toLocaleLowerCase("pt-BR"),
+    );
+
+    onChange(existingValue ? value.filter((tag) => tag !== existingValue) : [...value, nextValue]);
+    setQuery("");
+  }
+
+  function createSelection(nextValue: string) {
+    const existingValue = value.find(
+      (tag) => tag.toLocaleLowerCase("pt-BR") === nextValue.toLocaleLowerCase("pt-BR"),
+    );
+
+    if (existingValue) {
+      if (!value.includes(existingValue)) onChange([...value, existingValue]);
+      setQuery("");
+      return;
+    }
+
+    onChange([...value, nextValue]);
+    setQuery("");
+  }
+
+  function removeSelection(removedValue: string) {
+    onChange(value.filter((tag) => tag !== removedValue));
+  }
+
+  function handleOpenChange(nextOpen: boolean) {
+    if (nextOpen) {
+      setPortalContainer(
+        rootRef.current?.closest<HTMLElement>('[data-slot="drawer-content"]') ?? null,
+      );
+    }
+    setOpen(nextOpen);
+  }
 
   return (
-    <div className="space-y-2 text-sm font-medium">
+    <div ref={rootRef} className="space-y-2 text-sm font-medium">
       {label ? (
         <label htmlFor={fieldId} className="block">
           {label}
         </label>
       ) : null}
-      <Combobox.Root
-        multiple
-        items={items}
-        value={value}
-        onValueChange={(next) => {
-          console.log("[TagInput] onValueChange", next);
-          onChange(next);
-          setQuery("");
-        }}
-        inputValue={query}
-        onInputValueChange={setQuery}
-      >
-        <Combobox.Chips
-          className={cn(
-            "flex min-h-11 w-full flex-wrap items-center gap-1.5 rounded-2xl border border-border bg-background px-2 py-1.5",
-            "transition focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20",
-          )}
-        >
-          {value.map((tag) => (
-            <Combobox.Chip
-              key={tag}
-              className="flex items-center gap-1 rounded-xl bg-primary/10 py-1 pr-1 pl-2.5 text-xs font-medium text-foreground"
-            >
-              {tag}
-              <Combobox.ChipRemove
-                aria-label={`Remover ${tag}`}
-                className="grid size-4 place-items-center rounded-md text-muted-foreground transition hover:bg-primary/20 hover:text-foreground"
-              >
-                <Cancel01Icon className="size-3" />
-              </Combobox.ChipRemove>
-            </Combobox.Chip>
-          ))}
-          <Combobox.Input
-            id={fieldId}
-            placeholder={value.length === 0 ? placeholder : ""}
-            className="h-7 min-w-24 flex-1 bg-transparent px-1 text-sm font-normal text-foreground outline-none placeholder:text-muted-foreground"
-          />
-        </Combobox.Chips>
 
-        <Combobox.Portal>
-          <Combobox.Positioner sideOffset={6} className="isolate z-50 outline-none">
-            <Combobox.Popup className="max-h-64 w-[var(--anchor-width)] origin-[var(--transform-origin)] overflow-y-auto rounded-2xl bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95">
-              <Combobox.Empty className="px-3 py-2 text-sm text-muted-foreground">
-                Digite para criar uma etiqueta.
-              </Combobox.Empty>
-              <Combobox.List>
-                {(item: string) => {
-                  const isCreate = canCreate && item.toLowerCase() === trimmedQuery.toLowerCase();
-                  return (
-                    <Combobox.Item
-                      key={item}
-                      value={item}
-                      className="relative flex cursor-default items-center gap-2 rounded-xl py-2 pr-8 pl-3 text-sm outline-none select-none data-highlighted:bg-accent data-highlighted:text-accent-foreground"
-                    >
-                      {isCreate ? (
-                        <span>
-                          Criar <span className="font-medium">“{item}”</span>
-                        </span>
-                      ) : (
-                        <span>{item}</span>
-                      )}
-                      <Combobox.ItemIndicator className="absolute right-2 flex size-4 items-center justify-center">
-                        <Tick02Icon className="size-4" />
-                      </Combobox.ItemIndicator>
-                    </Combobox.Item>
+      <Popover open={open} onOpenChange={handleOpenChange}>
+        <PopoverTrigger
+          render={
+            <Button
+              id={fieldId}
+              type="button"
+              variant="outline"
+              role="combobox"
+              aria-expanded={open}
+              autoHeight
+              mode="input"
+              placeholder={value.length === 0}
+              className="relative min-h-11 w-full p-1 pr-9"
+            >
+              <div className="flex flex-wrap items-center gap-1.5 pr-2.5">
+                {value.length > 0 ? (
+                  value.map((tag) => (
+                    <Badge key={tag} variant="outline" size="md" className="max-w-full">
+                      <span className="truncate">{tag}</span>
+                      <BadgeButton
+                        aria-label={`Remover ${tag}`}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          removeSelection(tag);
+                        }}
+                      >
+                        <XIcon />
+                      </BadgeButton>
+                    </Badge>
+                  ))
+                ) : (
+                  <span className="px-2.5 py-1.5 text-muted-foreground">{placeholder}</span>
+                )}
+              </div>
+              <ButtonArrow className="absolute top-3 right-3" />
+            </Button>
+          }
+        />
+        <PopoverContent
+          className="w-(--anchor-width) p-0"
+          align="start"
+          container={portalContainer ?? undefined}
+        >
+          <Command>
+            <CommandInput placeholder={searchPlaceholder} value={query} onValueChange={setQuery} />
+            <CommandList>
+              <CommandEmpty>{emptyMessage}</CommandEmpty>
+              <CommandGroup>
+                {items.map((item) => {
+                  const selected = value.some(
+                    (tag) =>
+                      tag.toLocaleLowerCase("pt-BR") === item.value.toLocaleLowerCase("pt-BR"),
                   );
-                }}
-              </Combobox.List>
-            </Combobox.Popup>
-          </Combobox.Positioner>
-        </Combobox.Portal>
-      </Combobox.Root>
+
+                  if (item.creatable) {
+                    return (
+                      <CommandItem
+                        key={`create:${item.creatable.toLocaleLowerCase("pt-BR")}`}
+                        value={item.value}
+                        onSelect={() => createSelection(item.creatable ?? "")}
+                      >
+                        <PlusIcon className="size-3 text-muted-foreground" />
+                        <span className="truncate">
+                          {createLabel} <span className="font-medium">“{item.creatable}”</span>
+                        </span>
+                      </CommandItem>
+                    );
+                  }
+
+                  return (
+                    <CommandItem
+                      key={item.value}
+                      value={item.value}
+                      onSelect={() => toggleSelection(item.value)}
+                    >
+                      <span className="truncate">{item.value}</span>
+                      {selected ? <CommandCheck /> : null}
+                    </CommandItem>
+                  );
+                })}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }
