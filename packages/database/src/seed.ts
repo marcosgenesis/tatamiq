@@ -219,7 +219,7 @@ const beltData = [
     slug: "adult-black",
     name: "Preta",
     position: 4,
-    maxDegrees: 6,
+    maxDegrees: 9,
     minMonthsDegree: 36,
     minAttDegree: 100,
     minMonthsBelt: 0,

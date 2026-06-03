@@ -1,8 +1,9 @@
-import { Body, Controller, Get, HttpCode, Inject, Param, Patch, Post } from "@nestjs/common";
+import { Controller, Get, HttpCode, Inject, Param, Patch, Post } from "@nestjs/common";
 import { ApiOkResponse, ApiTags } from "@nestjs/swagger";
 import { OrgRoles } from "@thallesp/nestjs-better-auth";
 import { AcademyId } from "../academy-request";
-import { BeltDto, ListBeltsResponseDto, type UpdateBeltDto } from "./belts.dto";
+import { ZodBody } from "../zod-body.decorator";
+import { BeltDto, ListBeltsResponseDto, UpdateBeltDto } from "./belts.dto";
 import { BeltsService } from "./belts.service";
 
 @ApiTags("belts")
@@ -21,7 +22,7 @@ export class BeltsController {
   @ApiOkResponse({ type: BeltDto })
   update(
     @Param("id") id: string,
-    @Body() body: UpdateBeltDto,
+    @ZodBody(UpdateBeltDto) body: UpdateBeltDto,
     @AcademyId() academyId: string,
   ): Promise<BeltDto> {
     return this.beltsService.update(academyId, id, body);

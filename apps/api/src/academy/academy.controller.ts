@@ -11,6 +11,7 @@ import {
 import { ApiBody, ApiOkResponse, ApiTags } from "@nestjs/swagger";
 import { OrgRoles } from "@thallesp/nestjs-better-auth";
 import { AcademyId } from "../academy-request";
+import { ZodBody } from "../zod-body.decorator";
 import { AcademyLogoUploadResponseDto, AcademyProfileDto, UpdateAcademyDto } from "./academy.dto";
 import { AcademyService } from "./academy.service";
 
@@ -31,7 +32,7 @@ export class AcademyController {
   @ApiOkResponse({ type: AcademyProfileDto })
   update(
     @AcademyId() academyId: string,
-    @Body() body: UpdateAcademyDto,
+    @ZodBody(UpdateAcademyDto) body: UpdateAcademyDto,
   ): Promise<AcademyProfileDto> {
     return this.academyService.update(academyId, body);
   }

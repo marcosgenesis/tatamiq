@@ -6,7 +6,7 @@ import {
   type PaginationState,
   useReactTable,
 } from "@tanstack/react-table";
-import { Building02Icon, PlusSignIcon, UserMultiple02Icon } from "hugeicons-react";
+import { PlusSignIcon } from "hugeicons-react";
 import { type Dispatch, type SetStateAction, useMemo, useState } from "react";
 import { DataGrid, DataGridContainer } from "@/components/reui/data-grid/data-grid";
 import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination";
@@ -40,7 +40,7 @@ import { PlatformLoading, PlatformShell } from "./platform-shell";
 export function PlatformPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [academyQuery, setAcademyQuery] = useState("");
+  const academyQuery = "";
   const [academyPagination, setAcademyPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
@@ -177,7 +177,7 @@ export function PlatformPage() {
           />
         </div>
 
-        <Card>
+        <Card className="shadow-none">
           <CardHeader>
             <CardTitle>Atividade recente</CardTitle>
           </CardHeader>
@@ -197,38 +197,6 @@ export function PlatformPage() {
         </Card>
       </section>
     </PlatformShell>
-  );
-}
-
-function MetricCard({
-  label,
-  value,
-  to,
-}: {
-  label: string;
-  value: number | undefined;
-  to: "/platform" | "/platform/users" | "/platform/administrators";
-}) {
-  return (
-    <Link to={to} className="group block rounded-[calc(var(--radius)+0.55rem)] outline-none">
-      <Card className="transition-colors group-hover:border-primary/30 group-hover:bg-muted/40 group-focus-visible:ring-3 group-focus-visible:ring-ring/50">
-        <CardContent className="flex items-center gap-3 p-5">
-          <div className="rounded-xl bg-primary/10 p-3 text-primary transition-colors group-hover:bg-primary/15">
-            {label === "Academias" ? (
-              <Building02Icon className="size-5" />
-            ) : (
-              <UserMultiple02Icon className="size-5" />
-            )}
-          </div>
-          <div>
-            <p className="text-muted-foreground text-sm transition-colors group-hover:text-foreground">
-              {label}
-            </p>
-            <p className="font-semibold text-2xl tabular-nums">{value ?? "—"}</p>
-          </div>
-        </CardContent>
-      </Card>
-    </Link>
   );
 }
 
@@ -312,7 +280,7 @@ function AcademiesDataGrid({
   });
 
   return (
-    <DataGridContainer>
+    <DataGridContainer className="bg-background">
       <DataGrid
         table={table}
         recordCount={rowCount}

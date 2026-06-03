@@ -1,11 +1,12 @@
-import { Body, Controller, Get, Inject, Param, Post, Query } from "@nestjs/common";
+import { Controller, Get, Inject, Param, Post, Query } from "@nestjs/common";
 import { ApiOkResponse, ApiQuery, ApiTags } from "@nestjs/swagger";
 import type { EligibilityType } from "@tatamiq/contracts";
 import { OrgRoles } from "@thallesp/nestjs-better-auth";
 import { AcademyId, ActorId } from "../academy-request";
+import { ZodBody } from "../zod-body.decorator";
 import {
-  type CreatePromotionDto,
-  type DismissEligibilityDto,
+  CreatePromotionDto,
+  DismissEligibilityDto,
   GraduationSummaryResponseDto,
   ListEligibleStudentsResponseDto,
   ListPromotionsResponseDto,
@@ -23,7 +24,7 @@ export class GraduationController {
   @ApiOkResponse({ type: PromotionDto })
   createPromotion(
     @Param("id") studentId: string,
-    @Body() body: CreatePromotionDto,
+    @ZodBody(CreatePromotionDto) body: CreatePromotionDto,
     @AcademyId() academyId: string,
     @ActorId() actorId: string,
   ): Promise<PromotionDto> {
@@ -58,7 +59,7 @@ export class GraduationController {
   @Post("students/:id/dismiss-eligibility")
   dismissEligibility(
     @Param("id") studentId: string,
-    @Body() body: DismissEligibilityDto,
+    @ZodBody(DismissEligibilityDto) body: DismissEligibilityDto,
     @AcademyId() academyId: string,
   ): Promise<void> {
     return this.graduationService.dismissEligibility(academyId, studentId, body);

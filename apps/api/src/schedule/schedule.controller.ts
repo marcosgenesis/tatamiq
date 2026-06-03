@@ -1,17 +1,8 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  HttpCode,
-  Inject,
-  Param,
-  Post,
-  Query,
-} from "@nestjs/common";
+import { Controller, Delete, Get, HttpCode, Inject, Param, Post, Query } from "@nestjs/common";
 import { ApiBody, ApiOkResponse, ApiParam, ApiQuery, ApiTags } from "@nestjs/swagger";
 import { OrgRoles } from "@thallesp/nestjs-better-auth";
 import { AcademyId, ActorId } from "../academy-request";
+import { ZodBody } from "../zod-body.decorator";
 import {
   CreateAdHocClassDto,
   CreateRecurringCancellationDto,
@@ -50,7 +41,7 @@ export class ScheduleController {
   createAdHoc(
     @AcademyId() academyId: string,
     @ActorId() actorId: string,
-    @Body() body: CreateAdHocClassDto,
+    @ZodBody(CreateAdHocClassDto) body: CreateAdHocClassDto,
   ): Promise<ScheduleOccurrenceDto> {
     return this.scheduleService.createAdHoc(academyId, actorId, body);
   }
@@ -92,7 +83,7 @@ export class ScheduleController {
   cancelRecurring(
     @AcademyId() academyId: string,
     @ActorId() actorId: string,
-    @Body() body: CreateRecurringCancellationDto,
+    @ZodBody(CreateRecurringCancellationDto) body: CreateRecurringCancellationDto,
   ): Promise<ScheduleOccurrenceDto> {
     return this.scheduleService.cancelRecurring(academyId, actorId, body);
   }

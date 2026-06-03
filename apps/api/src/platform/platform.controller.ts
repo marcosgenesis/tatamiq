@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  Body,
   Controller,
   Get,
   Inject,
@@ -11,6 +10,7 @@ import {
 } from "@nestjs/common";
 import { ApiBody, ApiOkResponse, ApiParam, ApiQuery, ApiTags } from "@nestjs/swagger";
 import { AllowAnonymous, Session } from "@thallesp/nestjs-better-auth";
+import { ZodBody } from "../zod-body.decorator";
 
 type PlatformRequest = { ip?: string; headers: Record<string, string | string[] | undefined> };
 
@@ -88,7 +88,7 @@ export class PlatformController {
   @ApiOkResponse({ type: CompleteReservedFirstAccessResponseDto })
   async completeFirstAccess(
     @Param("token") token: string,
-    @Body() body: CompleteReservedFirstAccessBodyDto,
+    @ZodBody(CompleteReservedFirstAccessBodyDto) body: CompleteReservedFirstAccessBodyDto,
   ) {
     if (!body.password || body.password.length < 8) {
       throw new BadRequestException("Senha deve ter no mínimo 8 caracteres.");
@@ -136,7 +136,7 @@ export class PlatformController {
   @ApiOkResponse({ type: ProvisionAcademyResultDto })
   async provisionAcademy(
     @Session() session: PlatformSession,
-    @Body() body: ProvisionAcademyBodyDto,
+    @ZodBody(ProvisionAcademyBodyDto) body: ProvisionAcademyBodyDto,
   ) {
     return this.auditedAction.run(
       session,
@@ -161,7 +161,7 @@ export class PlatformController {
   async transferAcademy(
     @Session() session: PlatformSession,
     @Param("id") id: string,
-    @Body() body: TransferAcademyBodyDto,
+    @ZodBody(TransferAcademyBodyDto) body: TransferAcademyBodyDto,
   ) {
     return this.auditedAction.run(
       session,
@@ -228,7 +228,7 @@ export class PlatformController {
   @ApiOkResponse({ type: AddPlatformAdministratorResultDto })
   async addAdministrator(
     @Session() session: PlatformSession,
-    @Body() body: AddPlatformAdministratorBodyDto,
+    @ZodBody(AddPlatformAdministratorBodyDto) body: AddPlatformAdministratorBodyDto,
   ) {
     return this.auditedAction.run(
       session,
@@ -258,7 +258,7 @@ export class PlatformController {
   @ApiOkResponse({ type: PlatformSupportSessionDto })
   async startSupport(
     @Session() session: PlatformSession,
-    @Body() body: StartPlatformSupportBodyDto,
+    @ZodBody(StartPlatformSupportBodyDto) body: StartPlatformSupportBodyDto,
     @Req() request: PlatformRequest,
   ) {
     const userAgentHeader = request.headers["user-agent"];
@@ -294,7 +294,7 @@ export class PlatformController {
   @ApiOkResponse({ type: PlatformSupportSessionDto })
   async activateSupport(
     @Session() session: PlatformSession,
-    @Body() body: ActivatePlatformSupportBodyDto,
+    @ZodBody(ActivatePlatformSupportBodyDto) body: ActivatePlatformSupportBodyDto,
   ) {
     if (!session.session.impersonatedBy) throw new BadRequestException("Não há suporte ativo.");
     const adminUserId = session.session.impersonatedBy;
@@ -424,7 +424,7 @@ export class PlatformController {
   async deleteUser(
     @Session() session: PlatformSession,
     @Param("id") id: string,
-    @Body() body: PlatformDeleteUserBodyDto,
+    @ZodBody(PlatformDeleteUserBodyDto) body: PlatformDeleteUserBodyDto,
   ) {
     return this.auditedAction.run(session, () => this.userDeletionService.delete(id, body), {
       action:
@@ -447,7 +447,7 @@ export class PlatformController {
   async banUser(
     @Session() session: PlatformSession,
     @Param("id") id: string,
-    @Body() body: PlatformBanUserBodyDto,
+    @ZodBody(PlatformBanUserBodyDto) body: PlatformBanUserBodyDto,
   ) {
     return this.auditedAction.run(
       session,

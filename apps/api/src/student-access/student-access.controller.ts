@@ -1,7 +1,8 @@
-import { Body, Controller, Get, HttpCode, Inject, Param, Post } from "@nestjs/common";
+import { Controller, Get, HttpCode, Inject, Param, Post } from "@nestjs/common";
 import { ApiBody, ApiOkResponse, ApiParam, ApiTags } from "@nestjs/swagger";
-import { AllowAnonymous, OrgRoles, Session } from "@thallesp/nestjs-better-auth";
+import { AllowAnonymous, OrgRoles } from "@thallesp/nestjs-better-auth";
 import { AcademyId, ActorId } from "../academy-request";
+import { ZodBody } from "../zod-body.decorator";
 import {
   AcceptStudentInviteDto,
   AcceptStudentInviteResponseDto,
@@ -79,7 +80,7 @@ export class StudentAccessController {
   accept(
     @ActorId() actorId: string,
     @Param("token") token: string,
-    @Body() body: AcceptStudentInviteDto,
+    @ZodBody(AcceptStudentInviteDto) body: AcceptStudentInviteDto,
   ): Promise<AcceptStudentInviteResponseDto> {
     return this.studentAccessService.acceptInvite(token, actorId, body);
   }

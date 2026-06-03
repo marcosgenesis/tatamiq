@@ -69,7 +69,7 @@ export const studentSchema = z.object({
   monthlyAmountInCents: z.number().int().nonnegative().nullable(),
   monthlyDueDay: z.number().int().min(1).max(31).nullable(),
   currentBeltId: z.string(),
-  currentDegree: z.number().int().min(0).max(6),
+  currentDegree: z.number().int().min(0).max(9),
   belt: beltSchema.nullable(),
   guardian: studentGuardianSchema.nullable(),
   accessState: studentAccessStateSchema,
@@ -111,7 +111,7 @@ export const createStudentSchema = z.object({
   monthlyAmountInCents: z.number().int().nonnegative().nullable().optional(),
   monthlyDueDay: z.number().int().min(1).max(31).nullable().optional(),
   currentBeltId: z.string(),
-  currentDegree: z.number().int().min(0).max(6),
+  currentDegree: z.number().int().min(0).max(9),
   guardian: guardianInputSchema,
 });
 
@@ -799,7 +799,7 @@ export const promotionSchema = z.object({
 
 export const createPromotionSchema = z.object({
   newBeltId: z.string().min(1),
-  newDegree: z.number().int().min(0).max(6),
+  newDegree: z.number().int().min(0).max(9),
   promotedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   note: z.string().trim().optional().or(z.literal("")),
 });
