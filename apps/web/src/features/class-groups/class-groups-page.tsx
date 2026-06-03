@@ -1,65 +1,22 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ClassGroup } from "@tatamiq/contracts";
-import type { components } from "@tatamiq/contracts/generated";
-import { Delete02Icon, PlusSignIcon } from "hugeicons-react";
-import {
-  type Dispatch,
-  type FormEvent,
-  type InputHTMLAttributes,
-  type SetStateAction,
-  useMemo,
-  useState,
-} from "react";
+import { PlusSignIcon } from "hugeicons-react";
+import { useMemo, useState } from "react";
 import { api } from "../../api";
 import { Badge } from "../../components/reui/badge";
 import { Button } from "../../components/ui/button";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-} from "../../components/ui/drawer";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../components/ui/select";
-import { TagInput } from "../../components/ui/tag-input";
-import { TimeField } from "../../components/ui/time-field";
+import { Drawer, DrawerContent } from "../../components/ui/drawer";
+import { ClassGroupForm, type ClassGroupPayload } from "./class-group-form";
 
 type ClassGroupStatusFilter = "active" | "archived" | "all";
-type ClassGroupPayload = components["schemas"]["UpdateClassGroupDto"];
-type ScheduleFormRow = { id: string; weekday: string; startTime: string };
-type ClassGroupFormState = {
-  name: string;
-  defaultDurationMinutes: string;
-  status: ClassGroup["status"];
-  schedules: ScheduleFormRow[];
-  tags: string[];
-  studentIds: string[];
-};
 
 const weekdays = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
-const emptyForm: ClassGroupFormState = {
-  name: "",
-  defaultDurationMinutes: "60",
-  status: "active",
-  schedules: [{ id: crypto.randomUUID(), weekday: "1", startTime: "19:00" }],
-  tags: [],
-  studentIds: [],
-};
 
 export function ClassGroupsPage() {
   const queryClient = useQueryClient();
-  const [status, setStatus] = useState<ClassGroupStatusFilter>("active");
+  const status: ClassGroupStatusFilter = "active";
   const [editingClassGroup, setEditingClassGroup] = useState<ClassGroup | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [form, setForm] = useState<ClassGroupFormState>(emptyForm);
   const [error, setError] = useState<string | null>(null);
 
   const classGroupsQuery = useQuery({
@@ -126,38 +83,19 @@ export function ClassGroupsPage() {
   });
 
   const classGroups = classGroupsQuery.data?.classGroups ?? [];
-  const summary = classGroupsQuery.data?.summary;
   const tagSuggestions = useMemo(
     () => Array.from(new Set(classGroups.flatMap((classGroup) => classGroup.tags))).sort(),
     [classGroups],
   );
-  const title = useMemo(() => {
-    if (status === "active") return "Turmas ativas";
-    if (status === "archived") return "Turmas arquivadas";
-    return "Todas as turmas";
-  }, [status]);
 
   function openCreateForm() {
     setEditingClassGroup(null);
-    setForm(emptyForm);
     setError(null);
     setIsFormOpen(true);
   }
 
   function openEditForm(classGroup: ClassGroup) {
     setEditingClassGroup(classGroup);
-    setForm({
-      name: classGroup.name,
-      defaultDurationMinutes: String(classGroup.defaultDurationMinutes),
-      status: classGroup.status,
-      schedules: classGroup.schedules.map((schedule) => ({
-        id: schedule.id,
-        weekday: String(schedule.weekday),
-        startTime: schedule.startTime,
-      })),
-      tags: classGroup.tags,
-      studentIds: classGroup.students.map((student) => student.id),
-    });
     setError(null);
     setIsFormOpen(true);
   }
@@ -168,31 +106,8 @@ export function ClassGroupsPage() {
     setError(null);
   }
 
-  function updateSchedule(index: number, field: keyof ScheduleFormRow, value: string) {
-    setForm((current) => ({
-      ...current,
-      schedules: current.schedules.map((schedule, scheduleIndex) =>
-        scheduleIndex === index ? { ...schedule, [field]: value } : schedule,
-      ),
-    }));
-  }
-
-  function submitForm(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  function submitForm(payload: ClassGroupPayload) {
     setError(null);
-
-    const payload: ClassGroupPayload = {
-      name: form.name,
-      defaultDurationMinutes: Number(form.defaultDurationMinutes),
-      schedules: form.schedules.map((schedule) => ({
-        weekday: Number(schedule.weekday),
-        startTime: schedule.startTime,
-      })),
-      tags: form.tags,
-      studentIds: form.studentIds,
-    };
-
-    if (editingClassGroup) payload.status = form.status;
     saveMutation.mutate(payload);
   }
 
@@ -226,14 +141,11 @@ export function ClassGroupsPage() {
           <ClassGroupForm
             editingClassGroup={editingClassGroup}
             error={error}
-            form={form}
             isSaving={saveMutation.isPending}
             students={studentsQuery.data ?? []}
             tagSuggestions={tagSuggestions}
-            setForm={setForm}
             onCancel={closeForm}
             onSubmit={submitForm}
-            updateSchedule={updateSchedule}
           />
         </DrawerContent>
       </Drawer>
@@ -267,252 +179,6 @@ export function ClassGroupsPage() {
         ) : null}
       </div>
     </div>
-  );
-}
-
-function ClassGroupForm(props: {
-  editingClassGroup: ClassGroup | null;
-  error: string | null;
-  form: ClassGroupFormState;
-  isSaving: boolean;
-  students: Array<{ id: string; name: string }>;
-  tagSuggestions: string[];
-  setForm: Dispatch<SetStateAction<ClassGroupFormState>>;
-  onCancel: () => void;
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
-  updateSchedule: (index: number, field: keyof ScheduleFormRow, value: string) => void;
-}) {
-  return (
-    <form className="flex h-full flex-col" onSubmit={props.onSubmit}>
-      <DrawerHeader>
-        <DrawerTitle>{props.editingClassGroup ? "Editar turma" : "Nova turma"}</DrawerTitle>
-        <DrawerDescription>
-          {props.editingClassGroup
-            ? "Atualize os dados da turma."
-            : "Preencha os dados para criar uma nova turma."}
-        </DrawerDescription>
-      </DrawerHeader>
-      <div className="no-scrollbar flex-1 space-y-6 overflow-y-auto px-4">
-        <div className="grid gap-4">
-          <TextField
-            label="Nome"
-            required
-            value={props.form.name}
-            onChange={(value) => props.setForm((current) => ({ ...current, name: value }))}
-          />
-          <TextField
-            label="Duração padrão (min)"
-            required
-            type="number"
-            min="15"
-            max="300"
-            value={props.form.defaultDurationMinutes}
-            onChange={(value) =>
-              props.setForm((current) => ({ ...current, defaultDurationMinutes: value }))
-            }
-          />
-          <TagInput
-            label="Etiquetas"
-            placeholder="No Gi, Iniciante"
-            value={props.form.tags}
-            suggestions={props.tagSuggestions}
-            onChange={(tags) => props.setForm((current) => ({ ...current, tags }))}
-          />
-          {props.editingClassGroup ? (
-            <label className="space-y-2 text-sm font-medium">
-              <span>Status</span>
-              <select
-                value={props.form.status}
-                onChange={(event) =>
-                  props.setForm((current) => ({
-                    ...current,
-                    status: event.target.value as ClassGroup["status"],
-                  }))
-                }
-                className="h-11 w-full rounded-2xl border border-border bg-background px-3 text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-              >
-                <option value="active">Ativa</option>
-                <option value="archived">Arquivada</option>
-              </select>
-            </label>
-          ) : null}
-        </div>
-
-        <div className="rounded-3xl border border-border bg-muted/30 p-4">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h3 className="font-medium">Horários semanais</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Informe pelo menos um dia e horário.
-              </p>
-            </div>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={() =>
-                props.setForm((current) => ({
-                  ...current,
-                  schedules: [
-                    ...current.schedules,
-                    { id: crypto.randomUUID(), weekday: "1", startTime: "19:00" },
-                  ],
-                }))
-              }
-            >
-              Adicionar horário
-            </Button>
-          </div>
-          <div className="mt-4 grid gap-3">
-            {props.form.schedules.map((schedule, index) => (
-              <div
-                key={schedule.id}
-                className="grid grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_2.75rem] items-end gap-2"
-              >
-                <WeekdaySelect
-                  value={schedule.weekday}
-                  onChange={(value) => props.updateSchedule(index, "weekday", value)}
-                />
-                <TimeField
-                  label="Horário"
-                  value={schedule.startTime}
-                  onChange={(value) => props.updateSchedule(index, "startTime", value)}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-lg"
-                  aria-label="Remover horário"
-                  title="Remover horário"
-                  className="size-11 rounded-2xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                  onClick={() =>
-                    props.setForm((current) => ({
-                      ...current,
-                      schedules: current.schedules.filter(
-                        (_, scheduleIndex) => scheduleIndex !== index,
-                      ),
-                    }))
-                  }
-                >
-                  <Delete02Icon className="size-4" aria-hidden />
-                </Button>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="rounded-3xl border border-border bg-muted/30 p-4">
-          <h3 className="font-medium">Alunos vinculados</h3>
-          <div className="mt-4 grid gap-2">
-            {props.students.map((student) => (
-              <label
-                key={student.id}
-                className="flex items-center gap-2 rounded-2xl border border-border bg-background p-3 text-sm"
-              >
-                <input
-                  type="checkbox"
-                  checked={props.form.studentIds.includes(student.id)}
-                  onChange={(event) =>
-                    props.setForm((current) => ({
-                      ...current,
-                      studentIds: event.target.checked
-                        ? [...current.studentIds, student.id]
-                        : current.studentIds.filter((id) => id !== student.id),
-                    }))
-                  }
-                />
-                {student.name}
-              </label>
-            ))}
-            {props.students.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Cadastre alunos ativos antes de vinculá-los.
-              </p>
-            ) : null}
-          </div>
-        </div>
-
-        {props.error ? <p className="text-sm text-destructive">{props.error}</p> : null}
-      </div>
-      <DrawerFooter>
-        <DrawerClose asChild>
-          <Button type="button" variant="secondary">
-            Cancelar
-          </Button>
-        </DrawerClose>
-        <Button type="submit" disabled={props.isSaving}>
-          {props.isSaving ? "Salvando..." : "Salvar turma"}
-        </Button>
-      </DrawerFooter>
-    </form>
-  );
-}
-
-function WeekdaySelect({ value, onChange }: { value: string; onChange: (value: string) => void }) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <div className="min-w-0 space-y-2 text-sm font-medium">
-      <span>Dia</span>
-      <Select
-        modal={false}
-        open={open}
-        value={value}
-        onOpenChange={setOpen}
-        onValueChange={(nextValue) => {
-          if (nextValue) onChange(nextValue);
-        }}
-      >
-        <SelectTrigger
-          className="h-11 w-full rounded-2xl border-border bg-background px-3 text-foreground focus-visible:border-primary focus-visible:ring-primary/20"
-          onPointerDown={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            setOpen((current) => !current);
-          }}
-        >
-          <SelectValue placeholder="Dia">{weekdays[Number(value)] ?? "Dia"}</SelectValue>
-        </SelectTrigger>
-        <SelectContent align="start" className="rounded-2xl">
-          {weekdays.map((weekday, weekdayIndex) => {
-            const weekdayValue = String(weekdayIndex);
-            return (
-              <SelectItem
-                key={weekday}
-                value={weekdayValue}
-                onPointerDown={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  onChange(weekdayValue);
-                  setOpen(false);
-                }}
-              >
-                {weekday}
-              </SelectItem>
-            );
-          })}
-        </SelectContent>
-      </Select>
-    </div>
-  );
-}
-
-function TextField(
-  props: Omit<InputHTMLAttributes<HTMLInputElement>, "onChange"> & {
-    label: string;
-    onChange: (value: string) => void;
-  },
-) {
-  const { label, onChange, ...inputProps } = props;
-  return (
-    <label className="space-y-2 text-sm font-medium">
-      <span>{label}</span>
-      <input
-        {...inputProps}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-11 w-full rounded-2xl border border-border bg-background px-3 text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-      />
-    </label>
   );
 }
 
