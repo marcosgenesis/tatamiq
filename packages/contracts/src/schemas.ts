@@ -383,7 +383,7 @@ export const classGroupScheduleInputSchema = z.object({
 });
 
 export const createClassGroupSchema = z.object({
-  name: z.string().trim().min(1),
+  name: z.string().trim().min(1).max(120),
   defaultDurationMinutes: z.number().int().min(15).max(300),
   schedules: z.array(classGroupScheduleInputSchema).min(1),
   tags: z.array(z.string().trim()).optional().default([]),

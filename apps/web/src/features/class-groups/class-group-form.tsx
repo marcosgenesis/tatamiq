@@ -49,12 +49,16 @@ const timePattern = /^([01]\d|2[0-3]):[0-5]\d$/;
 const weekdays = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
 export const classGroupFormSchema = z.object({
-  name: z.string().trim().min(1, "Informe o nome da turma."),
+  name: z
+    .string()
+    .trim()
+    .min(1, "Informe o nome da turma.")
+    .max(120, "O nome pode ter no máximo 120 caracteres."),
   defaultDurationMinutes: z
     .string()
     .trim()
     .min(1, "Informe a duração padrão.")
-    .refine((value) => Number.isInteger(Number(value)), "Informe a duração em minutos.")
+    .refine((value) => /^\d+$/.test(value), "Informe a duração em minutos.")
     .refine((value) => Number(value) >= 15, "A duração mínima é 15 minutos.")
     .refine((value) => Number(value) <= 300, "A duração máxima é 300 minutos."),
   schedules: z
@@ -162,7 +166,8 @@ export function ClassGroupForm(props: {
     props.onSubmit(toClassGroupPayload(values));
   }
 
-  const scheduleError = form.formState.errors.schedules?.message;
+  const scheduleError =
+    form.formState.errors.schedules?.root?.message ?? form.formState.errors.schedules?.message;
 
   return (
     <form id={formId} className="flex h-full flex-col" onSubmit={form.handleSubmit(submitForm)}>

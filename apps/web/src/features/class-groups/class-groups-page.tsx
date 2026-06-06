@@ -5,6 +5,15 @@ import { useMemo, useState } from "react";
 import { api } from "../../api";
 import { Badge } from "../../components/reui/badge";
 import { Button } from "../../components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../../components/ui/dialog";
 import { Drawer, DrawerContent } from "../../components/ui/drawer";
 import { ClassGroupForm, type ClassGroupPayload } from "./class-group-form";
 
@@ -18,6 +27,7 @@ export function ClassGroupsPage() {
   const [editingClassGroup, setEditingClassGroup] = useState<ClassGroup | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [archivingClassGroup, setArchivingClassGroup] = useState<ClassGroup | null>(null);
 
   const classGroupsQuery = useQuery({
     queryKey: ["class-groups", status],
@@ -132,6 +142,7 @@ export function ClassGroupsPage() {
 
       <Drawer
         direction="right"
+        dismissible={false}
         open={isFormOpen}
         onOpenChange={(open: boolean) => {
           if (!open) closeForm();
@@ -150,6 +161,45 @@ export function ClassGroupsPage() {
         </DrawerContent>
       </Drawer>
 
+      <Dialog
+        open={archivingClassGroup !== null}
+        onOpenChange={(open: boolean) => {
+          if (!open) setArchivingClassGroup(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Arquivar turma</DialogTitle>
+            <DialogDescription>
+              {archivingClassGroup
+                ? `Tem certeza que deseja arquivar "${archivingClassGroup.name}"? Você pode reativá-la depois.`
+                : null}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="secondary">
+                Cancelar
+              </Button>
+            </DialogClose>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={statusMutation.isPending}
+              onClick={() => {
+                if (!archivingClassGroup) return;
+                statusMutation.mutate(
+                  { id: archivingClassGroup.id, action: "archive" },
+                  { onSuccess: () => setArchivingClassGroup(null) },
+                );
+              }}
+            >
+              {statusMutation.isPending ? "Arquivando..." : "Arquivar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div>
         {classGroupsQuery.isLoading ? (
           <p className="text-sm text-muted-foreground">Carregando turmas...</p>
@@ -167,12 +217,13 @@ export function ClassGroupsPage() {
                 key={classGroup.id}
                 classGroup={classGroup}
                 onEdit={() => openEditForm(classGroup)}
-                onToggleStatus={() =>
-                  statusMutation.mutate({
-                    id: classGroup.id,
-                    action: classGroup.status === "active" ? "archive" : "reactivate",
-                  })
-                }
+                onToggleStatus={() => {
+                  if (classGroup.status === "active") {
+                    setArchivingClassGroup(classGroup);
+                    return;
+                  }
+                  statusMutation.mutate({ id: classGroup.id, action: "reactivate" });
+                }}
               />
             ))}
           </div>

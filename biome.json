@@ -17,7 +17,8 @@
       "!packages/contracts/src/generated",
       "!packages/contracts/openapi.json",
       "!packages/database/drizzle",
-      "!**/components/reui"
+      "!**/components/reui",
+      "!**/.agents"
     ]
   },
   "formatter": {
