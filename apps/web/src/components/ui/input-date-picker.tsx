@@ -121,7 +121,7 @@ export function DatePickerInput({ value, onChange, placeholder, disabled }: Date
             <Calendar
               mode="single"
               selected={date}
-              month={month}
+              {...(month ? { month } : {})}
               onMonthChange={setMonth}
               onSelect={(date) => {
                 setDate(date);
