@@ -34,6 +34,7 @@ export function TimeField({
   label,
   placeholder = "HH:mm",
   id,
+  className,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -41,6 +42,7 @@ export function TimeField({
   label?: string;
   placeholder?: string;
   id?: string;
+  className?: string;
 }) {
   const generatedId = useId();
   const fieldId = id ?? generatedId;
@@ -63,6 +65,7 @@ export function TimeField({
         <DateInput
           className={cn(
             "flex h-11 w-full items-center rounded-2xl border border-border bg-background pr-3 pl-9 text-sm font-normal text-foreground outline-none transition focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20",
+            className,
           )}
         >
           {(segment) => (
