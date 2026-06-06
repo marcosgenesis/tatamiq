@@ -2,9 +2,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import type { BeltDto, Student } from "@tatamiq/contracts";
 import type { components } from "@tatamiq/contracts/generated";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { DatePickerInput } from "@/components/ui/input-date-picker";
 import {
   Select,
@@ -59,11 +60,42 @@ function brToIsoDate(value: string): string {
   return `${match[3]}-${match[2]}-${match[1]}`;
 }
 
+function parseBrDate(value: string): Date | null {
+  if (!isValidBrDate(value)) return null;
+  const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!match) return null;
+  return new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
+}
+
+function isFutureBrDate(value: string, today = new Date()): boolean {
+  const date = parseBrDate(value);
+  if (!date) return false;
+  const current = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  return date > current;
+}
+
+function isMinorBirthDate(value: string, today = new Date()): boolean {
+  const birth = parseBrDate(value);
+  if (!birth) return false;
+
+  const current = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  if (birth > current) return false;
+  let age = current.getFullYear() - birth.getFullYear();
+  const hasBirthdayPassedThisYear =
+    current.getMonth() > birth.getMonth() ||
+    (current.getMonth() === birth.getMonth() && current.getDate() >= birth.getDate());
+
+  if (!hasBirthdayPassedThisYear) age -= 1;
+  return age < 18;
+}
+
 function isoToBrDate(value: string): string {
   const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!match) return value;
   return `${match[3]}/${match[2]}/${match[1]}`;
 }
+
+const maxMonthlyAmountInCents = 100_000_000;
 
 const emailField = z
   .string()
@@ -73,30 +105,56 @@ const emailField = z
     "Informe um email válido.",
   );
 
-const studentFormSchema = z.object({
-  name: z.string().trim().min(1, "Informe o nome do aluno."),
-  birthDate: z
-    .string()
-    .trim()
-    .min(1, "Informe a data de nascimento.")
-    .refine(isValidBrDate, "Use uma data válida no formato dd/mm/aaaa."),
-  enrollmentDate: z
-    .string()
-    .trim()
-    .min(1, "Informe a data de matrícula.")
-    .refine(isValidBrDate, "Use uma data válida no formato dd/mm/aaaa."),
-  phone: z.string(),
-  email: emailField,
-  monthlyAmount: z.string(),
-  monthlyDueDay: z.string(),
-  currentBeltId: z.string().min(1, "Selecione a faixa."),
-  currentDegree: z.string().min(1, "Selecione o grau."),
-  status: z.enum(["active", "inactive"]),
-  guardianName: z.string(),
-  guardianPhone: z.string(),
-  guardianEmail: emailField,
-  guardianRelationship: z.string(),
-});
+const studentFormSchema = z
+  .object({
+    name: z.string().trim().min(1, "Informe o nome do aluno."),
+    birthDate: z
+      .string()
+      .trim()
+      .min(1, "Informe a data de nascimento.")
+      .refine(isValidBrDate, "Use uma data válida no formato dd/mm/aaaa.")
+      .refine((value) => !isFutureBrDate(value), "Data de nascimento não pode ser futura."),
+    enrollmentDate: z
+      .string()
+      .trim()
+      .min(1, "Informe a data de matrícula.")
+      .refine(isValidBrDate, "Use uma data válida no formato dd/mm/aaaa.")
+      .refine((value) => !isFutureBrDate(value), "Data de matrícula não pode ser futura."),
+    phone: z.string(),
+    email: emailField,
+    monthlyAmount: z.string().refine((value) => {
+      if (!value) return true;
+      const cents = Number(value);
+      return Number.isSafeInteger(cents) && cents <= maxMonthlyAmountInCents;
+    }, "Valor mensal deve ser menor ou igual a R$ 1.000.000,00."),
+    monthlyDueDay: z.string(),
+    currentBeltId: z.string().min(1, "Selecione a faixa."),
+    currentDegree: z.string().min(1, "Selecione o grau."),
+    status: z.enum(["active", "inactive"]),
+    guardianName: z.string(),
+    guardianPhone: z.string(),
+    guardianEmail: emailField,
+    guardianRelationship: z.string(),
+  })
+  .superRefine((values, ctx) => {
+    if (!isMinorBirthDate(values.birthDate)) return;
+
+    if (!values.guardianName.trim()) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["guardianName"],
+        message: "Informe o nome do responsável.",
+      });
+    }
+
+    if (!values.guardianPhone.trim()) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["guardianPhone"],
+        message: "Informe o telefone do responsável.",
+      });
+    }
+  });
 
 type StudentFormValues = z.infer<typeof studentFormSchema>;
 
@@ -148,6 +206,15 @@ function maxDegreeForBelt(belt: BeltDto | undefined): number {
   return belt?.slug.includes("black") ? 9 : 4;
 }
 
+function apiErrorMessage(error: unknown, fallback: string): string {
+  if (typeof error === "object" && error !== null && "message" in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === "string" && message.trim()) return message;
+  }
+
+  return fallback;
+}
+
 function toStudentPayload(values: StudentFormValues, isEditing: boolean): StudentPayload {
   const guardian =
     values.guardianName.trim() || values.guardianPhone.trim()
@@ -187,8 +254,10 @@ export function StudentForm(props: {
 }) {
   const formId = useId();
   const [error, setError] = useState<string | null>(null);
+  const submitInFlightRef = useRef(false);
   const [beltOpen, setBeltOpen] = useState(false);
   const [gradeOpen, setGradeOpen] = useState(false);
+  const [guardianOpen, setGuardianOpen] = useState(false);
 
   const adultBelts = props.belts.filter((b) => b.path === "adult");
   const childBelts = props.belts.filter((b) => b.path === "child");
@@ -202,6 +271,19 @@ export function StudentForm(props: {
 
   const currentBeltId = form.watch("currentBeltId");
   const currentDegree = form.watch("currentDegree");
+  const birthDate = form.watch("birthDate");
+  const guardianName = form.watch("guardianName");
+  const guardianPhone = form.watch("guardianPhone");
+  const guardianEmail = form.watch("guardianEmail");
+  const guardianRelationship = form.watch("guardianRelationship");
+  const isMinor = isMinorBirthDate(birthDate);
+  const hasGuardianData = Boolean(
+    guardianName.trim() ||
+      guardianPhone.trim() ||
+      guardianEmail.trim() ||
+      guardianRelationship.trim(),
+  );
+  const shouldShowGuardianSection = isMinor || hasGuardianData;
   const selectedBelt = props.belts.find((b) => b.id === currentBeltId);
   const isBlackBelt = selectedBelt?.slug.includes("black") ?? false;
   const maxDegree = maxDegreeForBelt(selectedBelt);
@@ -224,9 +306,21 @@ export function StudentForm(props: {
 
   useEffect(() => {
     if (!props.open) return;
-    form.reset(studentToFormValues(props.student));
+    const values = studentToFormValues(props.student);
+    form.reset(values);
+    submitInFlightRef.current = false;
+    setGuardianOpen(isMinorBirthDate(values.birthDate) || Boolean(props.student?.guardian));
     setError(null);
   }, [props.open, props.student, form]);
+
+  useEffect(() => {
+    if (isMinor) {
+      setGuardianOpen(true);
+      return;
+    }
+
+    if (!hasGuardianData) setGuardianOpen(false);
+  }, [isMinor, hasGuardianData]);
 
   const saveMutation = useMutation({
     mutationFn: async (input: StudentPayload) => {
@@ -235,12 +329,12 @@ export function StudentForm(props: {
           params: { path: { id: props.student.id } },
           body: input,
         });
-        if (error) throw new Error("Não foi possível salvar o aluno.");
+        if (error) throw new Error(apiErrorMessage(error, "Não foi possível salvar o aluno."));
         return data;
       }
 
       const { data, error } = await api.POST("/students", { body: input });
-      if (error) throw new Error("Não foi possível criar o aluno.");
+      if (error) throw new Error(apiErrorMessage(error, "Não foi possível criar o aluno."));
       return data;
     },
     onSuccess: () => {
@@ -248,11 +342,17 @@ export function StudentForm(props: {
       props.onClose();
     },
     onError: (mutationError) => {
+      submitInFlightRef.current = false;
       setError(mutationError instanceof Error ? mutationError.message : "Erro ao salvar aluno.");
+    },
+    onSettled: () => {
+      submitInFlightRef.current = false;
     },
   });
 
   function submitForm(values: StudentFormValues) {
+    if (submitInFlightRef.current) return;
+    submitInFlightRef.current = true;
     setError(null);
     saveMutation.mutate(toStudentPayload(values, Boolean(props.student)));
   }
@@ -563,93 +663,119 @@ export function StudentForm(props: {
               ) : null}
             </FieldGroup>
 
-            <FieldSet className="rounded-3xl border border-border bg-muted/30 p-4">
-              <FieldLegend>Responsável</FieldLegend>
-              <FieldDescription>Obrigatório para aluno menor de idade.</FieldDescription>
-              <FieldGroup className="mt-4 grid grid-cols-2 gap-4">
-                <Controller
-                  name="guardianName"
-                  control={form.control}
-                  render={({ field, fieldState }) => (
-                    <Field className="col-span-2" data-invalid={fieldState.invalid}>
-                      <FieldLabel htmlFor={`${formId}-guardian-name`}>
-                        Nome do responsável
-                      </FieldLabel>
-                      <Input
-                        {...field}
-                        id={`${formId}-guardian-name`}
-                        aria-invalid={fieldState.invalid}
-                        className="h-11 rounded-2xl px-3"
+            {shouldShowGuardianSection ? (
+              <Collapsible
+                open={guardianOpen}
+                onOpenChange={setGuardianOpen}
+                className="group/guardian rounded-3xl border border-border bg-muted/30"
+              >
+                <FieldSet className="border-0 p-0">
+                  <CollapsibleTrigger
+                    className="flex w-full items-start justify-between gap-4 rounded-3xl p-4 text-left transition-colors hover:bg-muted/40"
+                    type="button"
+                  >
+                    <div>
+                      <FieldLegend>Responsável</FieldLegend>
+                      <FieldDescription>
+                        {isMinor
+                          ? "Obrigatório para aluno menor de idade."
+                          : "Dados opcionais já preenchidos para este aluno."}
+                      </FieldDescription>
+                    </div>
+                    <span className="mt-1 rounded-full border border-border px-2.5 py-1 text-xs font-medium text-muted-foreground transition-transform group-data-[state=open]/guardian:rotate-180">
+                      ▼
+                    </span>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="px-4 pb-4">
+                    <FieldGroup className="grid grid-cols-2 gap-4 border-t border-border/60 pt-4">
+                      <Controller
+                        name="guardianName"
+                        control={form.control}
+                        render={({ field, fieldState }) => (
+                          <Field className="col-span-2" data-invalid={fieldState.invalid}>
+                            <FieldLabel htmlFor={`${formId}-guardian-name`}>
+                              Nome do responsável
+                            </FieldLabel>
+                            <Input
+                              {...field}
+                              id={`${formId}-guardian-name`}
+                              aria-invalid={fieldState.invalid}
+                              className="h-11 rounded-2xl px-3"
+                            />
+                            {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+                          </Field>
+                        )}
                       />
-                      {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
-                    </Field>
-                  )}
-                />
 
-                <Controller
-                  name="guardianPhone"
-                  control={form.control}
-                  render={({ field, fieldState }) => (
-                    <Field data-invalid={fieldState.invalid}>
-                      <FieldLabel htmlFor={`${formId}-guardian-phone`}>
-                        Telefone do responsável
-                      </FieldLabel>
-                      <Input
-                        id={`${formId}-guardian-phone`}
-                        name={field.name}
-                        ref={field.ref}
-                        onBlur={field.onBlur}
-                        value={maskPhone(field.value)}
-                        onChange={(event) => field.onChange(event.target.value.replace(/\D/g, ""))}
-                        aria-invalid={fieldState.invalid}
-                        placeholder="(00) 00000-0000"
-                        className="h-11 rounded-2xl px-3"
+                      <Controller
+                        name="guardianPhone"
+                        control={form.control}
+                        render={({ field, fieldState }) => (
+                          <Field data-invalid={fieldState.invalid}>
+                            <FieldLabel htmlFor={`${formId}-guardian-phone`}>
+                              Telefone do responsável
+                            </FieldLabel>
+                            <Input
+                              id={`${formId}-guardian-phone`}
+                              name={field.name}
+                              ref={field.ref}
+                              onBlur={field.onBlur}
+                              value={maskPhone(field.value)}
+                              onChange={(event) =>
+                                field.onChange(event.target.value.replace(/\D/g, ""))
+                              }
+                              aria-invalid={fieldState.invalid}
+                              placeholder="(00) 00000-0000"
+                              className="h-11 rounded-2xl px-3"
+                            />
+                            {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+                          </Field>
+                        )}
                       />
-                      {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
-                    </Field>
-                  )}
-                />
 
-                <Controller
-                  name="guardianEmail"
-                  control={form.control}
-                  render={({ field, fieldState }) => (
-                    <Field data-invalid={fieldState.invalid}>
-                      <FieldLabel htmlFor={`${formId}-guardian-email`}>
-                        Email do responsável
-                      </FieldLabel>
-                      <Input
-                        {...field}
-                        id={`${formId}-guardian-email`}
-                        type="email"
-                        aria-invalid={fieldState.invalid}
-                        className="h-11 rounded-2xl px-3"
+                      <Controller
+                        name="guardianEmail"
+                        control={form.control}
+                        render={({ field, fieldState }) => (
+                          <Field data-invalid={fieldState.invalid}>
+                            <FieldLabel htmlFor={`${formId}-guardian-email`}>
+                              Email do responsável
+                            </FieldLabel>
+                            <Input
+                              {...field}
+                              id={`${formId}-guardian-email`}
+                              type="email"
+                              aria-invalid={fieldState.invalid}
+                              className="h-11 rounded-2xl px-3"
+                            />
+                            {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+                          </Field>
+                        )}
                       />
-                      {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
-                    </Field>
-                  )}
-                />
 
-                <Controller
-                  name="guardianRelationship"
-                  control={form.control}
-                  render={({ field, fieldState }) => (
-                    <Field data-invalid={fieldState.invalid}>
-                      <FieldLabel htmlFor={`${formId}-guardian-relationship`}>
-                        Parentesco
-                      </FieldLabel>
-                      <Input
-                        {...field}
-                        id={`${formId}-guardian-relationship`}
-                        aria-invalid={fieldState.invalid}
-                        className="h-11 rounded-2xl px-3"
+                      <Controller
+                        name="guardianRelationship"
+                        control={form.control}
+                        render={({ field, fieldState }) => (
+                          <Field data-invalid={fieldState.invalid}>
+                            <FieldLabel htmlFor={`${formId}-guardian-relationship`}>
+                              Parentesco
+                            </FieldLabel>
+                            <Input
+                              {...field}
+                              id={`${formId}-guardian-relationship`}
+                              aria-invalid={fieldState.invalid}
+                              className="h-11 rounded-2xl px-3"
+                            />
+                            {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+                          </Field>
+                        )}
                       />
-                      {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
-                    </Field>
-                  )}
-                />
-              </FieldGroup>
-            </FieldSet>
+                    </FieldGroup>
+                  </CollapsibleContent>
+                </FieldSet>
+              </Collapsible>
+            ) : null}
 
             {error ? <FieldError>{error}</FieldError> : null}
           </div>

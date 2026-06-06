@@ -221,7 +221,7 @@ export function currentPlatformSupportQuery() {
     queryFn: async (): Promise<PlatformSupportSession | null> => {
       const { data, error } = await api.GET("/platform/support/current");
       if (error) throw error;
-      return data;
+      return data ?? null;
     },
     retry: false,
     refetchInterval: 60_000,
