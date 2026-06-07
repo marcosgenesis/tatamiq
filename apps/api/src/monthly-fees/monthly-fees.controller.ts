@@ -1,7 +1,8 @@
-import { Body, Controller, Get, HttpCode, Inject, Param, Post, Query } from "@nestjs/common";
+import { Controller, Get, HttpCode, Inject, Param, Post, Query } from "@nestjs/common";
 import { ApiBody, ApiOkResponse, ApiParam, ApiQuery, ApiTags } from "@nestjs/swagger";
 import { OrgRoles } from "@thallesp/nestjs-better-auth";
 import { AcademyId, ActorId } from "../academy-request";
+import { ZodBody } from "../zod-body.decorator";
 import { FeeGenerationService } from "./fee-generation.service";
 import {
   AdjustMonthlyFeeDto,
@@ -58,7 +59,7 @@ export class MonthlyFeesController {
   @ApiOkResponse({ type: MonthlyFeeDetailDto })
   create(
     @AcademyId() academyId: string,
-    @Body() body: CreateMonthlyFeeDto,
+    @ZodBody(CreateMonthlyFeeDto) body: CreateMonthlyFeeDto,
   ): Promise<MonthlyFeeDetailDto> {
     return this.monthlyFeesService.create(academyId, body);
   }
@@ -92,7 +93,7 @@ export class MonthlyFeesController {
     @AcademyId() academyId: string,
     @ActorId() actorId: string,
     @Param("id") id: string,
-    @Body() body: ConfirmReceiptDto,
+    @ZodBody(ConfirmReceiptDto) body: ConfirmReceiptDto,
   ): Promise<MonthlyFeeDetailDto> {
     return this.monthlyFeesService.confirmReceipt(academyId, id, actorId, body);
   }
@@ -106,7 +107,7 @@ export class MonthlyFeesController {
     @AcademyId() academyId: string,
     @ActorId() actorId: string,
     @Param("id") id: string,
-    @Body() body: AdjustMonthlyFeeDto,
+    @ZodBody(AdjustMonthlyFeeDto) body: AdjustMonthlyFeeDto,
   ): Promise<MonthlyFeeDetailDto> {
     return this.monthlyFeesService.adjust(academyId, id, actorId, body);
   }
@@ -120,7 +121,7 @@ export class MonthlyFeesController {
     @AcademyId() academyId: string,
     @ActorId() actorId: string,
     @Param("id") id: string,
-    @Body() body: WaiveMonthlyFeeDto,
+    @ZodBody(WaiveMonthlyFeeDto) body: WaiveMonthlyFeeDto,
   ): Promise<MonthlyFeeDetailDto> {
     return this.monthlyFeesService.waive(academyId, id, actorId, body);
   }
@@ -134,7 +135,7 @@ export class MonthlyFeesController {
     @AcademyId() academyId: string,
     @ActorId() actorId: string,
     @Param("id") id: string,
-    @Body() body: ManualPaymentDto,
+    @ZodBody(ManualPaymentDto) body: ManualPaymentDto,
   ): Promise<MonthlyFeeDetailDto> {
     return this.monthlyFeesService.manualPayment(academyId, id, actorId, body);
   }
@@ -182,7 +183,7 @@ export class MonthlyFeesController {
     @ActorId() actorId: string,
     @Param("id") id: string,
     @Param("receiptId") receiptId: string,
-    @Body() body: RejectReceiptDto,
+    @ZodBody(RejectReceiptDto) body: RejectReceiptDto,
   ): Promise<MonthlyFeeDetailDto> {
     return this.monthlyFeesService.rejectReceipt(academyId, id, receiptId, actorId, body);
   }

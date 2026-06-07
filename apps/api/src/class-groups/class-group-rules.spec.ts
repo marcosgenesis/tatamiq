@@ -20,6 +20,30 @@ describe("class group input rules", () => {
     ).toThrow("Horário da turma precisa estar no formato HH:mm.");
   });
 
+  it("rejects duplicate schedule entries", () => {
+    expect(() =>
+      normalizeClassGroupInput({
+        schedules: [
+          { weekday: 1, startTime: "19:00" },
+          { weekday: 1, startTime: "19:00" },
+        ],
+        tags: [],
+      }),
+    ).toThrow("Remova horários duplicados da turma.");
+  });
+
+  it("allows same time on different weekdays", () => {
+    const normalized = normalizeClassGroupInput({
+      schedules: [
+        { weekday: 1, startTime: "19:00" },
+        { weekday: 2, startTime: "19:00" },
+      ],
+      tags: [],
+    });
+
+    expect(normalized.schedules).toHaveLength(2);
+  });
+
   it("normalizes unique tags", () => {
     const normalized = normalizeClassGroupInput({
       schedules: [{ weekday: 1, startTime: "07:30" }],

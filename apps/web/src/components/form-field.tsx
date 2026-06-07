@@ -1,4 +1,5 @@
 import type { InputHTMLAttributes } from "react";
+import { cn } from "@/lib/utils";
 
 export function Field(
   props: Omit<InputHTMLAttributes<HTMLInputElement>, "onChange"> & {
@@ -6,9 +7,9 @@ export function Field(
     onChange: (value: string) => void;
   },
 ) {
-  const { label, onChange, ...inputProps } = props;
+  const { label, onChange, className, ...inputProps } = props;
   return (
-    <label className="space-y-2 text-sm font-medium">
+    <label className={cn("space-y-2 text-sm font-medium", className)}>
       <span>
         {label}
         {inputProps.required && <span className="text-destructive ml-0.5">*</span>}
@@ -28,9 +29,10 @@ export function SelectField(props: {
   options: Array<{ value: string; label: string }>;
   onChange: (value: string) => void;
   required?: boolean;
+  className?: string;
 }) {
   return (
-    <label className="space-y-2 text-sm font-medium">
+    <label className={cn("space-y-2 text-sm font-medium", props.className)}>
       <span>
         {props.label}
         {props.required && <span className="text-destructive ml-0.5">*</span>}

@@ -21,8 +21,15 @@ import {
   studentNotes,
   students,
 } from "@tatamiq/database";
-import { and, desc, eq, gte, isNull, lt, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNull, lt, sql } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
+import {
+  type AgendaAdHocRow,
+  type AgendaRecurringCancellationRow,
+  type AgendaRecurringSessionRow,
+  type AgendaScheduleRow,
+  projectAgendaDays,
+} from "../schedule/weekly-agenda-projection";
 
 @Injectable()
 export class StudentPortalService {
@@ -32,127 +39,144 @@ export class StudentPortalService {
     const groupLinks = await this.db
       .select({ classGroupId: studentClassGroups.classGroupId })
       .from(studentClassGroups)
-      .where(eq(studentClassGroups.studentId, studentId));
+      .where(
+        and(eq(studentClassGroups.studentId, studentId), isNull(studentClassGroups.activeUntil)),
+      );
 
     const groupIds = groupLinks.map((l) => l.classGroupId);
     if (groupIds.length === 0) return { days: [] };
 
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const today = new Date(`${new Date().toISOString().slice(0, 10)}T00:00:00.000Z`);
+    const todayDate = today.toISOString().slice(0, 10);
     const endDate = new Date(today);
-    endDate.setDate(endDate.getDate() + 7);
+    endDate.setUTCDate(endDate.getUTCDate() + 7);
+    const endDateExclusive = endDate.toISOString().slice(0, 10);
+    const dates = Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(today);
+      date.setUTCDate(date.getUTCDate() + index);
+      return date.toISOString().slice(0, 10);
+    });
 
-    const schedules = await this.db
+    const [scheduleRows, adHocRows, recurringCancellations, recurringSessionRows] =
+      await Promise.all([
+        this.studentAgendaScheduleRows(groupIds),
+        this.studentAgendaAdHocRows(groupIds, todayDate, endDateExclusive),
+        this.studentAgendaRecurringCancellations(groupIds, todayDate, endDateExclusive),
+        this.studentAgendaRecurringSessionRows(groupIds, todayDate, endDateExclusive),
+      ]);
+
+    const days = projectAgendaDays(
+      {
+        range: { weekStart: todayDate, weekEndExclusive: endDateExclusive },
+        scheduleRows,
+        adHocRows,
+        recurringCancellations,
+        recurringSessionRows,
+        tagsByClassGroup: new Map(),
+        studentCountByClassGroup: new Map(),
+        attendanceCountBySession: new Map(),
+      },
+      dates,
+    );
+
+    return {
+      days: days.map((day) => ({
+        date: day.date,
+        weekday: day.weekday,
+        classes: day.occurrences.map((occurrence) => ({
+          id: occurrence.id,
+          classGroupId: occurrence.classGroupId,
+          classGroupName: occurrence.classGroupName,
+          scheduledStartAt: occurrence.scheduledStartAt,
+          durationMinutes: occurrence.durationMinutes,
+          status: occurrence.status === "cancelled" ? "cancelled" : "scheduled",
+          source: occurrence.source,
+        })),
+      })),
+    };
+  }
+
+  private async studentAgendaScheduleRows(groupIds: string[]): Promise<AgendaScheduleRow[]> {
+    return this.db
       .select({
-        schedule: classGroupSchedules,
-        groupName: classGroups.name,
-        groupId: classGroups.id,
-        duration: classGroups.defaultDurationMinutes,
+        scheduleId: classGroupSchedules.id,
+        weekday: classGroupSchedules.weekday,
+        startTime: classGroupSchedules.startTime,
+        classGroupId: classGroups.id,
+        classGroupName: classGroups.name,
+        durationMinutes: classGroups.defaultDurationMinutes,
       })
       .from(classGroupSchedules)
       .innerJoin(classGroups, eq(classGroupSchedules.classGroupId, classGroups.id))
       .where(
-        sql`${classGroupSchedules.classGroupId} IN (${sql.join(
-          groupIds.map((id) => sql`${id}`),
-          sql`, `,
-        )})`,
+        and(inArray(classGroupSchedules.classGroupId, groupIds), eq(classGroups.status, "active")),
       );
+  }
 
-    const cancellations = await this.db
-      .select()
-      .from(classCancellations)
-      .where(
-        and(
-          sql`${classCancellations.classGroupId} IN (${sql.join(
-            groupIds.map((id) => sql`${id}`),
-            sql`, `,
-          )})`,
-          gte(classCancellations.occurrenceDate, today.toISOString().split("T")[0]),
-          lt(classCancellations.occurrenceDate, endDate.toISOString().split("T")[0]),
-        ),
-      );
-
-    const cancelledSet = new Set(
-      cancellations.map((c) => `${c.classGroupId}:${c.classGroupScheduleId}:${c.occurrenceDate}`),
-    );
-
-    const adHocClasses = await this.db
+  private async studentAgendaAdHocRows(
+    groupIds: string[],
+    fromDate: string,
+    toDateExclusive: string,
+  ): Promise<AgendaAdHocRow[]> {
+    return this.db
       .select({
-        session: classSessions,
-        groupName: classGroups.name,
+        id: classSessions.id,
+        classGroupId: classSessions.classGroupId,
+        classGroupName: classGroups.name,
+        scheduledStartAt: classSessions.scheduledStartAt,
+        durationMinutes: classSessions.durationMinutes,
+        status: classSessions.status,
       })
       .from(classSessions)
       .innerJoin(classGroups, eq(classSessions.classGroupId, classGroups.id))
       .where(
         and(
-          sql`${classSessions.classGroupId} IN (${sql.join(
-            groupIds.map((id) => sql`${id}`),
-            sql`, `,
-          )})`,
+          inArray(classSessions.classGroupId, groupIds),
           eq(classSessions.kind, "ad_hoc"),
-          gte(classSessions.scheduledStartAt, today),
-          lt(classSessions.scheduledStartAt, endDate),
+          gte(classSessions.scheduledStartAt, new Date(`${fromDate}T00:00:00.000Z`)),
+          lt(classSessions.scheduledStartAt, new Date(`${toDateExclusive}T00:00:00.000Z`)),
         ),
       );
+  }
 
-    const daysMap = new Map<
-      string,
-      { date: string; weekday: number; classes: StudentScheduleResponse["days"][0]["classes"] }
-    >();
+  private async studentAgendaRecurringCancellations(
+    groupIds: string[],
+    fromDate: string,
+    toDateExclusive: string,
+  ): Promise<AgendaRecurringCancellationRow[]> {
+    return this.db
+      .select()
+      .from(classCancellations)
+      .where(
+        and(
+          inArray(classCancellations.classGroupId, groupIds),
+          gte(classCancellations.occurrenceDate, fromDate),
+          lt(classCancellations.occurrenceDate, toDateExclusive),
+        ),
+      );
+  }
 
-    for (let d = 0; d < 7; d++) {
-      const date = new Date(today);
-      date.setDate(date.getDate() + d);
-      const dateStr = date.toISOString().split("T")[0];
-      daysMap.set(dateStr, {
-        date: dateStr,
-        weekday: date.getDay(),
-        classes: [],
-      });
-    }
-
-    for (const { schedule, groupName, groupId, duration } of schedules) {
-      for (let d = 0; d < 7; d++) {
-        const date = new Date(today);
-        date.setDate(date.getDate() + d);
-        if (date.getDay() !== schedule.weekday) continue;
-
-        const dateStr = date.toISOString().split("T")[0];
-        const cancelKey = `${groupId}:${schedule.id}:${dateStr}`;
-        const isCancelled = cancelledSet.has(cancelKey);
-
-        const [hours, minutes] = schedule.startTime.split(":").map(Number);
-        const startAt = new Date(date);
-        startAt.setHours(hours, minutes, 0, 0);
-
-        daysMap.get(dateStr)?.classes.push({
-          id: `${schedule.id}-${dateStr}`,
-          classGroupId: groupId,
-          classGroupName: groupName,
-          scheduledStartAt: startAt.toISOString(),
-          durationMinutes: duration,
-          status: isCancelled ? "cancelled" : "scheduled",
-          source: "recurring",
-        });
-      }
-    }
-
-    for (const { session, groupName } of adHocClasses) {
-      const dateStr = session.scheduledStartAt.toISOString().split("T")[0];
-      daysMap.get(dateStr)?.classes.push({
-        id: session.id,
-        classGroupId: session.classGroupId,
-        classGroupName: groupName,
-        scheduledStartAt: session.scheduledStartAt.toISOString(),
-        durationMinutes: session.durationMinutes,
-        status: session.status === "cancelled" ? "cancelled" : "scheduled",
-        source: "ad_hoc",
-      });
-    }
-
-    return {
-      days: Array.from(daysMap.values()).filter((d) => d.classes.length > 0 || true),
-    };
+  private async studentAgendaRecurringSessionRows(
+    groupIds: string[],
+    fromDate: string,
+    toDateExclusive: string,
+  ): Promise<AgendaRecurringSessionRow[]> {
+    return this.db
+      .select({
+        id: classSessions.id,
+        classGroupId: classSessions.classGroupId,
+        scheduledStartAt: classSessions.scheduledStartAt,
+        status: classSessions.status,
+      })
+      .from(classSessions)
+      .where(
+        and(
+          inArray(classSessions.classGroupId, groupIds),
+          eq(classSessions.kind, "recurring"),
+          gte(classSessions.scheduledStartAt, new Date(`${fromDate}T00:00:00.000Z`)),
+          lt(classSessions.scheduledStartAt, new Date(`${toDateExclusive}T00:00:00.000Z`)),
+        ),
+      );
   }
 
   async attendanceHistory(studentId: string): Promise<StudentAttendancesResponse> {
@@ -226,7 +250,7 @@ export class StudentPortalService {
     });
   }
 
-  async indicators(studentId: string, userId: string): Promise<StudentIndicatorsResponse> {
+  async indicators(studentId: string, _userId: string): Promise<StudentIndicatorsResponse> {
     const [access] = await this.db
       .select()
       .from(studentAccess)

@@ -1,4 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
+import { createZodDto } from "nestjs-zod";
+import { z } from "zod";
 
 export class PlatformMeUserDto {
   @ApiProperty({ type: String })
@@ -605,21 +607,21 @@ export class AddPlatformAdministratorResultDto {
   firstAccessLink!: string | null;
 }
 
-export class StartPlatformSupportBodyDto {
-  @ApiProperty({ type: String })
-  targetUserId!: string;
+const startPlatformSupportBodySchema = z.object({
+  targetUserId: z.string().min(1),
+  academyId: z.string().min(1).optional(),
+  reason: z.string().min(1).optional(),
+});
 
-  @ApiProperty({ type: String, required: false })
-  academyId?: string;
+const activatePlatformSupportBodySchema = z.object({
+  supportSessionId: z.string().min(1),
+});
 
-  @ApiProperty({ type: String, required: false })
-  reason?: string;
-}
+export class StartPlatformSupportBodyDto extends createZodDto(startPlatformSupportBodySchema) {}
 
-export class ActivatePlatformSupportBodyDto {
-  @ApiProperty({ type: String })
-  supportSessionId!: string;
-}
+export class ActivatePlatformSupportBodyDto extends createZodDto(
+  activatePlatformSupportBodySchema,
+) {}
 
 export class PlatformSupportSessionDto {
   @ApiProperty({ type: String })

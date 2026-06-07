@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import type { ClassGroup, ScheduleOccurrence } from "@tatamiq/contracts";
+import type { ScheduleOccurrence } from "@tatamiq/contracts";
 import type { components } from "@tatamiq/contracts/generated";
 import { Calendar03Icon, Clock01Icon, PlusSignIcon, UserMultiple02Icon } from "hugeicons-react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
@@ -18,29 +18,27 @@ import {
   DrawerTitle,
 } from "../../components/ui/drawer";
 import { formatAttendanceSummary } from "../classes/attendance-summary";
+import { AdHocClassForm, type AdHocFormState } from "./ad-hoc-class-form";
+import {
+  eventColorClasses,
+  FIRST_HOUR,
+  fmtMinutes,
+  GRID_HEIGHT,
+  getEventPosition,
+  HOUR_PX,
+  HOURS,
+  LAST_HOUR,
+  layoutDayEvents,
+  localStartMinutes,
+  pointerYToMinutes,
+  WEEKDAYS_SHORT,
+} from "./schedule-calendar-layout";
 import "./schedule-calendar.css";
-
-/* ── constants ── */
-
-const HOUR_PX = 72;
-const FIRST_HOUR = 6;
-const LAST_HOUR = 23;
-const TOTAL_HOURS = LAST_HOUR - FIRST_HOUR;
-const GRID_HEIGHT = TOTAL_HOURS * HOUR_PX;
-const HOURS = Array.from({ length: TOTAL_HOURS }, (_, i) => FIRST_HOUR + i);
-const WEEKDAYS_SHORT = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
 
 /* ── types ── */
 
 type CreateAdHocPayload = components["schemas"]["CreateAdHocClassDto"];
 type ScheduleDay = { date: string; weekday: number; occurrences: ScheduleOccurrence[] };
-type LayoutedEvent = { occurrence: ScheduleOccurrence; col: number; totalCols: number };
-
-type AdHocFormState = {
-  classGroupId: string;
-  scheduledStartAt: string;
-  durationMinutes: string;
-};
 
 /* ═══════════════ PAGE ═══════════════ */
 
@@ -360,13 +358,16 @@ export function SchedulePage() {
         }}
       >
         <DrawerContent>
-          <AdHocForm
+          <AdHocClassForm
             classGroups={classGroupsQuery.data ?? []}
             error={error}
             form={form}
             isSaving={createAdHocMutation.isPending}
             setForm={setForm}
             onSubmit={submitAdHoc}
+            onUseNow={() =>
+              setForm((current) => ({ ...current, scheduledStartAt: toDatetimeLocal(new Date()) }))
+            }
           />
         </DrawerContent>
       </Drawer>
@@ -405,76 +406,6 @@ export function SchedulePage() {
       </Drawer>
     </div>
   );
-}
-
-/* ── event colours (tailwind classes) ── */
-
-function eventColorClasses(occ: ScheduleOccurrence): string {
-  if (occ.status === "cancelled") return "bg-muted text-muted-foreground opacity-50";
-  if (occ.status === "active") return "bg-emerald-600 text-white";
-  if (occ.status === "ended") return "bg-muted text-muted-foreground opacity-60";
-  return "bg-primary text-primary-foreground";
-}
-
-/* ── event layout ── */
-
-function localStartMinutes(occ: ScheduleOccurrence): number {
-  const d = new Date(occ.scheduledStartAt);
-  return d.getHours() * 60 + d.getMinutes();
-}
-
-function getEventPosition(occ: ScheduleOccurrence) {
-  const m = localStartMinutes(occ);
-  return {
-    top: ((m - FIRST_HOUR * 60) / 60) * HOUR_PX,
-    height: Math.max((occ.durationMinutes / 60) * HOUR_PX, 28),
-  };
-}
-
-function layoutDayEvents(occs: ScheduleOccurrence[]): LayoutedEvent[] {
-  if (occs.length === 0) return [];
-  const sorted = [...occs].sort((a, b) => localStartMinutes(a) - localStartMinutes(b));
-  const colEnds: number[] = [];
-  const result: LayoutedEvent[] = [];
-
-  for (const occ of sorted) {
-    const s = localStartMinutes(occ);
-    const e = s + occ.durationMinutes;
-    let col = colEnds.findIndex((ce) => s >= ce);
-    if (col === -1) {
-      col = colEnds.length;
-      colEnds.push(e);
-    } else {
-      colEnds[col] = e;
-    }
-    result.push({ occurrence: occ, col, totalCols: 0 });
-  }
-
-  for (const item of result) {
-    const s = localStartMinutes(item.occurrence);
-    const e = s + item.occurrence.durationMinutes;
-    let max = item.col;
-    for (const other of result) {
-      const os = localStartMinutes(other.occurrence);
-      const oe = os + other.occurrence.durationMinutes;
-      if (s < oe && e > os && other.col > max) max = other.col;
-    }
-    item.totalCols = max + 1;
-  }
-
-  for (const item of result) {
-    const s = localStartMinutes(item.occurrence);
-    const e = s + item.occurrence.durationMinutes;
-    let groupMax = item.totalCols;
-    for (const other of result) {
-      const os = localStartMinutes(other.occurrence);
-      const oe = os + other.occurrence.durationMinutes;
-      if (s < oe && e > os && other.totalCols > groupMax) groupMax = other.totalCols;
-    }
-    item.totalCols = groupMax;
-  }
-
-  return result;
 }
 
 /* ── detail drawer ── */
@@ -709,86 +640,6 @@ function useDeleteAdHocMutation(onSuccess: () => void) {
   });
 }
 
-/* ── ad-hoc form ── */
-
-function AdHocForm(props: {
-  classGroups: ClassGroup[];
-  error: string | null;
-  form: AdHocFormState;
-  isSaving: boolean;
-  setForm: React.Dispatch<React.SetStateAction<AdHocFormState>>;
-  onSubmit: (e: FormEvent<HTMLFormElement>) => void;
-}) {
-  return (
-    <form className="flex h-full flex-col" onSubmit={props.onSubmit}>
-      <DrawerHeader>
-        <DrawerTitle className="font-heading text-xl">Nova aula avulsa</DrawerTitle>
-        <DrawerDescription>Selecione a turma, data e duração.</DrawerDescription>
-      </DrawerHeader>
-      <div className="no-scrollbar flex-1 space-y-5 overflow-y-auto px-4">
-        <label className="block space-y-2 text-sm font-medium">
-          <span className="text-muted-foreground">Turma</span>
-          <select
-            value={props.form.classGroupId}
-            onChange={(e) => props.setForm((c) => ({ ...c, classGroupId: e.target.value }))}
-            className="h-11 w-full rounded-xl border border-border bg-background px-3 text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-          >
-            {props.classGroups.map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="block space-y-2 text-sm font-medium">
-          <span className="text-muted-foreground">Data e hora</span>
-          <input
-            type="datetime-local"
-            value={props.form.scheduledStartAt}
-            onChange={(e) => props.setForm((c) => ({ ...c, scheduledStartAt: e.target.value }))}
-            className="h-11 w-full rounded-xl border border-border bg-background px-3 text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-          />
-        </label>
-        <label className="block space-y-2 text-sm font-medium">
-          <span className="text-muted-foreground">Duração (min)</span>
-          <input
-            type="number"
-            min="15"
-            max="300"
-            value={props.form.durationMinutes}
-            onChange={(e) => props.setForm((c) => ({ ...c, durationMinutes: e.target.value }))}
-            className="h-11 w-full rounded-xl border border-border bg-background px-3 text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-          />
-        </label>
-        {props.error ? (
-          <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
-            {props.error}
-          </p>
-        ) : null}
-      </div>
-      <DrawerFooter>
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={() =>
-            props.setForm((c) => ({ ...c, scheduledStartAt: toDatetimeLocal(new Date()) }))
-          }
-        >
-          Usar agora
-        </Button>
-        <DrawerClose asChild>
-          <Button type="button" variant="secondary">
-            Cancelar
-          </Button>
-        </DrawerClose>
-        <Button type="submit" size="lg" disabled={props.isSaving || props.classGroups.length === 0}>
-          {props.isSaving ? "Salvando..." : "Salvar aula"}
-        </Button>
-      </DrawerFooter>
-    </form>
-  );
-}
-
 /* ── dashboard cards (exports) ── */
 
 export function TodayScheduleCard() {
@@ -908,21 +759,6 @@ function useNowMinutes() {
     return () => clearInterval(id);
   }, []);
   return m;
-}
-
-function pointerYToMinutes(clientY: number, el: HTMLElement): number {
-  const rect = el.getBoundingClientRect();
-  const y = clientY - rect.top;
-  const raw = FIRST_HOUR * 60 + (y / HOUR_PX) * 60;
-  return snapToGrid(Math.max(FIRST_HOUR * 60, Math.min(LAST_HOUR * 60 - 15, raw)));
-}
-
-function snapToGrid(minutes: number, interval = 15): number {
-  return Math.round(minutes / interval) * interval;
-}
-
-function fmtMinutes(totalMin: number): string {
-  return `${String(Math.floor(totalMin / 60)).padStart(2, "0")}:${String(totalMin % 60).padStart(2, "0")}`;
 }
 
 function getLocalDateStr(d: Date) {

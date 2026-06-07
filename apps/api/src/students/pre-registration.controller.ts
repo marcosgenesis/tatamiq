@@ -1,7 +1,8 @@
-import { Body, Controller, Get, HttpCode, Inject, Param, Post } from "@nestjs/common";
+import { Controller, Get, HttpCode, Inject, Param, Post } from "@nestjs/common";
 import { ApiBody, ApiOkResponse, ApiParam, ApiTags } from "@nestjs/swagger";
 import { AllowAnonymous, OrgRoles } from "@thallesp/nestjs-better-auth";
 import { AcademyId, ActorId } from "../academy-request";
+import { ZodBody } from "../zod-body.decorator";
 import { PreRegistrationService } from "./pre-registration.service";
 import {
   ApprovePreRegistrationRequestDto,
@@ -44,7 +45,7 @@ export class PreRegistrationController {
   @ApiOkResponse({ type: PreRegistrationRequestDto })
   createRequest(
     @Param("token") token: string,
-    @Body() body: CreatePreRegistrationRequestDto,
+    @ZodBody(CreatePreRegistrationRequestDto) body: CreatePreRegistrationRequestDto,
   ): Promise<PreRegistrationRequestDto> {
     return this.preRegistrationService.createRequest(token, body);
   }
@@ -67,7 +68,7 @@ export class PreRegistrationController {
   @ApiOkResponse({ type: CompleteFirstAccessResponseDto })
   completeFirstAccess(
     @Param("token") token: string,
-    @Body() body: CompleteFirstAccessDto,
+    @ZodBody(CompleteFirstAccessDto) body: CompleteFirstAccessDto,
   ): Promise<CompleteFirstAccessResponseDto> {
     return this.preRegistrationService.completeFirstAccess(token, body);
   }
@@ -124,7 +125,7 @@ export class PreRegistrationController {
     @AcademyId() academyId: string,
     @ActorId() actorId: string,
     @Param("id") id: string,
-    @Body() body: RejectPreRegistrationRequestDto,
+    @ZodBody(RejectPreRegistrationRequestDto) body: RejectPreRegistrationRequestDto,
   ): Promise<PreRegistrationRequestDto> {
     return this.preRegistrationService.rejectRequest(academyId, id, actorId, body);
   }
@@ -139,7 +140,7 @@ export class PreRegistrationController {
     @AcademyId() academyId: string,
     @ActorId() actorId: string,
     @Param("id") id: string,
-    @Body() body: ApprovePreRegistrationRequestDto,
+    @ZodBody(ApprovePreRegistrationRequestDto) body: ApprovePreRegistrationRequestDto,
   ): Promise<ApprovePreRegistrationResponseDto> {
     return this.preRegistrationService.approveRequest(academyId, id, actorId, body);
   }

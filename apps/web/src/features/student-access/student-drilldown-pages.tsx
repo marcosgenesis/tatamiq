@@ -2,8 +2,8 @@ import { useNavigate } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import type React from "react";
 import { Button } from "../../components/ui/button";
+import { StudentGraduationScreen } from "../student-portal/screens/student-graduation-screen";
 import { StudentAttendanceSection } from "../student-portal/student-attendance-section";
-import { StudentGraduationSection } from "../student-portal/student-graduation-section";
 
 export function StudentAttendancePage() {
   return (
@@ -15,9 +15,9 @@ export function StudentAttendancePage() {
 
 export function StudentGraduationPage() {
   return (
-    <StudentDrilldownLayout title="Graduação">
-      <StudentGraduationSection />
-    </StudentDrilldownLayout>
+    <main className="mx-auto min-h-screen max-w-screen-sm bg-background text-foreground">
+      <StudentGraduationScreen />
+    </main>
   );
 }
 

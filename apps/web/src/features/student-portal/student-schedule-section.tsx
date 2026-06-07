@@ -1,7 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
+import { Calendar03Icon } from "hugeicons-react";
 import { api } from "../../api";
 import { Badge } from "../../components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { Skeleton } from "../../components/ui/skeleton";
+import { cn } from "../../lib/utils";
+import { StudentEmptyState } from "./components/student-empty-state";
+
+type ScheduledClass = {
+  id: string;
+  classGroupName: string;
+  scheduledStartAt: string;
+  durationMinutes: number;
+  status: string;
+  source: string;
+};
+type Day = { date: string; weekday: string; classes: ScheduledClass[] };
 
 export function StudentScheduleSection() {
   const query = useQuery({
@@ -10,80 +23,137 @@ export function StudentScheduleSection() {
       // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
       const { data, error } = await (api.GET as any)("/student/schedule");
       if (error) throw new Error("Não foi possível carregar a agenda.");
-      return data as {
-        days: Array<{
-          date: string;
-          weekday: string;
-          classes: Array<{
-            id: string;
-            classGroupName: string;
-            scheduledStartAt: string;
-            durationMinutes: number;
-            status: string;
-            source: string;
-          }>;
-        }>;
-      };
+      return data as { days: Day[] };
     },
   });
 
-  if (query.isLoading) {
-    return <p className="text-sm text-muted-foreground">Carregando agenda...</p>;
-  }
-
-  if (query.isError || !query.data) {
-    return <p className="text-sm text-destructive">Erro ao carregar agenda.</p>;
-  }
-
-  const { days } = query.data;
-
-  if (days.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground">Nenhuma aula programada nos próximos 7 dias.</p>
-    );
-  }
+  const days = query.data?.days ?? [];
+  const withClasses = days.filter((d) => d.classes.length > 0);
 
   return (
-    <div className="space-y-4">
-      {days.map((day) => (
-        <Card key={day.date}>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base capitalize">
-              {day.weekday} — {formatDate(day.date)}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {day.classes.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Sem aulas neste dia.</p>
-            ) : (
-              day.classes.map((cls) => (
-                <div
-                  key={cls.id}
-                  className={`flex min-h-16 items-start justify-between gap-3 rounded-2xl border border-border p-4 text-sm ${
-                    cls.status === "cancelled" ? "opacity-60" : ""
-                  }`}
-                >
-                  <div className="min-w-0">
-                    <strong className="break-words">{cls.classGroupName}</strong>
-                    <p className="text-muted-foreground">
-                      {formatTime(cls.scheduledStartAt)} · {cls.durationMinutes} min
-                    </p>
-                  </div>
-                  {cls.status === "cancelled" && <Badge variant="muted">Cancelada</Badge>}
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
+    <div className="space-y-5">
+      <header>
+        <h1 className="text-[1.55rem] font-bold tracking-tight">Agenda</h1>
+        <p className="text-sm font-medium text-muted-foreground">Próximos 7 dias</p>
+      </header>
+
+      {query.isLoading ? (
+        <div className="space-y-3">
+          <Skeleton className="h-16 w-full rounded-2xl" />
+          <Skeleton className="h-20 w-full rounded-2xl" />
+        </div>
+      ) : query.isError ? (
+        <p className="text-sm text-destructive">Erro ao carregar a agenda.</p>
+      ) : days.length > 0 ? (
+        <div className="flex gap-1.5">
+          {days.slice(0, 7).map((day, i) => (
+            <WeekPill key={day.date} day={day} active={i === 0} />
+          ))}
+        </div>
+      ) : null}
+
+      {!query.isLoading && !query.isError && withClasses.length === 0 ? (
+        <StudentEmptyState
+          icon={Calendar03Icon}
+          title="Nenhuma aula por enquanto"
+          description="Quando você entrar em uma turma, as aulas dos próximos 7 dias aparecem aqui."
+        />
+      ) : null}
+
+      {withClasses.map((day, i) => (
+        <section key={day.date} className="space-y-2.5">
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-bold tracking-tight">{dayHeading(day.date, i)}</h2>
+            <span className="text-xs font-medium text-muted-foreground">· {longDay(day.date)}</span>
+          </div>
+          {day.classes.map((cls) => (
+            <ClassRow key={cls.id} cls={cls} />
+          ))}
+        </section>
       ))}
     </div>
   );
 }
 
-function formatDate(value: string): string {
-  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short" }).format(new Date(value));
+function WeekPill({ day, active }: { day: Day; active: boolean }) {
+  const d = new Date(`${day.date.slice(0, 10)}T12:00:00`);
+  return (
+    <div
+      className={cn(
+        "flex flex-1 flex-col items-center gap-1 rounded-xl py-2.5",
+        active ? "bg-primary text-primary-foreground" : "border border-border bg-card",
+      )}
+    >
+      <span
+        className={cn(
+          "text-[0.65rem] font-semibold",
+          active ? "text-primary-foreground/80" : "text-muted-foreground",
+        )}
+      >
+        {SHORT[d.getDay()]}
+      </span>
+      <span className="text-[0.95rem] font-bold">{d.getDate()}</span>
+    </div>
+  );
 }
 
-function formatTime(value: string): string {
-  return new Intl.DateTimeFormat("pt-BR", { timeStyle: "short" }).format(new Date(value));
+function ClassRow({ cls }: { cls: ScheduledClass }) {
+  const cancelled = cls.status === "cancelled";
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-3.5 rounded-2xl border border-border p-3.5",
+        cancelled ? "bg-muted/40" : "bg-card",
+      )}
+    >
+      <div className="w-14 shrink-0">
+        <p
+          className={cn(
+            "text-[0.95rem] font-bold leading-tight",
+            cancelled && "text-muted-foreground",
+          )}
+        >
+          {time(cls.scheduledStartAt)}
+        </p>
+        <p className="text-[0.7rem] font-medium text-muted-foreground">{cls.durationMinutes} min</p>
+      </div>
+      <span className="h-9 w-px bg-border" />
+      <div className="min-w-0 flex-1">
+        <p
+          className={cn(
+            "truncate text-sm font-semibold",
+            cancelled && "text-muted-foreground line-through",
+          )}
+        >
+          {cls.classGroupName}
+        </p>
+      </div>
+      {cancelled ? <Badge variant="destructive-light">Cancelada</Badge> : null}
+    </div>
+  );
+}
+
+const SHORT = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
+
+function time(iso: string): string {
+  return new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit" }).format(
+    new Date(iso),
+  );
+}
+
+function dayHeading(dateIso: string, index: number): string {
+  if (index === 0) return "Hoje";
+  if (index === 1) return "Amanhã";
+  const d = new Date(`${dateIso.slice(0, 10)}T12:00:00`);
+  const wd = new Intl.DateTimeFormat("pt-BR", { weekday: "long" }).format(d);
+  return wd.charAt(0).toUpperCase() + wd.slice(1);
+}
+
+function longDay(dateIso: string): string {
+  const d = new Date(`${dateIso.slice(0, 10)}T12:00:00`);
+  return new Intl.DateTimeFormat("pt-BR", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+  }).format(d);
 }

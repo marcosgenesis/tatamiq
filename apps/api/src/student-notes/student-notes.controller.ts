@@ -1,7 +1,8 @@
-import { Body, Controller, Get, HttpCode, Inject, Param, Patch, Post } from "@nestjs/common";
+import { Controller, Get, HttpCode, Inject, Param, Patch, Post } from "@nestjs/common";
 import { ApiBody, ApiOkResponse, ApiParam, ApiTags } from "@nestjs/swagger";
 import { OrgRoles } from "@thallesp/nestjs-better-auth";
 import { AcademyId, ActorId } from "../academy-request";
+import { ZodBody } from "../zod-body.decorator";
 import {
   CreateStudentNoteDto,
   ListStudentNotesResponseDto,
@@ -37,7 +38,7 @@ export class StudentNotesController {
     @AcademyId() academyId: string,
     @ActorId() actorId: string,
     @Param("id") id: string,
-    @Body() body: CreateStudentNoteDto,
+    @ZodBody(CreateStudentNoteDto) body: CreateStudentNoteDto,
   ): Promise<StudentNoteDto> {
     return this.studentNotesService.create(academyId, id, actorId, body);
   }
@@ -51,7 +52,7 @@ export class StudentNotesController {
     @AcademyId() academyId: string,
     @Param("id") _id: string,
     @Param("noteId") noteId: string,
-    @Body() body: UpdateStudentNoteDto,
+    @ZodBody(UpdateStudentNoteDto) body: UpdateStudentNoteDto,
   ): Promise<StudentNoteDto> {
     return this.studentNotesService.update(academyId, noteId, body);
   }

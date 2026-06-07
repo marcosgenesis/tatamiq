@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { projectWeeklyAgenda, weeklyAgendaRange } from "./weekly-agenda-projection";
+import {
+  projectAgendaDays,
+  projectWeeklyAgenda,
+  weeklyAgendaRange,
+} from "./weekly-agenda-projection";
 
 const baseInput = {
   range: weeklyAgendaRange("2026-05-20"),
@@ -141,5 +145,36 @@ describe("weekly agenda projection", () => {
       attendanceCount: 7,
       tags: ["adulto", "iniciante"],
     });
+  });
+
+  it("projects arbitrary next-seven-day windows with the same occurrence rules", () => {
+    const days = projectAgendaDays(
+      {
+        ...baseInput,
+        recurringCancellations: [
+          {
+            id: "cancel-1",
+            classGroupScheduleId: "sched-wed",
+            occurrenceDate: "2026-05-20",
+            revertedAt: null,
+          },
+        ],
+        adHocRows: [
+          {
+            id: "adhoc-1",
+            classGroupId: "cg-1",
+            classGroupName: "Adulto manhã",
+            scheduledStartAt: new Date("2026-05-21T10:00:00.000Z"),
+            durationMinutes: 60,
+            status: "scheduled",
+          },
+        ],
+      },
+      ["2026-05-20", "2026-05-21", "2026-05-22"],
+    );
+
+    expect(days.map((day) => day.date)).toEqual(["2026-05-20", "2026-05-21", "2026-05-22"]);
+    expect(days[0]?.occurrences[0]).toMatchObject({ source: "recurring", status: "cancelled" });
+    expect(days[1]?.occurrences[0]).toMatchObject({ id: "adhoc-1", source: "ad_hoc" });
   });
 });

@@ -1,4 +1,3 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { PreRegistrationRequest } from "@tatamiq/contracts";
 import {
   Alert01Icon,
@@ -8,144 +7,16 @@ import {
   RefreshIcon,
   Tick01Icon,
 } from "hugeicons-react";
-import { useState } from "react";
-import { toast } from "sonner";
-import { api } from "../../api";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Textarea } from "../../components/ui/textarea";
 import { formatDate } from "../../lib/formatting";
-
-type DuplicateDecision = "link_to_existing" | "create_new" | "reject_as_duplicate";
+import { type DuplicateDecision, usePreRegistrationsWorkflow } from "./pre-registrations-workflow";
 
 export function PreRegistrationsTab() {
-  const queryClient = useQueryClient();
-  const [rejectingId, setRejectingId] = useState<string | null>(null);
-  const [rejectReason, setRejectReason] = useState("");
-  const [approvingId, setApprovingId] = useState<string | null>(null);
-  const [approvalResult, setApprovalResult] = useState<{
-    requestId: string;
-    firstAccessLink: string;
-  } | null>(null);
-
-  const linkQuery = useQuery({
-    queryKey: ["students", "pre-registration-link"],
-    queryFn: async () => {
-      const { data, error } = await api.GET("/students/pre-registration-link");
-      if (error) throw new Error("Não foi possível carregar o link.");
-      return data;
-    },
-  });
-
-  const requestsQuery = useQuery({
-    queryKey: ["students", "pre-registrations"],
-    queryFn: async () => {
-      const { data, error } = await api.GET("/students/pre-registrations");
-      if (error) {
-        const message =
-          typeof error === "object" && error !== null && "message" in error
-            ? String((error as { message: string }).message)
-            : "Não foi possível carregar pré-cadastros.";
-        throw new Error(message);
-      }
-      return data;
-    },
-  });
-
-  const linkActionMutation = useMutation({
-    mutationFn: async (action: "pause" | "reactivate" | "regenerate") => {
-      const path =
-        action === "pause"
-          ? "/students/pre-registration-link/pause"
-          : action === "reactivate"
-            ? "/students/pre-registration-link/reactivate"
-            : "/students/pre-registration-link/regenerate";
-      // biome-ignore lint/suspicious/noExplicitAny: dynamic endpoint path
-      const { error } = await (api.POST as any)(path);
-      if (error) throw new Error("Não foi possível atualizar o link.");
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["students", "pre-registration-link"],
-      });
-    },
-  });
-
-  const rejectMutation = useMutation({
-    mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
-      const { error } = await api.POST("/students/pre-registrations/{id}/reject", {
-        params: { path: { id } },
-        body: { reason },
-      });
-      if (error) throw new Error("Não foi possível rejeitar a solicitação.");
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["students", "pre-registrations"],
-      });
-      setRejectingId(null);
-      setRejectReason("");
-    },
-  });
-
-  const approveMutation = useMutation({
-    mutationFn: async ({
-      id,
-      duplicateDecision,
-    }: {
-      id: string;
-      duplicateDecision?: DuplicateDecision;
-    }) => {
-      const { data, error } = await api.POST("/students/pre-registrations/{id}/approve", {
-        params: { path: { id } },
-        body: duplicateDecision ? { duplicateDecision } : {},
-      });
-      if (error) throw new Error("Não foi possível aprovar a solicitação.");
-      return data;
-    },
-    onSuccess: async (data, variables) => {
-      if (data?.firstAccessLink) {
-        setApprovalResult({
-          requestId: variables.id,
-          firstAccessLink: data.firstAccessLink,
-        });
-      }
-      await queryClient.invalidateQueries({
-        queryKey: ["students", "pre-registrations"],
-      });
-      setApprovingId(null);
-    },
-  });
-
-  const sendEmailMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await api.POST("/students/pre-registrations/{id}/send-first-access-email", {
-        params: { path: { id } },
-      });
-      if (error) throw new Error("Não foi possível enviar o email.");
-    },
-    onSuccess: () => {
-      toast("Email enviado com sucesso");
-    },
-    onError: () => {
-      toast.error("Falha ao enviar email");
-    },
-  });
-
-  const link = linkQuery.data;
-  const requests = requestsQuery.data?.requests ?? [];
-
-  function copyLink() {
-    if (!link) return;
-    navigator.clipboard.writeText(link.url);
-    toast("Link de pré-cadastro copiado", { description: link.url });
-  }
-
-  function copyFirstAccessLink(url: string) {
-    navigator.clipboard.writeText(url);
-    toast("Link de primeiro acesso copiado");
-  }
+  const workflow = usePreRegistrationsWorkflow();
+  const { link, linkQuery, requests, requestsQuery } = workflow;
 
   return (
     <div className="space-y-6">
@@ -168,14 +39,14 @@ export function PreRegistrationsTab() {
                 <Badge variant={link.status === "active" ? "default" : "muted"}>
                   {link.status === "active" ? "Ativo" : "Pausado"}
                 </Badge>
-                <Button type="button" variant="secondary" onClick={copyLink}>
+                <Button type="button" variant="secondary" onClick={workflow.copyLink}>
                   <Copy01Icon className="size-4" /> Copiar
                 </Button>
                 {link.status === "active" ? (
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => linkActionMutation.mutate("pause")}
+                    onClick={() => workflow.submitLinkAction("pause")}
                   >
                     Pausar
                   </Button>
@@ -183,7 +54,7 @@ export function PreRegistrationsTab() {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => linkActionMutation.mutate("reactivate")}
+                    onClick={() => workflow.submitLinkAction("reactivate")}
                   >
                     Reativar
                   </Button>
@@ -191,7 +62,7 @@ export function PreRegistrationsTab() {
                 <Button
                   type="button"
                   variant="ghost"
-                  onClick={() => linkActionMutation.mutate("regenerate")}
+                  onClick={() => workflow.submitLinkAction("regenerate")}
                 >
                   <RefreshIcon className="size-4" /> Regenerar
                 </Button>
@@ -235,36 +106,28 @@ export function PreRegistrationsTab() {
           <RequestCard
             key={request.id}
             request={request}
-            rejecting={rejectingId === request.id}
-            rejectReason={rejectReason}
-            approving={approvingId === request.id}
-            approvalResult={approvalResult?.requestId === request.id ? approvalResult : null}
-            approvePending={approveMutation.isPending}
-            sendEmailPending={sendEmailMutation.isPending}
-            onStartReject={() => {
-              setRejectingId(request.id);
-              setRejectReason("");
-            }}
-            onCancelReject={() => setRejectingId(null)}
-            onRejectReasonChange={setRejectReason}
-            onReject={() =>
-              rejectMutation.mutate({
-                id: request.id,
-                reason: rejectReason,
+            rejecting={workflow.rejectingId === request.id}
+            rejectReason={workflow.rejectReason}
+            approving={workflow.approvingId === request.id}
+            approvalResult={
+              workflow.approvalResult?.requestId === request.id ? workflow.approvalResult : null
+            }
+            approvePending={workflow.approvePending}
+            sendEmailPending={workflow.sendEmailPending}
+            onStartReject={() => workflow.startReject(request.id)}
+            onCancelReject={workflow.cancelReject}
+            onRejectReasonChange={workflow.setRejectReason}
+            onReject={() => workflow.submitReject(request.id)}
+            onApprove={(decision) =>
+              workflow.submitApprove({
+                requestId: request.id,
+                hasDuplicate: !!request.duplicateStudent,
+                duplicateDecision: decision,
               })
             }
-            onApprove={(decision) => {
-              if (request.duplicateStudent && !decision) {
-                setApprovingId(request.id);
-                return;
-              }
-              approveMutation.mutate(
-                decision ? { id: request.id, duplicateDecision: decision } : { id: request.id },
-              );
-            }}
-            onCancelApprove={() => setApprovingId(null)}
-            onCopyFirstAccess={copyFirstAccessLink}
-            onSendEmail={() => sendEmailMutation.mutate(request.id)}
+            onCancelApprove={workflow.cancelApprove}
+            onCopyFirstAccess={workflow.copyFirstAccessLink}
+            onSendEmail={() => workflow.sendFirstAccessEmail(request.id)}
           />
         ))}
       </div>

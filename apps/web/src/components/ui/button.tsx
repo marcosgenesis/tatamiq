@@ -1,5 +1,7 @@
 import { Button as ButtonPrimitive } from "@base-ui/react/button";
 import { cva, type VariantProps } from "class-variance-authority";
+import { ChevronDownIcon } from "lucide-react";
+import type * as React from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -44,15 +46,45 @@ function Button({
   className,
   variant = "default",
   size = "default",
+  autoHeight = false,
+  mode,
+  placeholder = false,
   ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+}: ButtonPrimitive.Props &
+  VariantProps<typeof buttonVariants> & {
+    autoHeight?: boolean;
+    mode?: "input";
+    placeholder?: boolean;
+  }) {
   return (
     <ButtonPrimitive
       data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
+      data-mode={mode}
+      data-placeholder={placeholder}
+      className={cn(
+        buttonVariants({ variant, size }),
+        autoHeight && "h-auto min-h-8 items-start whitespace-normal",
+        mode === "input" &&
+          "justify-start rounded-2xl border-input bg-background text-left font-normal hover:bg-background aria-expanded:bg-background",
+        placeholder && "text-muted-foreground",
+        className,
+      )}
       {...props}
     />
   );
 }
 
-export { Button, buttonVariants };
+function ButtonArrow({ className, ...props }: React.ComponentProps<typeof ChevronDownIcon>) {
+  return (
+    <ChevronDownIcon
+      data-slot="button-arrow"
+      className={cn(
+        "size-4 shrink-0 text-muted-foreground transition-transform group-aria-expanded/button:rotate-180",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+export { Button, ButtonArrow, buttonVariants };

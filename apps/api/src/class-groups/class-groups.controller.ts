@@ -1,7 +1,8 @@
-import { Body, Controller, Get, HttpCode, Inject, Param, Patch, Post, Query } from "@nestjs/common";
+import { Controller, Get, HttpCode, Inject, Param, Patch, Post, Query } from "@nestjs/common";
 import { ApiBody, ApiOkResponse, ApiParam, ApiQuery, ApiTags } from "@nestjs/swagger";
 import { OrgRoles } from "@thallesp/nestjs-better-auth";
 import { AcademyId } from "../academy-request";
+import { ZodBody } from "../zod-body.decorator";
 import {
   ClassGroupDto,
   CreateClassGroupDto,
@@ -34,7 +35,7 @@ export class ClassGroupsController {
   @ApiOkResponse({ type: ClassGroupDto })
   create(
     @AcademyId() academyId: string,
-    @Body() body: CreateClassGroupDto,
+    @ZodBody(CreateClassGroupDto) body: CreateClassGroupDto,
   ): Promise<ClassGroupDto> {
     return this.classGroupsService.create(academyId, body);
   }
@@ -53,7 +54,7 @@ export class ClassGroupsController {
   update(
     @AcademyId() academyId: string,
     @Param("id") id: string,
-    @Body() body: UpdateClassGroupDto,
+    @ZodBody(UpdateClassGroupDto) body: UpdateClassGroupDto,
   ): Promise<ClassGroupDto> {
     return this.classGroupsService.update(academyId, id, body);
   }

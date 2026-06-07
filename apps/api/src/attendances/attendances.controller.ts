@@ -1,7 +1,8 @@
-import { Body, Controller, Get, HttpCode, Inject, Param, Post } from "@nestjs/common";
+import { Controller, Get, HttpCode, Inject, Param, Post } from "@nestjs/common";
 import { ApiBody, ApiOkResponse, ApiParam, ApiTags } from "@nestjs/swagger";
 import { OrgRoles } from "@thallesp/nestjs-better-auth";
 import { AcademyId, ActorId } from "../academy-request";
+import { ZodBody } from "../zod-body.decorator";
 import {
   AddManualAttendanceDto,
   AttendanceDto,
@@ -37,7 +38,7 @@ export class AttendancesController {
     @AcademyId() academyId: string,
     @ActorId() actorId: string,
     @Param("classSessionId") classSessionId: string,
-    @Body() body: AddManualAttendanceDto,
+    @ZodBody(AddManualAttendanceDto) body: AddManualAttendanceDto,
   ): Promise<AttendanceDto> {
     return this.attendancesService.addManual(academyId, actorId, classSessionId, body);
   }
@@ -53,7 +54,7 @@ export class AttendancesController {
     @ActorId() actorId: string,
     @Param("classSessionId") classSessionId: string,
     @Param("attendanceId") attendanceId: string,
-    @Body() body: InvalidateAttendanceDto,
+    @ZodBody(InvalidateAttendanceDto) body: InvalidateAttendanceDto,
   ): Promise<AttendanceDto> {
     return this.attendancesService.invalidate(
       academyId,

@@ -1,7 +1,8 @@
-import { Body, Controller, Get, HttpCode, Inject, Param, Post } from "@nestjs/common";
+import { Controller, Get, HttpCode, Inject, Param, Post } from "@nestjs/common";
 import { ApiBody, ApiOkResponse, ApiParam, ApiTags } from "@nestjs/swagger";
 import { OrgRoles } from "@thallesp/nestjs-better-auth";
 import { AcademyId, ActorId } from "../academy-request";
+import { ZodBody } from "../zod-body.decorator";
 import { ClassSessionDto, QrTokenResponseDto, StartRecurringClassDto } from "./classes.dto";
 import { ClassesService } from "./classes.service";
 
@@ -18,7 +19,7 @@ export class ClassesController {
   startRecurring(
     @AcademyId() academyId: string,
     @ActorId() actorId: string,
-    @Body() body: StartRecurringClassDto,
+    @ZodBody(StartRecurringClassDto) body: StartRecurringClassDto,
   ): Promise<ClassSessionDto> {
     return this.classesService.startRecurring(academyId, actorId, body);
   }

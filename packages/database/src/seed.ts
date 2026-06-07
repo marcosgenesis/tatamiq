@@ -16,6 +16,7 @@ import {
   monthlyFees,
   organization,
   promotions,
+  studentAccess,
   studentClassGroups,
   studentGuardians,
   studentNotes,
@@ -29,6 +30,8 @@ const db = createDatabase();
 
 const email = "dev@tatamiq.local";
 const password = "tatamiq123";
+const adminEmail = "marcosgenesisof@gmail.com";
+const studentEmail = "aluno@tatamiq.local";
 const academyName = "Legado Jiu Jitsu";
 const academySlug = "academia-de-teste-dev";
 
@@ -75,24 +78,24 @@ const [existingUser] = await db
   .where(eq(user.email, email))
   .limit(1);
 
-const userId = existingUser?.id ?? randomUUID();
+const userId = await ensureAuthUser({
+  email,
+  name: "Instrutor Dev",
+  password,
+});
 
-if (!existingUser) {
-  await db.insert(user).values({
-    id: userId,
-    name: "Instrutor Dev",
-    email,
-    emailVerified: true,
-  });
+const adminUserId = await ensureAuthUser({
+  email: adminEmail,
+  name: "Admin Plataforma Dev",
+  password,
+  role: "admin",
+});
 
-  await db.insert(account).values({
-    id: randomUUID(),
-    accountId: userId,
-    providerId: "credential",
-    userId,
-    password: await hashPassword(password),
-  });
-}
+const studentUserId = await ensureAuthUser({
+  email: studentEmail,
+  name: "Aluno Portal Dev",
+  password,
+});
 
 const [existingOrganization] = await db
   .select({ id: organization.id })
@@ -139,8 +142,15 @@ const [existingBelt] = await db
   .limit(1);
 
 if (existingBelt && !forceReseed) {
+  const portalStudent = await ensurePortalStudent(organizationId);
+  await ensureStudentPortalAccess({
+    organizationId,
+    studentId: portalStudent.id,
+    authUserId: studentUserId,
+  });
+
   console.log(`Seed data already exists for ${academyName}, skipping. Use --force to re-seed.`);
-  console.log(`Login: ${email} / ${password}`);
+  printTestCredentials();
   process.exit(0);
 }
 
@@ -219,7 +229,7 @@ const beltData = [
     slug: "adult-black",
     name: "Preta",
     position: 4,
-    maxDegrees: 6,
+    maxDegrees: 9,
     minMonthsDegree: 36,
     minAttDegree: 100,
     minMonthsBelt: 0,
@@ -467,6 +477,19 @@ const studentList = [
     dueDay: 10,
     status: "active" as const,
   },
+  {
+    id: randomUUID(),
+    name: "Aluno Portal Dev",
+    birth: "1999-10-10",
+    enrolled: dateStr(monthsAgo(6)),
+    belt: whiteBelt,
+    degree: 1,
+    phone: "(85) 98888-1099",
+    email: studentEmail,
+    amount: 18000,
+    dueDay: 10,
+    status: "active" as const,
+  },
   // Inactive students
   {
     id: randomUUID(),
@@ -529,9 +552,10 @@ const rafaelStudent = requireArrayItem(studentList, 4, "student");
 const anaBeatrizStudent = requireArrayItem(studentList, 5, "student");
 const felipeStudent = requireArrayItem(studentList, 6, "student");
 const julianaStudent = requireArrayItem(studentList, 7, "student");
-const diegoStudent = requireArrayItem(studentList, 12, "student");
-const miguelStudent = requireArrayItem(studentList, 14, "student");
-const sofiaStudent = requireArrayItem(studentList, 15, "student");
+const portalStudent = requireArrayItem(studentList, 12, "student");
+const diegoStudent = requireArrayItem(studentList, 13, "student");
+const miguelStudent = requireArrayItem(studentList, 15, "student");
+const sofiaStudent = requireArrayItem(studentList, 16, "student");
 
 await db.insert(students).values(
   studentList.map((s) => ({
@@ -552,6 +576,12 @@ await db.insert(students).values(
     updatedAt: now,
   })),
 );
+
+await ensureStudentPortalAccess({
+  organizationId,
+  studentId: portalStudent.id,
+  authUserId: studentUserId,
+});
 
 // --- Guardians (for child students) ---
 
@@ -1086,7 +1116,7 @@ if (todaySchedule && classGroupList.findIndex((g) => g.id === todaySchedule.grou
 }
 
 console.log(`\nSeed completo para "${academyName}"!`);
-console.log(`Login: ${email} / ${password}`);
+printTestCredentials();
 console.log(`\nDados criados:`);
 console.log(
   `  - ${beltData.length + beltChildData.length} faixas (${beltData.length} adulto + ${beltChildData.length} infantil)`,
@@ -1104,6 +1134,168 @@ console.log(`  - ${feeInserts.length} mensalidades`);
 console.log(`  - ${promotionInserts.length} promoções`);
 
 process.exit(0);
+
+async function ensureAuthUser(input: {
+  email: string;
+  name: string;
+  password: string;
+  role?: string | null;
+}): Promise<string> {
+  const normalizedEmail = input.email.trim().toLowerCase();
+  const [existing] = await db
+    .select({ id: user.id, role: user.role })
+    .from(user)
+    .where(eq(user.email, normalizedEmail))
+    .limit(1);
+
+  const authUserId = existing?.id ?? randomUUID();
+  const hashedPassword = await hashPassword(input.password);
+
+  if (!existing) {
+    await db.insert(user).values({
+      id: authUserId,
+      name: input.name,
+      email: normalizedEmail,
+      emailVerified: true,
+      role: input.role ?? null,
+      banned: false,
+      banReason: null,
+      updatedAt: now,
+    });
+  } else {
+    await db
+      .update(user)
+      .set({
+        name: input.name,
+        emailVerified: true,
+        role: input.role === undefined ? existing.role : input.role,
+        banned: false,
+        banReason: null,
+        updatedAt: now,
+      })
+      .where(eq(user.id, authUserId));
+  }
+
+  const [existingAccount] = await db
+    .select({ id: account.id })
+    .from(account)
+    .where(eq(account.userId, authUserId))
+    .limit(1);
+
+  if (existingAccount) {
+    await db
+      .update(account)
+      .set({ password: hashedPassword, updatedAt: now })
+      .where(eq(account.id, existingAccount.id));
+  } else {
+    await db.insert(account).values({
+      id: randomUUID(),
+      accountId: authUserId,
+      providerId: "credential",
+      userId: authUserId,
+      password: hashedPassword,
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  return authUserId;
+}
+
+async function ensurePortalStudent(organizationId: string): Promise<{ id: string }> {
+  const [existingStudent] = await db
+    .select({ id: students.id })
+    .from(students)
+    .where(eq(students.email, studentEmail))
+    .limit(1);
+
+  if (existingStudent) return existingStudent;
+
+  const [fallbackBelt] = await db
+    .select({ id: belts.id })
+    .from(belts)
+    .where(eq(belts.organizationId, organizationId))
+    .limit(1);
+
+  if (!fallbackBelt) {
+    throw new Error("Não foi possível criar Aluno Portal Dev: nenhuma faixa encontrada.");
+  }
+
+  const studentId = randomUUID();
+  await db.insert(students).values({
+    id: studentId,
+    organizationId,
+    name: "Aluno Portal Dev",
+    birthDate: "1999-10-10",
+    enrollmentDate: today,
+    status: "active",
+    inactiveAt: null,
+    phone: "(85) 98888-1099",
+    email: studentEmail,
+    monthlyAmountInCents: 18000,
+    monthlyDueDay: 10,
+    currentBeltId: fallbackBelt.id,
+    currentDegree: 1,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  return { id: studentId };
+}
+
+async function ensureStudentPortalAccess(input: {
+  organizationId: string;
+  studentId: string;
+  authUserId: string;
+}) {
+  const [existingAccess] = await db
+    .select({ id: studentAccess.id, status: studentAccess.status })
+    .from(studentAccess)
+    .where(eq(studentAccess.authUserId, input.authUserId))
+    .limit(1);
+
+  if (existingAccess) {
+    await db
+      .update(studentAccess)
+      .set({
+        organizationId: input.organizationId,
+        studentId: input.studentId,
+        status: "active",
+        revokedAt: null,
+        revokedByUserId: null,
+        lastSeenFeesAt: now,
+        lastSeenNotesAt: now,
+        lastSeenGraduationAt: now,
+        lastSeenScheduleAt: now,
+        updatedAt: now,
+      })
+      .where(eq(studentAccess.id, existingAccess.id));
+    return;
+  }
+
+  await db.insert(studentAccess).values({
+    id: randomUUID(),
+    organizationId: input.organizationId,
+    studentId: input.studentId,
+    authUserId: input.authUserId,
+    status: "active",
+    revokedAt: null,
+    revokedByUserId: null,
+    lastSeenFeesAt: now,
+    lastSeenNotesAt: now,
+    lastSeenGraduationAt: now,
+    lastSeenScheduleAt: now,
+    createdAt: now,
+    updatedAt: now,
+  });
+}
+
+function printTestCredentials() {
+  console.log("\nCredenciais de teste:");
+  console.log(`  Admin plataforma: ${adminEmail} / ${password}`);
+  console.log(`  Instrutor:        ${email} / ${password}`);
+  console.log(`  Aluno:            ${studentEmail} / ${password}`);
+}
 
 function simpleHash(str: string): number {
   let hash = 0;

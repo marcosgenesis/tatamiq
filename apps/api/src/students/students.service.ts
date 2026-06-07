@@ -1,7 +1,7 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { CreateStudentInput, Student, UpdateStudentInput } from "@tatamiq/contracts";
 import { belts, type Database, studentGuardians, students } from "@tatamiq/database";
-import { and, count, eq, inArray } from "drizzle-orm";
+import { and, count, eq, inArray, ne, sql } from "drizzle-orm";
 import { BeltsService, toBeltDto } from "../belts/belts.service";
 import { DATABASE } from "../database/database.module";
 import { StudentAccessService } from "../student-access/student-access.service";
@@ -86,6 +86,7 @@ export class StudentsService {
 
   async create(organizationId: string, input: CreateStudentInput): Promise<Student> {
     validateStudentInput(input);
+    await this.assertUniqueEmail(organizationId, input.email);
 
     const belt = await this.beltsService.findById(organizationId, input.currentBeltId);
     if (!belt) {
@@ -130,6 +131,7 @@ export class StudentsService {
   async update(organizationId: string, id: string, input: UpdateStudentInput): Promise<Student> {
     await this.findStudent(organizationId, id);
     validateStudentInput(input);
+    await this.assertUniqueEmail(organizationId, input.email, id);
 
     const belt = await this.beltsService.findById(organizationId, input.currentBeltId);
     if (!belt) {
@@ -180,6 +182,31 @@ export class StudentsService {
       .where(and(eq(students.id, id), eq(students.organizationId, organizationId)));
 
     return this.get(organizationId, id);
+  }
+
+  private async assertUniqueEmail(
+    organizationId: string,
+    email: string | null | undefined,
+    ignoreStudentId?: string,
+  ) {
+    const normalizedEmail = email?.trim().toLowerCase();
+    if (!normalizedEmail) return;
+
+    const conditions = [
+      eq(students.organizationId, organizationId),
+      sql`lower(${students.email}) = ${normalizedEmail}`,
+    ];
+    if (ignoreStudentId) conditions.push(ne(students.id, ignoreStudentId));
+
+    const [existing] = await this.db
+      .select({ id: students.id })
+      .from(students)
+      .where(and(...conditions))
+      .limit(1);
+
+    if (existing) {
+      throw new BadRequestException("Já existe um aluno com este email.");
+    }
   }
 
   private async findStudent(organizationId: string, id: string): Promise<StudentRow> {

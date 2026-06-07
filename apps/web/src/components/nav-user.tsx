@@ -16,9 +16,18 @@ export function NavUser() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Avatar className="size-8 cursor-pointer" />}>
-        <AvatarImage src={user.image ?? undefined} />
-        <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+      <DropdownMenuTrigger
+        render={
+          <button
+            type="button"
+            className="flex size-8 items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          />
+        }
+      >
+        <Avatar className="size-8 cursor-pointer">
+          <AvatarImage src={user.image ?? undefined} />
+          <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+        </Avatar>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-60">
         <div className="flex items-center gap-3 px-2 py-2">

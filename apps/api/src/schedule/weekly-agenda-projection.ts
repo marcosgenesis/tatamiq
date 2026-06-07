@@ -56,23 +56,29 @@ export type WeeklyAgendaProjectionInput = {
 };
 
 export function projectWeeklyAgenda(input: WeeklyAgendaProjectionInput): WeeklyScheduleResponse {
-  const days = listWeekDates(input.range.weekStart);
+  return {
+    weekStart: input.range.weekStart,
+    days: projectAgendaDays(input, listWeekDates(input.range.weekStart)),
+  };
+}
+
+export function projectAgendaDays(
+  input: WeeklyAgendaProjectionInput,
+  dates: string[],
+): WeeklyScheduleResponse["days"] {
   const recurringSessionMap = mapRecurringSessions(
     input.recurringSessionRows,
     input.attendanceCountBySession,
   );
 
-  return {
-    weekStart: input.range.weekStart,
-    days: days.map((date) => ({
-      date,
-      weekday: weekdayForDate(date),
-      occurrences: [
-        ...expandRecurringOccurrencesForDate(input, date, recurringSessionMap),
-        ...expandAdHocOccurrencesForDate(input, date),
-      ].sort((a, b) => a.startTime.localeCompare(b.startTime)),
-    })),
-  };
+  return dates.map((date) => ({
+    date,
+    weekday: weekdayForDate(date),
+    occurrences: [
+      ...expandRecurringOccurrencesForDate(input, date, recurringSessionMap),
+      ...expandAdHocOccurrencesForDate(input, date),
+    ].sort((a, b) => a.startTime.localeCompare(b.startTime)),
+  }));
 }
 
 export function weeklyAgendaRange(date: string): WeeklyAgendaRange {

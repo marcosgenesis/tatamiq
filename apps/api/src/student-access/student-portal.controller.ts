@@ -1,5 +1,4 @@
 import {
-  Body,
   Controller,
   ForbiddenException,
   Get,
@@ -22,17 +21,18 @@ import {
 } from "../monthly-fees/monthly-fees.dto";
 import { MonthlyFeesService } from "../monthly-fees/monthly-fees.service";
 import { StudentNotesService } from "../student-notes/student-notes.service";
+import { ZodBody } from "../zod-body.decorator";
 import { QrAttendanceService } from "./qr-attendance.service";
 import {
   ConfirmQrAttendanceDto,
   ConfirmQrAttendanceResponseDto,
-  type MarkSeenDto,
+  MarkSeenDto,
   StudentAttendancesResponseDto,
   StudentGraduationResponseDto,
   StudentIndicatorsResponseDto,
   StudentMeResponseDto,
   StudentScheduleResponseDto,
-  type UpdateStudentProfileDto,
+  UpdateStudentProfileDto,
 } from "./student-access.dto";
 import { StudentAccessService } from "./student-access.service";
 import { StudentPortalService } from "./student-portal.service";
@@ -55,7 +55,7 @@ export class StudentPortalController {
   @ApiOkResponse({ type: ConfirmQrAttendanceResponseDto })
   confirmQrAttendance(
     @ActorId() actorId: string,
-    @Body() body: ConfirmQrAttendanceDto,
+    @ZodBody(ConfirmQrAttendanceDto) body: ConfirmQrAttendanceDto,
   ): Promise<ConfirmQrAttendanceResponseDto> {
     return this.qrAttendanceService.confirmQrAttendance(actorId, body);
   }
@@ -101,7 +101,7 @@ export class StudentPortalController {
   async studentConfirmReceipt(
     @ActorId() actorId: string,
     @Param("id") id: string,
-    @Body() body: ConfirmReceiptDto,
+    @ZodBody(ConfirmReceiptDto) body: ConfirmReceiptDto,
   ): Promise<MonthlyFeeDetailDto> {
     const meData = await this.studentAccessService.me(actorId);
     assertStudentCanSubmitReceipts(meData.student.readOnly);
@@ -155,7 +155,7 @@ export class StudentPortalController {
   @Patch("profile")
   async updateStudentProfile(
     @ActorId() actorId: string,
-    @Body() body: UpdateStudentProfileDto,
+    @ZodBody(UpdateStudentProfileDto) body: UpdateStudentProfileDto,
   ): Promise<void> {
     const meData = await this.studentAccessService.me(actorId);
     return this.portalService.updateProfile(meData.student.id, actorId, body);
@@ -177,7 +177,10 @@ export class StudentPortalController {
 
   @Post("indicators/mark-seen")
   @HttpCode(200)
-  async markSeen(@ActorId() actorId: string, @Body() body: MarkSeenDto): Promise<void> {
+  async markSeen(
+    @ActorId() actorId: string,
+    @ZodBody(MarkSeenDto) body: MarkSeenDto,
+  ): Promise<void> {
     const meData = await this.studentAccessService.me(actorId);
     return this.portalService.markSeen(meData.student.id, body);
   }

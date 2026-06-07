@@ -7,14 +7,15 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import type { components } from "@tatamiq/contracts/generated";
+import { ArrowRight01Icon } from "hugeicons-react";
 import { type Dispatch, type SetStateAction, useMemo, useState } from "react";
 import { DataGrid, DataGridContainer } from "@/components/reui/data-grid/data-grid";
 import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination";
 import { DataGridTable } from "@/components/reui/data-grid/data-grid-table";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "../../components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
-import { Input } from "../../components/ui/input";
 import { authClient } from "../../lib/auth-client";
+import { formatDate, getInitials, SearchInput } from "./platform-components";
 import { platformMeQuery, platformUsersQuery } from "./platform-queries";
 import { PlatformLoading, PlatformShell } from "./platform-shell";
 
@@ -26,63 +27,36 @@ export function PlatformUsersPage() {
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
 
   const platform = useQuery(platformMeQuery());
-
   const users = useQuery(platformUsersQuery(query, pagination.pageIndex, pagination.pageSize));
 
-  if (platform.isLoading) {
-    return <PlatformLoading label="Carregando..." />;
-  }
-
-  if (platform.isError) {
-    return <Navigate to="/choose-area" />;
-  }
-
-  const user = platform.data?.user;
-  if (!user) return <Navigate to="/choose-area" />;
+  if (platform.isLoading) return <PlatformLoading label="Carregando usuários..." />;
+  if (platform.isError || !platform.data?.user) return <Navigate to="/choose-area" />;
 
   return (
     <PlatformShell
-      user={user}
+      user={platform.data.user}
       onSignOut={() => authClient.signOut().then(() => navigate({ to: "/sign-in" }))}
+      title="Usuários"
+      description="Contas de toda a plataforma"
     >
-      <div className="flex items-center justify-between">
-        <div>
-          <Link to="/platform" className="text-muted-foreground text-sm hover:text-foreground">
-            ← Voltar para Administração da Plataforma
-          </Link>
-          <h2 className="mt-2 font-semibold text-2xl">Usuários</h2>
-          <p className="text-muted-foreground text-sm">
-            Busque por nome ou email. Clique em um usuário para ver detalhes.
-          </p>
-        </div>
+      <div className="space-y-4">
+        <SearchInput
+          value={query}
+          onChange={(value) => {
+            setQuery(value);
+            setPagination((c) => ({ ...c, pageIndex: 0 }));
+          }}
+          placeholder="Buscar usuário por nome ou e-mail"
+        />
+        <UsersDataGrid
+          users={users.data?.items ?? []}
+          loading={users.isLoading}
+          pagination={pagination}
+          onPaginationChange={setPagination}
+          rowCount={users.data?.pagination.total ?? 0}
+          pageCount={users.data?.pagination.totalPages ?? -1}
+        />
       </div>
-
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <CardTitle>Lista de Usuários</CardTitle>
-            <Input
-              className="sm:max-w-xs"
-              placeholder="Buscar por nome ou email..."
-              value={query}
-              onChange={(event) => {
-                setQuery(event.target.value);
-                setPagination((current) => ({ ...current, pageIndex: 0 }));
-              }}
-            />
-          </div>
-        </CardHeader>
-        <CardContent>
-          <UsersDataGrid
-            users={users.data?.items ?? []}
-            loading={users.isLoading}
-            pagination={pagination}
-            onPaginationChange={setPagination}
-            rowCount={users.data?.pagination.total ?? 0}
-            pageCount={users.data?.pagination.totalPages ?? -1}
-          />
-        </CardContent>
-      </Card>
     </PlatformShell>
   );
 }
@@ -107,30 +81,27 @@ function UsersDataGrid({
       {
         accessorKey: "name",
         header: "Usuário",
-        size: 320,
+        size: 340,
         cell: ({ row }) => (
-          <div>
-            <Link
-              to="/platform/users/$userId"
-              params={{ userId: row.original.id }}
-              className="font-medium hover:underline"
-            >
-              {row.original.name}
-            </Link>
-            <p className="text-muted-foreground text-xs">{row.original.email}</p>
-          </div>
+          <Link
+            to="/platform/users/$userId"
+            params={{ userId: row.original.id }}
+            className="flex items-center gap-3"
+          >
+            <Avatar className="size-9 rounded-xl">
+              <AvatarImage src={row.original.image ?? undefined} />
+              <AvatarFallback className="rounded-xl bg-muted text-xs font-semibold text-foreground/70">
+                {getInitials(row.original.name)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0">
+              <p className="truncate font-semibold text-foreground hover:underline">
+                {row.original.name}
+              </p>
+              <p className="truncate text-muted-foreground text-xs">{row.original.email}</p>
+            </div>
+          </Link>
         ),
-      },
-      {
-        accessorKey: "banned",
-        header: "Status",
-        size: 120,
-        cell: ({ row }) =>
-          row.original.banned ? (
-            <Badge variant="warning">Bloqueado</Badge>
-          ) : (
-            <Badge variant="default">Ativo</Badge>
-          ),
       },
       {
         accessorKey: "role",
@@ -138,16 +109,48 @@ function UsersDataGrid({
         size: 140,
         cell: ({ row }) =>
           row.original.role === "admin" ? (
-            <Badge variant="muted">Admin</Badge>
+            <Badge variant="warning">Operador</Badge>
           ) : (
-            <span className="text-muted-foreground text-sm">Usuário</span>
+            <span className="text-sm text-muted-foreground">Usuário</span>
+          ),
+      },
+      {
+        accessorKey: "banned",
+        header: "Status",
+        size: 120,
+        cell: ({ row }) =>
+          row.original.banned ? (
+            <Badge variant="destructive">Bloqueado</Badge>
+          ) : (
+            <Badge variant="success">Ativo</Badge>
           ),
       },
       {
         accessorKey: "createdAt",
-        header: "Cadastrado em",
-        size: 160,
-        cell: ({ row }) => <span>{formatDate(row.original.createdAt)}</span>,
+        header: "Cadastro",
+        size: 130,
+        cell: ({ row }) => (
+          <span className="text-sm text-muted-foreground">
+            {formatDate(row.original.createdAt)}
+          </span>
+        ),
+      },
+      {
+        id: "actions",
+        header: "",
+        size: 60,
+        cell: ({ row }) => (
+          <div className="flex justify-end">
+            <Link
+              to="/platform/users/$userId"
+              params={{ userId: row.original.id }}
+              className="grid size-8 place-items-center rounded-lg text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
+              aria-label={`Abrir ${row.original.name}`}
+            >
+              <ArrowRight01Icon className="size-4" />
+            </Link>
+          </div>
+        ),
       },
     ],
     [],
@@ -164,7 +167,7 @@ function UsersDataGrid({
   });
 
   return (
-    <DataGridContainer>
+    <DataGridContainer className="rounded-2xl bg-card">
       <DataGrid
         table={table}
         recordCount={rowCount}
@@ -185,8 +188,4 @@ function UsersDataGrid({
       </DataGrid>
     </DataGridContainer>
   );
-}
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short" }).format(new Date(value));
 }
