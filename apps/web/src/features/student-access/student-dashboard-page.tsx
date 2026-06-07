@@ -4,7 +4,10 @@ import { useState } from "react";
 import { api } from "../../api";
 import { Badge } from "../../components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { useIsMobile } from "../../hooks/use-mobile";
+import { browserStorage, createOnboardingState } from "../student-portal/lib/onboarding-state";
 import { StudentHomeScreen } from "../student-portal/screens/student-home-screen";
+import { StudentOnboardingFlow } from "../student-portal/screens/student-onboarding-flow";
 import { StudentAttendanceSection } from "../student-portal/student-attendance-section";
 import { StudentGraduationSection } from "../student-portal/student-graduation-section";
 import {
@@ -43,6 +46,10 @@ const tabs: Array<{ key: Tab; label: string }> = [
 
 export function StudentDashboardPage() {
   const [activeTab, setActiveTab] = useState<Tab>("home");
+  const isMobile = useIsMobile();
+  const [showOnboarding, setShowOnboarding] = useState(() =>
+    createOnboardingState(browserStorage()).shouldShowWelcome(),
+  );
   const indicators = useStudentIndicators();
   const markSeen = useMarkIndicatorSeen();
 
@@ -86,6 +93,19 @@ export function StudentDashboardPage() {
   const hasUpcomingClass = data.upcomingClasses.some(
     (item: { status: string }) => item.status !== "cancelled",
   );
+
+  if (isMobile && showOnboarding && !data.student.readOnly) {
+    const s = data.student as { name: string; phone?: string; email?: string };
+    return (
+      <StudentOnboardingFlow
+        studentName={s.name}
+        studentPhone={s.phone}
+        studentEmail={s.email}
+        onDone={() => setShowOnboarding(false)}
+      />
+    );
+  }
+
   const desktop = (
     <main className="min-h-screen bg-background p-6 text-foreground">
       <div className="mx-auto max-w-5xl space-y-6">
