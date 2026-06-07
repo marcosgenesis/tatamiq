@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { StudentMeResponse, StudentMonthlyFee } from "@tatamiq/contracts";
+import { Camera01Icon, CheckmarkCircle03Icon } from "hugeicons-react";
 import { type FormEvent, useState } from "react";
 import { api } from "../../api";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { Skeleton } from "../../components/ui/skeleton";
 import { Textarea } from "../../components/ui/textarea";
 import { formatCurrency, formatDate, monthNames } from "../../lib/formatting";
 import {
@@ -12,6 +14,8 @@ import {
   studentLastReceiptMessage,
   studentReceiptCta,
 } from "../monthly-fees/receipt-state";
+import { StudentEmptyState } from "./components/student-empty-state";
+import { dueInLabel } from "./lib/student-format";
 
 const ACCEPTED_TYPES = "image/jpeg,image/png,image/webp,image/heic,application/pdf";
 const MAX_SIZE_BYTES = 10 * 1024 * 1024;
@@ -103,35 +107,36 @@ export function StudentMonthlyFeesSection({ me }: { me: StudentMeResponse }) {
     uploadMutation.mutate();
   }
 
+  const fees = feesQuery.data?.fees ?? [];
+
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Pix da Academia</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-          {me.academy.pixCopyPaste || me.academy.pixKey ? (
-            <div className="rounded-2xl bg-muted p-4">
-              {me.academy.pixCopyPaste ? (
-                <p className="break-all font-mono text-xs">{me.academy.pixCopyPaste}</p>
-              ) : (
-                <p className="break-all">{me.academy.pixKey}</p>
-              )}
-            </div>
-          ) : (
-            <p className="text-muted-foreground">Confirme os dados de pagamento com o instrutor.</p>
-          )}
-          <p className="text-muted-foreground">Envie imagem ou PDF do comprovante, até 10 MB.</p>
-        </CardContent>
-      </Card>
+      <header>
+        <h1 className="text-[1.55rem] font-bold tracking-tight">Mensalidades</h1>
+        <p className="text-sm font-medium text-muted-foreground">Mantenha seus pagamentos em dia</p>
+      </header>
 
-      {feesQuery.isLoading ? <p className="text-sm text-muted-foreground">Carregando...</p> : null}
+      {feesQuery.isLoading ? (
+        <div className="space-y-3">
+          <Skeleton className="h-32 w-full rounded-2xl" />
+          <Skeleton className="h-20 w-full rounded-2xl" />
+        </div>
+      ) : null}
       {feesQuery.isError ? (
         <p className="text-sm text-destructive">Não foi possível carregar mensalidades.</p>
       ) : null}
 
+      {!feesQuery.isLoading && !feesQuery.isError && fees.length === 0 ? (
+        <StudentEmptyState
+          icon={CheckmarkCircle03Icon}
+          tone="success"
+          title="Nenhuma cobrança em aberto"
+          description="Assim que sua matrícula gerar uma mensalidade, ela aparece aqui para pagamento e envio de comprovante."
+        />
+      ) : null}
+
       <div className="space-y-3">
-        {(feesQuery.data?.fees ?? []).map((fee) => (
+        {fees.map((fee) => (
           <FeeCard
             key={fee.id}
             fee={fee}
@@ -140,6 +145,24 @@ export function StudentMonthlyFeesSection({ me }: { me: StudentMeResponse }) {
           />
         ))}
       </div>
+
+      {me.academy.pixCopyPaste || me.academy.pixKey ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Pix da academia</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <div className="rounded-2xl bg-muted p-4">
+              {me.academy.pixCopyPaste ? (
+                <p className="break-all font-mono text-xs">{me.academy.pixCopyPaste}</p>
+              ) : (
+                <p className="break-all">{me.academy.pixKey}</p>
+              )}
+            </div>
+            <p className="text-muted-foreground">Envie imagem ou PDF do comprovante, até 10 MB.</p>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {selectedFee ? (
         <Card>
@@ -189,6 +212,21 @@ export function StudentMonthlyFeesSection({ me }: { me: StudentMeResponse }) {
   );
 }
 
+function feeBadge(fee: StudentMonthlyFee): { label: string; className: string } {
+  if (fee.status === "paid")
+    return { label: "Pago", className: "border-emerald-500/20 bg-emerald-500/10 text-emerald-700" };
+  if (fee.status === "waived")
+    return { label: "Dispensada", className: "border-border bg-muted text-muted-foreground" };
+  if (fee.status === "under_review")
+    return { label: "Em análise", className: "border-amber-500/20 bg-amber-500/10 text-amber-700" };
+  if (fee.isOverdue)
+    return {
+      label: "Atrasada",
+      className: "border-destructive/20 bg-destructive/10 text-destructive",
+    };
+  return { label: "Pendente", className: "border-amber-500/20 bg-amber-500/10 text-amber-700" };
+}
+
 function FeeCard({
   fee,
   onUpload,
@@ -201,48 +239,45 @@ function FeeCard({
   const uiStatus = deriveStudentReceiptStatus(fee);
   const cta = studentReceiptCta(uiStatus);
   const message = studentLastReceiptMessage(fee);
-  const statusLabel = fee.isOverdue
-    ? "Atrasada"
-    : fee.status === "open"
-      ? "Em aberto"
-      : fee.status === "under_review"
-        ? "Em verificação"
-        : fee.status === "paid"
-          ? "Pago"
-          : "Dispensada";
+  const badge = feeBadge(fee);
+  const actionable = fee.status === "open" || fee.status === "under_review";
 
   return (
-    <Card>
-      <CardContent className="flex flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between">
+    <div className="rounded-2xl border border-border bg-card p-[1.1rem] shadow-sm">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2">
-            <strong>
-              {monthNames[fee.referenceMonth - 1]} {fee.referenceYear}
-            </strong>
-            <Badge
-              variant={fee.isOverdue ? "warning" : fee.status === "paid" ? "default" : "muted"}
-            >
-              {statusLabel}
-            </Badge>
-          </div>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {formatCurrency(fee.amountInCents)} · vence em {formatDate(fee.dueDate)}
+          <p className="text-[0.78rem] font-bold text-muted-foreground">
+            {monthNames[fee.referenceMonth - 1]} {fee.referenceYear}
           </p>
-          {message ? <p className="mt-2 text-sm text-muted-foreground">{message}</p> : null}
+          <p className="mt-1.5 text-[1.6rem] font-bold leading-none">
+            {formatCurrency(fee.amountInCents)}
+          </p>
         </div>
-        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-          {fee.lastReceipt ? (
-            <Button type="button" variant="secondary" onClick={onOpen} className="min-h-11">
-              Abrir comprovante
-            </Button>
-          ) : null}
+        <Badge className={badge.className}>{badge.label}</Badge>
+      </div>
+      <p
+        className={`mt-2.5 text-xs font-semibold ${fee.isOverdue ? "text-destructive" : "text-muted-foreground"}`}
+      >
+        Vence em {formatDate(fee.dueDate)} · {dueInLabel(fee.dueDate)}
+      </p>
+      {message ? (
+        <p className="mt-1.5 text-xs font-medium text-muted-foreground">{message}</p>
+      ) : null}
+      {actionable || fee.lastReceipt ? (
+        <div className="mt-3.5 flex gap-2">
           {cta ? (
-            <Button type="button" onClick={onUpload} className="min-h-11">
+            <Button type="button" onClick={onUpload} className="h-10 flex-1">
+              <Camera01Icon aria-hidden="true" />
               {cta}
             </Button>
           ) : null}
+          {fee.lastReceipt ? (
+            <Button type="button" variant="outline" onClick={onOpen} className="h-10">
+              Ver comprovante
+            </Button>
+          ) : null}
         </div>
-      </CardContent>
-    </Card>
+      ) : null}
+    </div>
   );
 }
