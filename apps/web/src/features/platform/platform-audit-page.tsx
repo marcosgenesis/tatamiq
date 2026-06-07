@@ -1,42 +1,71 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link, Navigate, useNavigate } from "@tanstack/react-router";
+import { Navigate, useNavigate } from "@tanstack/react-router";
 import {
   type ColumnDef,
   getCoreRowModel,
   type PaginationState,
   useReactTable,
 } from "@tanstack/react-table";
+import { Download04Icon } from "hugeicons-react";
 import { type Dispatch, type SetStateAction, useMemo, useState } from "react";
 import { DataGrid, DataGridContainer } from "@/components/reui/data-grid/data-grid";
 import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination";
 import { DataGridTable } from "@/components/reui/data-grid/data-grid-table";
 import { Badge } from "../../components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { Button } from "../../components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../components/ui/select";
 import { authClient } from "../../lib/auth-client";
+import { ACTION_LABELS, ActionTag, actionLabel, formatDateTime } from "./platform-components";
 import {
   type PlatformAuditLogEntry,
   platformAuditQuery,
   platformMeQuery,
 } from "./platform-queries";
-import { PlatformShell } from "./platform-shell";
+import { PlatformLoading, PlatformShell } from "./platform-shell";
 
-const ACTION_LABELS: Record<string, string> = {
-  "platform.dashboard.viewed": "Dashboard visualizado",
-  "platform.academy.provisioned": "Academia provisionada",
-  "platform.academy.transferred": "Academia transferida",
-  "platform.user.banned": "Usuário bloqueado",
-  "platform.user.unbanned": "Usuário desbloqueado",
-  "platform.user.sessions_revoked": "Sessões revogadas",
-  "platform.user.deleted": "Usuário excluído",
-  "platform.user.deleted_preserving_history": "Usuário excluído (preservando histórico)",
-  "platform.admin.added": "Admin adicionado",
-  "platform.admin.removed": "Admin removido",
-  "platform.first_access_link.generated": "Link de primeiro acesso gerado",
-  "platform.first_access_link.regenerated": "Link de primeiro acesso regenerado",
-  "platform.sensitive_file.accessed": "Arquivo sensível acessado",
-  "platform.support.started": "Suporte assistido iniciado",
-  "platform.support.ended": "Suporte assistido encerrado",
-};
+function exportCsv(entries: PlatformAuditLogEntry[]) {
+  const header = [
+    "Data",
+    "Ação",
+    "Responsável",
+    "E-mail",
+    "Alvo",
+    "ID alvo",
+    "Academia",
+    "Resultado",
+    "Motivo",
+  ];
+  const quote = (value: string) => `"${value.replace(/"/g, '""')}"`;
+  const rows = entries.map((e) =>
+    [
+      formatDateTime(e.createdAt),
+      actionLabel(e.action),
+      e.adminName ?? "",
+      e.adminEmail ?? "",
+      e.targetType,
+      e.targetId ?? "",
+      e.academyId ?? "",
+      e.result,
+      e.reason ?? "",
+    ]
+      .map((v) => quote(String(v)))
+      .join(","),
+  );
+  const csv = [header.map(quote).join(","), ...rows].join("\n");
+  const blob = new Blob([`﻿${csv}`], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "auditoria-tatamiq.csv";
+  link.click();
+  URL.revokeObjectURL(url);
+}
 
 export function PlatformAuditPage() {
   const navigate = useNavigate();
@@ -44,66 +73,63 @@ export function PlatformAuditPage() {
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
 
   const platform = useQuery(platformMeQuery());
-
   const audit = useQuery(
     platformAuditQuery(actionFilter, pagination.pageIndex, pagination.pageSize),
   );
 
-  if (platform.isLoading) return null;
-  if (platform.isError) return <Navigate to="/choose-area" />;
+  if (platform.isLoading) return <PlatformLoading label="Carregando auditoria..." />;
+  if (platform.isError || !platform.data?.user) return <Navigate to="/choose-area" />;
 
-  const user = platform.data?.user;
-  if (!user) return <Navigate to="/choose-area" />;
+  const entries = (audit.data?.items ?? []) as PlatformAuditLogEntry[];
 
   return (
     <PlatformShell
-      user={user}
+      user={platform.data.user}
       onSignOut={() => authClient.signOut().then(() => navigate({ to: "/sign-in" }))}
+      title="Auditoria"
+      description="Registro de ações sensíveis"
+      actions={
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={entries.length === 0}
+          onClick={() => exportCsv(entries)}
+        >
+          <Download04Icon className="size-4" />
+          Exportar log
+        </Button>
+      }
     >
-      <div className="flex items-center justify-between">
-        <div>
-          <Link to="/platform" className="text-muted-foreground text-sm hover:text-foreground">
-            ← Voltar para Administração da Plataforma
-          </Link>
-          <h2 className="mt-2 font-semibold text-2xl">Auditoria Administrativa</h2>
-          <p className="text-muted-foreground text-sm">
-            Registro de ações sensíveis realizadas por administradores.
-          </p>
-        </div>
-      </div>
+      <div className="space-y-4">
+        <Select
+          value={actionFilter || "all"}
+          onValueChange={(value) => {
+            setActionFilter(!value || value === "all" ? "" : value);
+            setPagination((c) => ({ ...c, pageIndex: 0 }));
+          }}
+        >
+          <SelectTrigger className="h-10 w-full max-w-xs rounded-xl">
+            <SelectValue placeholder="Todas as ações" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas as ações</SelectItem>
+            {Object.entries(ACTION_LABELS).map(([key, label]) => (
+              <SelectItem key={key} value={key}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <CardTitle>Registros de Auditoria</CardTitle>
-            <select
-              className="rounded-md border bg-background px-3 py-2 text-sm"
-              value={actionFilter}
-              onChange={(e) => {
-                setActionFilter(e.target.value);
-                setPagination((current) => ({ ...current, pageIndex: 0 }));
-              }}
-            >
-              <option value="">Todas as ações</option>
-              {Object.entries(ACTION_LABELS).map(([key, label]) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <AuditDataGrid
-            entries={audit.data?.items ?? []}
-            loading={audit.isLoading}
-            pagination={pagination}
-            onPaginationChange={setPagination}
-            rowCount={audit.data?.pagination.total ?? 0}
-            pageCount={audit.data?.pagination.totalPages ?? -1}
-          />
-        </CardContent>
-      </Card>
+        <AuditDataGrid
+          entries={entries}
+          loading={audit.isLoading}
+          pagination={pagination}
+          onPaginationChange={setPagination}
+          rowCount={audit.data?.pagination.total ?? 0}
+          pageCount={audit.data?.pagination.totalPages ?? -1}
+        />
+      </div>
     </PlatformShell>
   );
 }
@@ -126,41 +152,40 @@ function AuditDataGrid({
   const columns = useMemo<ColumnDef<PlatformAuditLogEntry>[]>(
     () => [
       {
-        accessorKey: "createdAt",
-        header: "Data",
-        size: 170,
+        accessorKey: "action",
+        header: "Ação",
+        size: 240,
         cell: ({ row }) => (
-          <span className="text-xs">{formatDateTime(row.original.createdAt)}</span>
-        ),
-      },
-      {
-        id: "admin",
-        header: "Administrador",
-        size: 260,
-        cell: ({ row }) => (
-          <div>
-            <p className="text-sm">{row.original.adminName ?? "—"}</p>
-            <p className="text-muted-foreground text-xs">{row.original.adminEmail ?? "—"}</p>
+          <div className="space-y-1">
+            <p className="font-medium">{actionLabel(row.original.action)}</p>
+            <ActionTag action={row.original.action} />
           </div>
         ),
       },
       {
-        accessorKey: "action",
-        header: "Ação",
-        size: 260,
+        id: "admin",
+        header: "Responsável",
+        size: 220,
         cell: ({ row }) => (
-          <Badge variant="muted">{ACTION_LABELS[row.original.action] ?? row.original.action}</Badge>
+          <div className="min-w-0">
+            <p className="truncate text-sm">{row.original.adminName ?? "—"}</p>
+            <p className="truncate text-muted-foreground text-xs">
+              {row.original.adminEmail ?? "—"}
+            </p>
+          </div>
         ),
       },
       {
         id: "target",
         header: "Alvo",
-        size: 220,
+        size: 200,
         cell: ({ row }) => (
           <div className="text-sm">
             {row.original.targetType}
             {row.original.targetId ? (
-              <span className="block text-muted-foreground text-xs">{row.original.targetId}</span>
+              <span className="block truncate font-mono text-muted-foreground text-xs">
+                {row.original.targetId}
+              </span>
             ) : null}
           </div>
         ),
@@ -168,20 +193,20 @@ function AuditDataGrid({
       {
         accessorKey: "result",
         header: "Resultado",
-        size: 130,
+        size: 120,
         cell: ({ row }) => (
-          <Badge variant={row.original.result === "success" ? "default" : "warning"}>
-            {row.original.result}
+          <Badge variant={row.original.result === "success" ? "success" : "destructive"}>
+            {row.original.result === "success" ? "Sucesso" : row.original.result}
           </Badge>
         ),
       },
       {
-        accessorKey: "reason",
-        header: "Motivo",
-        size: 240,
+        accessorKey: "createdAt",
+        header: "Quando",
+        size: 160,
         cell: ({ row }) => (
-          <span className="block truncate text-muted-foreground text-sm">
-            {row.original.reason ?? "—"}
+          <span className="text-muted-foreground text-xs">
+            {formatDateTime(row.original.createdAt)}
           </span>
         ),
       },
@@ -200,7 +225,7 @@ function AuditDataGrid({
   });
 
   return (
-    <DataGridContainer>
+    <DataGridContainer className="rounded-2xl bg-card">
       <DataGrid
         table={table}
         recordCount={rowCount}
@@ -221,11 +246,4 @@ function AuditDataGrid({
       </DataGrid>
     </DataGridContainer>
   );
-}
-
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat("pt-BR", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(new Date(value));
 }
