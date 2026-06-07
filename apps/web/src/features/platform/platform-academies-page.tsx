@@ -6,38 +6,46 @@ import {
   type PaginationState,
   useReactTable,
 } from "@tanstack/react-table";
-import type { components } from "@tatamiq/contracts/generated";
 import { ArrowRight01Icon } from "hugeicons-react";
 import { type Dispatch, type SetStateAction, useMemo, useState } from "react";
 import { DataGrid, DataGridContainer } from "@/components/reui/data-grid/data-grid";
 import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination";
 import { DataGridTable } from "@/components/reui/data-grid/data-grid-table";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "../../components/ui/badge";
 import { authClient } from "../../lib/auth-client";
-import { formatDate, getInitials, SearchInput } from "./platform-components";
-import { platformMeQuery, platformUsersQuery } from "./platform-queries";
+import {
+  AcademyAvatar,
+  formatDate,
+  ProvisionAcademyDialog,
+  SearchInput,
+} from "./platform-components";
+import {
+  type PlatformAcademySummary,
+  platformAcademiesQuery,
+  platformMeQuery,
+} from "./platform-queries";
 import { PlatformLoading, PlatformShell } from "./platform-shell";
 
-type PlatformUserSummary = components["schemas"]["PlatformUserSummaryDto"];
-
-export function PlatformUsersPage() {
+export function PlatformAcademiesPage() {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
 
   const platform = useQuery(platformMeQuery());
-  const users = useQuery(platformUsersQuery(query, pagination.pageIndex, pagination.pageSize));
+  const academies = useQuery(
+    platformAcademiesQuery(query, pagination.pageIndex, pagination.pageSize),
+  );
 
-  if (platform.isLoading) return <PlatformLoading label="Carregando usuários..." />;
+  if (platform.isLoading) return <PlatformLoading label="Carregando academias..." />;
   if (platform.isError || !platform.data?.user) return <Navigate to="/choose-area" />;
 
   return (
     <PlatformShell
       user={platform.data.user}
       onSignOut={() => authClient.signOut().then(() => navigate({ to: "/sign-in" }))}
-      title="Usuários"
-      description="Contas de toda a plataforma"
+      title="Academias"
+      description="Tenants ativos na plataforma"
+      actions={<ProvisionAcademyDialog />}
     >
       <div className="space-y-4">
         <SearchInput
@@ -46,89 +54,74 @@ export function PlatformUsersPage() {
             setQuery(value);
             setPagination((c) => ({ ...c, pageIndex: 0 }));
           }}
-          placeholder="Buscar usuário por nome ou e-mail"
+          placeholder="Buscar academia por nome ou slug"
         />
-        <UsersDataGrid
-          users={users.data?.items ?? []}
-          loading={users.isLoading}
+        <AcademiesDataGrid
+          academies={academies.data?.items ?? []}
+          loading={academies.isLoading}
           pagination={pagination}
           onPaginationChange={setPagination}
-          rowCount={users.data?.pagination.total ?? 0}
-          pageCount={users.data?.pagination.totalPages ?? -1}
+          rowCount={academies.data?.pagination.total ?? 0}
+          pageCount={academies.data?.pagination.totalPages ?? -1}
         />
       </div>
     </PlatformShell>
   );
 }
 
-function UsersDataGrid({
-  users,
+function AcademiesDataGrid({
+  academies,
   loading,
   pagination,
   onPaginationChange,
   rowCount,
   pageCount,
 }: {
-  users: PlatformUserSummary[];
+  academies: PlatformAcademySummary[];
   loading: boolean;
   pagination: PaginationState;
   onPaginationChange: Dispatch<SetStateAction<PaginationState>>;
   rowCount: number;
   pageCount: number;
 }) {
-  const columns = useMemo<ColumnDef<PlatformUserSummary>[]>(
+  const columns = useMemo<ColumnDef<PlatformAcademySummary>[]>(
     () => [
       {
         accessorKey: "name",
-        header: "Usuário",
-        size: 340,
+        header: "Academia",
+        size: 320,
         cell: ({ row }) => (
           <Link
-            to="/platform/users/$userId"
-            params={{ userId: row.original.id }}
+            to="/platform/academies/$academyId"
+            params={{ academyId: row.original.id }}
             className="flex items-center gap-3"
           >
-            <Avatar className="size-9 rounded-xl">
-              <AvatarImage src={row.original.image ?? undefined} />
-              <AvatarFallback className="rounded-xl bg-muted text-xs font-semibold text-foreground/70">
-                {getInitials(row.original.name)}
-              </AvatarFallback>
-            </Avatar>
+            <AcademyAvatar name={row.original.name} logo={row.original.logo} />
             <div className="min-w-0">
-              <p className="truncate font-semibold text-foreground hover:underline">
-                {row.original.name}
-              </p>
-              <p className="truncate text-muted-foreground text-xs">{row.original.email}</p>
+              <p className="font-semibold text-foreground hover:underline">{row.original.name}</p>
+              <p className="truncate text-muted-foreground text-xs">/{row.original.slug}</p>
             </div>
           </Link>
         ),
       },
       {
-        accessorKey: "role",
-        header: "Papel",
-        size: 140,
+        id: "owner",
+        header: "Dono",
+        size: 280,
         cell: ({ row }) =>
-          row.original.role === "admin" ? (
-            <Badge variant="warning">Operador</Badge>
+          row.original.owner ? (
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium">{row.original.owner.name}</p>
+              <p className="truncate text-muted-foreground text-xs">{row.original.owner.email}</p>
+            </div>
           ) : (
-            <span className="text-sm text-muted-foreground">Usuário</span>
-          ),
-      },
-      {
-        accessorKey: "banned",
-        header: "Status",
-        size: 120,
-        cell: ({ row }) =>
-          row.original.banned ? (
-            <Badge variant="destructive">Bloqueado</Badge>
-          ) : (
-            <Badge variant="success">Ativo</Badge>
+            <Badge variant="muted">Sem dono</Badge>
           ),
       },
       {
         accessorKey: "createdAt",
-        header: "Cadastro",
-        size: 130,
+        header: "Criada em",
+        size: 140,
         cell: ({ row }) => (
           <span className="text-sm text-muted-foreground">
             {formatDate(row.original.createdAt)}
@@ -142,8 +135,8 @@ function UsersDataGrid({
         cell: ({ row }) => (
           <div className="flex justify-end">
             <Link
-              to="/platform/users/$userId"
-              params={{ userId: row.original.id }}
+              to="/platform/academies/$academyId"
+              params={{ academyId: row.original.id }}
               className="grid size-8 place-items-center rounded-lg text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
               aria-label={`Abrir ${row.original.name}`}
             >
@@ -157,7 +150,7 @@ function UsersDataGrid({
   );
 
   const table = useReactTable({
-    data: users,
+    data: academies,
     columns,
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true,
@@ -172,7 +165,7 @@ function UsersDataGrid({
         table={table}
         recordCount={rowCount}
         isLoading={loading}
-        emptyMessage="Nenhum usuário encontrado."
+        emptyMessage="Nenhuma academia encontrada."
         tableLayout={{ headerSticky: true }}
         tableClassNames={{ edgeCell: "px-4" }}
       >

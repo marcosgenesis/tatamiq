@@ -1,321 +1,182 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Link, Navigate, useNavigate } from "@tanstack/react-router";
-import {
-  type ColumnDef,
-  getCoreRowModel,
-  type PaginationState,
-  useReactTable,
-} from "@tanstack/react-table";
-import { PlusSignIcon } from "hugeicons-react";
-import { type Dispatch, type SetStateAction, useMemo, useState } from "react";
-import { DataGrid, DataGridContainer } from "@/components/reui/data-grid/data-grid";
-import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination";
-import { DataGridTable } from "@/components/reui/data-grid/data-grid-table";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "../../components/ui/badge";
-import { Button } from "../../components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "../../components/ui/dialog";
-import { Input } from "../../components/ui/input";
+import { ArrowRight01Icon, ShieldUserIcon } from "hugeicons-react";
+import { Skeleton } from "../../components/ui/skeleton";
 import { authClient } from "../../lib/auth-client";
 import {
+  AcademyAvatar,
+  ActionDot,
+  actionLabel,
+  formatDate,
+  formatRelative,
+  ProvisionAcademyDialog,
+  STAT_ICONS,
+  StatCard,
+} from "./platform-components";
+import {
   type PlatformAcademySummary,
-  type ProvisionPlatformAcademyInput,
-  platformAcademiesQuery,
+  type PlatformAuditLogEntry,
+  platformAuditQuery,
   platformDashboardQuery,
-  platformKeys,
   platformMeQuery,
-  provisionPlatformAcademy,
 } from "./platform-queries";
 import { PlatformLoading, PlatformShell } from "./platform-shell";
 
 export function PlatformPage() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const academyQuery = "";
-  const [academyPagination, setAcademyPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: 10,
-  });
-  const [isProvisionOpen, setIsProvisionOpen] = useState(false);
-  const [provisionForm, setProvisionForm] = useState({
-    academyName: "",
-    ownerEmail: "",
-    ownerName: "",
-  });
   const platform = useQuery(platformMeQuery());
   const dashboard = useQuery(platformDashboardQuery());
-  const academies = useQuery(
-    platformAcademiesQuery(academyQuery, academyPagination.pageIndex, academyPagination.pageSize),
-  );
-  const provision = useMutation({
-    mutationFn: (input: ProvisionPlatformAcademyInput) => provisionPlatformAcademy(input),
-    onSuccess: async () => {
-      setProvisionForm({ academyName: "", ownerEmail: "", ownerName: "" });
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: platformKeys.dashboard }),
-        queryClient.invalidateQueries({ queryKey: ["platform", "academies"] }),
-      ]);
-    },
-  });
+  const activity = useQuery(platformAuditQuery("", 0, 7));
 
   if (platform.isLoading) {
-    return <PlatformLoading label="Carregando Administração da Plataforma..." />;
+    return <PlatformLoading label="Carregando console do operador..." />;
   }
-
-  if (platform.isError) {
+  if (platform.isError || !platform.data?.user) {
     return <Navigate to="/choose-area" />;
   }
 
-  const user = platform.data?.user;
-
-  if (!user) {
-    return <Navigate to="/choose-area" />;
-  }
+  const totals = dashboard.data?.totals;
+  const recent = (dashboard.data?.recentAcademies ?? []) as PlatformAcademySummary[];
+  const entries = (activity.data?.items ?? []) as PlatformAuditLogEntry[];
 
   return (
     <PlatformShell
-      user={user}
+      user={platform.data.user}
       onSignOut={() => authClient.signOut().then(() => navigate({ to: "/sign-in" }))}
-      actions={
-        <Dialog open={isProvisionOpen} onOpenChange={setIsProvisionOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => provision.reset()}>
-              <PlusSignIcon className="size-4" />
-              Provisionar academia
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Provisionar Academia</DialogTitle>
-              <DialogDescription>
-                Crie uma Academia para um email existente ou para uma Conta Reservada com link
-                copiável.
-              </DialogDescription>
-            </DialogHeader>
-            <form
-              className="grid gap-3"
-              onSubmit={(event) => {
-                event.preventDefault();
-                provision.mutate({
-                  academyName: provisionForm.academyName,
-                  ownerEmail: provisionForm.ownerEmail,
-                  ...(provisionForm.ownerName ? { ownerName: provisionForm.ownerName } : {}),
-                });
-              }}
-            >
-              <Input
-                required
-                placeholder="Nome da academia"
-                value={provisionForm.academyName}
-                onChange={(event) =>
-                  setProvisionForm((current) => ({ ...current, academyName: event.target.value }))
-                }
-              />
-              <Input
-                required
-                type="email"
-                placeholder="Email do dono"
-                value={provisionForm.ownerEmail}
-                onChange={(event) =>
-                  setProvisionForm((current) => ({ ...current, ownerEmail: event.target.value }))
-                }
-              />
-              <Input
-                placeholder="Nome do dono"
-                value={provisionForm.ownerName}
-                onChange={(event) =>
-                  setProvisionForm((current) => ({ ...current, ownerName: event.target.value }))
-                }
-              />
-              {provision.data?.firstAccessLink ? (
-                <div className="rounded-lg border bg-background p-3 text-sm">
-                  <p className="font-medium">Link de primeiro acesso</p>
-                  <p className="break-all text-muted-foreground">
-                    {provision.data.firstAccessLink}
-                  </p>
-                </div>
-              ) : null}
-              {provision.data && !provision.data.firstAccessLink ? (
-                <p className="text-muted-foreground text-sm">
-                  Academia provisionada para uma conta existente.
-                </p>
-              ) : null}
-              {provision.isError ? (
-                <p className="text-destructive text-sm">Não foi possível provisionar a academia.</p>
-              ) : null}
-              <DialogFooter className="pt-2">
-                <Button type="button" variant="outline" onClick={() => setIsProvisionOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={provision.isPending}>
-                  {provision.isPending ? "Criando..." : "Provisionar"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      }
+      title="Visão geral"
+      description="Operação da plataforma"
+      actions={<ProvisionAcademyDialog />}
     >
-      <section className="grid gap-6">
-        <div>
-          <AcademiesDataGrid
-            academies={academies.data?.items ?? []}
-            loading={academies.isLoading}
-            pagination={academyPagination}
-            onPaginationChange={setAcademyPagination}
-            rowCount={academies.data?.pagination.total ?? 0}
-            pageCount={academies.data?.pagination.totalPages ?? -1}
+      <div className="space-y-6">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <StatCard
+            icon={STAT_ICONS.academies}
+            label="Academias"
+            value={totals?.academies ?? 0}
+            loading={dashboard.isLoading}
+          />
+          <StatCard
+            icon={STAT_ICONS.users}
+            label="Usuários"
+            value={totals?.users ?? 0}
+            loading={dashboard.isLoading}
+          />
+          <StatCard
+            icon={STAT_ICONS.admins}
+            label="Administradores"
+            value={totals?.admins ?? 0}
+            loading={dashboard.isLoading}
+          />
+          <StatCard
+            icon={ShieldUserIcon}
+            label="Usuários bloqueados"
+            value={totals?.bannedUsers ?? 0}
+            loading={dashboard.isLoading}
           />
         </div>
 
-        <Card className="shadow-none">
-          <CardHeader>
-            <CardTitle>Atividade recente</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {((dashboard.data?.recentAcademies ?? []) as PlatformAcademySummary[]).map(
-              (academy) => (
-                <AcademyListItem key={academy.id} academy={academy} />
-              ),
-            )}
-            {dashboard.isLoading ? (
-              <p className="text-muted-foreground text-sm">Carregando...</p>
-            ) : null}
-            {!dashboard.isLoading && (dashboard.data?.recentAcademies.length ?? 0) === 0 ? (
-              <p className="text-muted-foreground text-sm">Nenhuma academia encontrada.</p>
-            ) : null}
-          </CardContent>
-        </Card>
-      </section>
+        <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
+          <section className="rounded-2xl border border-border bg-card shadow-sm">
+            <header className="flex items-center justify-between border-b border-border px-5 py-4">
+              <h2 className="text-[0.95rem] font-bold tracking-tight">Academias recentes</h2>
+              <Link
+                to="/platform/academies"
+                className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+              >
+                Ver todas
+                <ArrowRight01Icon className="size-3.5" />
+              </Link>
+            </header>
+            <div className="divide-y divide-border">
+              {dashboard.isLoading ? (
+                <RowSkeletons rows={4} />
+              ) : recent.length === 0 ? (
+                <EmptyRow message="Nenhuma academia ainda." />
+              ) : (
+                recent.map((academy) => (
+                  <Link
+                    key={academy.id}
+                    to="/platform/academies/$academyId"
+                    params={{ academyId: academy.id }}
+                    className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-muted/50"
+                  >
+                    <AcademyAvatar name={academy.name} logo={academy.logo} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold">{academy.name}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {academy.owner?.email ?? `Sem dono · /${academy.slug}`}
+                      </p>
+                    </div>
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      {formatDate(academy.createdAt)}
+                    </span>
+                    <ArrowRight01Icon className="size-4 shrink-0 text-muted-foreground/50" />
+                  </Link>
+                ))
+              )}
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-border bg-card shadow-sm">
+            <header className="flex items-center justify-between border-b border-border px-5 py-4">
+              <h2 className="text-[0.95rem] font-bold tracking-tight">Atividade recente</h2>
+              <Link
+                to="/platform/audit"
+                className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+              >
+                Auditoria
+                <ArrowRight01Icon className="size-3.5" />
+              </Link>
+            </header>
+            <div className="divide-y divide-border">
+              {activity.isLoading ? (
+                <RowSkeletons rows={5} />
+              ) : entries.length === 0 ? (
+                <EmptyRow message="Nenhuma atividade registrada." />
+              ) : (
+                entries.map((entry) => (
+                  <div key={entry.id} className="flex items-start gap-3 px-5 py-3">
+                    <ActionDot action={entry.action} />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium leading-tight">
+                        {actionLabel(entry.action)}
+                      </p>
+                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                        {entry.adminName ?? entry.adminEmail ?? "Sistema"}
+                      </p>
+                    </div>
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      {formatRelative(entry.createdAt)}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+        </div>
+      </div>
     </PlatformShell>
   );
 }
 
-function AcademiesDataGrid({
-  academies,
-  loading,
-  pagination,
-  onPaginationChange,
-  rowCount,
-  pageCount,
-}: {
-  academies: PlatformAcademySummary[];
-  loading: boolean;
-  pagination: PaginationState;
-  onPaginationChange: Dispatch<SetStateAction<PaginationState>>;
-  rowCount: number;
-  pageCount: number;
-}) {
-  const columns = useMemo<ColumnDef<PlatformAcademySummary>[]>(
-    () => [
-      {
-        accessorKey: "name",
-        header: "Academia",
-        size: 260,
-        cell: ({ row }) => (
-          <div className="flex gap-1.5 items-center">
-            <Avatar>
-              <AvatarImage src={row.original.logo ?? undefined} />
-              <AvatarFallback>{row.original.name.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <div>
-              <Link
-                to="/platform/academies/$academyId"
-                params={{ academyId: row.original.id }}
-                className="font-medium hover:underline"
-              >
-                {row.original.name}
-              </Link>
-              <p className="text-muted-foreground text-xs">/{row.original.slug}</p>
-            </div>
+const SKELETON_KEYS = ["s1", "s2", "s3", "s4", "s5", "s6"];
+
+function RowSkeletons({ rows }: { rows: number }) {
+  return (
+    <>
+      {SKELETON_KEYS.slice(0, rows).map((key) => (
+        <div key={key} className="flex items-center gap-3 px-5 py-3">
+          <Skeleton className="size-9 rounded-xl" />
+          <div className="flex-1 space-y-1.5">
+            <Skeleton className="h-3.5 w-32" />
+            <Skeleton className="h-3 w-44" />
           </div>
-        ),
-      },
-      {
-        id: "owner",
-        header: "Dono",
-        size: 260,
-        cell: ({ row }) =>
-          row.original.owner ? (
-            <div className="flex gap-1.5">
-              <Avatar>
-                <AvatarFallback>{row.original.owner.name.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <div>
-                <p>{row.original.owner.name}</p>
-                <p className="text-muted-foreground text-xs">{row.original.owner.email}</p>
-              </div>
-            </div>
-          ) : (
-            <Badge variant="muted">Sem dono</Badge>
-          ),
-      },
-      {
-        accessorKey: "createdAt",
-        header: "Criada em",
-        size: 140,
-        cell: ({ row }) => <span>{formatDate(row.original.createdAt)}</span>,
-      },
-    ],
-    [],
-  );
-
-  const table = useReactTable({
-    data: academies,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    manualPagination: true,
-    pageCount,
-    state: { pagination },
-    onPaginationChange,
-  });
-
-  return (
-    <DataGridContainer className="bg-background">
-      <DataGrid
-        table={table}
-        recordCount={rowCount}
-        isLoading={loading}
-        emptyMessage="Nenhuma academia encontrada."
-        tableLayout={{ headerSticky: true }}
-        tableClassNames={{ edgeCell: "px-4" }}
-      >
-        <DataGridTable />
-        <DataGridPagination
-          className="border-border border-t px-4 py-3 sm:py-3"
-          rowsPerPageLabel="Linhas por página"
-          previousPageLabel="Página anterior"
-          nextPageLabel="Próxima página"
-          info="{from} - {to} de {count}"
-          sizes={[10, 25, 50]}
-        />
-      </DataGrid>
-    </DataGridContainer>
+        </div>
+      ))}
+    </>
   );
 }
 
-function AcademyListItem({ academy }: { academy: PlatformAcademySummary }) {
-  return (
-    <Link
-      to="/platform/academies/$academyId"
-      params={{ academyId: academy.id }}
-      className="block rounded-lg border bg-background p-3 transition-colors hover:bg-muted/50"
-    >
-      <p className="font-medium text-sm">{academy.name}</p>
-      <p className="text-muted-foreground text-xs">{academy.owner?.email ?? "Sem dono"}</p>
-    </Link>
-  );
-}
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short" }).format(new Date(value));
+function EmptyRow({ message }: { message: string }) {
+  return <p className="px-5 py-8 text-center text-sm text-muted-foreground">{message}</p>;
 }

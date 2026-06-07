@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { type BeltKey, beltInfo } from "../lib/belt-progress";
 
@@ -42,14 +43,16 @@ export function BeltVisual({
 }) {
   const info = beltInfo(beltKey);
   const label = `Faixa ${name ?? info.name}, ${degrees} ${degrees === 1 ? "grau" : "graus"}`;
+  const [imageFailed, setImageFailed] = useState(false);
 
-  if (imagePath) {
+  if (imagePath && !imageFailed) {
     return (
       <img
         src={imagePath}
         alt={label}
         style={{ height: DIMS[size].h }}
         className={cn("w-auto rounded-md", className)}
+        onError={() => setImageFailed(true)}
       />
     );
   }
