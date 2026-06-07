@@ -140,11 +140,13 @@ export function toClassGroupPayload(values: ClassGroupFormValues): ClassGroupPay
   };
 }
 
+type StudentOption = { id: string; name: string; belt: { name: string; slug: string } | null };
+
 export function ClassGroupForm(props: {
   editingClassGroup: ClassGroup | null;
   error: string | null;
   isSaving: boolean;
-  students: Array<{ id: string; name: string }>;
+  students: StudentOption[];
   tagSuggestions: string[];
   onCancel: () => void;
   onSubmit: (payload: ClassGroupPayload) => void;
@@ -412,7 +414,7 @@ function DurationStepper(props: {
 
 function StudentPicker(props: {
   formId: string;
-  students: Array<{ id: string; name: string }>;
+  students: StudentOption[];
   value: string[];
   onChange: (value: string[]) => void;
 }) {
@@ -499,6 +501,16 @@ function StudentPicker(props: {
                       </AvatarFallback>
                     </Avatar>
                     <span className="flex-1 truncate text-sm text-foreground">{student.name}</span>
+                    {student.belt ? (
+                      <span className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
+                        <span
+                          aria-hidden
+                          className="size-2.5 shrink-0 rounded-full ring-1 ring-black/10 dark:ring-white/15"
+                          style={{ backgroundColor: beltColor(student.belt.slug) }}
+                        />
+                        {student.belt.name}
+                      </span>
+                    ) : null}
                   </button>
                 );
               })
@@ -584,6 +596,20 @@ function WeekdaySelect({
       </SelectContent>
     </Select>
   );
+}
+
+function beltColor(slug: string): string {
+  const value = slug.toLowerCase();
+  if (value.includes("black")) return "#171717";
+  if (value.includes("brown")) return "#92400e";
+  if (value.includes("purple")) return "#7c3aed";
+  if (value.includes("blue")) return "#2563eb";
+  if (value.includes("green")) return "#16a34a";
+  if (value.includes("orange")) return "#ea580c";
+  if (value.includes("yellow")) return "#eab308";
+  if (value.includes("gray") || value.includes("grey")) return "#9ca3af";
+  if (value.includes("white")) return "#e5e5e5";
+  return "#9ca3af";
 }
 
 function initials(name: string): string {
