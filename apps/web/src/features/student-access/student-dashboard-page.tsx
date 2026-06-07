@@ -4,6 +4,7 @@ import { useState } from "react";
 import { api } from "../../api";
 import { Badge } from "../../components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { StudentHomeScreen } from "../student-portal/screens/student-home-screen";
 import { StudentAttendanceSection } from "../student-portal/student-attendance-section";
 import { StudentGraduationSection } from "../student-portal/student-graduation-section";
 import {
@@ -145,10 +146,15 @@ export function StudentDashboardPage() {
       onTabChange={handleTabChange}
       desktop={desktop}
     >
-      {activeTab === "home" && <HomeTab data={data} mobile />}
-      {activeTab === "fees" && <StudentMonthlyFeesSection me={data} />}
-      {activeTab === "schedule" && <StudentScheduleSection />}
-      {activeTab === "profile" && <StudentProfileSection />}
+      {activeTab === "home" ? (
+        <StudentHomeScreen data={data} />
+      ) : (
+        <div className="px-4 pt-5">
+          {activeTab === "fees" && <StudentMonthlyFeesSection me={data} />}
+          {activeTab === "schedule" && <StudentScheduleSection />}
+          {activeTab === "profile" && <StudentProfileSection />}
+        </div>
+      )}
     </StudentMobileShell>
   );
 }

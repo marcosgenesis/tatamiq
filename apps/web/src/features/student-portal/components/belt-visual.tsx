@@ -36,7 +36,7 @@ export function BeltVisual({
   beltKey: BeltKey;
   degrees?: number;
   size?: Size;
-  imagePath?: string | null;
+  imagePath?: string | null | undefined;
   name?: string;
   className?: string;
 }) {
