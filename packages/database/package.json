@@ -18,15 +18,15 @@
     "db:seed:e2e": "tsx src/seed-e2e.ts"
   },
   "dependencies": {
-    "better-auth": "^1.6.11",
+    "better-auth": "^1.6.18",
     "drizzle-orm": "latest",
     "postgres": "latest"
   },
   "devDependencies": {
     "@types/node": "^25.9.1",
     "drizzle-kit": "latest",
-    "tsx": "latest",
+    "tsx": "4.22.4",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.6"
   }
 }
