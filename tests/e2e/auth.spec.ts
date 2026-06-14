@@ -85,7 +85,6 @@ test("forgot password issues a token and reset password allows a new sign-in", a
   ).toBeVisible();
 
   const token = await getLatestPasswordResetToken(signupEmail);
-
   await page.goto(`/reset-password?token=${token}`);
   await page.getByLabel("Nova senha").fill(resetPassword);
   await page.getByRole("button", { name: "Definir senha" }).click();
