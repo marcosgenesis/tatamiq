@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "git config user.name \"Marcos Gênesis\" && git config user.email \"49327985+marcosgenesis@users.noreply.github.com\"",
+            "statusMessage": "Setting git commit identity"
+          }
+        ]
+      }
+    ]
+  }
+}

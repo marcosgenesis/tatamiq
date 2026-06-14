@@ -1,4 +1,9 @@
 import { useMutation } from "@tanstack/react-query";
+import type {
+  CsvImportConfirmInput,
+  CsvImportPreviewInput,
+  CsvImportPreviewResponse,
+} from "@tatamiq/contracts";
 import { Download04Icon, Upload04Icon } from "hugeicons-react";
 import { useRef, useState } from "react";
 import { api } from "../../../api";
@@ -13,31 +18,22 @@ import {
   DrawerTitle,
 } from "../../../components/ui/drawer";
 
-type ImportPreview = {
-  totalLines: number;
-  validLines: number;
-  errorLines: number;
-  previewToken: string;
-  lines: Array<{ line: number; name: string; errors: string[]; warnings: string[] }>;
-};
-
 export function StudentCsvImport(props: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onImportComplete: () => void;
 }) {
-  const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
+  const [importPreview, setImportPreview] = useState<CsvImportPreviewResponse | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const csvFileInputRef = useRef<HTMLInputElement>(null);
 
   const importPreviewMutation = useMutation({
     mutationFn: async (csvContent: string) => {
-      // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
-      const { data, error } = await (api.POST as any)("/students/import-csv", {
-        body: { csv: csvContent },
+      const { data, error } = await api.POST("/students/import-csv", {
+        body: { csv: csvContent } satisfies CsvImportPreviewInput,
       });
-      if (error) throw new Error("Falha ao processar CSV.");
-      return data as ImportPreview;
+      if (error || !data) throw new Error("Falha ao processar CSV.");
+      return data satisfies CsvImportPreviewResponse;
     },
     onSuccess: (data) => {
       setImportPreview(data);
@@ -50,9 +46,8 @@ export function StudentCsvImport(props: {
 
   const importConfirmMutation = useMutation({
     mutationFn: async (previewToken: string) => {
-      // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
-      const { error } = await (api.POST as any)("/students/import-csv/confirm", {
-        body: { previewToken },
+      const { error } = await api.POST("/students/import-csv/confirm", {
+        body: { previewToken } satisfies CsvImportConfirmInput,
       });
       if (error) throw new Error("Falha ao confirmar importação.");
     },

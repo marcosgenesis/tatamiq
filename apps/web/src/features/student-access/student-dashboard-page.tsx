@@ -1,5 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
+import type {
+  StudentAttendancesResponse,
+  StudentGraduationResponse,
+  StudentMeResponse,
+} from "@tatamiq/contracts";
 import { useState } from "react";
 import { api } from "../../api";
 import { Badge } from "../../components/ui/badge";
@@ -22,18 +27,7 @@ import { StudentMobileShell, type StudentMobileTab } from "./student-mobile-shel
 
 type Tab = "home" | "fees" | "schedule" | "attendance" | "graduation" | "profile";
 
-type StudentDashboardData = {
-  student: { id: string; name: string; status: "active" | "inactive"; readOnly: boolean };
-  academy: { name: string };
-  classGroups: Array<{ id: string; name: string }>;
-  upcomingClasses: Array<{
-    id: string;
-    classGroupName: string;
-    status: string;
-    scheduledStartAt: string;
-    durationMinutes: number;
-  }>;
-};
+type StudentDashboardData = StudentMeResponse;
 
 const tabs: Array<{ key: Tab; label: string }> = [
   { key: "home", label: "Início" },
@@ -57,8 +51,8 @@ export function StudentDashboardPage() {
     queryKey: ["student", "me"],
     queryFn: async () => {
       const { data, error } = await api.GET("/student/me");
-      if (error) throw new Error("Não foi possível carregar sua área de aluno.");
-      return data;
+      if (error || !data) throw new Error("Não foi possível carregar sua área de aluno.");
+      return data satisfies StudentMeResponse;
     },
   });
 
@@ -95,12 +89,11 @@ export function StudentDashboardPage() {
   );
 
   if (isMobile && showOnboarding && !data.student.readOnly) {
-    const s = data.student as { name: string; phone?: string; email?: string };
     return (
       <StudentOnboardingFlow
-        studentName={s.name}
-        studentPhone={s.phone}
-        studentEmail={s.email}
+        studentName={data.student.name}
+        studentPhone={data.student.phone ?? undefined}
+        studentEmail={data.student.email ?? undefined}
         onDone={() => setShowOnboarding(false)}
       />
     );
@@ -236,12 +229,9 @@ function AttendanceSummaryCard() {
   const query = useQuery({
     queryKey: ["student", "attendances"],
     queryFn: async () => {
-      // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
-      const { data, error } = await (api.GET as any)("/student/attendances");
-      if (error) throw new Error("Não foi possível carregar presenças.");
-      return data as {
-        attendances: Array<{ id: string; createdAt: string; invalidatedAt: string | null }>;
-      };
+      const { data, error } = await api.GET("/student/attendances");
+      if (error || !data) throw new Error("Não foi possível carregar presenças.");
+      return data satisfies StudentAttendancesResponse;
     },
   });
 
@@ -285,13 +275,9 @@ function GraduationSummaryCard() {
   const query = useQuery({
     queryKey: ["student", "graduation"],
     queryFn: async () => {
-      // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
-      const { data, error } = await (api.GET as any)("/student/graduation");
-      if (error) throw new Error("Não foi possível carregar graduação.");
-      return data as {
-        currentBelt: { name: string; path?: string | null } | null;
-        currentDegree: number;
-      };
+      const { data, error } = await api.GET("/student/graduation");
+      if (error || !data) throw new Error("Não foi possível carregar graduação.");
+      return data satisfies StudentGraduationResponse;
     },
   });
 

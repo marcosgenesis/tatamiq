@@ -9,6 +9,8 @@ const apiUrl = process.env.BETTER_AUTH_URL ?? "http://localhost:3100";
 const webUrl = process.env.WEB_APP_URL ?? process.env.CORS_ORIGIN ?? "http://localhost:5173";
 
 const db = createDatabase();
+export const DEV_BETTER_AUTH_SECRET =
+  "dev-only-tatamiq-better-auth-secret-change-me-minimum-32-chars";
 
 export function platformAdminUserIds(): string[] {
   return (process.env.BETTER_AUTH_ADMIN_USER_IDS ?? process.env.PLATFORM_ADMIN_USER_IDS ?? "")
@@ -17,13 +19,42 @@ export function platformAdminUserIds(): string[] {
     .filter(Boolean);
 }
 
+export function resolveBetterAuthSecret(env: NodeJS.ProcessEnv = process.env): string {
+  const configuredSecret = env.BETTER_AUTH_SECRET?.trim();
+  if (configuredSecret) return configuredSecret;
+
+  const nodeEnv = env.NODE_ENV?.trim();
+  if (!nodeEnv || nodeEnv === "development" || nodeEnv === "test") {
+    return DEV_BETTER_AUTH_SECRET;
+  }
+
+  throw new Error(
+    "BETTER_AUTH_SECRET must be configured when NODE_ENV is not local development or test.",
+  );
+}
+
+export function resolveQrTokenSecret(env: NodeJS.ProcessEnv = process.env): string {
+  const configuredQrSecret = env.QR_TOKEN_SECRET?.trim();
+  if (configuredQrSecret) return configuredQrSecret;
+
+  const configuredAuthSecret = env.BETTER_AUTH_SECRET?.trim();
+  if (configuredAuthSecret) return configuredAuthSecret;
+
+  const nodeEnv = env.NODE_ENV?.trim();
+  if (!nodeEnv || nodeEnv === "development" || nodeEnv === "test") {
+    return DEV_BETTER_AUTH_SECRET;
+  }
+
+  throw new Error(
+    "QR_TOKEN_SECRET or BETTER_AUTH_SECRET must be configured when NODE_ENV is not local development or test.",
+  );
+}
+
 export const auth = betterAuth({
   appName: "Tatamiq",
   baseURL: apiUrl,
   basePath: "/auth",
-  secret:
-    process.env.BETTER_AUTH_SECRET ??
-    "dev-only-tatamiq-better-auth-secret-change-me-minimum-32-chars",
+  secret: resolveBetterAuthSecret(),
   trustedOrigins: [webUrl],
   database: drizzleAdapter(db, {
     provider: "pg",
@@ -31,11 +62,11 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
-    sendResetPassword: async ({ user, url }) => {
+    sendResetPassword: async ({ user }) => {
       console.log({
         event: "password_reset_link_created",
         email: user.email,
-        url,
+        delivery: "dev-log",
       });
     },
   },

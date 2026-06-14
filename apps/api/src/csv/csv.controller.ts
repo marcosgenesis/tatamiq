@@ -1,7 +1,14 @@
-import { Body, Controller, Get, Inject, Post, Query, Res } from "@nestjs/common";
-import { ApiQuery, ApiTags } from "@nestjs/swagger";
+import { Controller, Get, Inject, Post, Query, Res } from "@nestjs/common";
+import { ApiBody, ApiCreatedResponse, ApiQuery, ApiTags } from "@nestjs/swagger";
 import { OrgRoles } from "@thallesp/nestjs-better-auth";
 import { AcademyId } from "../academy-request";
+import { ZodBody } from "../zod-body.decorator";
+import {
+  CsvImportConfirmDto,
+  CsvImportConfirmResponseDto,
+  CsvImportPreviewDto,
+  CsvImportPreviewResponseDto,
+} from "./csv.dto";
 import { CsvService } from "./csv.service";
 
 type CsvResponse = {
@@ -24,12 +31,22 @@ export class CsvController {
   }
 
   @Post("students/import-csv")
-  async importPreview(@Body() body: { csv: string }, @AcademyId() academyId: string) {
+  @ApiBody({ type: CsvImportPreviewDto })
+  @ApiCreatedResponse({ type: CsvImportPreviewResponseDto })
+  async importPreview(
+    @ZodBody(CsvImportPreviewDto) body: CsvImportPreviewDto,
+    @AcademyId() academyId: string,
+  ): Promise<CsvImportPreviewResponseDto> {
     return this.csvService.previewImport(academyId, body.csv);
   }
 
   @Post("students/import-csv/confirm")
-  async importConfirm(@Body() body: { previewToken: string }, @AcademyId() academyId: string) {
+  @ApiBody({ type: CsvImportConfirmDto })
+  @ApiCreatedResponse({ type: CsvImportConfirmResponseDto })
+  async importConfirm(
+    @ZodBody(CsvImportConfirmDto) body: CsvImportConfirmDto,
+    @AcademyId() academyId: string,
+  ): Promise<CsvImportConfirmResponseDto> {
     return this.csvService.confirmImport(academyId, body.previewToken);
   }
 

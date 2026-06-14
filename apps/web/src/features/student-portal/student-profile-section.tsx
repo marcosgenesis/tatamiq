@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
+import type { StudentGraduationResponse, StudentMeResponse } from "@tatamiq/contracts";
+import type { components } from "@tatamiq/contracts/generated";
 import {
   ArrowRight01Icon,
   ChampionIcon,
@@ -16,7 +18,10 @@ import { Skeleton } from "../../components/ui/skeleton";
 import { authClient } from "../../lib/auth-client";
 import { getInitials } from "../student-access/student-mobile-shell";
 import { BeltVisual } from "./components/belt-visual";
-import { beltProgress, type GraduationInput } from "./lib/belt-progress";
+import { beltProgress } from "./lib/belt-progress";
+import { toGraduationInput } from "./lib/graduation-response";
+
+type UpdateStudentProfileInput = components["schemas"]["UpdateStudentProfileDto"];
 
 export function StudentProfileSection() {
   const queryClient = useQueryClient();
@@ -30,32 +35,29 @@ export function StudentProfileSection() {
     queryKey: ["student", "me"],
     queryFn: async () => {
       const { data, error: err } = await api.GET("/student/me");
-      if (err) throw new Error("Erro ao carregar perfil.");
-      return data;
+      if (err || !data) throw new Error("Erro ao carregar perfil.");
+      return data satisfies StudentMeResponse;
     },
   });
   const graduationQuery = useQuery({
     queryKey: ["student", "graduation"],
     queryFn: async () => {
-      // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
-      const { data, error: err } = await (api.GET as any)("/student/graduation");
-      if (err) throw new Error("graduation");
-      return data as GraduationInput;
+      const { data, error: err } = await api.GET("/student/graduation");
+      if (err || !data) throw new Error("graduation");
+      return data satisfies StudentGraduationResponse;
     },
   });
 
   useEffect(() => {
     if (meQuery.data) {
-      const s = meQuery.data.student as { phone?: string; email?: string };
-      setPhone(s.phone ?? "");
-      setEmail(s.email ?? "");
+      setPhone(meQuery.data.student.phone ?? "");
+      setEmail(meQuery.data.student.email ?? "");
     }
   }, [meQuery.data]);
 
   const mutation = useMutation({
-    mutationFn: async (body: { phone?: string; email?: string }) => {
-      // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
-      const { error: err } = await (api.PATCH as any)("/student/profile", { body });
+    mutationFn: async (body: UpdateStudentProfileInput) => {
+      const { error: err } = await api.PATCH("/student/profile", { body });
       if (err) throw new Error("Não foi possível salvar.");
     },
     onSuccess: () => {
@@ -73,9 +75,10 @@ export function StudentProfileSection() {
     e.preventDefault();
     setSuccess(null);
     setError(null);
-    const body: { phone?: string; email?: string } = {};
-    if (phone) body.phone = phone;
-    if (email) body.email = email;
+    const body = {
+      ...(phone ? { phone } : {}),
+      ...(email ? { email } : {}),
+    } satisfies UpdateStudentProfileInput;
     mutation.mutate(body);
   }
 
@@ -93,12 +96,10 @@ export function StudentProfileSection() {
     );
   }
 
-  const student = meQuery.data?.student as
-    | { name: string; status: string; readOnly?: boolean }
-    | undefined;
+  const student = meQuery.data?.student;
   const academy = meQuery.data?.academy;
   const readOnly = Boolean(student?.readOnly);
-  const belt = graduationQuery.data ? beltProgress(graduationQuery.data) : null;
+  const belt = graduationQuery.data ? beltProgress(toGraduationInput(graduationQuery.data)) : null;
   const isActive = student?.status === "active";
 
   return (

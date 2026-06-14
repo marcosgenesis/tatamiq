@@ -1,30 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
+import type { StudentGraduationResponse } from "@tatamiq/contracts";
 import { api } from "../../api";
 import { Badge } from "../../components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
-
-type Promotion = {
-  id: string;
-  beltName: string;
-  degree: number;
-  promotedAt: string;
-  notes: string | null;
-};
-
-type GraduationData = {
-  currentBelt: { id: string; name: string; path: string; position: number } | null;
-  currentDegree: number;
-  promotions: Promotion[];
-};
+import { toGraduationInput } from "./lib/graduation-response";
 
 export function StudentGraduationSection() {
   const query = useQuery({
     queryKey: ["student", "graduation"],
     queryFn: async () => {
-      // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
-      const { data, error } = await (api.GET as any)("/student/graduation");
-      if (error) throw new Error("Não foi possível carregar graduação.");
-      return data as GraduationData;
+      const { data, error } = await api.GET("/student/graduation");
+      if (error || !data) throw new Error("Não foi possível carregar graduação.");
+      return data satisfies StudentGraduationResponse;
     },
   });
 
@@ -36,7 +23,7 @@ export function StudentGraduationSection() {
     return <p className="text-sm text-destructive">Erro ao carregar graduação.</p>;
   }
 
-  const { currentBelt, currentDegree, promotions } = query.data;
+  const { currentBelt, currentDegree, promotions } = toGraduationInput(query.data);
 
   return (
     <div className="space-y-6">

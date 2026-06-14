@@ -1,5 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
+import type { components } from "@tatamiq/contracts/generated";
 import { Award01Icon, QrCodeIcon, Wallet01Icon } from "hugeicons-react";
 import { type ComponentType, type FormEvent, useMemo, useState } from "react";
 import { api } from "../../../api";
@@ -126,6 +127,8 @@ function WelcomeStep({ onStart, onSkip }: { onStart: () => void; onSkip: () => v
   );
 }
 
+type UpdateStudentProfileInput = components["schemas"]["UpdateStudentProfileDto"];
+
 function ProfileStep({
   name,
   phone: initialPhone,
@@ -143,11 +146,11 @@ function ProfileStep({
   const [email, setEmail] = useState(initialEmail);
   const mutation = useMutation({
     mutationFn: async () => {
-      const body: { phone?: string; email?: string } = {};
-      if (phone) body.phone = phone;
-      if (email) body.email = email;
-      // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
-      await (api.PATCH as any)("/student/profile", { body });
+      const body = {
+        ...(phone ? { phone } : {}),
+        ...(email ? { email } : {}),
+      } satisfies UpdateStudentProfileInput;
+      await api.PATCH("/student/profile", { body });
     },
     onSettled: onContinue,
   });

@@ -1,5 +1,5 @@
 import { Controller, Get, HttpCode, Inject, Param, Patch, Post } from "@nestjs/common";
-import { ApiOkResponse, ApiTags } from "@nestjs/swagger";
+import { ApiBody, ApiOkResponse, ApiParam, ApiTags } from "@nestjs/swagger";
 import { OrgRoles } from "@thallesp/nestjs-better-auth";
 import { AcademyId } from "../academy-request";
 import { ZodBody } from "../zod-body.decorator";
@@ -19,6 +19,8 @@ export class BeltsController {
   }
 
   @Patch(":id")
+  @ApiParam({ name: "id" })
+  @ApiBody({ type: UpdateBeltDto })
   @ApiOkResponse({ type: BeltDto })
   update(
     @Param("id") id: string,

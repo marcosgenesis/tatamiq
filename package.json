@@ -25,8 +25,14 @@
     "lint-staged": "latest",
     "turbo": "latest",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.4",
+    "vitest": "^3.2.6",
     "wrangler": "^4.94.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "esbuild": "0.28.1",
+      "postcss": "8.5.10"
+    }
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,json,jsonc,css,md}": [

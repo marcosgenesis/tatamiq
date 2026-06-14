@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import type { StudentScheduleClass, StudentScheduleResponse } from "@tatamiq/contracts";
 import { Calendar03Icon } from "hugeicons-react";
 import { api } from "../../api";
 import { Badge } from "../../components/ui/badge";
@@ -6,24 +7,15 @@ import { Skeleton } from "../../components/ui/skeleton";
 import { cn } from "../../lib/utils";
 import { StudentEmptyState } from "./components/student-empty-state";
 
-type ScheduledClass = {
-  id: string;
-  classGroupName: string;
-  scheduledStartAt: string;
-  durationMinutes: number;
-  status: string;
-  source: string;
-};
-type Day = { date: string; weekday: string; classes: ScheduledClass[] };
+type Day = StudentScheduleResponse["days"][number];
 
 export function StudentScheduleSection() {
   const query = useQuery({
     queryKey: ["student", "schedule"],
     queryFn: async () => {
-      // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
-      const { data, error } = await (api.GET as any)("/student/schedule");
-      if (error) throw new Error("Não foi possível carregar a agenda.");
-      return data as { days: Day[] };
+      const { data, error } = await api.GET("/student/schedule");
+      if (error || !data) throw new Error("Não foi possível carregar a agenda.");
+      return data satisfies StudentScheduleResponse;
     },
   });
 
@@ -97,7 +89,7 @@ function WeekPill({ day, active }: { day: Day; active: boolean }) {
   );
 }
 
-function ClassRow({ cls }: { cls: ScheduledClass }) {
+function ClassRow({ cls }: { cls: StudentScheduleClass }) {
   const cancelled = cls.status === "cancelled";
   return (
     <div

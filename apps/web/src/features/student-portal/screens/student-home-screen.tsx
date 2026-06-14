@@ -1,5 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
+import type {
+  StudentAttendancesResponse,
+  StudentGraduationResponse,
+  StudentMeResponse,
+  StudentMonthlyFeesResponse,
+} from "@tatamiq/contracts";
 import {
   ArrowRight01Icon,
   Award01Icon,
@@ -9,26 +15,17 @@ import {
   QrCodeIcon,
   Wallet01Icon,
 } from "hugeicons-react";
-import type { ComponentType, ReactNode } from "react";
+import type { ComponentType } from "react";
 import { api } from "../../../api";
 import { Skeleton } from "../../../components/ui/skeleton";
 import { cn } from "../../../lib/utils";
 import { getInitials } from "../../student-access/student-mobile-shell";
 import { BeltVisual } from "../components/belt-visual";
-import { beltProgress, type GraduationInput } from "../lib/belt-progress";
+import { beltProgress } from "../lib/belt-progress";
+import { toGraduationInput } from "../lib/graduation-response";
 import { startsInLabel } from "../lib/student-format";
 
-type HomeData = {
-  student: { name: string; status: string };
-  academy: { name: string };
-  upcomingClasses: Array<{
-    id: string;
-    classGroupName: string;
-    status: string;
-    scheduledStartAt: string;
-    durationMinutes: number;
-  }>;
-};
+type HomeData = Pick<StudentMeResponse, "academy" | "student" | "upcomingClasses">;
 
 type ActivityItem = {
   icon: ComponentType<{ className?: string }>;
@@ -44,25 +41,17 @@ export function StudentHomeScreen({ data }: { data: HomeData }) {
   const graduationQuery = useQuery({
     queryKey: ["student", "graduation"],
     queryFn: async () => {
-      // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
-      const { data: g, error } = await (api.GET as any)("/student/graduation");
-      if (error) throw new Error("graduation");
-      return g as GraduationInput;
+      const { data: g, error } = await api.GET("/student/graduation");
+      if (error || !g) throw new Error("graduation");
+      return g satisfies StudentGraduationResponse;
     },
   });
   const attendancesQuery = useQuery({
     queryKey: ["student", "attendances"],
     queryFn: async () => {
-      // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
-      const { data: a, error } = await (api.GET as any)("/student/attendances");
-      if (error) throw new Error("attendances");
-      return a as {
-        attendances: Array<{
-          classGroupName: string;
-          createdAt: string;
-          invalidatedAt: string | null;
-        }>;
-      };
+      const { data: a, error } = await api.GET("/student/attendances");
+      if (error || !a) throw new Error("attendances");
+      return a satisfies StudentAttendancesResponse;
     },
   });
   const feesQuery = useQuery({
@@ -75,7 +64,7 @@ export function StudentHomeScreen({ data }: { data: HomeData }) {
   });
 
   const nextClass = data.upcomingClasses.find((c) => c.status !== "cancelled") ?? null;
-  const belt = graduationQuery.data ? beltProgress(graduationQuery.data) : null;
+  const belt = graduationQuery.data ? beltProgress(toGraduationInput(graduationQuery.data)) : null;
 
   const monthAttendances = (attendancesQuery.data?.attendances ?? []).filter(
     (a) => !a.invalidatedAt && isThisMonth(a.createdAt),
@@ -315,14 +304,13 @@ function isThisMonth(iso: string): boolean {
   return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
 }
 
-function deriveFeeStatus(fees: unknown): {
+function deriveFeeStatus(fees: StudentMonthlyFeesResponse | undefined): {
   value: string;
   label: string;
   tone: string;
   valueClass: string;
 } {
-  const list =
-    (fees as { fees?: Array<{ status: string; isOverdue?: boolean }> } | undefined)?.fees ?? [];
+  const list = fees?.fees ?? [];
   const overdue = list.find((f) => f.isOverdue && f.status === "open");
   const open = list.find((f) => f.status === "open");
   if (overdue)
@@ -348,11 +336,9 @@ function deriveFeeStatus(fees: unknown): {
 }
 
 function buildActivity(
-  graduation: GraduationInput | undefined,
-  // biome-ignore lint/suspicious/noExplicitAny: composed from loosely-typed endpoints
-  attendances: any,
-  // biome-ignore lint/suspicious/noExplicitAny: composed from loosely-typed endpoints
-  fees: any,
+  graduation: StudentGraduationResponse | undefined,
+  attendances: StudentAttendancesResponse | undefined,
+  fees: StudentMonthlyFeesResponse | undefined,
 ): ActivityItem[] {
   const items: ActivityItem[] = [];
   const promo = graduation?.promotions?.[0];
@@ -360,16 +346,17 @@ function buildActivity(
     items.push({
       icon: Award01Icon,
       tone: "bg-primary/10 text-primary",
-      title: promo.degree > 0 ? `Promovido para ${promo.degree}º grau` : `Faixa ${promo.beltName}`,
+      title:
+        promo.newDegree > 0
+          ? `Promovido para ${promo.newDegree}º grau`
+          : `Faixa ${promo.newBeltName}`,
       meta: new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(
         new Date(promo.promotedAt),
       ),
       at: +new Date(promo.promotedAt),
     });
   }
-  const att = attendances?.attendances?.find(
-    (a: { invalidatedAt: string | null }) => !a.invalidatedAt,
-  );
+  const att = attendances?.attendances.find((attendance) => !attendance.invalidatedAt);
   if (att) {
     items.push({
       icon: CheckmarkCircle03Icon,
@@ -379,7 +366,7 @@ function buildActivity(
       at: +new Date(att.createdAt),
     });
   }
-  const paid = fees?.fees?.find((f: { status: string }) => f.status === "paid");
+  const paid = fees?.fees.find((fee) => fee.status === "paid");
   if (paid?.paidAt) {
     items.push({
       icon: Wallet01Icon,

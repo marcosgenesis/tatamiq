@@ -97,14 +97,14 @@ Current ADRs:
 ### To do
 
 - [ ] **Graduação** — belt/degree system (adult + child), promotion history, eligibility (time + valid attendances), IBJJF-based editable rules
-- [ ] **Mensalidades** — monthly fee schema, auto-generation (5d before due), manual creation, adjustment w/ reason, waiver w/ reason, overdue status rotation
-- [ ] **Pix + verificação** — academy Pix config, student receipt upload (R2), instructor approval/rejection queue
-- [ ] **Academy settings** — edit name/logo/address/phone/Instagram, Pix config, logo upload (R2)
+- [x] **Mensalidades** — monthly fee schema, auto-generation (5d before due), manual creation, adjustment w/ reason, waiver w/ reason, overdue status rotation
+- [x] **Pix + verificação** — academy Pix config, student receipt upload (R2), instructor approval/rejection queue
+- [x] **Academy settings** — edit name/logo/address/phone/Instagram, Pix config, logo upload (R2)
 - [ ] **Dashboard instrutor** — payments in verification, overdue fees, eligible for promotion, pending/expired invites (today's classes already works)
 - [ ] **Anotações aluno** — free-text notes on student profile, public/private visibility, archive
-- [ ] **Import/export CSV** — student import, student/attendance/fee export
-- [ ] **Portal aluno (completo)** — next 7d schedule, attendance history 12m, fee history 12m, graduation view, send receipt, edit contact/photo
-- [ ] **Indicadores internos** — receipt approved/rejected, fee open/overdue, new note, new promotion, cancelled class
+- [x] **Import/export CSV** — student import, student/attendance/fee export
+- [x] **Portal aluno** — next 7d schedule, attendance history 12m, fee history 12m, graduation view, send receipt, edit contact/photo
+- [x] **Indicadores internos** — receipt approved/rejected, fee open/overdue, new note, new promotion, cancelled class
 - [ ] **Filtros obrigatórios** — students by class group/belt, attendances by period/class/student, fees by status/due date/student
 
 ## Development workflow

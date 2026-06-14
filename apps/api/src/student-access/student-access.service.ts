@@ -344,6 +344,8 @@ export class StudentAccessService {
         id: student.id,
         name: student.name,
         status: student.status === "inactive" ? "inactive" : "active",
+        phone: student.phone ?? null,
+        email: student.email ?? null,
         readOnly: state.readOnly,
         blocked: state.blocked,
       },

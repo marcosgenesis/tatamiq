@@ -82,6 +82,7 @@ export class CsvService {
     const emailSet = new Set(existingEmails.map((s) => s.email?.toLowerCase()).filter(Boolean));
 
     const rows: ParsedStudentRow[] = [];
+    const csvEmailSet = new Set<string>();
 
     for (let i = 1; i < lines.length; i++) {
       const cols = parseCsvLine(lines[i]);
@@ -120,8 +121,17 @@ export class CsvService {
       if (name && birthDate && existingSet.has(`${name.toLowerCase()}:${birthDate}`)) {
         warnings.push("Aluno com mesmo nome e data de nascimento já existe.");
       }
-      if (email && emailSet.has(email.toLowerCase())) {
-        warnings.push("Email já cadastrado em outro aluno.");
+
+      const normalizedEmail = email.trim().toLowerCase();
+      if (normalizedEmail) {
+        if (emailSet.has(normalizedEmail)) {
+          errors.push("Email já cadastrado em outro aluno.");
+        }
+        if (csvEmailSet.has(normalizedEmail)) {
+          errors.push("Email duplicado no arquivo CSV.");
+        } else {
+          csvEmailSet.add(normalizedEmail);
+        }
       }
 
       rows.push({
@@ -171,60 +181,64 @@ export class CsvService {
       throw new NotFoundException("Preview não encontrado ou expirado.");
     }
 
+    const result = await this.db.transaction(async (tx) => {
+      const academyBelts = await tx
+        .select()
+        .from(belts)
+        .where(eq(belts.organizationId, organizationId));
+      const beltsByName = new Map(academyBelts.map((b) => [b.name.toLowerCase(), b]));
+      const defaultBelt = academyBelts.find((b) => b.path === "adult" && b.position === 0);
+
+      let imported = 0;
+      let skipped = 0;
+
+      for (const row of preview.rows) {
+        if (row.errors.length > 0) {
+          skipped++;
+          continue;
+        }
+
+        const belt = beltsByName.get(row.beltName.toLowerCase()) ?? defaultBelt;
+        if (!belt) {
+          skipped++;
+          continue;
+        }
+
+        const studentId = crypto.randomUUID();
+        await tx.insert(students).values({
+          id: studentId,
+          organizationId,
+          name: row.name,
+          birthDate: row.birthDate,
+          enrollmentDate: row.enrollmentDate,
+          status: "active",
+          email: row.email || null,
+          phone: row.phone || null,
+          currentBeltId: belt.id,
+          currentDegree: row.degree,
+          monthlyAmountInCents: row.monthlyAmount,
+          monthlyDueDay: row.monthlyDueDay,
+        });
+
+        if (row.guardianName && row.guardianPhone) {
+          await tx.insert(studentGuardians).values({
+            id: crypto.randomUUID(),
+            studentId,
+            name: row.guardianName,
+            phone: row.guardianPhone,
+            email: row.guardianEmail || null,
+            relationship: row.guardianRelationship || null,
+          });
+        }
+        imported++;
+      }
+
+      return { imported, skipped };
+    });
+
     this.previewStore.delete(previewToken);
 
-    const academyBelts = await this.db
-      .select()
-      .from(belts)
-      .where(eq(belts.organizationId, organizationId));
-    const beltsByName = new Map(academyBelts.map((b) => [b.name.toLowerCase(), b]));
-    const defaultBelt = academyBelts.find((b) => b.path === "adult" && b.position === 0);
-
-    let imported = 0;
-    let skipped = 0;
-
-    for (const row of preview.rows) {
-      if (row.errors.length > 0) {
-        skipped++;
-        continue;
-      }
-
-      const belt = beltsByName.get(row.beltName.toLowerCase()) ?? defaultBelt;
-      if (!belt) {
-        skipped++;
-        continue;
-      }
-
-      const studentId = crypto.randomUUID();
-      await this.db.insert(students).values({
-        id: studentId,
-        organizationId,
-        name: row.name,
-        birthDate: row.birthDate,
-        enrollmentDate: row.enrollmentDate,
-        status: "active",
-        email: row.email || null,
-        phone: row.phone || null,
-        currentBeltId: belt.id,
-        currentDegree: row.degree,
-        monthlyAmountInCents: row.monthlyAmount,
-        monthlyDueDay: row.monthlyDueDay,
-      });
-
-      if (row.guardianName && row.guardianPhone) {
-        await this.db.insert(studentGuardians).values({
-          id: crypto.randomUUID(),
-          studentId,
-          name: row.guardianName,
-          phone: row.guardianPhone,
-          email: row.guardianEmail || null,
-          relationship: row.guardianRelationship || null,
-        });
-      }
-      imported++;
-    }
-
-    return { imported, skipped };
+    return result;
   }
 
   async exportStudents(organizationId: string): Promise<string> {
@@ -300,7 +314,6 @@ export class CsvService {
         escapeCsv(r.studentName),
         escapeCsv(r.classGroupName),
         r.attendance.source,
-        "",
         r.attendance.invalidatedAt ? "Sim" : "Não",
       ].join(","),
     );

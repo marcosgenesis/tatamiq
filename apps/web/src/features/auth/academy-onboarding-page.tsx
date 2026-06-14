@@ -1,4 +1,6 @@
 import { Navigate, useNavigate } from "@tanstack/react-router";
+import type { AcademyConfirmLogoInput } from "@tatamiq/contracts";
+import type { components } from "@tatamiq/contracts/generated";
 import {
   ArrowRight01Icon,
   Cancel01Icon,
@@ -19,6 +21,8 @@ import { formatBytes, useFileUpload } from "../../hooks/use-file-upload";
 import { createAcademySlug } from "../../lib/academy-slug";
 import { authClient } from "../../lib/auth-client";
 import { cn } from "../../lib/utils";
+
+type UpdateAcademyInput = components["schemas"]["UpdateAcademyDto"];
 
 type OnboardingData = {
   academyName: string;
@@ -90,10 +94,7 @@ export function AcademyOnboardingPage() {
 
     setIsSubmitting(true);
     try {
-      // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
-      const { data: uploadData, error: uploadError } = await (api.POST as any)(
-        "/academy/logo/upload-url",
-      );
+      const { data: uploadData, error: uploadError } = await api.POST("/academy/logo/upload-url");
       if (uploadError || !uploadData) throw new Error();
 
       const uploadRes = await fetch(uploadData.uploadUrl, {
@@ -103,9 +104,8 @@ export function AcademyOnboardingPage() {
       });
       if (!uploadRes.ok) throw new Error();
 
-      // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
-      const { error: confirmError } = await (api.POST as any)("/academy/logo/confirm", {
-        body: { fileKey: uploadData.fileKey },
+      const { error: confirmError } = await api.POST("/academy/logo/confirm", {
+        body: { fileKey: uploadData.fileKey } satisfies AcademyConfirmLogoInput,
       });
       if (confirmError) throw new Error();
     } catch {
@@ -119,14 +119,14 @@ export function AcademyOnboardingPage() {
   async function saveDetailsAndFinish() {
     setIsSubmitting(true);
     try {
-      const payload: Record<string, unknown> = {};
-      if (data.address.trim()) payload.address = data.address.trim();
-      if (data.phone.trim()) payload.phone = data.phone.trim();
-      if (data.instagram.trim()) payload.instagram = data.instagram.trim();
+      const payload = {
+        ...(data.address.trim() ? { address: data.address.trim() } : {}),
+        ...(data.phone.trim() ? { phone: data.phone.trim() } : {}),
+        ...(data.instagram.trim() ? { instagram: data.instagram.trim() } : {}),
+      } satisfies UpdateAcademyInput;
 
       if (Object.keys(payload).length > 0) {
-        // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
-        await (api.PATCH as any)("/academy", { body: payload });
+        await api.PATCH("/academy", { body: payload });
       }
     } catch {
       toast.error("Não foi possível salvar os detalhes, mas você pode editar nas configurações.");

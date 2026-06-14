@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { BeltDto } from "@tatamiq/contracts";
+import type { AcademyConfirmLogoInput, AcademyProfile, BeltDto } from "@tatamiq/contracts";
+import type { components } from "@tatamiq/contracts/generated";
 import { AlertCircleIcon, Cancel01Icon, UserIcon } from "hugeicons-react";
 import { type FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -30,6 +31,9 @@ import { Textarea } from "../../components/ui/textarea";
 import { useBelts } from "../../hooks/use-belts";
 import { formatBytes, useFileUpload } from "../../hooks/use-file-upload";
 import { cn } from "../../lib/utils";
+
+type UpdateAcademyInput = components["schemas"]["UpdateAcademyDto"];
+type UpdateBeltInput = components["schemas"]["UpdateBeltDto"];
 
 type PixKeyType = "cpf" | "email" | "phone" | "random";
 
@@ -175,21 +179,9 @@ export function SettingsPage() {
   const academyQuery = useQuery({
     queryKey: ["academy"],
     queryFn: async () => {
-      // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
-      const { data, error } = await (api.GET as any)("/academy");
-      if (error) throw new Error("Não foi possível carregar dados da academia.");
-      return data as {
-        id: string;
-        name: string;
-        slug: string;
-        logo: string | null;
-        address: string | null;
-        phone: string | null;
-        instagram: string | null;
-        pixKeyType: string | null;
-        pixKey: string | null;
-        pixCopyPaste: string | null;
-      };
+      const { data, error } = await api.GET("/academy");
+      if (error || !data) throw new Error("Não foi possível carregar dados da academia.");
+      return data satisfies AcademyProfile;
     },
   });
 
@@ -217,9 +209,8 @@ export function SettingsPage() {
   }, [academyQuery.data]);
 
   const saveMutation = useMutation({
-    mutationFn: async (input: Record<string, unknown>) => {
-      // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
-      const { data, error } = await (api.PATCH as any)("/academy", { body: input });
+    mutationFn: async (input: UpdateAcademyInput) => {
+      const { data, error } = await api.PATCH("/academy", { body: input });
       if (error) throw new Error("Não foi possível salvar as configurações.");
       return data;
     },
@@ -239,26 +230,29 @@ export function SettingsPage() {
   function submitForm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const payload: Record<string, unknown> = {
+    const payload = {
       name: form.name,
       address: form.address,
       phone: form.phone,
       instagram: form.instagram,
-    };
-
-    if (form.pixMode === "key") {
-      payload.pixKeyType = form.pixKeyType;
-      payload.pixKey = form.pixKey;
-      payload.pixCopyPaste = "";
-    } else if (form.pixMode === "copy_paste") {
-      payload.pixKeyType = null;
-      payload.pixKey = "";
-      payload.pixCopyPaste = form.pixCopyPaste;
-    } else {
-      payload.pixKeyType = null;
-      payload.pixKey = "";
-      payload.pixCopyPaste = "";
-    }
+      ...(form.pixMode === "key"
+        ? {
+            pixKeyType: form.pixKeyType,
+            pixKey: form.pixKey,
+            pixCopyPaste: "",
+          }
+        : form.pixMode === "copy_paste"
+          ? {
+              pixKeyType: null,
+              pixKey: "",
+              pixCopyPaste: form.pixCopyPaste,
+            }
+          : {
+              pixKeyType: null,
+              pixKey: "",
+              pixCopyPaste: "",
+            }),
+    } satisfies UpdateAcademyInput;
 
     saveMutation.mutate(payload);
   }
@@ -266,10 +260,7 @@ export function SettingsPage() {
   async function handleLogoUpload(file: File) {
     setIsUploading(true);
     try {
-      // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
-      const { data: uploadData, error: uploadError } = await (api.POST as any)(
-        "/academy/logo/upload-url",
-      );
+      const { data: uploadData, error: uploadError } = await api.POST("/academy/logo/upload-url");
       if (uploadError || !uploadData) {
         throw new Error("Não foi possível gerar URL de upload.");
       }
@@ -283,9 +274,8 @@ export function SettingsPage() {
         throw new Error("Falha ao enviar arquivo.");
       }
 
-      // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
-      const { error: confirmError } = await (api.POST as any)("/academy/logo/confirm", {
-        body: { fileKey: uploadData.fileKey },
+      const { error: confirmError } = await api.POST("/academy/logo/confirm", {
+        body: { fileKey: uploadData.fileKey } satisfies AcademyConfirmLogoInput,
       });
       if (confirmError) {
         throw new Error("Não foi possível confirmar o logo.");
@@ -511,10 +501,9 @@ function BeltRulesSection() {
   const updateBeltMutation = useMutation({
     mutationFn: async ({ id, body }: { id: string; body: Partial<BeltRuleFields> }) => {
       setSavingBeltId(id);
-      // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
-      const { error } = await (api.PATCH as any)("/belts/{id}", {
+      const { error } = await api.PATCH("/belts/{id}", {
         params: { path: { id } },
-        body,
+        body: toUpdateBeltInput(body),
       });
       if (error) throw new Error("Não foi possível salvar regras da faixa.");
     },
@@ -537,8 +526,7 @@ function BeltRulesSection() {
   function getBeltValue(belt: BeltDto, field: keyof BeltRuleFields): number | null {
     const override = editingBelts[belt.id]?.[field];
     if (override !== undefined) return override;
-    // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
-    return (belt as any)[field] ?? null;
+    return belt[field] ?? null;
   }
 
   function updateBeltField(beltId: string, field: keyof BeltRuleFields, value: number | null) {
@@ -654,3 +642,23 @@ type BeltRuleFields = {
   minMonthsForNextBelt: number | null;
   minAttendancesForNextBelt: number | null;
 };
+
+function toUpdateBeltInput(body: Partial<BeltRuleFields>): UpdateBeltInput {
+  return {
+    ...(body.maxDegrees !== undefined && body.maxDegrees !== null
+      ? { maxDegrees: body.maxDegrees }
+      : {}),
+    ...(body.minMonthsForNextDegree !== undefined && body.minMonthsForNextDegree !== null
+      ? { minMonthsForNextDegree: body.minMonthsForNextDegree }
+      : {}),
+    ...(body.minAttendancesForNextDegree !== undefined && body.minAttendancesForNextDegree !== null
+      ? { minAttendancesForNextDegree: body.minAttendancesForNextDegree }
+      : {}),
+    ...(body.minMonthsForNextBelt !== undefined && body.minMonthsForNextBelt !== null
+      ? { minMonthsForNextBelt: body.minMonthsForNextBelt }
+      : {}),
+    ...(body.minAttendancesForNextBelt !== undefined && body.minAttendancesForNextBelt !== null
+      ? { minAttendancesForNextBelt: body.minAttendancesForNextBelt }
+      : {}),
+  };
+}

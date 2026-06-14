@@ -1,11 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
+import type { StudentGraduationResponse } from "@tatamiq/contracts";
 import { ArrowLeft01Icon, ChampionIcon, Tick02Icon } from "hugeicons-react";
 import { api } from "../../../api";
 import { Skeleton } from "../../../components/ui/skeleton";
 import { cn } from "../../../lib/utils";
 import { BeltVisual } from "../components/belt-visual";
-import { BELT_ORDER, beltProgress, type GraduationInput } from "../lib/belt-progress";
+import { BELT_ORDER, beltProgress } from "../lib/belt-progress";
+import { toGraduationInput } from "../lib/graduation-response";
 
 const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit",
@@ -18,15 +20,15 @@ export function StudentGraduationScreen() {
   const query = useQuery({
     queryKey: ["student", "graduation"],
     queryFn: async () => {
-      // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
-      const { data, error } = await (api.GET as any)("/student/graduation");
-      if (error) throw new Error("Não foi possível carregar graduação.");
-      return data as GraduationInput;
+      const { data, error } = await api.GET("/student/graduation");
+      if (error || !data) throw new Error("Não foi possível carregar graduação.");
+      return data satisfies StudentGraduationResponse;
     },
   });
 
-  const belt = query.data ? beltProgress(query.data) : null;
-  const promotions = (query.data?.promotions ?? [])
+  const graduation = query.data ? toGraduationInput(query.data) : null;
+  const belt = graduation ? beltProgress(graduation) : null;
+  const promotions = (graduation?.promotions ?? [])
     .slice()
     .sort((a, b) => +new Date(b.promotedAt) - +new Date(a.promotedAt));
 

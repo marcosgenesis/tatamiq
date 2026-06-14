@@ -28,6 +28,7 @@ export type GraduationInput = {
   currentBelt: { name: string; position?: number; path?: string | null } | null;
   currentDegree: number;
   promotions: Array<{
+    id?: string;
     beltName: string;
     degree: number;
     promotedAt: string;

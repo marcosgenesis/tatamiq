@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  Body,
   Controller,
   Get,
   HttpCode,
@@ -12,7 +11,12 @@ import { ApiBody, ApiOkResponse, ApiTags } from "@nestjs/swagger";
 import { OrgRoles } from "@thallesp/nestjs-better-auth";
 import { AcademyId } from "../academy-request";
 import { ZodBody } from "../zod-body.decorator";
-import { AcademyLogoUploadResponseDto, AcademyProfileDto, UpdateAcademyDto } from "./academy.dto";
+import {
+  AcademyConfirmLogoDto,
+  AcademyLogoUploadResponseDto,
+  AcademyProfileDto,
+  UpdateAcademyDto,
+} from "./academy.dto";
 import { AcademyService } from "./academy.service";
 
 @ApiTags("academy")
@@ -46,10 +50,11 @@ export class AcademyController {
 
   @Post("logo/confirm")
   @HttpCode(200)
+  @ApiBody({ type: AcademyConfirmLogoDto })
   @ApiOkResponse({ type: AcademyProfileDto })
   confirmLogo(
     @AcademyId() academyId: string,
-    @Body() body: { fileKey: string },
+    @ZodBody(AcademyConfirmLogoDto) body: AcademyConfirmLogoDto,
   ): Promise<AcademyProfileDto> {
     if (!body.fileKey) {
       throw new BadRequestException("fileKey é obrigatório.");
