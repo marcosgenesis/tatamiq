@@ -308,6 +308,7 @@ export function SchedulePage() {
                             <button
                               key={occ.id}
                               type="button"
+                              data-testid="schedule-occurrence-card"
                               className={`schedule-event absolute z-[2] flex flex-col overflow-hidden rounded-md text-left ${eventColorClasses(occ)}`}
                               style={{
                                 top: `${pos.top + 1}px`,
