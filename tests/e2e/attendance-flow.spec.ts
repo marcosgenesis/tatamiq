@@ -1,16 +1,17 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
+import { INSTRUCTOR_STORAGE_STATE } from "./support/auth";
 import { resetE2eFixture } from "./support/database";
 
+test.use({ storageState: INSTRUCTOR_STORAGE_STATE });
 test.describe.configure({ mode: "serial" });
 
-test.beforeEach(() => {
+test.beforeAll(() => {
   resetE2eFixture();
 });
 
 test("recurring class supports QR, manual correction, visitor attendance, and ending", async ({
   page,
 }) => {
-  await signIn(page);
   await page.goto("/schedule");
   await expect(page.getByRole("heading", { name: "Agenda" })).toBeVisible();
 
@@ -60,7 +61,6 @@ test("recurring class supports QR, manual correction, visitor attendance, and en
 });
 
 test("ad hoc class can be started and ended", async ({ page }) => {
-  await signIn(page);
   await page.goto("/schedule");
 
   const adHocCard = occurrenceCard(page, "E2E Open Mat Avulsa");
@@ -75,7 +75,6 @@ test("ad hoc class can be started and ended", async ({ page }) => {
 });
 
 test("cancelled recurring occurrence cannot be started", async ({ page }) => {
-  await signIn(page);
   await page.goto("/schedule");
 
   const cancelledCard = occurrenceCard(page, "E2E Aula Cancelada");
@@ -83,14 +82,6 @@ test("cancelled recurring occurrence cannot be started", async ({ page }) => {
   await expect(cancelledCard.getByRole("button", { name: "Iniciar aula" })).toHaveCount(0);
   await expect(cancelledCard.getByRole("button", { name: "Reativar" })).toBeVisible();
 });
-
-async function signIn(page: Page) {
-  await page.goto("/sign-in");
-  await page.getByLabel("Email").fill("dev@tatamiq.local");
-  await page.getByLabel("Senha").fill("tatamiq123");
-  await page.getByRole("button", { name: "Entrar" }).click();
-  await expect(page.getByRole("heading", { name: "Painel" })).toBeVisible();
-}
 
 async function addStudentBySearch(page: Page, studentName: string) {
   await page.getByRole("button", { name: "Adicionar aluno" }).click();

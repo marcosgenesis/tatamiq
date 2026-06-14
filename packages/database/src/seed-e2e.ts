@@ -20,6 +20,12 @@ type SeedDatabase = Parameters<Parameters<typeof db.transaction>[0]>[0];
 const DEV_USER_EMAIL = "dev@tatamiq.local";
 const DEV_ORG_SLUG = "academia-de-teste-dev";
 
+/**
+ * E2E fixture conventions:
+ * - keep ids stable and prefixed with `e2e-` so reset logic can target only test data
+ * - make each domain slice extend this map instead of inventing ad hoc ids in specs
+ * - keep reseeding idempotent: reset first, then recreate the same records every run
+ */
 const FIXTURE = {
   recurringClassGroupId: "e2e-class-group-recurring",
   recurringScheduleId: "e2e-schedule-recurring-today",
@@ -120,7 +126,7 @@ async function createFixture(database: SeedDatabase, organizationId: string, use
       id: FIXTURE.whiteBeltId,
       organizationId,
       name: "Branca",
-      slug: "adult-white",
+      slug: "e2e-adult-white",
       path: "adult",
       position: 0,
       maxDegrees: 4,
@@ -133,7 +139,7 @@ async function createFixture(database: SeedDatabase, organizationId: string, use
       id: FIXTURE.blueBeltId,
       organizationId,
       name: "Azul",
-      slug: "adult-blue",
+      slug: "e2e-adult-blue",
       path: "adult",
       position: 1,
       maxDegrees: 4,
