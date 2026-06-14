@@ -13,11 +13,12 @@ test("recurring class supports QR, manual correction, visitor attendance, and en
   page,
 }) => {
   await page.goto("/schedule");
-  await expect(page.getByRole("heading", { name: "Agenda" })).toBeVisible();
+  await expect(page).toHaveURL(/\/schedule$/);
+  await expect(page.getByRole("button", { name: "Hoje" })).toBeVisible();
 
-  const recurringCard = occurrenceCard(page, "E2E No-Gi 19h");
-  await expect(recurringCard).toContainText("Recorrente");
-  await recurringCard.getByRole("button", { name: "Iniciar aula" }).click();
+  await occurrenceButton(page, "E2E No-Gi 19h").click();
+  await expect(page.getByText("Recorrente", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Iniciar aula" }).click();
 
   await expect(page).toHaveURL(/\/classes\//);
   await expect(page.getByRole("heading", { name: "E2E No-Gi 19h" })).toBeVisible();
@@ -63,9 +64,9 @@ test("recurring class supports QR, manual correction, visitor attendance, and en
 test("ad hoc class can be started and ended", async ({ page }) => {
   await page.goto("/schedule");
 
-  const adHocCard = occurrenceCard(page, "E2E Open Mat Avulsa");
-  await expect(adHocCard).toContainText("Avulsa");
-  await adHocCard.getByRole("button", { name: "Iniciar aula" }).click();
+  await occurrenceButton(page, "E2E Open Mat Avulsa").click();
+  await expect(page.getByText("Avulsa", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Iniciar aula" }).click();
 
   await expect(page).toHaveURL(/\/classes\//);
   await expect(page.getByRole("heading", { name: "E2E Open Mat Avulsa" })).toBeVisible();
@@ -77,10 +78,10 @@ test("ad hoc class can be started and ended", async ({ page }) => {
 test("cancelled recurring occurrence cannot be started", async ({ page }) => {
   await page.goto("/schedule");
 
-  const cancelledCard = occurrenceCard(page, "E2E Aula Cancelada");
-  await expect(cancelledCard).toContainText("Cancelada");
-  await expect(cancelledCard.getByRole("button", { name: "Iniciar aula" })).toHaveCount(0);
-  await expect(cancelledCard.getByRole("button", { name: "Reativar" })).toBeVisible();
+  await occurrenceButton(page, "E2E Aula Cancelada").click();
+  await expect(page.getByText("Cancelada", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Iniciar aula" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Reativar aula" })).toBeVisible();
 });
 
 async function addStudentBySearch(page: Page, studentName: string) {
@@ -89,8 +90,8 @@ async function addStudentBySearch(page: Page, studentName: string) {
   await searchResult(page, studentName).getByRole("button", { name: "Marcar presença" }).click();
 }
 
-function occurrenceCard(page: Page, classGroupName: string): Locator {
-  return page.getByTestId("schedule-occurrence-card").filter({ hasText: classGroupName }).first();
+function occurrenceButton(page: Page, classGroupName: string): Locator {
+  return page.getByRole("button", { name: new RegExp(classGroupName) }).first();
 }
 
 function rosterRow(page: Page, studentName: string): Locator {

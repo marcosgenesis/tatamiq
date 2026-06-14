@@ -18,11 +18,34 @@ test("sign-up flows through onboarding into the instructor panel", async ({ page
   await page.getByLabel("Senha").fill(initialPassword);
   await page.getByRole("button", { name: "Criar conta" }).click();
 
+  await expect(page).toHaveURL(/\/choose-area$/);
+  await page.getByRole("button", { name: "Criar academia" }).click();
+
   await expect(page).toHaveURL(/\/onboarding\/academy$/);
-  await page.getByLabel("Nome da academia").fill(academyName);
+  await page.getByPlaceholder("Ex: Arte Suave BJJ").fill(academyName);
   await page.getByRole("button", { name: "Continuar" }).click();
-  await page.getByRole("button", { name: "Pular" }).click();
-  await page.getByRole("button", { name: "Começar a usar" }).click();
+
+  const nextStep = await Promise.race([
+    page
+      .getByRole("heading", { name: "Painel" })
+      .waitFor({ state: "visible", timeout: 5_000 })
+      .then(() => "panel" as const),
+    page
+      .getByRole("button", { name: "Pular" })
+      .waitFor({ state: "visible", timeout: 5_000 })
+      .then(() => "logo" as const),
+    page
+      .getByRole("button", { name: "Começar a usar" })
+      .waitFor({ state: "visible", timeout: 5_000 })
+      .then(() => "details" as const),
+  ]);
+
+  if (nextStep === "logo") {
+    await page.getByRole("button", { name: "Pular" }).click();
+    await page.getByRole("button", { name: "Começar a usar" }).click();
+  } else if (nextStep === "details") {
+    await page.getByRole("button", { name: "Começar a usar" }).click();
+  }
 
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole("heading", { name: "Painel" })).toBeVisible();
@@ -43,9 +66,8 @@ test("invalid credentials show the expected sign-in error", async ({ page }) => 
 test("sign-out returns to sign-in and sign-in works again", async ({ page }) => {
   await signIn(page, initialPassword);
 
-  await page.goto("/choose-area", { waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("button", { name: "Trocar conta" })).toBeVisible();
-  await page.getByRole("button", { name: "Trocar conta" }).click();
+  await page.getByRole("button", { name: displayName.charAt(0), exact: true }).click();
+  await page.getByRole("menuitem", { name: "Sair" }).click();
 
   await expect(page).toHaveURL(/\/sign-in$/);
   await expect(page.getByRole("heading", { name: "Entrar no Tatamiq" })).toBeVisible();
@@ -62,7 +84,8 @@ test("forgot password issues a token and reset password allows a new sign-in", a
     page.getByText("Se o email existir, o link de recuperação será enviado."),
   ).toBeVisible();
 
-  const token = await getLatestPasswordResetToken();
+  const token = await getLatestPasswordResetToken(signupEmail);
+
   await page.goto(`/reset-password?token=${token}`);
   await page.getByLabel("Nova senha").fill(resetPassword);
   await page.getByRole("button", { name: "Definir senha" }).click();
