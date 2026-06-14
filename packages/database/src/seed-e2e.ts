@@ -10,6 +10,7 @@ import {
   classSessions,
   organization,
   studentClassGroups,
+  studentGuardians,
   students,
   user,
 } from "./schema";
@@ -20,6 +21,8 @@ type SeedDatabase = Parameters<Parameters<typeof db.transaction>[0]>[0];
 const DEV_USER_EMAIL = "dev@tatamiq.local";
 const DEV_ORG_SLUG = "academia-de-teste-dev";
 
+// Convention: keep every fixture id stable under the e2e-* namespace so slices can
+// extend this file safely without colliding or depending on insert order.
 const FIXTURE = {
   recurringClassGroupId: "e2e-class-group-recurring",
   recurringScheduleId: "e2e-schedule-recurring-today",
@@ -30,12 +33,14 @@ const FIXTURE = {
   adHocSessionId: "e2e-class-session-ad-hoc",
   anaStudentId: "e2e-student-ana-presente",
   brunoStudentId: "e2e-student-bruno-visitante",
+  crudFixtureStudentId: "e2e-student-crud-fixture",
   anaLinkId: "e2e-link-ana-recurring",
   recurringTagId: "e2e-tag-recurring",
   cancelledTagId: "e2e-tag-cancelled",
   adHocTagId: "e2e-tag-ad-hoc",
   whiteBeltId: "e2e-belt-adult-white",
   blueBeltId: "e2e-belt-adult-blue",
+  childGreyBeltId: "e2e-belt-child-grey",
 };
 
 const fixtureClassGroupIds = [
@@ -43,8 +48,13 @@ const fixtureClassGroupIds = [
   FIXTURE.cancelledClassGroupId,
   FIXTURE.adHocClassGroupId,
 ];
-const fixtureStudentIds = [FIXTURE.anaStudentId, FIXTURE.brunoStudentId];
+const fixtureStudentIds = [
+  FIXTURE.anaStudentId,
+  FIXTURE.brunoStudentId,
+  FIXTURE.crudFixtureStudentId,
+];
 const fixtureScheduleIds = [FIXTURE.recurringScheduleId, FIXTURE.cancelledScheduleId];
+const fixtureBeltIds = [FIXTURE.whiteBeltId, FIXTURE.blueBeltId, FIXTURE.childGreyBeltId];
 
 const [devUser] = await db
   .select({ id: user.id })
@@ -110,8 +120,11 @@ async function resetFixture(database: SeedDatabase) {
     .delete(classGroupSchedules)
     .where(inArray(classGroupSchedules.id, fixtureScheduleIds));
   await database.delete(classGroups).where(inArray(classGroups.id, fixtureClassGroupIds));
+  await database
+    .delete(studentGuardians)
+    .where(inArray(studentGuardians.studentId, fixtureStudentIds));
   await database.delete(students).where(inArray(students.id, fixtureStudentIds));
-  await database.delete(belts).where(inArray(belts.id, [FIXTURE.whiteBeltId, FIXTURE.blueBeltId]));
+  await database.delete(belts).where(inArray(belts.id, fixtureBeltIds));
 }
 
 async function createFixture(database: SeedDatabase, organizationId: string, userId: string) {
@@ -120,7 +133,7 @@ async function createFixture(database: SeedDatabase, organizationId: string, use
       id: FIXTURE.whiteBeltId,
       organizationId,
       name: "Branca",
-      slug: "adult-white",
+      slug: "e2e-adult-white",
       path: "adult",
       position: 0,
       maxDegrees: 4,
@@ -133,9 +146,22 @@ async function createFixture(database: SeedDatabase, organizationId: string, use
       id: FIXTURE.blueBeltId,
       organizationId,
       name: "Azul",
-      slug: "adult-blue",
+      slug: "e2e-adult-blue",
       path: "adult",
       position: 1,
+      maxDegrees: 4,
+      minMonthsForNextDegree: 6,
+      minAttendancesForNextDegree: 30,
+      minMonthsForNextBelt: 24,
+      minAttendancesForNextBelt: 120,
+    },
+    {
+      id: FIXTURE.childGreyBeltId,
+      organizationId,
+      name: "Cinza",
+      slug: "e2e-child-grey",
+      path: "child",
+      position: 0,
       maxDegrees: 4,
       minMonthsForNextDegree: 6,
       minAttendancesForNextDegree: 30,
@@ -179,7 +205,35 @@ async function createFixture(database: SeedDatabase, organizationId: string, use
       createdAt: now,
       updatedAt: now,
     },
+    {
+      id: FIXTURE.crudFixtureStudentId,
+      organizationId: organizationId,
+      name: "000 E2E Carla CRUD",
+      birthDate: "2007-04-20",
+      enrollmentDate: "2024-03-05",
+      status: "active",
+      inactiveAt: null,
+      phone: null,
+      email: "carla.crud.e2e@tatamiq.local",
+      monthlyAmountInCents: 23000,
+      monthlyDueDay: 15,
+      currentBeltId: FIXTURE.childGreyBeltId,
+      currentDegree: 2,
+      createdAt: now,
+      updatedAt: now,
+    },
   ]);
+
+  await database.insert(studentGuardians).values({
+    id: "e2e-guardian-crud-fixture",
+    studentId: FIXTURE.crudFixtureStudentId,
+    name: "E2E Guardiã Carla",
+    phone: "11988887777",
+    email: "guardia.carla.e2e@tatamiq.local",
+    relationship: "Mãe",
+    createdAt: now,
+    updatedAt: now,
+  });
 
   await database.insert(classGroups).values([
     {

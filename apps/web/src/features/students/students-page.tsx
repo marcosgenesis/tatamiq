@@ -28,7 +28,7 @@ type StudentsTab = "students" | "pre-registrations";
 export function StudentsPage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<StudentsTab>("students");
-  const [status, _setStatus] = useState<StudentStatusFilter>("active");
+  const [status, setStatus] = useState<StudentStatusFilter>("active");
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
@@ -103,7 +103,9 @@ export function StudentsPage() {
   const [isImportOpen, setIsImportOpen] = useState(false);
 
   const students = studentsQuery.data?.students ?? [];
+  const summary = studentsQuery.data?.summary;
   const hasStudents = students.length > 0;
+  const hasAnyStudents = (summary?.total ?? 0) > 0;
 
   const openEditForm = useCallback((student: Student) => {
     setEditingStudent(student);
@@ -290,14 +292,44 @@ export function StudentsPage() {
             onClose={closeForm}
           />
 
+          <div className="flex flex-wrap gap-2">
+            <StatusFilterButton
+              label="Ativos"
+              count={summary?.active ?? 0}
+              active={status === "active"}
+              onClick={() => {
+                setStatus("active");
+                setPagination((current) => ({ ...current, pageIndex: 0 }));
+              }}
+            />
+            <StatusFilterButton
+              label="Inativos"
+              count={summary?.inactive ?? 0}
+              active={status === "inactive"}
+              onClick={() => {
+                setStatus("inactive");
+                setPagination((current) => ({ ...current, pageIndex: 0 }));
+              }}
+            />
+            <StatusFilterButton
+              label="Todos"
+              count={summary?.total ?? 0}
+              active={status === "all"}
+              onClick={() => {
+                setStatus("all");
+                setPagination((current) => ({ ...current, pageIndex: 0 }));
+              }}
+            />
+          </div>
+
           <div>
             {studentsQuery.isError ? (
               <p className="text-sm text-destructive">Não foi possível carregar alunos.</p>
             ) : null}
-            {!studentsQuery.isLoading && !hasStudents ? (
+            {!studentsQuery.isLoading && !hasAnyStudents ? (
               <StudentsEmptyState onCreate={openCreateForm} />
             ) : null}
-            {hasStudents || studentsQuery.isLoading ? (
+            {hasAnyStudents || studentsQuery.isLoading ? (
               <DataGridContainer className="overflow-x-auto">
                 <DataGrid
                   table={table}
@@ -365,6 +397,20 @@ function AccessActions(props: {
   return (
     <Button type="button" variant="secondary" size="sm" onClick={props.onGenerateInvite}>
       {access.status === "expired" ? "Gerar novo convite" : "Gerar convite"}
+    </Button>
+  );
+}
+
+function StatusFilterButton(props: {
+  label: string;
+  count: number;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <Button type="button" variant={props.active ? "default" : "outline"} onClick={props.onClick}>
+      {props.label}
+      <Badge variant={props.active ? "primary-light" : "secondary"}>{props.count}</Badge>
     </Button>
   );
 }
