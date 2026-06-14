@@ -17,29 +17,40 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: "pnpm --filter @tatamiq/api dev",
+      command: "pnpm dev",
+      cwd: "apps/api",
       url: `${apiUrl}/health`,
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
       env: {
+        ...process.env,
         PORT: new URL(apiUrl).port,
         CORS_ORIGIN: webUrl,
       },
     },
     {
-      command: "pnpm --filter @tatamiq/web dev",
+      command: "pnpm dev",
+      cwd: "apps/web",
       url: webUrl,
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
       env: {
+        ...process.env,
         VITE_API_URL: apiUrl,
       },
     },
   ],
   projects: [
     {
+      name: "setup",
+      testMatch: /.*\.setup\.ts/,
+      use: { ...devices["Desktop Chrome"] },
+    },
+    {
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
+      dependencies: ["setup"],
+      testIgnore: /.*\.setup\.ts/,
     },
   ],
 });
