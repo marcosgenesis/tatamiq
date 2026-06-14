@@ -1,16 +1,18 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
-import { INSTRUCTOR_STORAGE_STATE_PATH } from "./support/auth";
+import { INSTRUCTOR_STORAGE_STATE } from "./support/auth";
 import { resetE2eFixture } from "./support/database";
 
 test.describe.configure({ mode: "serial" });
-test.use({ storageState: INSTRUCTOR_STORAGE_STATE_PATH });
+test.use({ storageState: INSTRUCTOR_STORAGE_STATE });
 
 test.beforeAll(() => {
   resetE2eFixture();
 });
 
-const adultStudentName = `000 E2E Adulto ${Date.now()}`;
-const minorStudentName = `000 E2E Menor ${Date.now()}`;
+const adultStudentName = "000 E2E Adulto CRUD";
+const adultStudentEmail = "adult.crud.e2e@tatamiq.local";
+const minorStudentName = "000 E2E Menor CRUD";
+const minorStudentEmail = "minor.crud.e2e@tatamiq.local";
 const fixtureStudentName = "000 E2E Carla CRUD";
 
 test("create a minor student with guardian and show guardian in the row", async ({ page }) => {
@@ -24,7 +26,7 @@ test("create a minor student with guardian and show guardian in the row", async 
     birthDate: "14/06/2012",
     enrollmentDate: "10/01/2024",
     phone: "11987654321",
-    email: `minor.${Date.now()}@tatamiq.local`,
+    email: minorStudentEmail,
     monthlyAmountDigits: "19990",
     dueDay: "10",
     beltName: "Cinza",
@@ -40,7 +42,7 @@ test("create a minor student with guardian and show guardian in the row", async 
   await page.getByLabel("Telefone do responsável", { exact: true }).fill("11999998888");
   await page
     .getByLabel("Email do responsável", { exact: true })
-    .fill(`guardian.${Date.now()}@tatamiq.local`);
+    .fill("guardian.minor.crud.e2e@tatamiq.local");
   await page.getByLabel("Parentesco", { exact: true }).fill("Mãe");
   await page.getByRole("button", { name: "Salvar aluno" }).click();
 
@@ -63,7 +65,7 @@ test("create an adult student without guardian section", async ({ page }) => {
     birthDate: "12/03/1998",
     enrollmentDate: "15/02/2024",
     phone: "",
-    email: `adult.${Date.now()}@tatamiq.local`,
+    email: adultStudentEmail,
     monthlyAmountDigits: "25000",
     dueDay: "05",
     beltName: "Branca",
