@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
+import type { StudentAttendanceDto, StudentAttendancesResponse } from "@tatamiq/contracts";
 import { FireIcon, QrCodeIcon } from "hugeicons-react";
 import { api } from "../../api";
 import { Badge } from "../../components/ui/badge";
@@ -9,15 +10,6 @@ import { cn } from "../../lib/utils";
 import { StudentEmptyState } from "./components/student-empty-state";
 import { dayOfMonth, weekdayShort } from "./lib/student-format";
 
-type Attendance = {
-  id: string;
-  classGroupName: string;
-  source: string;
-  isOutOfGroup: boolean;
-  invalidatedAt: string | null;
-  createdAt: string;
-};
-
 const MONTH_FMT = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" });
 
 export function StudentAttendanceSection() {
@@ -25,10 +17,9 @@ export function StudentAttendanceSection() {
   const query = useQuery({
     queryKey: ["student", "attendances"],
     queryFn: async () => {
-      // biome-ignore lint/suspicious/noExplicitAny: endpoint not in generated types
-      const { data, error } = await (api.GET as any)("/student/attendances");
-      if (error) throw new Error("Não foi possível carregar presenças.");
-      return data as { attendances: Attendance[] };
+      const { data, error } = await api.GET("/student/attendances");
+      if (error || !data) throw new Error("Não foi possível carregar presenças.");
+      return data satisfies StudentAttendancesResponse;
     },
   });
 
@@ -181,7 +172,7 @@ function sameMonth(iso: string, ref: Date): boolean {
   return d.getMonth() === ref.getMonth() && d.getFullYear() === ref.getFullYear();
 }
 
-function weeklyBuckets(items: Attendance[], now: Date): number[] {
+function weeklyBuckets(items: StudentAttendanceDto[], now: Date): number[] {
   const buckets = new Array(8).fill(0);
   const msWeek = 7 * 86_400_000;
   for (const a of items) {
@@ -191,8 +182,10 @@ function weeklyBuckets(items: Attendance[], now: Date): number[] {
   return buckets;
 }
 
-function groupByMonth(items: Attendance[]): Array<{ label: string; items: Attendance[] }> {
-  const map = new Map<string, Attendance[]>();
+function groupByMonth(
+  items: StudentAttendanceDto[],
+): Array<{ label: string; items: StudentAttendanceDto[] }> {
+  const map = new Map<string, StudentAttendanceDto[]>();
   for (const a of [...items].sort((x, y) => +new Date(y.createdAt) - +new Date(x.createdAt))) {
     const label = MONTH_FMT.format(new Date(a.createdAt));
     const list = map.get(label) ?? [];

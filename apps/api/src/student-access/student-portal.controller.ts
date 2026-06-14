@@ -153,6 +153,7 @@ export class StudentPortalController {
   }
 
   @Patch("profile")
+  @ApiBody({ type: UpdateStudentProfileDto })
   async updateStudentProfile(
     @ActorId() actorId: string,
     @ZodBody(UpdateStudentProfileDto) body: UpdateStudentProfileDto,
@@ -177,6 +178,7 @@ export class StudentPortalController {
 
   @Post("indicators/mark-seen")
   @HttpCode(200)
+  @ApiBody({ type: MarkSeenDto })
   async markSeen(
     @ActorId() actorId: string,
     @ZodBody(MarkSeenDto) body: MarkSeenDto,

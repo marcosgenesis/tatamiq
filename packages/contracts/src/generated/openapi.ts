@@ -1786,6 +1786,9 @@ export interface components {
             uploadUrl: string;
             fileKey: string;
         };
+        AcademyConfirmLogoDto: {
+            fileKey: string;
+        };
         ListBeltsResponseDto: {
             belts: {
                 id: string;
@@ -1800,6 +1803,13 @@ export interface components {
                 minMonthsForNextBelt: number;
                 minAttendancesForNextBelt: number;
             }[];
+        };
+        UpdateBeltDto: {
+            minMonthsForNextDegree?: number;
+            minAttendancesForNextDegree?: number;
+            minMonthsForNextBelt?: number;
+            minAttendancesForNextBelt?: number;
+            maxDegrees?: number;
         };
         BeltDto: {
             id: string;
@@ -2193,6 +2203,8 @@ export interface components {
                 name: string;
                 /** @enum {string} */
                 status: "active" | "inactive";
+                phone: string | null;
+                email: string | null;
                 readOnly: boolean;
                 blocked: boolean;
             };
@@ -2336,6 +2348,10 @@ export interface components {
                 createdAt: string;
             }[];
         };
+        UpdateStudentProfileDto: {
+            phone?: string | "";
+            email?: string | "";
+        };
         StudentGraduationResponseDto: {
             currentBelt: {
                 id: string;
@@ -2366,6 +2382,10 @@ export interface components {
             hasNewNotes: boolean;
             hasNewPromotion: boolean;
             hasCancelledClass: boolean;
+        };
+        MarkSeenDto: {
+            /** @enum {string} */
+            type: "fees" | "notes" | "graduation" | "schedule";
         };
         ListMonthlyFeesResponseDto: {
             fees: {
@@ -2501,6 +2521,11 @@ export interface components {
                 requiredMonths: number;
                 requiredAttendances: number;
             }[];
+            summary: {
+                degree: number;
+                belt: number;
+                transition: number;
+            };
         };
         GraduationSummaryResponseDto: {
             degree: number;
@@ -2740,6 +2765,28 @@ export interface components {
         };
         InvalidateAttendanceDto: {
             reason: string;
+        };
+        CsvImportPreviewDto: {
+            csv: string;
+        };
+        CsvImportPreviewResponseDto: {
+            totalLines: number;
+            validLines: number;
+            errorLines: number;
+            previewToken: string;
+            lines: {
+                line: number;
+                name: string;
+                errors: string[];
+                warnings: string[];
+            }[];
+        };
+        CsvImportConfirmDto: {
+            previewToken: string;
+        };
+        CsvImportConfirmResponseDto: {
+            imported: number;
+            skipped: number;
         };
         ReservedFirstAccessPreviewDto: {
             /** @enum {string} */
@@ -3143,7 +3190,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcademyConfirmLogoDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -3178,10 +3229,16 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                id: unknown;
+            };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateBeltDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -3922,7 +3979,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateStudentProfileDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -3977,7 +4038,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarkSeenDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -4978,13 +5043,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CsvImportPreviewDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CsvImportPreviewResponseDto"];
+                };
             };
         };
     };
@@ -4995,13 +5066,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CsvImportConfirmDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CsvImportConfirmResponseDto"];
+                };
             };
         };
     };

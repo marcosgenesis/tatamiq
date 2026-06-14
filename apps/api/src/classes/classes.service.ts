@@ -2,6 +2,7 @@ import { BadRequestException, Inject, Injectable, NotFoundException } from "@nes
 import type { ClassSession, QrTokenResponse, StartRecurringClassInput } from "@tatamiq/contracts";
 import { classGroupSchedules, classGroups, classSessions, type Database } from "@tatamiq/database";
 import { and, eq } from "drizzle-orm";
+import { resolveQrTokenSecret } from "../auth";
 import { DATABASE } from "../database/database.module";
 import { canTransition } from "./class-rules";
 import { generateQrToken, QR_WINDOW_SECONDS } from "./qr-token";
@@ -132,11 +133,7 @@ export class ClassesService {
       throw new BadRequestException("QR token disponível apenas para aula ativa.");
     }
 
-    const secret =
-      process.env.BETTER_AUTH_SECRET ??
-      "dev-only-tatamiq-better-auth-secret-change-me-minimum-32-chars";
-
-    const result = generateQrToken(id, organizationId, secret);
+    const result = generateQrToken(id, organizationId, resolveQrTokenSecret());
 
     return {
       ...result,

@@ -16,6 +16,7 @@ import {
   students,
 } from "@tatamiq/database";
 import { and, eq, isNull } from "drizzle-orm";
+import { resolveQrTokenSecret } from "../auth";
 import { parseClassStatus } from "../class-status";
 import { verifyQrToken } from "../classes/qr-token";
 import { DATABASE } from "../database/database.module";
@@ -31,8 +32,7 @@ export class QrAttendanceService {
     const access = await this.findActiveAccessForUser(userId);
     if (!access) throw new ForbiddenException("Conta sem acesso de aluno ativo.");
 
-    const secret = qrSecret();
-    const claims = verifyQrToken(input.token, secret);
+    const claims = verifyQrToken(input.token, resolveQrTokenSecret());
     if (!claims) throw new BadRequestException("QR Code inválido ou expirado.");
     if (claims.organizationId !== access.organizationId) {
       throw new ForbiddenException("QR Code não pertence à academia do aluno.");
@@ -162,12 +162,6 @@ export class QrAttendanceService {
       .limit(1);
     return !link;
   }
-}
-
-function qrSecret(): string {
-  const secret = process.env.QR_TOKEN_SECRET ?? process.env.BETTER_AUTH_SECRET;
-  if (!secret) throw new Error("QR_TOKEN_SECRET or BETTER_AUTH_SECRET must be set.");
-  return secret;
 }
 
 function toClassSessionDto(row: {

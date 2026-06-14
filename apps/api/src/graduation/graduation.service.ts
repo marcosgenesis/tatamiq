@@ -3,7 +3,6 @@ import type {
   CreatePromotionInput,
   DismissEligibilityInput,
   EligibilityType,
-  EligibleStudent,
   GraduationSummaryResponse,
   ListEligibleStudentsResponse,
   ListPromotionsResponse,
@@ -18,9 +17,9 @@ import {
   promotions,
   students,
 } from "@tatamiq/database";
-import { and, desc, eq, gte, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
-import { calculateAge, calculateEligibility, monthsBetween } from "./eligibility-rules";
+import { projectGraduationEligibility } from "./graduation-eligibility-projection";
 
 @Injectable()
 export class GraduationService {
@@ -145,123 +144,18 @@ export class GraduationService {
     organizationId: string,
     type?: EligibilityType,
   ): Promise<ListEligibleStudentsResponse> {
-    const org = await this.db
-      .select({ childToAdultAge: organization.childToAdultAge })
-      .from(organization)
-      .where(eq(organization.id, organizationId))
-      .limit(1);
-    const childToAdultAge = org[0]?.childToAdultAge ?? 16;
+    const projection = await this.computeEligibilityProjection(organizationId);
 
-    const studentRows = await this.db
-      .select({
-        student: students,
-        belt: belts,
-      })
-      .from(students)
-      .innerJoin(belts, eq(students.currentBeltId, belts.id))
-      .where(and(eq(students.organizationId, organizationId), eq(students.status, "active")));
-
-    const now = new Date();
-    const eligible: EligibleStudent[] = [];
-
-    for (const { student, belt } of studentRows) {
-      const lastPromotion = await this.db
-        .select({ promotedAt: promotions.promotedAt })
-        .from(promotions)
-        .where(eq(promotions.studentId, student.id))
-        .orderBy(desc(promotions.promotedAt))
-        .limit(1);
-
-      const referenceDate = lastPromotion[0]
-        ? new Date(lastPromotion[0].promotedAt)
-        : new Date(student.enrollmentDate);
-
-      const validAttendances = await this.db
-        .select({ count: sql<number>`count(*)::int` })
-        .from(attendances)
-        .where(
-          and(
-            eq(attendances.studentId, student.id),
-            isNull(attendances.invalidatedAt),
-            gte(attendances.createdAt, referenceDate),
-          ),
-        );
-
-      const attendanceCount = validAttendances[0]?.count ?? 0;
-      const months = monthsBetween(referenceDate, now);
-      const age = calculateAge(new Date(student.birthDate), now);
-
-      const result = calculateEligibility(
-        {
-          maxDegrees: belt.maxDegrees,
-          minMonthsForNextDegree: belt.minMonthsForNextDegree,
-          minAttendancesForNextDegree: belt.minAttendancesForNextDegree,
-          minMonthsForNextBelt: belt.minMonthsForNextBelt,
-          minAttendancesForNextBelt: belt.minAttendancesForNextBelt,
-          path: belt.path as "adult" | "child",
-        },
-        {
-          currentDegree: student.currentDegree,
-          monthsSinceReference: months,
-          attendancesSinceReference: attendanceCount,
-          age,
-          childToAdultAge,
-          degreeEligibilityDismissedUntil: student.degreeEligibilityDismissedUntil,
-          beltEligibilityDismissedUntil: student.beltEligibilityDismissedUntil,
-          transitionDismissedUntil: student.transitionDismissedUntil,
-        },
-        now,
-      );
-
-      const base = {
-        id: student.id,
-        name: student.name,
-        currentBeltId: belt.id,
-        currentBeltName: belt.name,
-        currentBeltPath: belt.path as "adult" | "child",
-        currentDegree: student.currentDegree,
-        monthsSinceReference: months,
-        attendancesSinceReference: attendanceCount,
-      };
-
-      if (result.degreeEligible && (!type || type === "degree")) {
-        eligible.push({
-          ...base,
-          eligibilityType: "degree",
-          requiredMonths: belt.minMonthsForNextDegree,
-          requiredAttendances: belt.minAttendancesForNextDegree,
-        });
-      }
-
-      if (result.beltEligible && (!type || type === "belt")) {
-        eligible.push({
-          ...base,
-          eligibilityType: "belt",
-          requiredMonths: belt.minMonthsForNextBelt,
-          requiredAttendances: belt.minAttendancesForNextBelt,
-        });
-      }
-
-      if (result.transitionEligible && (!type || type === "transition")) {
-        eligible.push({
-          ...base,
-          eligibilityType: "transition",
-          requiredMonths: 0,
-          requiredAttendances: 0,
-        });
-      }
-    }
-
-    return { students: eligible };
+    return {
+      students: type
+        ? projection.students.filter((student) => student.eligibilityType === type)
+        : projection.students,
+      summary: projection.summary,
+    };
   }
 
   async summary(organizationId: string): Promise<GraduationSummaryResponse> {
-    const { students: all } = await this.listEligibleStudents(organizationId);
-    return {
-      degree: all.filter((s) => s.eligibilityType === "degree").length,
-      belt: all.filter((s) => s.eligibilityType === "belt").length,
-      transition: all.filter((s) => s.eligibilityType === "transition").length,
-    };
+    return (await this.computeEligibilityProjection(organizationId)).summary;
   }
 
   async dismissEligibility(
@@ -314,6 +208,100 @@ export class GraduationService {
       currentDegree: row.student.currentDegree,
       promotions: history,
     };
+  }
+
+  private async computeEligibilityProjection(organizationId: string) {
+    const org = await this.db
+      .select({ childToAdultAge: organization.childToAdultAge })
+      .from(organization)
+      .where(eq(organization.id, organizationId))
+      .limit(1);
+    const childToAdultAge = org[0]?.childToAdultAge ?? 16;
+
+    const studentRows = await this.db
+      .select({
+        student: students,
+        belt: belts,
+      })
+      .from(students)
+      .innerJoin(belts, eq(students.currentBeltId, belts.id))
+      .where(and(eq(students.organizationId, organizationId), eq(students.status, "active")));
+
+    if (studentRows.length === 0) {
+      return projectGraduationEligibility([], childToAdultAge);
+    }
+
+    const studentIds = studentRows.map(({ student }) => student.id);
+
+    const promotionRows = await this.db
+      .select({ studentId: promotions.studentId, promotedAt: promotions.promotedAt })
+      .from(promotions)
+      .where(
+        and(
+          eq(promotions.organizationId, organizationId),
+          inArray(promotions.studentId, studentIds),
+        ),
+      )
+      .orderBy(desc(promotions.promotedAt), desc(promotions.createdAt));
+
+    const attendanceRows = await this.db
+      .select({
+        studentId: attendances.studentId,
+        createdAt: attendances.createdAt,
+        invalidatedAt: attendances.invalidatedAt,
+      })
+      .from(attendances)
+      .where(
+        and(
+          eq(attendances.organizationId, organizationId),
+          inArray(attendances.studentId, studentIds),
+        ),
+      );
+
+    const latestPromotionByStudent = new Map<string, string>();
+    for (const row of promotionRows) {
+      if (!latestPromotionByStudent.has(row.studentId)) {
+        latestPromotionByStudent.set(row.studentId, row.promotedAt);
+      }
+    }
+
+    const attendancesByStudent = new Map<
+      string,
+      Array<{ createdAt: Date; invalidatedAt: Date | null }>
+    >();
+    for (const row of attendanceRows) {
+      const existing = attendancesByStudent.get(row.studentId) ?? [];
+      existing.push({ createdAt: row.createdAt, invalidatedAt: row.invalidatedAt });
+      attendancesByStudent.set(row.studentId, existing);
+    }
+
+    return projectGraduationEligibility(
+      studentRows.map(({ student, belt }) => ({
+        student: {
+          id: student.id,
+          name: student.name,
+          birthDate: student.birthDate,
+          enrollmentDate: student.enrollmentDate,
+          currentDegree: student.currentDegree,
+          degreeEligibilityDismissedUntil: student.degreeEligibilityDismissedUntil,
+          beltEligibilityDismissedUntil: student.beltEligibilityDismissedUntil,
+          transitionDismissedUntil: student.transitionDismissedUntil,
+        },
+        belt: {
+          id: belt.id,
+          name: belt.name,
+          path: belt.path as "adult" | "child",
+          maxDegrees: belt.maxDegrees,
+          minMonthsForNextDegree: belt.minMonthsForNextDegree,
+          minAttendancesForNextDegree: belt.minAttendancesForNextDegree,
+          minMonthsForNextBelt: belt.minMonthsForNextBelt,
+          minAttendancesForNextBelt: belt.minAttendancesForNextBelt,
+        },
+        latestPromotionAt: latestPromotionByStudent.get(student.id) ?? null,
+        attendances: attendancesByStudent.get(student.id) ?? [],
+      })),
+      childToAdultAge,
+    );
   }
 
   private async findStudent(organizationId: string, studentId: string) {

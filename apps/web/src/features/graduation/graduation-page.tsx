@@ -45,15 +45,6 @@ type EligibleStudent = {
   requiredAttendances: number;
 };
 
-type Belt = {
-  id: string;
-  name: string;
-  slug: string;
-  path: string;
-  position: number;
-  maxDegrees: number;
-};
-
 const typeLabels: Record<EligibilityType, string> = {
   degree: "Grau",
   belt: "Faixa",
@@ -83,17 +74,14 @@ export function GraduationPage() {
   const [dismissStudent, setDismissStudent] = useState<EligibleStudent | null>(null);
   const [dismissForm, setDismissForm] = useState({ reason: "", days: "" });
 
-  const summaryQuery = useQuery({
-    queryKey: ["graduation", "summary"],
-    queryFn: () =>
-      apiFetch<{ degree: number; belt: number; transition: number }>("/graduation/summary"),
-  });
-
   const eligibleQuery = useQuery({
     queryKey: ["graduation", "eligible", typeFilter],
     queryFn: () => {
       const qs = typeFilter === "all" ? "" : `?type=${typeFilter}`;
-      return apiFetch<{ students: EligibleStudent[] }>(`/graduation/eligible${qs}`);
+      return apiFetch<{
+        students: EligibleStudent[];
+        summary: { degree: number; belt: number; transition: number };
+      }>(`/graduation/eligible${qs}`);
     },
   });
 
@@ -151,7 +139,7 @@ export function GraduationPage() {
   });
 
   const students = eligibleQuery.data?.students ?? [];
-  const summary = summaryQuery.data;
+  const summary = eligibleQuery.data?.summary;
 
   function openPromote(student: EligibleStudent) {
     setPromoteStudent(student);

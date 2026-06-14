@@ -190,6 +190,8 @@ export const studentMeResponseSchema = z.object({
     id: z.string(),
     name: z.string(),
     status: studentStatusSchema,
+    phone: z.string().nullable(),
+    email: z.string().nullable(),
     readOnly: z.boolean(),
     blocked: z.boolean(),
   }),
@@ -772,9 +774,14 @@ export const academyLogoUploadResponseSchema = z.object({
   fileKey: z.string(),
 });
 
+export const academyConfirmLogoSchema = z.object({
+  fileKey: z.string().trim().min(1),
+});
+
 export type AcademyProfile = z.infer<typeof academyProfileSchema>;
 export type UpdateAcademyInput = z.infer<typeof updateAcademySchema>;
 export type AcademyLogoUploadResponse = z.infer<typeof academyLogoUploadResponseSchema>;
+export type AcademyConfirmLogoInput = z.infer<typeof academyConfirmLogoSchema>;
 
 // --- Belt Editing ---
 
@@ -838,14 +845,15 @@ export const eligibleStudentSchema = z.object({
   requiredAttendances: z.number().int(),
 });
 
-export const listEligibleStudentsResponseSchema = z.object({
-  students: z.array(eligibleStudentSchema),
-});
-
 export const graduationSummaryResponseSchema = z.object({
   degree: z.number().int().nonnegative(),
   belt: z.number().int().nonnegative(),
   transition: z.number().int().nonnegative(),
+});
+
+export const listEligibleStudentsResponseSchema = z.object({
+  students: z.array(eligibleStudentSchema),
+  summary: graduationSummaryResponseSchema,
 });
 
 export const dismissEligibilitySchema = z.object({
@@ -947,6 +955,10 @@ export const csvImportLineSchema = z.object({
   warnings: z.array(z.string()),
 });
 
+export const csvImportPreviewSchema = z.object({
+  csv: z.string(),
+});
+
 export const csvImportPreviewResponseSchema = z.object({
   totalLines: z.number().int(),
   validLines: z.number().int(),
@@ -955,11 +967,17 @@ export const csvImportPreviewResponseSchema = z.object({
   lines: z.array(csvImportLineSchema),
 });
 
+export const csvImportConfirmSchema = z.object({
+  previewToken: z.string().trim().min(1),
+});
+
 export const csvImportConfirmResponseSchema = z.object({
   imported: z.number().int(),
   skipped: z.number().int(),
 });
 
 export type CsvImportLine = z.infer<typeof csvImportLineSchema>;
+export type CsvImportPreviewInput = z.infer<typeof csvImportPreviewSchema>;
 export type CsvImportPreviewResponse = z.infer<typeof csvImportPreviewResponseSchema>;
+export type CsvImportConfirmInput = z.infer<typeof csvImportConfirmSchema>;
 export type CsvImportConfirmResponse = z.infer<typeof csvImportConfirmResponseSchema>;
