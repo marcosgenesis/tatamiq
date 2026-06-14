@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
-import { createDatabase, verification } from "@tatamiq/database";
-import { desc, eq } from "drizzle-orm";
+import { createDatabase, user, verification } from "@tatamiq/database";
+import { desc, eq, like } from "drizzle-orm";
 
 const DEFAULT_DATABASE_URL = "postgres://tatamiq:tatamiq@localhost:5432/tatamiq";
 const db = createDatabase();
@@ -35,19 +35,49 @@ export function resetE2eFixture() {
  */
 export async function getLatestVerificationToken(identifier: string) {
   const [record] = await db
-    .select({ value: verification.value })
+    .select({ identifier: verification.identifier, value: verification.value })
     .from(verification)
-    .where(eq(verification.identifier, identifier))
+    .where(
+      identifier === "password-reset"
+        ? like(verification.identifier, "reset-password:%")
+        : eq(verification.identifier, identifier),
+    )
     .orderBy(desc(verification.createdAt))
     .limit(1);
 
-  if (!record?.value) {
+  if (!record?.identifier) {
     throw new Error(`No verification token found for identifier: ${identifier}`);
   }
 
-  return record.value;
+  return record.identifier.startsWith("reset-password:")
+    ? record.identifier.slice("reset-password:".length)
+    : record.value;
 }
 
-export function getLatestPasswordResetToken() {
-  return getLatestVerificationToken("password-reset");
+export async function getLatestPasswordResetToken(email?: string) {
+  if (!email) return getLatestVerificationToken("password-reset");
+
+  const [account] = await db
+    .select({ id: user.id })
+    .from(user)
+    .where(eq(user.email, email))
+    .limit(1);
+
+  if (!account?.id) {
+    throw new Error(`No user found for email: ${email}`);
+  }
+
+  const records = await db
+    .select({ identifier: verification.identifier, value: verification.value })
+    .from(verification)
+    .where(like(verification.identifier, "reset-password:%"))
+    .orderBy(desc(verification.createdAt))
+    .limit(20);
+
+  const matchingRecord = records.find((candidate) => candidate.value === account.id);
+  if (!matchingRecord?.identifier) {
+    throw new Error(`No password reset token found for email: ${email}`);
+  }
+
+  return matchingRecord.identifier.slice("reset-password:".length);
 }
