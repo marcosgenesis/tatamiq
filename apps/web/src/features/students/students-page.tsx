@@ -104,7 +104,6 @@ export function StudentsPage() {
 
   const students = studentsQuery.data?.students ?? [];
   const summary = studentsQuery.data?.summary;
-  const hasStudents = students.length > 0;
   const hasAnyStudents = (summary?.total ?? 0) > 0;
 
   const openEditForm = useCallback((student: Student) => {
