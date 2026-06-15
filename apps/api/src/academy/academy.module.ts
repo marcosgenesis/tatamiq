@@ -1,12 +1,12 @@
 import { Module } from "@nestjs/common";
 import { DatabaseModule } from "../database/database.module";
-import { R2StorageService } from "../monthly-fees/r2-storage.service";
+import { MonthlyFeesModule } from "../monthly-fees/monthly-fees.module";
 import { AcademyController } from "./academy.controller";
 import { AcademyService } from "./academy.service";
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, MonthlyFeesModule],
   controllers: [AcademyController],
-  providers: [AcademyService, R2StorageService],
+  providers: [AcademyService],
 })
 export class AcademyModule {}

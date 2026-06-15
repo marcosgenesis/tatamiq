@@ -8,7 +8,10 @@ import {
   classGroups,
   classGroupTags,
   classSessions,
+  monthlyFeeEvents,
+  monthlyFees,
   organization,
+  paymentReceipts,
   studentClassGroups,
   studentGuardians,
   students,
@@ -38,6 +41,8 @@ const FIXTURE = {
   anaStudentId: "e2e-student-ana-presente",
   brunoStudentId: "e2e-student-bruno-visitante",
   crudFixtureStudentId: "e2e-student-crud-fixture",
+  degreeEligibleStudentId: "e2e-student-degree-eligible",
+  freshStudentId: "e2e-student-fresh",
   anaLinkId: "e2e-link-ana-recurring",
   recurringTagId: "e2e-tag-recurring",
   cancelledTagId: "e2e-tag-cancelled",
@@ -45,6 +50,12 @@ const FIXTURE = {
   whiteBeltId: "e2e-belt-adult-white",
   blueBeltId: "e2e-belt-adult-blue",
   childGreyBeltId: "e2e-belt-child-grey",
+  openFeeId: "e2e-fee-open",
+  waiveFeeId: "e2e-fee-waive",
+  manualFeeId: "e2e-fee-manual",
+  reviewFeeId: "e2e-fee-review",
+  overdueFeeId: "e2e-fee-overdue",
+  pendingReceiptId: "e2e-receipt-pending",
 };
 
 const fixtureClassGroupIds = [
@@ -56,10 +67,16 @@ const fixtureStudentIds = [
   FIXTURE.anaStudentId,
   FIXTURE.brunoStudentId,
   FIXTURE.crudFixtureStudentId,
+  FIXTURE.degreeEligibleStudentId,
+  FIXTURE.freshStudentId,
 ];
 const fixtureScheduleIds = [FIXTURE.recurringScheduleId, FIXTURE.cancelledScheduleId];
 const fixtureBeltIds = [FIXTURE.whiteBeltId, FIXTURE.blueBeltId, FIXTURE.childGreyBeltId];
 const createdStudentEmails = ["adult.crud.e2e@tatamiq.local", "minor.crud.e2e@tatamiq.local"];
+const graduationSessionIds = Array.from(
+  { length: 31 },
+  (_, index) => `e2e-grad-session-${index + 1}`,
+);
 
 const [devUser] = await db
   .select({ id: user.id })
@@ -122,6 +139,32 @@ async function resetFixture(database: SeedDatabase) {
       .delete(attendances)
       .where(inArray(attendances.classSessionId, existingFixtureSessionIds));
   }
+
+  await database
+    .delete(monthlyFeeEvents)
+    .where(
+      inArray(monthlyFeeEvents.monthlyFeeId, [
+        FIXTURE.openFeeId,
+        FIXTURE.waiveFeeId,
+        FIXTURE.manualFeeId,
+        FIXTURE.reviewFeeId,
+        FIXTURE.overdueFeeId,
+      ]),
+    );
+  await database
+    .delete(paymentReceipts)
+    .where(inArray(paymentReceipts.id, [FIXTURE.pendingReceiptId]));
+  await database
+    .delete(monthlyFees)
+    .where(
+      inArray(monthlyFees.id, [
+        FIXTURE.openFeeId,
+        FIXTURE.waiveFeeId,
+        FIXTURE.manualFeeId,
+        FIXTURE.reviewFeeId,
+        FIXTURE.overdueFeeId,
+      ]),
+    );
 
   await database.delete(attendances).where(inArray(attendances.studentId, fixtureStudentIds));
   await database
@@ -233,7 +276,7 @@ async function createFixture(database: SeedDatabase, organizationId: string, use
       id: FIXTURE.crudFixtureStudentId,
       organizationId,
       name: "000 E2E Carla CRUD",
-      birthDate: "2007-04-20",
+      birthDate: "2012-04-20",
       enrollmentDate: "2024-03-05",
       status: "active",
       inactiveAt: null,
@@ -243,6 +286,40 @@ async function createFixture(database: SeedDatabase, organizationId: string, use
       monthlyDueDay: 15,
       currentBeltId: FIXTURE.childGreyBeltId,
       currentDegree: 2,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: FIXTURE.degreeEligibleStudentId,
+      organizationId,
+      name: "000 E2E Graduação Elegível",
+      birthDate: "1996-05-11",
+      enrollmentDate: isoDate(monthsAgo(7)),
+      status: "active",
+      inactiveAt: null,
+      phone: null,
+      email: "graduation.eligible.e2e@tatamiq.local",
+      monthlyAmountInCents: 21000,
+      monthlyDueDay: 10,
+      currentBeltId: FIXTURE.whiteBeltId,
+      currentDegree: 0,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: FIXTURE.freshStudentId,
+      organizationId,
+      name: "000 E2E Graduação Recém-matriculado",
+      birthDate: "2001-09-02",
+      enrollmentDate: isoDate(daysAgo(14)),
+      status: "active",
+      inactiveAt: null,
+      phone: null,
+      email: "graduation.fresh.e2e@tatamiq.local",
+      monthlyAmountInCents: 21000,
+      monthlyDueDay: 10,
+      currentBeltId: FIXTURE.whiteBeltId,
+      currentDegree: 0,
       createdAt: now,
       updatedAt: now,
     },
@@ -332,15 +409,26 @@ async function createFixture(database: SeedDatabase, organizationId: string, use
     },
   ]);
 
-  await database.insert(studentClassGroups).values({
-    id: FIXTURE.anaLinkId,
-    organizationId,
-    studentId: FIXTURE.anaStudentId,
-    classGroupId: FIXTURE.recurringClassGroupId,
-    activeFrom: "2024-01-10",
-    activeUntil: null,
-    createdAt: now,
-  });
+  await database.insert(studentClassGroups).values([
+    {
+      id: FIXTURE.anaLinkId,
+      organizationId,
+      studentId: FIXTURE.anaStudentId,
+      classGroupId: FIXTURE.recurringClassGroupId,
+      activeFrom: "2024-01-10",
+      activeUntil: null,
+      createdAt: now,
+    },
+    {
+      id: "e2e-link-grad-recurring",
+      organizationId,
+      studentId: FIXTURE.degreeEligibleStudentId,
+      classGroupId: FIXTURE.recurringClassGroupId,
+      activeFrom: isoDate(monthsAgo(7)),
+      activeUntil: null,
+      createdAt: now,
+    },
+  ]);
 
   await database.insert(classCancellations).values({
     id: FIXTURE.cancellationId,
@@ -354,21 +442,161 @@ async function createFixture(database: SeedDatabase, organizationId: string, use
     revertedByUserId: null,
   });
 
-  await database.insert(classSessions).values({
-    id: FIXTURE.adHocSessionId,
+  await database
+    .update(organization)
+    .set({
+      pixKeyType: "email",
+      pixKey: "pix.e2e@tatamiq.local",
+      pixCopyPaste: null,
+      logo: null,
+    })
+    .where(eq(organization.id, organizationId));
+
+  await database.insert(classSessions).values([
+    {
+      id: FIXTURE.adHocSessionId,
+      organizationId,
+      classGroupId: FIXTURE.adHocClassGroupId,
+      kind: "ad_hoc",
+      scheduledStartAt: scheduledStartAt(today, "21:00"),
+      actualStartAt: null,
+      durationMinutes: 45,
+      endedAt: null,
+      status: "scheduled",
+      cancelledAt: null,
+      cancelledByUserId: null,
+      createdByUserId: userId,
+      createdAt: now,
+      updatedAt: now,
+    },
+    ...graduationSessionIds.map((id, index) => {
+      const actualStartAt = daysAgo(31 - index, 19);
+      const endedAt = new Date(actualStartAt.getTime() + 60 * 60_000);
+      return {
+        id,
+        organizationId,
+        classGroupId: FIXTURE.recurringClassGroupId,
+        kind: "recurring",
+        scheduledStartAt: actualStartAt,
+        actualStartAt,
+        durationMinutes: 60,
+        endedAt,
+        status: "ended",
+        cancelledAt: null,
+        cancelledByUserId: null,
+        createdByUserId: userId,
+        createdAt: actualStartAt,
+        updatedAt: endedAt,
+      };
+    }),
+  ]);
+
+  await database.insert(attendances).values(
+    graduationSessionIds.map((classSessionId, index) => {
+      const createdAt = new Date(daysAgo(31 - index, 19).getTime() + 15 * 60_000);
+      return {
+        id: `e2e-grad-attendance-${index + 1}`,
+        organizationId,
+        classSessionId,
+        studentId: FIXTURE.degreeEligibleStudentId,
+        source: "manual",
+        invalidatedAt: null,
+        invalidatedByUserId: null,
+        invalidationReason: null,
+        createdByUserId: userId,
+        createdAt,
+      };
+    }),
+  );
+
+  await database.insert(monthlyFees).values([
+    {
+      id: FIXTURE.openFeeId,
+      organizationId,
+      studentId: FIXTURE.anaStudentId,
+      referenceYear: 2026,
+      referenceMonth: 7,
+      amountInCents: 18000,
+      originalAmountInCents: null,
+      dueDate: "2026-07-10",
+      status: "open",
+      paidAt: null,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: FIXTURE.waiveFeeId,
+      organizationId,
+      studentId: FIXTURE.anaStudentId,
+      referenceYear: 2026,
+      referenceMonth: 8,
+      amountInCents: 18000,
+      originalAmountInCents: null,
+      dueDate: "2026-08-10",
+      status: "open",
+      paidAt: null,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: FIXTURE.manualFeeId,
+      organizationId,
+      studentId: FIXTURE.brunoStudentId,
+      referenceYear: 2026,
+      referenceMonth: 7,
+      amountInCents: 25000,
+      originalAmountInCents: null,
+      dueDate: "2026-07-10",
+      status: "open",
+      paidAt: null,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: FIXTURE.reviewFeeId,
+      organizationId,
+      studentId: FIXTURE.brunoStudentId,
+      referenceYear: 2026,
+      referenceMonth: 8,
+      amountInCents: 25000,
+      originalAmountInCents: null,
+      dueDate: "2026-08-10",
+      status: "under_review",
+      paidAt: null,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: FIXTURE.overdueFeeId,
+      organizationId,
+      studentId: FIXTURE.anaStudentId,
+      referenceYear: 2026,
+      referenceMonth: 5,
+      amountInCents: 18000,
+      originalAmountInCents: null,
+      dueDate: "2026-05-10",
+      status: "open",
+      paidAt: null,
+      createdAt: now,
+      updatedAt: now,
+    },
+  ]);
+
+  await database.insert(paymentReceipts).values({
+    id: FIXTURE.pendingReceiptId,
+    monthlyFeeId: FIXTURE.reviewFeeId,
     organizationId,
-    classGroupId: FIXTURE.adHocClassGroupId,
-    kind: "ad_hoc",
-    scheduledStartAt: scheduledStartAt(today, "21:00"),
-    actualStartAt: null,
-    durationMinutes: 45,
-    endedAt: null,
-    status: "scheduled",
-    cancelledAt: null,
-    cancelledByUserId: null,
+    studentId: FIXTURE.brunoStudentId,
+    fileKey: "receipts/e2e/review/pending.png",
+    fileUrl: null,
+    fileType: "image/png",
+    fileSizeBytes: 1234,
+    note: "Comprovante E2E pendente",
+    status: "pending",
+    rejectionReason: null,
+    replacedAt: null,
     createdByUserId: userId,
     createdAt: now,
-    updatedAt: now,
   });
 }
 
@@ -378,4 +606,21 @@ function weekdayForDate(date: string): number {
 
 function scheduledStartAt(date: string, startTime: string): Date {
   return new Date(`${date}T${startTime}:00.000Z`);
+}
+
+function monthsAgo(months: number) {
+  const date = new Date();
+  date.setUTCMonth(date.getUTCMonth() - months);
+  return date;
+}
+
+function daysAgo(days: number, hour = 12) {
+  const date = new Date();
+  date.setUTCDate(date.getUTCDate() - days);
+  date.setUTCHours(hour, 0, 0, 0);
+  return date;
+}
+
+function isoDate(date: Date) {
+  return date.toISOString().slice(0, 10);
 }

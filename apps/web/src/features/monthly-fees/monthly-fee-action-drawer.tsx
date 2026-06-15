@@ -22,6 +22,11 @@ export function MonthlyFeeActionDrawer(props: {
   onReasonChange: (value: string) => void;
   onAmountChange: (value: string) => void;
 }) {
+  const confirmDisabled =
+    props.actionType === "manual_payment"
+      ? false
+      : !props.actionReason.trim() || (props.actionType === "adjust" && !props.actionAmount.trim());
+
   return (
     <Drawer
       direction="right"
@@ -70,7 +75,9 @@ export function MonthlyFeeActionDrawer(props: {
                 Cancelar
               </Button>
             </DrawerClose>
-            <Button type="submit">Confirmar</Button>
+            <Button type="submit" disabled={confirmDisabled}>
+              Confirmar
+            </Button>
           </DrawerFooter>
         </form>
       </DrawerContent>
