@@ -31,7 +31,10 @@ export function MonthlyFeeRow(props: {
   const isOpen = fee.status === "open";
 
   return (
-    <div className="grid gap-3 px-4 py-4 md:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr_0.8fr_1fr] md:items-center">
+    <div
+      className="grid gap-3 px-4 py-4 md:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr_0.8fr_1fr] md:items-center"
+      data-testid="monthly-fee-row"
+    >
       <strong>{fee.studentName}</strong>
       <span className="text-sm text-muted-foreground">
         {monthNames[fee.referenceMonth - 1]} {fee.referenceYear}

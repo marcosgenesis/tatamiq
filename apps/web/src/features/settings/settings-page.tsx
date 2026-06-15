@@ -563,7 +563,11 @@ function BeltRulesSection() {
             const hasChanges = !!editingBelts[belt.id];
             const isSaving = savingBeltId === belt.id;
             return (
-              <div key={belt.id} className="space-y-3 rounded-lg border border-border p-4">
+              <div
+                key={belt.id}
+                className="space-y-3 rounded-lg border border-border p-4"
+                data-testid={`belt-rule-card-${belt.slug}`}
+              >
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">{belt.name}</span>
                   {hasChanges && (
@@ -571,6 +575,7 @@ function BeltRulesSection() {
                       type="button"
                       size="sm"
                       disabled={isSaving}
+                      data-testid={`belt-rule-save-${belt.slug}`}
                       onClick={() => saveBelt(belt.id)}
                     >
                       {isSaving ? "Salvando..." : "Salvar"}

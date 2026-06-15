@@ -36,6 +36,22 @@ export function ActiveClassPage(props: { classId: string }) {
     refetchInterval: 10_000,
   });
 
+  const startMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await api.POST("/classes/{id}/start-ad-hoc", {
+        params: { path: { id: props.classId } },
+      });
+      if (error) throw new Error("Não foi possível iniciar a aula avulsa.");
+      return data;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["classes"] });
+      await queryClient.invalidateQueries({ queryKey: ["schedule"] });
+      await classQuery.refetch();
+      await qrQuery.refetch();
+    },
+  });
+
   const endMutation = useMutation({
     mutationFn: async () => {
       const { error } = await api.POST("/classes/{id}/end", {
@@ -46,13 +62,20 @@ export function ActiveClassPage(props: { classId: string }) {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["classes"] });
       await queryClient.invalidateQueries({ queryKey: ["schedule"] });
+      await classQuery.refetch();
+      await qrQuery.refetch();
     },
   });
 
   const classSession = classQuery.data;
   const qrToken = qrQuery.data;
+  const isScheduled = classSession?.status === "scheduled";
   const isActive = classSession?.status === "active";
   const isEnded = classSession?.status === "ended";
+  const canStartFromPage = isScheduled && classSession?.kind === "ad_hoc";
+  const qrUrl = qrToken
+    ? `${window.location.origin}/student/check-in?token=${encodeURIComponent(qrToken.token)}`
+    : null;
 
   if (classQuery.isLoading) {
     return (
@@ -110,14 +133,11 @@ export function ActiveClassPage(props: { classId: string }) {
               <div
                 className="flex justify-center rounded-2xl border border-primary/30 bg-white p-6"
                 data-testid="active-class-qr-code"
+                data-qr-url={qrUrl ?? undefined}
                 role="img"
                 aria-label="QR Code da aula ativa"
               >
-                <QRCodeSVG
-                  value={`${window.location.origin}/student/check-in?token=${encodeURIComponent(qrToken.token)}`}
-                  size={256}
-                  level="M"
-                />
+                <QRCodeSVG value={qrUrl ?? ""} size={256} level="M" />
               </div>
               <QrRefreshCountdown expiresAt={qrToken.expiresAt} onExpired={qrQuery.refetch} />
             </div>
@@ -131,6 +151,14 @@ export function ActiveClassPage(props: { classId: string }) {
           isActive={isActive}
           refetchInterval={isActive ? 10_000 : false}
         />
+      ) : null}
+
+      {canStartFromPage ? (
+        <div className="flex justify-end">
+          <Button disabled={startMutation.isPending} onClick={() => startMutation.mutate()}>
+            {startMutation.isPending ? "Iniciando..." : "Iniciar aula"}
+          </Button>
+        </div>
       ) : null}
 
       {isActive ? (
