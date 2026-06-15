@@ -26,6 +26,7 @@ export default defineConfig({
         ...process.env,
         PORT: new URL(apiUrl).port,
         CORS_ORIGIN: webUrl,
+        E2E: "true",
       },
     },
     {
