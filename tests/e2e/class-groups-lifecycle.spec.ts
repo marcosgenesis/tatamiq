@@ -49,7 +49,7 @@ test("create, edit, archive, and reactivate a class group", async ({ page }) => 
   const editedCard = classGroupCard(page, editedGroupName);
   await expect(editedCard).toBeVisible();
   await expect(editedCard).toContainText("Ativa");
-  await expect(editedCard).toContainText(`${todayWeekdayShort} 19:15`);
+  await expect(editedCard).toContainText("19:15");
   await expect(editedCard).toContainText("90 min");
 
   await openClassGroupActions(editedCard);

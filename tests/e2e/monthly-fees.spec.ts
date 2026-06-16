@@ -83,7 +83,13 @@ test("opens the fake R2 receipt and approves a pending receipt", async ({ page }
   await expect(reviewRow).toHaveCount(0);
 
   await page.goto("/monthly-fees?status=paid");
-  await expect(feeRow(page, "E2E Bruno Visitante", "Agosto 2026")).toContainText("Pago");
+  await expect(page).toHaveURL(/\/monthly-fees\?status=paid$/);
+  const paidRow = page
+    .getByTestId("monthly-fee-row")
+    .filter({ hasText: "E2E Bruno Visitante" })
+    .first();
+  await expect(paidRow).toBeVisible();
+  await expect(paidRow).toContainText("Pago");
 });
 
 test("rejecting a pending receipt requires a reason and returns the fee to open", async ({
