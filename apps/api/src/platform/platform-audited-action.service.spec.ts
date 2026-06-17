@@ -84,6 +84,115 @@ describe("PlatformAuditedActionService", () => {
     ]);
   });
 
+  it("writes a failure entry and rethrows the original command error", async () => {
+    const { auditedAction, entries } = service();
+    const error = new Error("Usuário não encontrado.");
+
+    await expect(
+      auditedAction.run(session({ id: "admin-1", role: "admin" }), () => Promise.reject(error), {
+        action: "platform.user.banned",
+        targetType: "user",
+        targetId: "user-42",
+        reason: "abuse",
+        metadata: { source: "test" },
+      }),
+    ).rejects.toBe(error);
+
+    expect(entries).toEqual([
+      expect.objectContaining({
+        adminUserId: "admin-1",
+        action: "platform.user.banned",
+        targetType: "user",
+        targetId: "user-42",
+        reason: "abuse",
+        result: "failure",
+        metadata: {
+          source: "test",
+          errorName: "Error",
+          errorMessage: "Usuário não encontrado.",
+        },
+      }),
+    ]);
+  });
+
+  it("writes impersonated-admin failures with the real admin id", async () => {
+    const { auditedAction, entries } = service();
+    const error = new Error("Transferência inválida.");
+
+    await expect(
+      auditedAction.runForImpersonatedAdmin("real-admin-1", () => Promise.reject(error), {
+        action: "platform.academy.transferred",
+        targetType: "academy",
+        academyId: "academy-1",
+      }),
+    ).rejects.toBe(error);
+
+    expect(entries).toEqual([
+      expect.objectContaining({
+        adminUserId: "real-admin-1",
+        action: "platform.academy.transferred",
+        targetType: "academy",
+        academyId: "academy-1",
+        result: "failure",
+      }),
+    ]);
+  });
+
+  it("does not call result-derived descriptor functions on failure", async () => {
+    const { auditedAction, entries } = service();
+    const targetId = vi.fn();
+    const academyId = vi.fn();
+    const reason = vi.fn();
+    const metadata = vi.fn();
+
+    await expect(
+      auditedAction.run(
+        session({ id: "admin-1", role: "admin" }),
+        () => Promise.reject(new Error("Provisionamento falhou.")),
+        {
+          action: "platform.academy.provisioned",
+          targetType: "academy",
+          targetId,
+          academyId,
+          reason,
+          metadata,
+        },
+      ),
+    ).rejects.toThrow("Provisionamento falhou.");
+
+    expect(targetId).not.toHaveBeenCalled();
+    expect(academyId).not.toHaveBeenCalled();
+    expect(reason).not.toHaveBeenCalled();
+    expect(metadata).not.toHaveBeenCalled();
+    expect(entries[0]).toMatchObject({
+      adminUserId: "admin-1",
+      action: "platform.academy.provisioned",
+      targetType: "academy",
+      result: "failure",
+    });
+    expect(entries[0]?.targetId).toBeUndefined();
+    expect(entries[0]?.academyId).toBeUndefined();
+    expect(entries[0]?.reason).toBeUndefined();
+  });
+
+  it("rethrows the original error when writing the failure audit rejects", async () => {
+    const { auditedAction, auditService } = service();
+    const commandError = new Error("Comando falhou.");
+    auditService.write.mockRejectedValueOnce(new Error("Audit unavailable."));
+
+    await expect(
+      auditedAction.run(
+        session({ id: "admin-1", role: "admin" }),
+        () => Promise.reject(commandError),
+        {
+          action: "platform.user.deleted",
+          targetType: "user",
+          targetId: "user-42",
+        },
+      ),
+    ).rejects.toBe(commandError);
+  });
+
   it("supports result-derived target ids, academy ids, reason, and metadata", async () => {
     const { auditedAction, entries } = service();
 

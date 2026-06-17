@@ -32,7 +32,7 @@ export class PlatformAuditedActionService {
     audit: AuditDescriptor<T>,
   ): Promise<T> {
     const admin = this.platformAdminService.assertPlatformAdmin(session);
-    return this.writeSuccessfulAudit(admin.user.id, command(admin), audit);
+    return this.writeAudit(admin.user.id, command(admin), audit);
   }
 
   async runForImpersonatedAdmin<T>(
@@ -40,15 +40,22 @@ export class PlatformAuditedActionService {
     command: AsyncCommand<T>,
     audit: AuditDescriptor<T>,
   ): Promise<T> {
-    return this.writeSuccessfulAudit(adminUserId, command(), audit);
+    return this.writeAudit(adminUserId, command(), audit);
   }
 
-  private async writeSuccessfulAudit<T>(
+  private async writeAudit<T>(
     adminUserId: string,
     resultPromise: Promise<T>,
     audit: AuditDescriptor<T>,
   ): Promise<T> {
-    const result = await resultPromise;
+    let result: T;
+    try {
+      result = await resultPromise;
+    } catch (error) {
+      await this.writeFailureAudit(adminUserId, audit, error);
+      throw error;
+    }
+
     await this.auditService.write({
       ...audit,
       adminUserId,
@@ -59,4 +66,36 @@ export class PlatformAuditedActionService {
     });
     return result;
   }
+
+  private async writeFailureAudit<T>(
+    adminUserId: string,
+    audit: AuditDescriptor<T>,
+    error: unknown,
+  ): Promise<void> {
+    try {
+      await this.auditService.write({
+        ...audit,
+        adminUserId,
+        result: "failure",
+        targetId: typeof audit.targetId === "function" ? undefined : audit.targetId,
+        academyId: typeof audit.academyId === "function" ? undefined : audit.academyId,
+        reason: typeof audit.reason === "function" ? undefined : audit.reason,
+        metadata: failureMetadata(error, audit.metadata),
+      });
+    } catch {
+      // Preserve the original command error when failure-audit persistence itself fails.
+    }
+  }
+}
+
+function failureMetadata<T>(
+  error: unknown,
+  descriptorMetadata: AuditDescriptor<T>["metadata"],
+): Record<string, unknown> {
+  const staticMetadata = typeof descriptorMetadata === "function" ? undefined : descriptorMetadata;
+  return {
+    ...staticMetadata,
+    errorName: error instanceof Error ? error.name : "Error",
+    errorMessage: error instanceof Error ? error.message : "Ação administrativa falhou.",
+  };
 }
