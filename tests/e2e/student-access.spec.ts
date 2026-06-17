@@ -135,6 +135,34 @@ test("pre-registration link lifecycle, approval, first access, and token guards"
   await expect(firstAccessPage.getByText("já foi utilizado", { exact: false })).toBeVisible();
 });
 
+test("surfaces duplicate pre-registration decisions in the instructor queue", async ({
+  browser,
+  page,
+}) => {
+  await openPreRegistrations(page);
+  const publicPage = await browser.newPage();
+  await publicPage.goto(await currentPreRegistrationLink(page));
+  await fillPreRegistrationForm(publicPage, {
+    name: "E2E Ana Presente",
+    birthDate: "1998-03-12",
+    phone: "11977776666",
+    email: "ana.e2e@tatamiq.local",
+    note: "Duplicidade intencional E2E",
+  });
+  await publicPage.getByRole("button", { name: "Enviar solicitação" }).click();
+  await expect(publicPage.getByText("Solicitação enviada")).toBeVisible();
+
+  await openPreRegistrations(page);
+  const requestCard = preRegistrationCard(page, "ana.e2e@tatamiq.local");
+  await expect(requestCard).toContainText("Possível duplicidade com E2E Ana Presente");
+
+  await requestCard.getByRole("button", { name: "Aprovar" }).click();
+  await expect(
+    requestCard.getByRole("button", { name: /Vincular ao aluno existente/ }),
+  ).toBeVisible();
+  await expect(requestCard.getByRole("button", { name: "Rejeitar como duplicata" })).toBeVisible();
+});
+
 test("rejects a pre-registration request with a reason", async ({ browser, page }) => {
   const requestEmail = `pre-reg-reject-${Date.now()}@tatamiq.local`;
 

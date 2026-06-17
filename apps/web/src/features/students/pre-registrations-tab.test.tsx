@@ -47,6 +47,32 @@ describe("RequestCard", () => {
     expect(html).toContain("Rejeitar");
   });
 
+  it("keeps approved requests read-only when no fresh approval result is available", () => {
+    const html = renderToStaticMarkup(
+      <RequestCard
+        request={{ ...baseRequest, status: "approved", reviewedAt: "2026-05-27T01:00:00.000Z" }}
+        rejecting={false}
+        rejectReason=""
+        approving={false}
+        approvalResult={null}
+        approvePending={false}
+        sendEmailPending={false}
+        onStartReject={vi.fn()}
+        onCancelReject={vi.fn()}
+        onRejectReasonChange={vi.fn()}
+        onReject={vi.fn()}
+        onApprove={vi.fn()}
+        onCancelApprove={vi.fn()}
+        onCopyFirstAccess={vi.fn()}
+        onSendEmail={vi.fn()}
+      />,
+    );
+
+    expect(html).toContain("Aprovada");
+    expect(html).not.toContain("Copiar link de primeiro acesso");
+    expect(html).not.toContain("Enviar por email");
+  });
+
   it("renders copy and email actions after approval result", () => {
     const html = renderToStaticMarkup(
       <RequestCard
