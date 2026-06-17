@@ -322,6 +322,10 @@ export const completeFirstAccessResponseSchema = z.object({
   redirectTo: z.enum(["sign-in", "student"]),
 });
 
+export const generateFirstAccessLinkResponseSchema = z.object({
+  firstAccessLink: z.string().url(),
+});
+
 export const sendFirstAccessEmailResponseSchema = z.object({
   sent: z.boolean(),
 });
@@ -342,6 +346,7 @@ export type ApprovePreRegistrationResponse = z.infer<typeof approvePreRegistrati
 export type FirstAccessPreview = z.infer<typeof firstAccessPreviewSchema>;
 export type CompleteFirstAccessInput = z.infer<typeof completeFirstAccessSchema>;
 export type CompleteFirstAccessResponse = z.infer<typeof completeFirstAccessResponseSchema>;
+export type GenerateFirstAccessLinkResponse = z.infer<typeof generateFirstAccessLinkResponseSchema>;
 export type SendFirstAccessEmailResponse = z.infer<typeof sendFirstAccessEmailResponseSchema>;
 
 export const classGroupStatusSchema = z.enum(["active", "archived"]);

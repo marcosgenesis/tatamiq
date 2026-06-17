@@ -104,6 +104,24 @@ export function usePreRegistrationsWorkflow() {
     },
   });
 
+  const generateFirstAccessLinkMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { data, error } = await api.POST(
+        "/students/pre-registrations/{id}/generate-first-access-link",
+        { params: { path: { id } } },
+      );
+      if (error || !data) throw new Error("Não foi possível gerar o link.");
+      return { requestId: id, firstAccessLink: data.firstAccessLink };
+    },
+    onSuccess: (data) => {
+      setApprovalResult(data);
+      copyFirstAccessLink(data.firstAccessLink);
+    },
+    onError: () => {
+      toast.error("Falha ao gerar link de primeiro acesso");
+    },
+  });
+
   const sendEmailMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await api.POST("/students/pre-registrations/{id}/send-first-access-email", {
@@ -169,10 +187,13 @@ export function usePreRegistrationsWorkflow() {
     approvingId,
     approvalResult,
     approvePending: approveMutation.isPending,
+    generateFirstAccessLinkPending: generateFirstAccessLinkMutation.isPending,
     sendEmailPending: sendEmailMutation.isPending,
     setRejectReason,
     copyLink,
     copyFirstAccessLink,
+    generateFirstAccessLink: (requestId: string) =>
+      generateFirstAccessLinkMutation.mutate(requestId),
     startReject,
     cancelReject: () => setRejectingId(null),
     submitReject,

@@ -1,4 +1,4 @@
-import { type Browser, expect, type Locator, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 import { INSTRUCTOR_STORAGE_STATE } from "./support/auth";
 import {
   consumeLatestFirstAccess,
@@ -67,12 +67,32 @@ test("pre-registration link lifecycle, approval, first access, and token guards"
   await requestCard.getByRole("button", { name: "Aprovar" }).click();
   const approveResponse = await approveResponsePromise;
   const approveBody = (await approveResponse.json()) as { firstAccessLink: string };
-  const firstAccessLink = approveBody.firstAccessLink;
+  let firstAccessLink = approveBody.firstAccessLink;
 
   await expect(requestCard).toContainText("Aprovada");
   await expect(page.getByText("Aluno aprovado com sucesso!")).toBeVisible();
-  await expect(page.getByRole("button", { name: /Copiar link de primeiro acesso/i })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Enviar por email" })).toBeVisible();
+  await expect(
+    requestCard.getByRole("button", { name: /Copiar link de primeiro acesso/i }),
+  ).toBeVisible();
+  await expect(requestCard.getByRole("button", { name: "Enviar por email" })).toBeVisible();
+
+  await page.reload();
+  await openPreRegistrations(page);
+  const reloadedRequestCard = preRegistrationCard(page, requestEmail);
+  await expect(reloadedRequestCard.getByRole("button", { name: "Enviar por email" })).toBeVisible();
+  const regenerateResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/students/pre-registrations/") &&
+      response.url().includes("/generate-first-access-link") &&
+      response.request().method() === "POST",
+  );
+  await reloadedRequestCard
+    .getByRole("button", { name: /Gerar novo link de primeiro acesso/ })
+    .click();
+  const regenerateResponse = await regenerateResponsePromise;
+  const regenerateBody = (await regenerateResponse.json()) as { firstAccessLink: string };
+  firstAccessLink = regenerateBody.firstAccessLink;
+  await expect(page.getByText("Link de primeiro acesso copiado")).toBeVisible();
 
   const firstAccessPage = await browser.newPage();
   await firstAccessPage.goto(firstAccessLink);
@@ -139,6 +159,8 @@ test("surfaces duplicate pre-registration decisions in the instructor queue", as
   browser,
   page,
 }) => {
+  const duplicateEmail = `pre-reg-duplicate-${Date.now()}@tatamiq.local`;
+
   await openPreRegistrations(page);
   const publicPage = await browser.newPage();
   await publicPage.goto(await currentPreRegistrationLink(page));
@@ -146,14 +168,14 @@ test("surfaces duplicate pre-registration decisions in the instructor queue", as
     name: "E2E Ana Presente",
     birthDate: "1998-03-12",
     phone: "11977776666",
-    email: "ana.e2e@tatamiq.local",
+    email: duplicateEmail,
     note: "Duplicidade intencional E2E",
   });
   await publicPage.getByRole("button", { name: "Enviar solicitação" }).click();
   await expect(publicPage.getByText("Solicitação enviada")).toBeVisible();
 
   await openPreRegistrations(page);
-  const requestCard = preRegistrationCard(page, "ana.e2e@tatamiq.local");
+  const requestCard = preRegistrationCard(page, duplicateEmail);
   await expect(requestCard).toContainText("Possível duplicidade com E2E Ana Presente");
 
   await requestCard.getByRole("button", { name: "Aprovar" }).click();

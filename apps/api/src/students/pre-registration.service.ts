@@ -13,6 +13,7 @@ import type {
   CompleteFirstAccessResponse,
   CreatePreRegistrationRequestInput,
   FirstAccessPreview,
+  GenerateFirstAccessLinkResponse,
   ListPreRegistrationRequestsResponse,
   PreRegistrationLink,
   PreRegistrationPublicProfile,
@@ -418,13 +419,54 @@ export class PreRegistrationService {
 
   // --- Email (#61) ---
 
+  async generateFirstAccessLink(
+    organizationId: string,
+    requestId: string,
+  ): Promise<GenerateFirstAccessLinkResponse> {
+    const { firstAccessLink } = await this.rotateFirstAccessToken(
+      organizationId,
+      requestId,
+      "Link de primeiro acesso só pode ser gerado para solicitações aprovadas.",
+    );
+    return { firstAccessLink };
+  }
+
   async sendFirstAccessEmail(
     organizationId: string,
     requestId: string,
   ): Promise<SendFirstAccessEmailResponse> {
+    const { request, firstAccessLink } = await this.rotateFirstAccessToken(
+      organizationId,
+      requestId,
+      "Email só pode ser enviado para solicitações aprovadas.",
+    );
+
+    const [academy] = await this.db
+      .select()
+      .from(organization)
+      .where(eq(organization.id, organizationId))
+      .limit(1);
+    if (!academy) throw new NotFoundException("Academia não encontrada.");
+
+    await this.emailService.send({
+      to: request.email,
+      subject: `Seu acesso ao ${academy.name} no Tatamiq`,
+      html: buildFirstAccessEmailHtml(academy.name, request.name, firstAccessLink),
+    });
+
+    return { sent: true };
+  }
+
+  // --- Private: link DTO projection ---
+
+  private async rotateFirstAccessToken(
+    organizationId: string,
+    requestId: string,
+    notApprovedMessage: string,
+  ) {
     const request = await this.findRequest(organizationId, requestId);
     if (request.status !== "approved") {
-      throw new BadRequestException("Email só pode ser enviado para solicitações aprovadas.");
+      throw new BadRequestException(notApprovedMessage);
     }
 
     const rawToken = randomBytes(32).toString("base64url");
@@ -443,25 +485,11 @@ export class PreRegistrationService {
       })
       .where(eq(preRegistrationRequests.id, requestId));
 
-    const [academy] = await this.db
-      .select()
-      .from(organization)
-      .where(eq(organization.id, organizationId))
-      .limit(1);
-    if (!academy) throw new NotFoundException("Academia não encontrada.");
-
-    const firstAccessUrl = `${webAppUrl()}/student/first-access/${rawToken}`;
-
-    await this.emailService.send({
-      to: request.email,
-      subject: `Seu acesso ao ${academy.name} no Tatamiq`,
-      html: buildFirstAccessEmailHtml(academy.name, request.name, firstAccessUrl),
-    });
-
-    return { sent: true };
+    return {
+      request,
+      firstAccessLink: `${webAppUrl()}/student/first-access/${rawToken}`,
+    };
   }
-
-  // --- Private: link DTO projection ---
 
   private async fetchLinkDto(organizationId: string): Promise<PreRegistrationLink> {
     const [row] = await this.db

@@ -113,6 +113,7 @@ export function PreRegistrationsTab() {
               workflow.approvalResult?.requestId === request.id ? workflow.approvalResult : null
             }
             approvePending={workflow.approvePending}
+            generateFirstAccessLinkPending={workflow.generateFirstAccessLinkPending}
             sendEmailPending={workflow.sendEmailPending}
             onStartReject={() => workflow.startReject(request.id)}
             onCancelReject={workflow.cancelReject}
@@ -127,6 +128,7 @@ export function PreRegistrationsTab() {
             }
             onCancelApprove={workflow.cancelApprove}
             onCopyFirstAccess={workflow.copyFirstAccessLink}
+            onGenerateFirstAccessLink={() => workflow.generateFirstAccessLink(request.id)}
             onSendEmail={() => workflow.sendFirstAccessEmail(request.id)}
           />
         ))}
@@ -142,6 +144,7 @@ export function RequestCard(props: {
   approving: boolean;
   approvalResult: { firstAccessLink: string } | null;
   approvePending: boolean;
+  generateFirstAccessLinkPending: boolean;
   sendEmailPending: boolean;
   onStartReject: () => void;
   onCancelReject: () => void;
@@ -150,6 +153,7 @@ export function RequestCard(props: {
   onApprove: (decision?: DuplicateDecision) => void;
   onCancelApprove: () => void;
   onCopyFirstAccess: (url: string) => void;
+  onGenerateFirstAccessLink: () => void;
   onSendEmail: () => void;
 }) {
   const { request } = props;
@@ -212,24 +216,40 @@ export function RequestCard(props: {
           ) : null}
         </div>
 
-        {/* Approval result: copy first access link + send email */}
-        {request.status === "approved" && props.approvalResult ? (
+        {/* Approval follow-up: copy/regenerate first access link + send email */}
+        {request.status === "approved" ? (
           <div className="space-y-3 rounded-2xl border border-green-500/30 bg-green-500/10 p-4">
             <p className="text-sm font-medium text-green-700 dark:text-green-300">
-              Aluno aprovado com sucesso!
+              {props.approvalResult
+                ? "Aluno aprovado com sucesso!"
+                : "Aluno aprovado. Você pode enviar ou gerar um novo link de primeiro acesso."}
             </p>
             <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => {
-                  if (props.approvalResult) {
-                    props.onCopyFirstAccess(props.approvalResult.firstAccessLink);
-                  }
-                }}
-              >
-                <Copy01Icon className="size-4" /> Copiar link de primeiro acesso
-              </Button>
+              {props.approvalResult ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    if (props.approvalResult) {
+                      props.onCopyFirstAccess(props.approvalResult.firstAccessLink);
+                    }
+                  }}
+                >
+                  <Copy01Icon className="size-4" /> Copiar link de primeiro acesso
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={props.generateFirstAccessLinkPending}
+                  onClick={props.onGenerateFirstAccessLink}
+                >
+                  <Copy01Icon className="size-4" />
+                  {props.generateFirstAccessLinkPending
+                    ? "Gerando..."
+                    : "Gerar novo link de primeiro acesso"}
+                </Button>
+              )}
               <Button
                 type="button"
                 variant="outline"

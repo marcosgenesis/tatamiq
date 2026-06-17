@@ -452,6 +452,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/students/pre-registrations/{id}/generate-first-access-link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PreRegistrationController_generateFirstAccessLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/students/pre-registrations/{id}/send-first-access-email": {
         parameters: {
             query?: never;
@@ -2094,6 +2110,10 @@ export interface components {
             /** Format: uri */
             firstAccessLink: string;
             studentId: string;
+        };
+        GenerateFirstAccessLinkResponseDto: {
+            /** Format: uri */
+            firstAccessLink: string;
         };
         SendFirstAccessEmailResponseDto: {
             sent: boolean;
@@ -3790,6 +3810,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApprovePreRegistrationResponseDto"];
+                };
+            };
+        };
+    };
+    PreRegistrationController_generateFirstAccessLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerateFirstAccessLinkResponseDto"];
                 };
             };
         };

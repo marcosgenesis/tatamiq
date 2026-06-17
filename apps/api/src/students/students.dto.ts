@@ -6,6 +6,7 @@ import {
   createPreRegistrationRequestSchema,
   createStudentSchema,
   firstAccessPreviewSchema,
+  generateFirstAccessLinkResponseSchema,
   listPreRegistrationRequestsResponseSchema,
   listStudentsResponseSchema,
   preRegistrationLinkSchema,
@@ -46,6 +47,9 @@ export class FirstAccessPreviewDto extends createZodDto(firstAccessPreviewSchema
 export class CompleteFirstAccessDto extends createZodDto(completeFirstAccessSchema) {}
 export class CompleteFirstAccessResponseDto extends createZodDto(
   completeFirstAccessResponseSchema,
+) {}
+export class GenerateFirstAccessLinkResponseDto extends createZodDto(
+  generateFirstAccessLinkResponseSchema,
 ) {}
 export class SendFirstAccessEmailResponseDto extends createZodDto(
   sendFirstAccessEmailResponseSchema,

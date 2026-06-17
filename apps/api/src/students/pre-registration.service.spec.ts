@@ -396,6 +396,36 @@ describe("PreRegistrationService", () => {
     });
   });
 
+  it("generates a fresh first-access link for approved requests", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-27T12:00:00.000Z"));
+    try {
+      mock.setSelectResults([
+        [{ ...requestRow, status: "approved", firstAccessConsumedAt: new Date() }],
+      ]);
+
+      const result = await service.generateFirstAccessLink("academy-1", "request-1");
+
+      expect(result.firstAccessLink).toContain("/student/first-access/");
+      expect(mock.updatedSets[0]).toMatchObject({
+        firstAccessTokenHash: expect.any(String),
+        firstAccessTokenExpiresAt: new Date("2026-06-03T12:00:00.000Z"),
+        firstAccessConsumedAt: null,
+      });
+      expect(emailService.send).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("rejects first-access link generation for non-approved requests", async () => {
+    mock.setSelectResults([[requestRow]]);
+
+    await expect(service.generateFirstAccessLink("academy-1", "request-1")).rejects.toThrow(
+      "Link de primeiro acesso só pode ser gerado para solicitações aprovadas.",
+    );
+  });
+
   it("rejects first-access email for non-approved requests", async () => {
     mock.setSelectResults([[requestRow]]);
 
