@@ -35,6 +35,7 @@ import {
   UpdateStudentProfileDto,
 } from "./student-access.dto";
 import { StudentAccessService } from "./student-access.service";
+import { canStudentPortalWrite } from "./student-access-rules";
 import { StudentPortalService } from "./student-portal.service";
 
 @ApiTags("student-portal")
@@ -159,6 +160,7 @@ export class StudentPortalController {
     @ZodBody(UpdateStudentProfileDto) body: UpdateStudentProfileDto,
   ): Promise<void> {
     const meData = await this.studentAccessService.me(actorId);
+    assertStudentCanWrite(meData.student.readOnly, "Aluno inativo não pode alterar contato.");
     return this.portalService.updateProfile(meData.student.id, actorId, body);
   }
 
@@ -189,7 +191,11 @@ export class StudentPortalController {
 }
 
 function assertStudentCanSubmitReceipts(readOnly: boolean): void {
-  if (readOnly) {
-    throw new ForbiddenException("Aluno inativo não pode enviar comprovante Pix.");
+  assertStudentCanWrite(readOnly, "Aluno inativo não pode enviar comprovante Pix.");
+}
+
+function assertStudentCanWrite(readOnly: boolean, message: string): void {
+  if (!canStudentPortalWrite(readOnly)) {
+    throw new ForbiddenException(message);
   }
 }

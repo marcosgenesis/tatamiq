@@ -38,6 +38,18 @@ export function validateStudentInput(input: StudentRuleInput, today = new Date()
   }
 }
 
+export function nextInactiveAt(input: {
+  currentStatus: string;
+  currentInactiveAt: Date | null;
+  nextStatus: string;
+  now: Date;
+}): Date | null {
+  if (input.nextStatus === "active") return null;
+  if (input.nextStatus !== "inactive") return input.currentInactiveAt;
+  if (input.currentStatus === "inactive") return input.currentInactiveAt ?? input.now;
+  return input.now;
+}
+
 export function isMinor(birthDate: string, today = new Date()): boolean {
   const birth = parseDateOnly(birthDate);
   const current = dateOnly(today);

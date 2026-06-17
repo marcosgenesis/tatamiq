@@ -5,7 +5,7 @@ import { and, count, eq, inArray, ne, sql } from "drizzle-orm";
 import { BeltsService, toBeltDto } from "../belts/belts.service";
 import { DATABASE } from "../database/database.module";
 import { StudentAccessService } from "../student-access/student-access.service";
-import { validateStudentInput } from "./student-rules";
+import { nextInactiveAt, validateStudentInput } from "./student-rules";
 
 type StudentRow = typeof students.$inferSelect;
 type GuardianRow = typeof studentGuardians.$inferSelect;
@@ -129,7 +129,7 @@ export class StudentsService {
   }
 
   async update(organizationId: string, id: string, input: UpdateStudentInput): Promise<Student> {
-    await this.findStudent(organizationId, id);
+    const current = await this.findStudent(organizationId, id);
     validateStudentInput(input);
     await this.assertUniqueEmail(organizationId, input.email, id);
 
@@ -139,6 +139,7 @@ export class StudentsService {
     }
 
     const status = input.status;
+    const nextStatus = status ?? current.status;
     const now = new Date();
 
     await this.db
@@ -148,7 +149,12 @@ export class StudentsService {
         birthDate: input.birthDate,
         enrollmentDate: input.enrollmentDate,
         status,
-        inactiveAt: status === "inactive" ? now : status === "active" ? null : undefined,
+        inactiveAt: nextInactiveAt({
+          currentStatus: current.status,
+          currentInactiveAt: current.inactiveAt,
+          nextStatus,
+          now,
+        }),
         phone: emptyToNull(input.phone),
         email: emptyToNull(input.email),
         monthlyAmountInCents: input.monthlyAmountInCents ?? null,
@@ -165,10 +171,20 @@ export class StudentsService {
   }
 
   async inactivate(organizationId: string, id: string): Promise<Student> {
-    await this.findStudent(organizationId, id);
+    const current = await this.findStudent(organizationId, id);
+    const now = new Date();
     await this.db
       .update(students)
-      .set({ status: "inactive", inactiveAt: new Date(), updatedAt: new Date() })
+      .set({
+        status: "inactive",
+        inactiveAt: nextInactiveAt({
+          currentStatus: current.status,
+          currentInactiveAt: current.inactiveAt,
+          nextStatus: "inactive",
+          now,
+        }),
+        updatedAt: now,
+      })
       .where(and(eq(students.id, id), eq(students.organizationId, organizationId)));
 
     return this.get(organizationId, id);

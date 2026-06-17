@@ -32,3 +32,7 @@ export function studentReadState(input: { status: string; inactiveAt: Date | nul
     blocked: input.now.getTime() > readUntil.getTime(),
   };
 }
+
+export function canStudentPortalWrite(readOnly: boolean): boolean {
+  return !readOnly;
+}
