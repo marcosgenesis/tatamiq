@@ -35,14 +35,15 @@ export function FirstAccessPage(props: { token: string }) {
       if (!preview?.hasPassword) {
         body.password = password;
       }
-      const { error } = await api.POST("/student/first-access/{token}/complete", {
+      const { data, error } = await api.POST("/student/first-access/{token}/complete", {
         params: { path: { token: props.token } },
         body,
       });
-      if (error) throw new Error("Não foi possível completar o acesso.");
+      if (error || !data) throw new Error("Não foi possível completar o acesso.");
+      return data;
     },
-    onSuccess: () => {
-      navigate({ to: "/sign-in" });
+    onSuccess: (data) => {
+      navigate({ to: firstAccessDestination(data.redirectTo) });
     },
   });
 
@@ -185,4 +186,8 @@ export function FirstAccessPage(props: { token: string }) {
       ) : null}
     </AuthLayout>
   );
+}
+
+export function firstAccessDestination(redirectTo: "sign-in" | "student") {
+  return redirectTo === "student" ? "/student" : "/sign-in";
 }

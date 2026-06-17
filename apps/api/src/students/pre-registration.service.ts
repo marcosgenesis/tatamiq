@@ -414,7 +414,7 @@ export class PreRegistrationService {
       .set({ firstAccessConsumedAt: now, updatedAt: now })
       .where(eq(preRegistrationRequests.id, row.request.id));
 
-    return { redirectTo: hasPassword ? "sign-in" : "sign-in" };
+    return { redirectTo: hasPassword ? "student" : "sign-in" };
   }
 
   // --- Email (#61) ---

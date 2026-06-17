@@ -94,6 +94,12 @@ const whiteBeltRow = {
   name: "Branca",
 };
 
+function futureDate() {
+  const date = new Date();
+  date.setDate(date.getDate() + 1);
+  return date;
+}
+
 const requestRow = {
   id: "request-1",
   organizationId: "academy-1",
@@ -394,6 +400,56 @@ describe("PreRegistrationService", () => {
       studentId: "",
       request: { status: "rejected", rejectionReason: "Rejeitada como duplicata." },
     });
+  });
+
+  it("routes new-account first access to sign-in after defining a password", async () => {
+    mock.setSelectResults([
+      [
+        {
+          request: { ...requestRow, firstAccessTokenExpiresAt: futureDate() },
+          academy: academyRow,
+        },
+      ],
+      [{ id: "auth-new", email: "aluno@example.com", name: "Aluno Teste" }],
+      [{ password: null }],
+    ]);
+
+    const result = await service.completeFirstAccess("token", {
+      password: "tatamiq456",
+      termsAccepted: true,
+      termsVersion: "student-access-v1",
+    });
+
+    expect(result).toEqual({ redirectTo: "sign-in" });
+    expect(mock.updatedSets).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ password: expect.any(String) }),
+        expect.objectContaining({ firstAccessConsumedAt: expect.any(Date) }),
+      ]),
+    );
+  });
+
+  it("routes existing-account first access to the student area", async () => {
+    mock.setSelectResults([
+      [
+        {
+          request: { ...requestRow, firstAccessTokenExpiresAt: futureDate() },
+          academy: academyRow,
+        },
+      ],
+      [{ id: "auth-existing", email: "aluno@example.com", name: "Aluno Teste" }],
+      [{ password: "hashed_password" }],
+    ]);
+
+    const result = await service.completeFirstAccess("token", {
+      termsAccepted: true,
+      termsVersion: "student-access-v1",
+    });
+
+    expect(result).toEqual({ redirectTo: "student" });
+    expect(mock.updatedSets).toEqual([
+      expect.objectContaining({ firstAccessConsumedAt: expect.any(Date) }),
+    ]);
   });
 
   it("generates a fresh first-access link for approved requests", async () => {

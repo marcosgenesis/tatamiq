@@ -94,7 +94,10 @@ test("pre-registration link lifecycle, approval, first access, and token guards"
   firstAccessLink = regenerateBody.firstAccessLink;
   await expect(page.getByText("Link de primeiro acesso copiado")).toBeVisible();
 
-  const firstAccessPage = await browser.newPage();
+  const firstAccessContext = await browser.newContext({
+    storageState: { cookies: [], origins: [] },
+  });
+  const firstAccessPage = await firstAccessContext.newPage();
   await firstAccessPage.goto(firstAccessLink);
   await expect(firstAccessPage.getByRole("heading", { name: "Primeiro acesso" })).toBeVisible();
   await firstAccessPage.getByLabel("Criar senha").fill(password);
@@ -103,16 +106,9 @@ test("pre-registration link lifecycle, approval, first access, and token guards"
   await firstAccessPage.getByLabel("Confirmar senha").fill(password);
   await firstAccessPage.getByRole("checkbox").check();
   await firstAccessPage.getByRole("button", { name: "Definir senha e acessar" }).click();
-  await expect(firstAccessPage).toHaveURL(/\/(sign-in)?$/);
+  await expect(firstAccessPage).toHaveURL(/\/sign-in$/);
 
-  if (
-    await firstAccessPage
-      .getByLabel("Email")
-      .isVisible()
-      .catch(() => false)
-  ) {
-    await signInAsStudentOnly(firstAccessPage, requestEmail, password);
-  }
+  await signInAsStudentOnly(firstAccessPage, requestEmail, password);
   await expect(
     firstAccessPage
       .getByText(/^Olá,/)

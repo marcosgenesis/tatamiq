@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { FirstAccessPage } from "./first-access-page";
+import { FirstAccessPage, firstAccessDestination } from "./first-access-page";
 
 let preview: {
   status: "valid" | "invalid" | "expired" | "consumed";
@@ -22,6 +22,13 @@ vi.mock("@tanstack/react-router", () => ({
   ),
   useNavigate: () => vi.fn(),
 }));
+
+describe("firstAccessDestination", () => {
+  it("maps API redirect outcomes to route destinations", () => {
+    expect(firstAccessDestination("sign-in")).toBe("/sign-in");
+    expect(firstAccessDestination("student")).toBe("/student");
+  });
+});
 
 describe("FirstAccessPage", () => {
   beforeEach(() => {
