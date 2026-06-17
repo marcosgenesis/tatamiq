@@ -1,9 +1,12 @@
-import { Controller, Get, HttpCode, Inject, Param, Post } from "@nestjs/common";
+import { Controller, Get, HttpCode, Inject, Param, Post, Req } from "@nestjs/common";
 import { ApiBody, ApiOkResponse, ApiParam, ApiTags } from "@nestjs/swagger";
 import { AllowAnonymous, OrgRoles } from "@thallesp/nestjs-better-auth";
 import { AcademyId, ActorId } from "../academy-request";
 import { ZodBody } from "../zod-body.decorator";
 import { PreRegistrationService } from "./pre-registration.service";
+
+type PreRegistrationRequestMetadata = { ip?: string };
+
 import {
   ApprovePreRegistrationRequestDto,
   ApprovePreRegistrationResponseDto,
@@ -47,8 +50,9 @@ export class PreRegistrationController {
   createRequest(
     @Param("token") token: string,
     @ZodBody(CreatePreRegistrationRequestDto) body: CreatePreRegistrationRequestDto,
+    @Req() request: PreRegistrationRequestMetadata,
   ): Promise<PreRegistrationRequestDto> {
-    return this.preRegistrationService.createRequest(token, body);
+    return this.preRegistrationService.createRequest(token, body, request.ip ?? null);
   }
 
   // --- First access (anonymous) ---

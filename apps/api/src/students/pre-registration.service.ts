@@ -2,6 +2,8 @@ import { randomBytes } from "node:crypto";
 import {
   BadRequestException,
   ConflictException,
+  HttpException,
+  HttpStatus,
   Inject,
   Injectable,
   NotFoundException,
@@ -44,6 +46,19 @@ import { parseLinkStatus } from "./pre-registration-link-rules";
 import { isMinor } from "./student-rules";
 
 const FIRST_ACCESS_DAYS = 7;
+const PRE_REGISTRATION_THROTTLE_WINDOW_MS = 10 * 60 * 1000;
+const PRE_REGISTRATION_EMAIL_ATTEMPT_LIMIT = 3;
+const PRE_REGISTRATION_IP_ATTEMPT_LIMIT = 20;
+const PRE_REGISTRATION_THROTTLED_MESSAGE =
+  "Muitas tentativas de pré-cadastro. Aguarde alguns minutos e tente novamente.";
+
+const preRegistrationEmailAttempts = new Map<string, number[]>();
+const preRegistrationIpAttempts = new Map<string, number[]>();
+
+export function resetPreRegistrationThrottleForTests() {
+  preRegistrationEmailAttempts.clear();
+  preRegistrationIpAttempts.clear();
+}
 
 type LinkRow = typeof academyPreRegistrationLinks.$inferSelect;
 type RequestRow = typeof preRegistrationRequests.$inferSelect;
@@ -92,12 +107,15 @@ export class PreRegistrationService {
   async createRequest(
     token: string,
     input: CreatePreRegistrationRequestInput,
+    clientIp?: string | null,
   ): Promise<PreRegistrationRequest> {
     const { linkId, organizationId } = await this.linkLifecycle.resolveActiveLink(token);
 
     this.validateRequest(input);
 
     const normalizedEmail = input.email.trim().toLowerCase();
+    this.assertPublicSubmissionAllowed(organizationId, normalizedEmail, clientIp);
+
     const duplicateEmail = await this.findOpenRequestByEmail(organizationId, normalizedEmail);
     if (duplicateEmail) {
       throw new ConflictException("Já existe uma solicitação em análise para este email.");
@@ -598,6 +616,30 @@ export class PreRegistrationService {
     return row ?? null;
   }
 
+  private assertPublicSubmissionAllowed(
+    organizationId: string,
+    normalizedEmail: string,
+    clientIp?: string | null,
+  ) {
+    const now = Date.now();
+    const emailKey = `${organizationId}:${normalizedEmail}`;
+    recordThrottleAttempt(
+      preRegistrationEmailAttempts,
+      emailKey,
+      PRE_REGISTRATION_EMAIL_ATTEMPT_LIMIT,
+      now,
+    );
+
+    if (clientIp) {
+      recordThrottleAttempt(
+        preRegistrationIpAttempts,
+        clientIp,
+        PRE_REGISTRATION_IP_ATTEMPT_LIMIT,
+        now,
+      );
+    }
+  }
+
   private async findOpenRequestByEmail(organizationId: string, email: string) {
     const [row] = await this.db
       .select({ id: preRegistrationRequests.id })
@@ -705,6 +747,22 @@ export class PreRegistrationService {
       reviewedAt: row.reviewedAt?.toISOString() ?? null,
     };
   }
+}
+
+function recordThrottleAttempt(
+  store: Map<string, number[]>,
+  key: string,
+  limit: number,
+  now: number,
+) {
+  const windowStart = now - PRE_REGISTRATION_THROTTLE_WINDOW_MS;
+  const attempts = (store.get(key) ?? []).filter((timestamp) => timestamp > windowStart);
+  if (attempts.length >= limit) {
+    store.set(key, attempts);
+    throw new HttpException(PRE_REGISTRATION_THROTTLED_MESSAGE, HttpStatus.TOO_MANY_REQUESTS);
+  }
+  attempts.push(now);
+  store.set(key, attempts);
 }
 
 function parseRequestStatus(value: string): "pending_review" | "approved" | "rejected" {

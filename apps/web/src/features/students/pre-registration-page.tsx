@@ -29,6 +29,12 @@ const emptyForm: FormState = {
   consentAccepted: false,
 };
 
+export function preRegistrationErrorMessage(error: unknown) {
+  return typeof error === "object" && error !== null && "message" in error
+    ? String((error as { message: string }).message)
+    : "Não foi possível enviar sua solicitação.";
+}
+
 export function PreRegistrationPage({ token }: { token: string }) {
   const [form, setForm] = useState<FormState>(emptyForm);
   const [submitted, setSubmitted] = useState(false);
@@ -53,11 +59,7 @@ export function PreRegistrationPage({ token }: { token: string }) {
         body: { ...form, consentAccepted: true },
       });
       if (error) {
-        const message =
-          typeof error === "object" && error !== null && "message" in error
-            ? String((error as { message: string }).message)
-            : "Não foi possível enviar sua solicitação.";
-        throw new Error(message);
+        throw new Error(preRegistrationErrorMessage(error));
       }
     },
     onSuccess: () => {

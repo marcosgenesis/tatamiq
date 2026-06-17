@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { PreRegistrationService } from "./pre-registration.service";
+import {
+  PreRegistrationService,
+  resetPreRegistrationThrottleForTests,
+} from "./pre-registration.service";
 
 type MockRow = Record<string, unknown>;
 
@@ -134,6 +137,7 @@ describe("PreRegistrationService", () => {
   let activationService: { activate: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
+    resetPreRegistrationThrottleForTests();
     mock = createMockDb();
     emailService = { send: vi.fn() };
     activationService = { activate: vi.fn().mockResolvedValue({ accessId: "access-1" }) };
@@ -178,6 +182,62 @@ describe("PreRegistrationService", () => {
       status: "pending_review",
       consentAcceptedAt: expect.any(Date),
     });
+  });
+
+  it("blocks repeated public submissions for the same email within the throttle window", async () => {
+    mock.setSelectResults(Array.from({ length: 6 }, () => []));
+
+    for (let index = 0; index < 3; index++) {
+      await service.createRequest("public-token", {
+        name: `Aluno ${index}`,
+        birthDate: "2000-01-01",
+        phone: "11999999999",
+        email: "throttled@example.com",
+        consentAccepted: true,
+      });
+    }
+
+    await expect(
+      service.createRequest("public-token", {
+        name: "Aluno Bloqueado",
+        birthDate: "2000-01-01",
+        phone: "11999999999",
+        email: "throttled@example.com",
+        consentAccepted: true,
+      }),
+    ).rejects.toThrow("Muitas tentativas de pré-cadastro");
+  });
+
+  it("blocks repeated public submissions from the same IP within the throttle window", async () => {
+    mock.setSelectResults(Array.from({ length: 40 }, () => []));
+
+    for (let index = 0; index < 20; index++) {
+      await service.createRequest(
+        "public-token",
+        {
+          name: `Aluno ${index}`,
+          birthDate: "2000-01-01",
+          phone: "11999999999",
+          email: `ip-${index}@example.com`,
+          consentAccepted: true,
+        },
+        "203.0.113.20",
+      );
+    }
+
+    await expect(
+      service.createRequest(
+        "public-token",
+        {
+          name: "Aluno Bloqueado",
+          birthDate: "2000-01-01",
+          phone: "11999999999",
+          email: "ip-blocked@example.com",
+          consentAccepted: true,
+        },
+        "203.0.113.20",
+      ),
+    ).rejects.toThrow("Muitas tentativas de pré-cadastro");
   });
 
   it("requires Consentimento de Pré-Cadastro", async () => {
