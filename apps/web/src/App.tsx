@@ -9,50 +9,17 @@ import {
   useNavigate,
 } from "@tanstack/react-router";
 import { CheckmarkSquare03Icon } from "hugeicons-react";
-import { useEffect } from "react";
+import { type ComponentType, lazy, Suspense, useEffect } from "react";
 import { AppShell } from "./components/app-shell";
 import { LogoIcon } from "./components/logo";
 import { Button } from "./components/ui/button";
 import { Toaster } from "./components/ui/sonner";
-import { AcademyOnboardingPage } from "./features/auth/academy-onboarding-page";
-import {
-  ForgotPasswordPage,
-  ResetPasswordPage,
-  SignInPage,
-  SignUpPage,
-} from "./features/auth/auth-pages";
-import { ClassGroupsPage } from "./features/class-groups/class-groups-page";
-import { ActiveClassPage } from "./features/classes/active-class-page";
-import { DashboardPage } from "./features/dashboard/dashboard-page";
-import { GraduationPage } from "./features/graduation/graduation-page";
-import { MonthlyFeesPage } from "./features/monthly-fees/monthly-fees-page";
 import { PlaceholderPage } from "./features/placeholder/placeholder-page";
-import { PlatformAcademiesPage } from "./features/platform/platform-academies-page";
-import { PlatformAcademyPage } from "./features/platform/platform-academy-page";
-import { PlatformAdministratorsPage } from "./features/platform/platform-administrators-page";
-import { PlatformAuditPage } from "./features/platform/platform-audit-page";
-import { PlatformFirstAccessPage } from "./features/platform/platform-first-access-page";
-import { PlatformPage } from "./features/platform/platform-page";
 import {
   currentPlatformSupportQuery,
   endPlatformSupport,
   platformMeQuery,
 } from "./features/platform/platform-queries";
-import { PlatformUserDetailPage } from "./features/platform/platform-user-detail-page";
-import { PlatformUsersPage } from "./features/platform/platform-users-page";
-import { SchedulePage } from "./features/schedule/schedule-page";
-import { SettingsPage } from "./features/settings/settings-page";
-import { AcceptStudentInvitePage } from "./features/student-access/accept-student-invite-page";
-import { ChooseAreaPage } from "./features/student-access/choose-area-page";
-import { StudentCheckInPage } from "./features/student-access/student-check-in-page";
-import { StudentDashboardPage } from "./features/student-access/student-dashboard-page";
-import {
-  StudentAttendancePage,
-  StudentGraduationPage,
-} from "./features/student-access/student-drilldown-pages";
-import { FirstAccessPage } from "./features/students/first-access-page";
-import { PreRegistrationPage } from "./features/students/pre-registration-page";
-import { StudentsPage } from "./features/students/students-page";
 import { ThemeProvider } from "./hooks/use-theme";
 import "./index.css";
 import { authClient } from "./lib/auth-client";
@@ -64,6 +31,123 @@ type OrganizationSummary = {
   name: string;
   logo?: string | null | undefined;
 };
+
+const SignInPage = lazyRoute(() => import("./features/auth/auth-pages"), "SignInPage");
+const SignUpPage = lazyRoute(() => import("./features/auth/auth-pages"), "SignUpPage");
+const ForgotPasswordPage = lazyRoute(
+  () => import("./features/auth/auth-pages"),
+  "ForgotPasswordPage",
+);
+const ResetPasswordPage = lazyRoute(
+  () => import("./features/auth/auth-pages"),
+  "ResetPasswordPage",
+);
+const AcceptStudentInvitePage = lazyRoute<{ token: string }>(
+  () => import("./features/student-access/accept-student-invite-page"),
+  "AcceptStudentInvitePage",
+);
+const StudentCheckInPage = lazyRoute(
+  () => import("./features/student-access/student-check-in-page"),
+  "StudentCheckInPage",
+);
+const PreRegistrationPage = lazyRoute<{ token: string }>(
+  () => import("./features/students/pre-registration-page"),
+  "PreRegistrationPage",
+);
+const FirstAccessPage = lazyRoute<{ token: string }>(
+  () => import("./features/students/first-access-page"),
+  "FirstAccessPage",
+);
+const PlatformFirstAccessPage = lazyRoute<{ token: string }>(
+  () => import("./features/platform/platform-first-access-page"),
+  "PlatformFirstAccessPage",
+);
+const ChooseAreaPage = lazyRoute(
+  () => import("./features/student-access/choose-area-page"),
+  "ChooseAreaPage",
+);
+const StudentDashboardPage = lazyRoute(
+  () => import("./features/student-access/student-dashboard-page"),
+  "StudentDashboardPage",
+);
+const StudentAttendancePage = lazyRoute(
+  () => import("./features/student-access/student-drilldown-pages"),
+  "StudentAttendancePage",
+);
+const StudentGraduationPage = lazyRoute(
+  () => import("./features/student-access/student-drilldown-pages"),
+  "StudentGraduationPage",
+);
+const AcademyOnboardingPage = lazyRoute(
+  () => import("./features/auth/academy-onboarding-page"),
+  "AcademyOnboardingPage",
+);
+const PlatformPage = lazyRoute(() => import("./features/platform/platform-page"), "PlatformPage");
+const PlatformAuditPage = lazyRoute(
+  () => import("./features/platform/platform-audit-page"),
+  "PlatformAuditPage",
+);
+const PlatformAdministratorsPage = lazyRoute(
+  () => import("./features/platform/platform-administrators-page"),
+  "PlatformAdministratorsPage",
+);
+const PlatformAcademiesPage = lazyRoute(
+  () => import("./features/platform/platform-academies-page"),
+  "PlatformAcademiesPage",
+);
+const PlatformAcademyPage = lazyRoute<{ academyId: string }>(
+  () => import("./features/platform/platform-academy-page"),
+  "PlatformAcademyPage",
+);
+const PlatformUsersPage = lazyRoute(
+  () => import("./features/platform/platform-users-page"),
+  "PlatformUsersPage",
+);
+const PlatformUserDetailPage = lazyRoute<{ userId: string }>(
+  () => import("./features/platform/platform-user-detail-page"),
+  "PlatformUserDetailPage",
+);
+const DashboardPage = lazyRoute(
+  () => import("./features/dashboard/dashboard-page"),
+  "DashboardPage",
+);
+const StudentsPage = lazyRoute(() => import("./features/students/students-page"), "StudentsPage");
+const ClassGroupsPage = lazyRoute(
+  () => import("./features/class-groups/class-groups-page"),
+  "ClassGroupsPage",
+);
+const SchedulePage = lazyRoute(() => import("./features/schedule/schedule-page"), "SchedulePage");
+const ActiveClassPage = lazyRoute<{ classId: string }>(
+  () => import("./features/classes/active-class-page"),
+  "ActiveClassPage",
+);
+const GraduationPage = lazyRoute(
+  () => import("./features/graduation/graduation-page"),
+  "GraduationPage",
+);
+const MonthlyFeesPage = lazyRoute(
+  () => import("./features/monthly-fees/monthly-fees-page"),
+  "MonthlyFeesPage",
+);
+const SettingsPage = lazyRoute(() => import("./features/settings/settings-page"), "SettingsPage");
+
+function lazyRoute<TProps extends object = Record<string, never>>(
+  loader: () => Promise<Record<string, unknown>>,
+  exportName: string,
+) {
+  const Component = lazy(async () => {
+    const module = await loader();
+    return { default: module[exportName] as ComponentType<TProps> };
+  });
+
+  return function LazyRouteComponent(props: TProps) {
+    return (
+      <Suspense fallback={<LoadingScreen />}>
+        <Component {...props} />
+      </Suspense>
+    );
+  };
+}
 
 // --- Root ---
 
