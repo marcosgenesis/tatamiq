@@ -10,10 +10,14 @@ import {
 } from "@tatamiq/database";
 import { count, desc, eq, ilike, or } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
+import { PlatformAdminService } from "./platform-admin.service";
 
 @Injectable()
 export class PlatformUserService {
-  constructor(@Inject(DATABASE) private readonly db: Database) {}
+  constructor(
+    @Inject(DATABASE) private readonly db: Database,
+    @Inject(PlatformAdminService) private readonly platformAdmins: PlatformAdminService,
+  ) {}
 
   async listUsers(options: { query?: string; page?: number; pageSize?: number } = {}) {
     const page = Math.max(0, options.page ?? 0);
@@ -92,8 +96,7 @@ export class PlatformUserService {
   }
 
   async banUser(id: string, reason?: string) {
-    const [row] = await this.db.select().from(user).where(eq(user.id, id)).limit(1);
-    if (!row) throw new NotFoundException("Usuário não encontrado.");
+    await this.platformAdmins.assertCanDisablePlatformUser(id);
 
     await this.db
       .update(user)

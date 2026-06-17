@@ -119,6 +119,7 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
   const isAdmin = detail.role === "admin";
   const ownsAcademy = detail.memberships.some((m) => m.role === "owner");
   const impact = deletionImpact.data as PlatformUserDeletionImpact | undefined;
+  const isPlatformAdmin = isAdmin || impact?.isPlatformAdmin === true;
 
   return (
     <PlatformShell
@@ -139,7 +140,7 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
             <p className="truncate text-sm text-muted-foreground">{detail.email}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {isAdmin ? <Badge variant="warning">Operador</Badge> : null}
+            {isAdmin ? <Badge variant="warning">Administrador da Plataforma</Badge> : null}
             {detail.banned ? (
               <Badge variant="destructive">Bloqueado</Badge>
             ) : (
@@ -156,7 +157,10 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
                   label="ID do usuário"
                   value={<span className="font-mono text-xs">{detail.id}</span>}
                 />
-                <DetailRow label="Papel" value={isAdmin ? "Operador da plataforma" : "Usuário"} />
+                <DetailRow
+                  label="Papel"
+                  value={isAdmin ? "Administrador da plataforma" : "Usuário"}
+                />
                 <DetailRow label="E-mail verificado" value={detail.emailVerified ? "Sim" : "Não"} />
                 <DetailRow label="Sessões ativas" value={String(detail.activeSessions)} />
                 <DetailRow label="Cadastrado em" value={formatLongDate(detail.createdAt)} />
@@ -259,6 +263,11 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
                   </Button>
                 ) : (
                   <div className="space-y-2">
+                    {isAdmin ? (
+                      <p className="rounded-xl bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
+                        Administradores da Plataforma não podem ser bloqueados por esta tela.
+                      </p>
+                    ) : null}
                     {ownsAcademy ? (
                       <p className="rounded-xl bg-primary/5 px-3 py-2 text-xs text-muted-foreground">
                         Este usuário é dono de academia. Bloquear impede o acesso à academia dele.
@@ -274,7 +283,7 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
                         <div className="flex gap-2">
                           <Button
                             onClick={() => banMutation.mutate()}
-                            disabled={banMutation.isPending}
+                            disabled={isAdmin || banMutation.isPending}
                           >
                             {banMutation.isPending ? "Bloqueando..." : "Confirmar"}
                           </Button>
@@ -294,6 +303,7 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
                         variant="outline"
                         className="w-full"
                         onClick={() => setShowBanForm(true)}
+                        disabled={isAdmin}
                       >
                         Bloquear usuário
                       </Button>
@@ -326,6 +336,11 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
                 <p className="text-sm text-muted-foreground">
                   Exclua definitivamente ou preservando o histórico operacional.
                 </p>
+                {isPlatformAdmin ? (
+                  <p className="rounded-xl bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
+                    Administradores da Plataforma são protegidos contra exclusão por este fluxo.
+                  </p>
+                ) : null}
                 {showDeleteForm ? (
                   <div className="space-y-3">
                     {impact ? (
@@ -406,7 +421,7 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
                       <Button
                         variant="destructive"
                         onClick={() => deleteMutation.mutate()}
-                        disabled={deleteMutation.isPending}
+                        disabled={isPlatformAdmin || deleteMutation.isPending}
                       >
                         {deleteMutation.isPending ? "Excluindo..." : "Confirmar exclusão"}
                       </Button>
@@ -420,6 +435,7 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
                     variant="destructive"
                     className="w-full"
                     onClick={() => setShowDeleteForm(true)}
+                    disabled={isAdmin}
                   >
                     <Delete02Icon className="size-4" />
                     Excluir usuário
