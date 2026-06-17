@@ -78,18 +78,19 @@ test("opens the fake R2 receipt and approves a pending receipt", async ({ page }
   await expect(popup.locator("body")).toContainText("fake-r2:receipts/e2e/review/pending.png");
   await popup.close();
 
-  await page.getByRole("button", { name: "Aprovar" }).click();
+  await Promise.all([
+    page.waitForResponse((response) => response.url().includes("/approve") && response.ok()),
+    page.getByRole("button", { name: "Aprovar" }).click(),
+  ]);
   await expect(page.getByRole("heading", { name: "Verificação de pagamento" })).toHaveCount(0);
   await expect(reviewRow).toHaveCount(0);
 
-  await page.goto("/monthly-fees?status=paid");
-  await expect(page).toHaveURL(/\/monthly-fees\?status=paid$/);
-  const paidRow = page
-    .getByTestId("monthly-fee-row")
-    .filter({ hasText: "E2E Bruno Visitante" })
-    .first();
+  await page.goto("/monthly-fees");
+  await expect(page).toHaveURL(/\/monthly-fees$/);
+  await page.reload();
+  const paidRow = feeRow(page, "E2E Bruno Visitante", "Agosto 2026");
   await expect(paidRow).toBeVisible();
-  await expect(paidRow).toContainText("Pago");
+  await expect.poll(async () => await paidRow.textContent()).toContain("Pago");
 });
 
 test("rejecting a pending receipt requires a reason and returns the fee to open", async ({
@@ -109,8 +110,10 @@ test("rejecting a pending receipt requires a reason and returns the fee to open"
   await expect(page.getByRole("heading", { name: "Verificação de pagamento" })).toHaveCount(0);
   await expect(reviewRow).toHaveCount(0);
 
-  await page.goto("/monthly-fees?status=open");
+  await page.goto("/monthly-fees");
+  await expect(page).toHaveURL(/\/monthly-fees$/);
   const reopenedRow = feeRow(page, "E2E Bruno Visitante", "Agosto 2026");
+  await expect(reopenedRow).toBeVisible();
   await expect(reopenedRow).toContainText("Em aberto");
 });
 

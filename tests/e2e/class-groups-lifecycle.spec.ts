@@ -11,7 +11,6 @@ test.beforeEach(() => {
 
 const createdGroupName = "000 E2E Turma Lifecycle";
 const editedGroupName = "000 E2E Turma Lifecycle Editada";
-const todayFixtureGroupName = "E2E No-Gi 19h";
 const weekdays = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"] as const;
 const weekdaysShort = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"] as const;
 
@@ -76,20 +75,33 @@ test("create, edit, archive, and reactivate a class group", async ({ page }) => 
 });
 
 test("archived class group disappears from the schedule", async ({ page }) => {
+  const scheduleOnlyGroupName = "000 E2E Turma Agenda Arquivada";
+  const todayWeekday = weekdayForToday();
+
   await openClassGroupsPage(page);
-
-  const fixtureCard = classGroupCard(page, todayFixtureGroupName);
-  await expect(fixtureCard).toBeVisible();
-
-  await openClassGroupActions(fixtureCard);
-  await page.getByRole("menuitem", { name: "Arquivar" }).click();
-  await page.getByRole("button", { name: /^Arquivar$/ }).click();
-  await expect(classGroupCard(page, todayFixtureGroupName)).toHaveCount(0);
+  await page.getByRole("button", { name: "Nova turma" }).click();
+  await page.getByLabel("Nome da turma").fill(scheduleOnlyGroupName);
+  await page.getByLabel("Duração em minutos").fill("60");
+  await setWeeklySchedule(page, 0, weekdays[todayWeekday], "19:15");
+  await page.getByRole("button", { name: "Salvar turma" }).click();
 
   await page.goto("/schedule");
   await expect(page).toHaveURL(/\/schedule$/);
   await expect(page.getByRole("button", { name: "Hoje" })).toBeVisible();
-  await expect(scheduleOccurrence(page, todayFixtureGroupName)).toHaveCount(0);
+  await expect(scheduleOccurrence(page, scheduleOnlyGroupName)).toBeVisible();
+
+  await openClassGroupsPage(page);
+  const createdCard = classGroupCard(page, scheduleOnlyGroupName);
+  await expect(createdCard).toBeVisible();
+  await openClassGroupActions(createdCard);
+  await page.getByRole("menuitem", { name: "Arquivar" }).click();
+  await page.getByRole("button", { name: /^Arquivar$/ }).click();
+  await expect(classGroupCard(page, scheduleOnlyGroupName)).toHaveCount(0);
+
+  await page.goto("/schedule");
+  await expect(page).toHaveURL(/\/schedule$/);
+  await expect(page.getByRole("button", { name: "Hoje" })).toBeVisible();
+  await expect(scheduleOccurrence(page, scheduleOnlyGroupName)).toHaveCount(0);
 });
 
 async function openClassGroupsPage(page: Page) {
