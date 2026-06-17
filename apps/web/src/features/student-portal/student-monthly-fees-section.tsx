@@ -58,7 +58,13 @@ export function StudentMonthlyFeesSection({ me }: { me: StudentMeResponse }) {
 
       const { error: confirmError } = await api.POST("/student/monthly-fees/{id}/receipts", {
         params: { path: { id: selectedFee.id } },
-        body: { fileKey: uploadData.fileKey, fileType: file.type, fileSizeBytes: file.size, note },
+        body: {
+          fileKey: uploadData.fileKey,
+          fileKeySignature: uploadData.fileKeySignature,
+          fileType: file.type,
+          fileSizeBytes: file.size,
+          note,
+        },
       });
       if (confirmError) throw new Error("Não foi possível confirmar o comprovante.");
     },

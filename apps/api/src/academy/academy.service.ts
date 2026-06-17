@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type {
   AcademyLogoUploadResponse,
   AcademyProfile,
@@ -8,6 +8,10 @@ import { type Database, organization } from "@tatamiq/database";
 import { eq } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
 import { R2StorageService } from "../monthly-fees/r2-storage.service";
+import {
+  assertValidUploadKeySignature,
+  issueUploadKeySignature,
+} from "../monthly-fees/upload-key-signature";
 
 @Injectable()
 export class AcademyService {
@@ -58,11 +62,35 @@ export class AcademyService {
 
     const fileKey = `logos/${organizationId}/${crypto.randomUUID()}`;
     const uploadUrl = await this.r2.generatePresignedUrl(fileKey, "image/*");
-    return { uploadUrl, fileKey };
+    const signature = issueUploadKeySignature({
+      purpose: "academy-logo",
+      organizationId,
+      subjectId: organizationId,
+      fileKey,
+    });
+    return { uploadUrl, fileKey, ...signature };
   }
 
-  async confirmLogo(organizationId: string, fileKey: string): Promise<AcademyProfile> {
+  async confirmLogo(
+    organizationId: string,
+    fileKey: string,
+    fileKeySignature: string,
+  ): Promise<AcademyProfile> {
     await this.get(organizationId);
+
+    if (!fileKey.startsWith(`logos/${organizationId}/`)) {
+      throw new BadRequestException("Upload inválido ou expirado.");
+    }
+
+    assertValidUploadKeySignature(
+      {
+        purpose: "academy-logo",
+        organizationId,
+        subjectId: organizationId,
+        fileKey,
+      },
+      fileKeySignature,
+    );
 
     const logoUrl = this.r2.getPublicUrl(fileKey);
     await this.db

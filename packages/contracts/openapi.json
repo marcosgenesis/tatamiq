@@ -124,6 +124,436 @@
         ]
       }
     },
+    "/monthly-fees": {
+      "get": {
+        "operationId": "MonthlyFeesController_list",
+        "parameters": [
+          {
+            "name": "referenceMonth",
+            "required": false,
+            "in": "query",
+            "schema": {}
+          },
+          {
+            "name": "referenceYear",
+            "required": false,
+            "in": "query",
+            "schema": {}
+          },
+          {
+            "name": "studentId",
+            "required": false,
+            "in": "query",
+            "schema": {}
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "open",
+                "under_review",
+                "paid",
+                "waived",
+                "overdue",
+                "all"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListMonthlyFeesResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "monthly-fees"
+        ]
+      },
+      "post": {
+        "operationId": "MonthlyFeesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMonthlyFeeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonthlyFeeDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "monthly-fees"
+        ]
+      }
+    },
+    "/monthly-fees/{id}": {
+      "get": {
+        "operationId": "MonthlyFeesController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonthlyFeeDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "monthly-fees"
+        ]
+      }
+    },
+    "/monthly-fees/{id}/upload-url": {
+      "post": {
+        "operationId": "MonthlyFeesController_uploadUrl",
+        "parameters": [
+          {
+            "name": "contentType",
+            "required": true,
+            "in": "query",
+            "schema": {}
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadUrlResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "monthly-fees"
+        ]
+      }
+    },
+    "/monthly-fees/{id}/receipts": {
+      "post": {
+        "operationId": "MonthlyFeesController_confirmReceipt",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmReceiptDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonthlyFeeDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "monthly-fees"
+        ]
+      },
+      "get": {
+        "operationId": "MonthlyFeesController_listReceipts",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "monthly-fees"
+        ]
+      }
+    },
+    "/monthly-fees/{id}/adjust": {
+      "post": {
+        "operationId": "MonthlyFeesController_adjust",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdjustMonthlyFeeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonthlyFeeDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "monthly-fees"
+        ]
+      }
+    },
+    "/monthly-fees/{id}/waive": {
+      "post": {
+        "operationId": "MonthlyFeesController_waive",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WaiveMonthlyFeeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonthlyFeeDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "monthly-fees"
+        ]
+      }
+    },
+    "/monthly-fees/{id}/manual-payment": {
+      "post": {
+        "operationId": "MonthlyFeesController_manualPayment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManualPaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonthlyFeeDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "monthly-fees"
+        ]
+      }
+    },
+    "/monthly-fees/{id}/receipts/{receiptId}/view-url": {
+      "get": {
+        "operationId": "MonthlyFeesController_receiptViewUrl",
+        "parameters": [
+          {
+            "name": "receiptId",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptViewUrlResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "monthly-fees"
+        ]
+      }
+    },
+    "/monthly-fees/{id}/receipts/{receiptId}/approve": {
+      "post": {
+        "operationId": "MonthlyFeesController_approveReceipt",
+        "parameters": [
+          {
+            "name": "receiptId",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonthlyFeeDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "monthly-fees"
+        ]
+      }
+    },
+    "/monthly-fees/{id}/receipts/{receiptId}/reject": {
+      "post": {
+        "operationId": "MonthlyFeesController_rejectReceipt",
+        "parameters": [
+          {
+            "name": "receiptId",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectReceiptDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonthlyFeeDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "monthly-fees"
+        ]
+      }
+    },
     "/belts": {
       "get": {
         "operationId": "BeltsController_list",
@@ -1230,436 +1660,6 @@
         },
         "tags": [
           "student-portal"
-        ]
-      }
-    },
-    "/monthly-fees": {
-      "get": {
-        "operationId": "MonthlyFeesController_list",
-        "parameters": [
-          {
-            "name": "referenceMonth",
-            "required": false,
-            "in": "query",
-            "schema": {}
-          },
-          {
-            "name": "referenceYear",
-            "required": false,
-            "in": "query",
-            "schema": {}
-          },
-          {
-            "name": "studentId",
-            "required": false,
-            "in": "query",
-            "schema": {}
-          },
-          {
-            "name": "status",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "enum": [
-                "open",
-                "under_review",
-                "paid",
-                "waived",
-                "overdue",
-                "all"
-              ],
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ListMonthlyFeesResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "monthly-fees"
-        ]
-      },
-      "post": {
-        "operationId": "MonthlyFeesController_create",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateMonthlyFeeDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MonthlyFeeDetailDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "monthly-fees"
-        ]
-      }
-    },
-    "/monthly-fees/{id}": {
-      "get": {
-        "operationId": "MonthlyFeesController_get",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {}
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MonthlyFeeDetailDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "monthly-fees"
-        ]
-      }
-    },
-    "/monthly-fees/{id}/upload-url": {
-      "post": {
-        "operationId": "MonthlyFeesController_uploadUrl",
-        "parameters": [
-          {
-            "name": "contentType",
-            "required": true,
-            "in": "query",
-            "schema": {}
-          },
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {}
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UploadUrlResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "monthly-fees"
-        ]
-      }
-    },
-    "/monthly-fees/{id}/receipts": {
-      "post": {
-        "operationId": "MonthlyFeesController_confirmReceipt",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {}
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ConfirmReceiptDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MonthlyFeeDetailDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "monthly-fees"
-        ]
-      },
-      "get": {
-        "operationId": "MonthlyFeesController_listReceipts",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {}
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "monthly-fees"
-        ]
-      }
-    },
-    "/monthly-fees/{id}/adjust": {
-      "post": {
-        "operationId": "MonthlyFeesController_adjust",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {}
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdjustMonthlyFeeDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MonthlyFeeDetailDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "monthly-fees"
-        ]
-      }
-    },
-    "/monthly-fees/{id}/waive": {
-      "post": {
-        "operationId": "MonthlyFeesController_waive",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {}
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/WaiveMonthlyFeeDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MonthlyFeeDetailDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "monthly-fees"
-        ]
-      }
-    },
-    "/monthly-fees/{id}/manual-payment": {
-      "post": {
-        "operationId": "MonthlyFeesController_manualPayment",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {}
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ManualPaymentDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MonthlyFeeDetailDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "monthly-fees"
-        ]
-      }
-    },
-    "/monthly-fees/{id}/receipts/{receiptId}/view-url": {
-      "get": {
-        "operationId": "MonthlyFeesController_receiptViewUrl",
-        "parameters": [
-          {
-            "name": "receiptId",
-            "required": true,
-            "in": "path",
-            "schema": {}
-          },
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {}
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ReceiptViewUrlResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "monthly-fees"
-        ]
-      }
-    },
-    "/monthly-fees/{id}/receipts/{receiptId}/approve": {
-      "post": {
-        "operationId": "MonthlyFeesController_approveReceipt",
-        "parameters": [
-          {
-            "name": "receiptId",
-            "required": true,
-            "in": "path",
-            "schema": {}
-          },
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {}
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MonthlyFeeDetailDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "monthly-fees"
-        ]
-      }
-    },
-    "/monthly-fees/{id}/receipts/{receiptId}/reject": {
-      "post": {
-        "operationId": "MonthlyFeesController_rejectReceipt",
-        "parameters": [
-          {
-            "name": "receiptId",
-            "required": true,
-            "in": "path",
-            "schema": {}
-          },
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {}
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RejectReceiptDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MonthlyFeeDetailDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "monthly-fees"
         ]
       }
     },
@@ -3801,11 +3801,22 @@
           },
           "fileKey": {
             "type": "string"
+          },
+          "fileKeySignature": {
+            "type": "string",
+            "minLength": 1
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
           }
         },
         "required": [
           "uploadUrl",
-          "fileKey"
+          "fileKey",
+          "fileKeySignature",
+          "expiresAt"
         ]
       },
       "AcademyConfirmLogoDto": {
@@ -3814,10 +3825,559 @@
           "fileKey": {
             "type": "string",
             "minLength": 1
+          },
+          "fileKeySignature": {
+            "type": "string",
+            "minLength": 1
           }
         },
         "required": [
-          "fileKey"
+          "fileKey",
+          "fileKeySignature"
+        ]
+      },
+      "ListMonthlyFeesResponseDto": {
+        "type": "object",
+        "properties": {
+          "fees": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "studentId": {
+                  "type": "string"
+                },
+                "studentName": {
+                  "type": "string"
+                },
+                "referenceYear": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "referenceMonth": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "amountInCents": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "originalAmountInCents": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991,
+                  "nullable": true
+                },
+                "dueDate": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "open",
+                    "under_review",
+                    "paid",
+                    "waived"
+                  ]
+                },
+                "isOverdue": {
+                  "type": "boolean"
+                },
+                "paidAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+                  "nullable": true
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                },
+                "updatedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                }
+              },
+              "required": [
+                "id",
+                "studentId",
+                "studentName",
+                "referenceYear",
+                "referenceMonth",
+                "amountInCents",
+                "originalAmountInCents",
+                "dueDate",
+                "status",
+                "isOverdue",
+                "paidAt",
+                "createdAt",
+                "updatedAt"
+              ]
+            }
+          },
+          "summary": {
+            "type": "object",
+            "properties": {
+              "open": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "overdue": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "underReview": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "paid": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "waived": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "total": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "open",
+              "overdue",
+              "underReview",
+              "paid",
+              "waived",
+              "total"
+            ]
+          }
+        },
+        "required": [
+          "fees",
+          "summary"
+        ]
+      },
+      "CreateMonthlyFeeDto": {
+        "type": "object",
+        "properties": {
+          "studentId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "referenceYear": {
+            "type": "integer",
+            "minimum": 2000,
+            "maximum": 2100
+          },
+          "referenceMonth": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 12
+          },
+          "amountInCents": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991,
+            "minimum": 0
+          },
+          "dueDay": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 31
+          }
+        },
+        "required": [
+          "studentId",
+          "referenceYear",
+          "referenceMonth",
+          "amountInCents",
+          "dueDay"
+        ]
+      },
+      "MonthlyFeeDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "studentId": {
+            "type": "string"
+          },
+          "studentName": {
+            "type": "string"
+          },
+          "referenceYear": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "referenceMonth": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "amountInCents": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "originalAmountInCents": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "nullable": true
+          },
+          "dueDate": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "under_review",
+              "paid",
+              "waived"
+            ]
+          },
+          "isOverdue": {
+            "type": "boolean"
+          },
+          "paidAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          },
+          "paymentOrigin": {
+            "type": "string",
+            "enum": [
+              "manual_payment",
+              "receipt_approved",
+              null
+            ],
+            "nullable": true
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "monthlyFeeId": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "waived",
+                    "adjusted",
+                    "receipt_approved",
+                    "receipt_rejected",
+                    "receipt_replaced",
+                    "manual_payment"
+                  ]
+                },
+                "reason": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "metadata": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {},
+                  "nullable": true
+                },
+                "createdByUserId": {
+                  "type": "string"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                }
+              },
+              "required": [
+                "id",
+                "monthlyFeeId",
+                "type",
+                "reason",
+                "metadata",
+                "createdByUserId",
+                "createdAt"
+              ]
+            }
+          },
+          "receipts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "monthlyFeeId": {
+                  "type": "string"
+                },
+                "studentId": {
+                  "type": "string"
+                },
+                "fileKey": {
+                  "type": "string"
+                },
+                "fileUrl": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "fileType": {
+                  "type": "string"
+                },
+                "fileSizeBytes": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "note": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "pending",
+                    "approved",
+                    "rejected",
+                    "replaced"
+                  ]
+                },
+                "rejectionReason": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "replacedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+                  "nullable": true
+                },
+                "createdByUserId": {
+                  "type": "string"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                }
+              },
+              "required": [
+                "id",
+                "monthlyFeeId",
+                "studentId",
+                "fileKey",
+                "fileUrl",
+                "fileType",
+                "fileSizeBytes",
+                "note",
+                "status",
+                "rejectionReason",
+                "replacedAt",
+                "createdByUserId",
+                "createdAt"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "studentId",
+          "studentName",
+          "referenceYear",
+          "referenceMonth",
+          "amountInCents",
+          "originalAmountInCents",
+          "dueDate",
+          "status",
+          "isOverdue",
+          "paidAt",
+          "createdAt",
+          "updatedAt",
+          "paymentOrigin",
+          "events",
+          "receipts"
+        ]
+      },
+      "UploadUrlResponseDto": {
+        "type": "object",
+        "properties": {
+          "uploadUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "fileKey": {
+            "type": "string"
+          },
+          "fileKeySignature": {
+            "type": "string",
+            "minLength": 1
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          }
+        },
+        "required": [
+          "uploadUrl",
+          "fileKey",
+          "fileKeySignature",
+          "expiresAt"
+        ]
+      },
+      "ConfirmReceiptDto": {
+        "type": "object",
+        "properties": {
+          "fileKey": {
+            "type": "string",
+            "minLength": 1
+          },
+          "fileKeySignature": {
+            "type": "string",
+            "minLength": 1
+          },
+          "fileType": {
+            "type": "string",
+            "minLength": 1
+          },
+          "fileSizeBytes": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "maximum": 10485760,
+            "minimum": 0
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "enum": [
+                  ""
+                ]
+              }
+            ]
+          }
+        },
+        "required": [
+          "fileKey",
+          "fileKeySignature",
+          "fileType",
+          "fileSizeBytes"
+        ]
+      },
+      "AdjustMonthlyFeeDto": {
+        "type": "object",
+        "properties": {
+          "amountInCents": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991,
+            "minimum": 0
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "amountInCents",
+          "reason"
+        ]
+      },
+      "WaiveMonthlyFeeDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
+      "ManualPaymentDto": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "const": ""
+              }
+            ]
+          }
+        }
+      },
+      "ReceiptViewUrlResponseDto": {
+        "type": "object",
+        "properties": {
+          "viewUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          }
+        },
+        "required": [
+          "viewUrl",
+          "expiresAt"
+        ]
+      },
+      "RejectReceiptDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "reason"
         ]
       },
       "ListBeltsResponseDto": {
@@ -5910,302 +6470,6 @@
           "fees"
         ]
       },
-      "UploadUrlResponseDto": {
-        "type": "object",
-        "properties": {
-          "uploadUrl": {
-            "type": "string",
-            "format": "uri"
-          },
-          "fileKey": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "uploadUrl",
-          "fileKey"
-        ]
-      },
-      "ConfirmReceiptDto": {
-        "type": "object",
-        "properties": {
-          "fileKey": {
-            "type": "string",
-            "minLength": 1
-          },
-          "fileType": {
-            "type": "string",
-            "minLength": 1
-          },
-          "fileSizeBytes": {
-            "type": "integer",
-            "exclusiveMinimum": true,
-            "maximum": 10485760,
-            "minimum": 0
-          },
-          "note": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "string",
-                "enum": [
-                  ""
-                ]
-              }
-            ]
-          }
-        },
-        "required": [
-          "fileKey",
-          "fileType",
-          "fileSizeBytes"
-        ]
-      },
-      "MonthlyFeeDetailDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "studentId": {
-            "type": "string"
-          },
-          "studentName": {
-            "type": "string"
-          },
-          "referenceYear": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "referenceMonth": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "amountInCents": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "originalAmountInCents": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991,
-            "nullable": true
-          },
-          "dueDate": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "open",
-              "under_review",
-              "paid",
-              "waived"
-            ]
-          },
-          "isOverdue": {
-            "type": "boolean"
-          },
-          "paidAt": {
-            "type": "string",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
-            "nullable": true
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
-          },
-          "paymentOrigin": {
-            "type": "string",
-            "enum": [
-              "manual_payment",
-              "receipt_approved",
-              null
-            ],
-            "nullable": true
-          },
-          "events": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string"
-                },
-                "monthlyFeeId": {
-                  "type": "string"
-                },
-                "type": {
-                  "type": "string",
-                  "enum": [
-                    "waived",
-                    "adjusted",
-                    "receipt_approved",
-                    "receipt_rejected",
-                    "receipt_replaced",
-                    "manual_payment"
-                  ]
-                },
-                "reason": {
-                  "type": "string",
-                  "nullable": true
-                },
-                "metadata": {
-                  "type": "object",
-                  "propertyNames": {
-                    "type": "string"
-                  },
-                  "additionalProperties": {},
-                  "nullable": true
-                },
-                "createdByUserId": {
-                  "type": "string"
-                },
-                "createdAt": {
-                  "type": "string",
-                  "format": "date-time",
-                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
-                }
-              },
-              "required": [
-                "id",
-                "monthlyFeeId",
-                "type",
-                "reason",
-                "metadata",
-                "createdByUserId",
-                "createdAt"
-              ]
-            }
-          },
-          "receipts": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string"
-                },
-                "monthlyFeeId": {
-                  "type": "string"
-                },
-                "studentId": {
-                  "type": "string"
-                },
-                "fileKey": {
-                  "type": "string"
-                },
-                "fileUrl": {
-                  "type": "string",
-                  "nullable": true
-                },
-                "fileType": {
-                  "type": "string"
-                },
-                "fileSizeBytes": {
-                  "type": "integer",
-                  "minimum": -9007199254740991,
-                  "maximum": 9007199254740991
-                },
-                "note": {
-                  "type": "string",
-                  "nullable": true
-                },
-                "status": {
-                  "type": "string",
-                  "enum": [
-                    "pending",
-                    "approved",
-                    "rejected",
-                    "replaced"
-                  ]
-                },
-                "rejectionReason": {
-                  "type": "string",
-                  "nullable": true
-                },
-                "replacedAt": {
-                  "type": "string",
-                  "format": "date-time",
-                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
-                  "nullable": true
-                },
-                "createdByUserId": {
-                  "type": "string"
-                },
-                "createdAt": {
-                  "type": "string",
-                  "format": "date-time",
-                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
-                }
-              },
-              "required": [
-                "id",
-                "monthlyFeeId",
-                "studentId",
-                "fileKey",
-                "fileUrl",
-                "fileType",
-                "fileSizeBytes",
-                "note",
-                "status",
-                "rejectionReason",
-                "replacedAt",
-                "createdByUserId",
-                "createdAt"
-              ]
-            }
-          }
-        },
-        "required": [
-          "id",
-          "studentId",
-          "studentName",
-          "referenceYear",
-          "referenceMonth",
-          "amountInCents",
-          "originalAmountInCents",
-          "dueDate",
-          "status",
-          "isOverdue",
-          "paidAt",
-          "createdAt",
-          "updatedAt",
-          "paymentOrigin",
-          "events",
-          "receipts"
-        ]
-      },
-      "ReceiptViewUrlResponseDto": {
-        "type": "object",
-        "properties": {
-          "viewUrl": {
-            "type": "string",
-            "format": "uri"
-          },
-          "expiresAt": {
-            "type": "string",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
-          }
-        },
-        "required": [
-          "viewUrl",
-          "expiresAt"
-        ]
-      },
       "StudentScheduleResponseDto": {
         "type": "object",
         "properties": {
@@ -6515,238 +6779,6 @@
         },
         "required": [
           "type"
-        ]
-      },
-      "ListMonthlyFeesResponseDto": {
-        "type": "object",
-        "properties": {
-          "fees": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string"
-                },
-                "studentId": {
-                  "type": "string"
-                },
-                "studentName": {
-                  "type": "string"
-                },
-                "referenceYear": {
-                  "type": "integer",
-                  "minimum": -9007199254740991,
-                  "maximum": 9007199254740991
-                },
-                "referenceMonth": {
-                  "type": "integer",
-                  "minimum": -9007199254740991,
-                  "maximum": 9007199254740991
-                },
-                "amountInCents": {
-                  "type": "integer",
-                  "minimum": -9007199254740991,
-                  "maximum": 9007199254740991
-                },
-                "originalAmountInCents": {
-                  "type": "integer",
-                  "minimum": -9007199254740991,
-                  "maximum": 9007199254740991,
-                  "nullable": true
-                },
-                "dueDate": {
-                  "type": "string"
-                },
-                "status": {
-                  "type": "string",
-                  "enum": [
-                    "open",
-                    "under_review",
-                    "paid",
-                    "waived"
-                  ]
-                },
-                "isOverdue": {
-                  "type": "boolean"
-                },
-                "paidAt": {
-                  "type": "string",
-                  "format": "date-time",
-                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
-                  "nullable": true
-                },
-                "createdAt": {
-                  "type": "string",
-                  "format": "date-time",
-                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
-                },
-                "updatedAt": {
-                  "type": "string",
-                  "format": "date-time",
-                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
-                }
-              },
-              "required": [
-                "id",
-                "studentId",
-                "studentName",
-                "referenceYear",
-                "referenceMonth",
-                "amountInCents",
-                "originalAmountInCents",
-                "dueDate",
-                "status",
-                "isOverdue",
-                "paidAt",
-                "createdAt",
-                "updatedAt"
-              ]
-            }
-          },
-          "summary": {
-            "type": "object",
-            "properties": {
-              "open": {
-                "type": "integer",
-                "minimum": 0,
-                "maximum": 9007199254740991
-              },
-              "overdue": {
-                "type": "integer",
-                "minimum": 0,
-                "maximum": 9007199254740991
-              },
-              "underReview": {
-                "type": "integer",
-                "minimum": 0,
-                "maximum": 9007199254740991
-              },
-              "paid": {
-                "type": "integer",
-                "minimum": 0,
-                "maximum": 9007199254740991
-              },
-              "waived": {
-                "type": "integer",
-                "minimum": 0,
-                "maximum": 9007199254740991
-              },
-              "total": {
-                "type": "integer",
-                "minimum": 0,
-                "maximum": 9007199254740991
-              }
-            },
-            "required": [
-              "open",
-              "overdue",
-              "underReview",
-              "paid",
-              "waived",
-              "total"
-            ]
-          }
-        },
-        "required": [
-          "fees",
-          "summary"
-        ]
-      },
-      "CreateMonthlyFeeDto": {
-        "type": "object",
-        "properties": {
-          "studentId": {
-            "type": "string",
-            "minLength": 1
-          },
-          "referenceYear": {
-            "type": "integer",
-            "minimum": 2000,
-            "maximum": 2100
-          },
-          "referenceMonth": {
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 12
-          },
-          "amountInCents": {
-            "type": "integer",
-            "exclusiveMinimum": true,
-            "maximum": 9007199254740991,
-            "minimum": 0
-          },
-          "dueDay": {
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 31
-          }
-        },
-        "required": [
-          "studentId",
-          "referenceYear",
-          "referenceMonth",
-          "amountInCents",
-          "dueDay"
-        ]
-      },
-      "AdjustMonthlyFeeDto": {
-        "type": "object",
-        "properties": {
-          "amountInCents": {
-            "type": "integer",
-            "exclusiveMinimum": true,
-            "maximum": 9007199254740991,
-            "minimum": 0
-          },
-          "reason": {
-            "type": "string",
-            "minLength": 1
-          }
-        },
-        "required": [
-          "amountInCents",
-          "reason"
-        ]
-      },
-      "WaiveMonthlyFeeDto": {
-        "type": "object",
-        "properties": {
-          "reason": {
-            "type": "string",
-            "minLength": 1
-          }
-        },
-        "required": [
-          "reason"
-        ]
-      },
-      "ManualPaymentDto": {
-        "type": "object",
-        "properties": {
-          "note": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "string",
-                "const": ""
-              }
-            ]
-          }
-        }
-      },
-      "RejectReceiptDto": {
-        "type": "object",
-        "properties": {
-          "reason": {
-            "type": "string",
-            "minLength": 1
-          }
-        },
-        "required": [
-          "reason"
         ]
       },
       "ListStudentNotesResponseDto": {

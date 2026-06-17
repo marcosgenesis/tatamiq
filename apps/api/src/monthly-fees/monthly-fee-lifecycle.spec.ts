@@ -213,6 +213,7 @@ describe("MonthlyFeeLifecycle", () => {
 
     await service.submitReceipt("org-1", "fee-1", "user-1", {
       fileKey: "receipts/org-1/fee-1/file",
+      fileKeySignature: "verified-by-service-layer",
       fileType: "image/png",
       fileSizeBytes: 1234,
       note: "Segue comprovante",
@@ -239,6 +240,7 @@ describe("MonthlyFeeLifecycle", () => {
 
     await service.submitReceipt("org-1", "fee-1", "user-1", {
       fileKey: "receipts/org-1/fee-1/new-file",
+      fileKeySignature: "verified-by-service-layer",
       fileType: "application/pdf",
       fileSizeBytes: 2000,
       note: undefined,
@@ -270,6 +272,7 @@ describe("MonthlyFeeLifecycle", () => {
       "user-1",
       {
         fileKey: "receipts/org-1/fee-1/new-file",
+        fileKeySignature: "verified-by-service-layer",
         fileType: "application/pdf",
         fileSizeBytes: 2000,
         note: undefined,
@@ -297,6 +300,7 @@ describe("MonthlyFeeLifecycle", () => {
         "user-1",
         {
           fileKey: "receipts/org-1/fee-other/file",
+          fileKeySignature: "verified-by-service-layer",
           fileType: "application/pdf",
           fileSizeBytes: 2000,
           note: undefined,

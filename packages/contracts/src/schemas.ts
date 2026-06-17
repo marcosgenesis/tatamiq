@@ -646,10 +646,13 @@ export type ManualPaymentInput = z.infer<typeof manualPaymentSchema>;
 export const uploadUrlResponseSchema = z.object({
   uploadUrl: z.string().url(),
   fileKey: z.string(),
+  fileKeySignature: z.string().min(1),
+  expiresAt: z.string().datetime(),
 });
 
 export const confirmReceiptSchema = z.object({
   fileKey: z.string().min(1),
+  fileKeySignature: z.string().min(1),
   fileType: z.string().min(1),
   fileSizeBytes: z
     .number()
@@ -772,10 +775,13 @@ export const updateAcademySchema = z.object({
 export const academyLogoUploadResponseSchema = z.object({
   uploadUrl: z.string().url(),
   fileKey: z.string(),
+  fileKeySignature: z.string().min(1),
+  expiresAt: z.string().datetime(),
 });
 
 export const academyConfirmLogoSchema = z.object({
   fileKey: z.string().trim().min(1),
+  fileKeySignature: z.string().min(1),
 });
 
 export type AcademyProfile = z.infer<typeof academyProfileSchema>;

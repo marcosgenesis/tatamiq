@@ -275,7 +275,10 @@ export function SettingsPage() {
       }
 
       const { error: confirmError } = await api.POST("/academy/logo/confirm", {
-        body: { fileKey: uploadData.fileKey } satisfies AcademyConfirmLogoInput,
+        body: {
+          fileKey: uploadData.fileKey,
+          fileKeySignature: uploadData.fileKeySignature,
+        } satisfies AcademyConfirmLogoInput,
       });
       if (confirmError) {
         throw new Error("Não foi possível confirmar o logo.");

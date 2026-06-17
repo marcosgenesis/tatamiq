@@ -105,7 +105,10 @@ export function AcademyOnboardingPage() {
       if (!uploadRes.ok) throw new Error();
 
       const { error: confirmError } = await api.POST("/academy/logo/confirm", {
-        body: { fileKey: uploadData.fileKey } satisfies AcademyConfirmLogoInput,
+        body: {
+          fileKey: uploadData.fileKey,
+          fileKeySignature: uploadData.fileKeySignature,
+        } satisfies AcademyConfirmLogoInput,
       });
       if (confirmError) throw new Error();
     } catch {
