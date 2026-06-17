@@ -30,6 +30,15 @@ import { StudentsModule } from "./students/students.module";
     LoggerModule.forRoot({
       pinoHttp: {
         level: process.env.LOG_LEVEL ?? "info",
+        redact: {
+          paths: [
+            "req.headers.cookie",
+            "req.headers.authorization",
+            'req.headers["x-api-key"]',
+            'res.headers["set-cookie"]',
+          ],
+          censor: "[REDACTED]",
+        },
       },
     }),
     DatabaseModule,
