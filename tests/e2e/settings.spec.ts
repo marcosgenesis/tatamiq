@@ -72,6 +72,7 @@ test("updates academy data, Pix config, uploads logo, and edits belt rules", asy
   const uploadUrlPayload = (await uploadUrlResponse.json()) as {
     uploadUrl: string;
     fileKey: string;
+    fileKeySignature: string;
   };
   const uploadResponse = await fetch(uploadUrlPayload.uploadUrl, {
     method: "PUT",
@@ -80,7 +81,10 @@ test("updates academy data, Pix config, uploads logo, and edits belt rules", asy
   });
   expect(uploadResponse.ok).toBeTruthy();
   const confirmResponse = await page.request.post(`${API_URL}/academy/logo/confirm`, {
-    data: { fileKey: uploadUrlPayload.fileKey },
+    data: {
+      fileKey: uploadUrlPayload.fileKey,
+      fileKeySignature: uploadUrlPayload.fileKeySignature,
+    },
   });
   expect(confirmResponse.ok()).toBeTruthy();
 
