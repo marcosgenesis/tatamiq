@@ -3,7 +3,9 @@ import { findActiveRecurringCancellation } from "./schedule-cancellations";
 import {
   getMondayWeekStart,
   listWeekDates,
-  toScheduledStartAt,
+  saoPauloDatePart,
+  saoPauloTimePart,
+  toSaoPauloScheduledStartAt,
   weekdayForDate,
 } from "./schedule-rules";
 
@@ -116,7 +118,7 @@ function expandAdHocOccurrencesForDate(
   date: string,
 ): ScheduleOccurrence[] {
   return input.adHocRows
-    .filter((row) => row.scheduledStartAt.toISOString().slice(0, 10) === date)
+    .filter((row) => saoPauloDatePart(row.scheduledStartAt) === date)
     .map((row) =>
       toAdHocOccurrence(
         row,
@@ -133,10 +135,7 @@ function mapRecurringSessions(
 ): Map<string, { id: string; status: string; attendanceCount: number }> {
   const map = new Map<string, { id: string; status: string; attendanceCount: number }>();
   for (const row of rows) {
-    const key = recurringSessionKey(
-      row.classGroupId,
-      row.scheduledStartAt.toISOString().slice(0, 10),
-    );
+    const key = recurringSessionKey(row.classGroupId, saoPauloDatePart(row.scheduledStartAt));
     map.set(key, {
       id: row.id,
       status: row.status,
@@ -173,7 +172,7 @@ export function toRecurringOccurrence(
     classSessionId: sessionInfo?.id ?? null,
     cancellationId: cancellation?.id ?? null,
     scheduledDate: date,
-    scheduledStartAt: toScheduledStartAt(date, row.startTime),
+    scheduledStartAt: toSaoPauloScheduledStartAt(date, row.startTime),
     startTime: row.startTime,
     durationMinutes: row.durationMinutes,
     studentCount: studentCountByClassGroup.get(row.classGroupId) ?? 0,
@@ -197,9 +196,9 @@ export function toAdHocOccurrence(
     scheduleId: null,
     classSessionId: row.id,
     cancellationId: null,
-    scheduledDate: row.scheduledStartAt.toISOString().slice(0, 10),
+    scheduledDate: saoPauloDatePart(row.scheduledStartAt),
     scheduledStartAt: row.scheduledStartAt.toISOString(),
-    startTime: row.scheduledStartAt.toISOString().slice(11, 16),
+    startTime: saoPauloTimePart(row.scheduledStartAt),
     durationMinutes: row.durationMinutes,
     studentCount: studentCountByClassGroup.get(row.classGroupId) ?? 0,
     attendanceCount,

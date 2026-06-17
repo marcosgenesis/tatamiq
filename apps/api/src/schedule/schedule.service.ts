@@ -18,6 +18,7 @@ import {
 } from "@tatamiq/database";
 import { and, eq, gte, inArray, isNull, lt } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
+import { saoPauloDatePart, toSaoPauloScheduledStartAt } from "./schedule-rules";
 import {
   type AgendaAdHocRow,
   type AgendaRecurringCancellationRow,
@@ -33,7 +34,7 @@ export class ScheduleService {
   constructor(@Inject(DATABASE) private readonly db: Database) {}
 
   async week(organizationId: string, weekStartInput?: string): Promise<WeeklyScheduleResponse> {
-    const range = weeklyAgendaRange(weekStartInput ?? new Date().toISOString().slice(0, 10));
+    const range = weeklyAgendaRange(weekStartInput ?? saoPauloDatePart(new Date()));
     const [scheduleRows, adHocRows, recurringCancellations, recurringSessionRows] =
       await Promise.all([
         this.activeScheduleRows(organizationId),
@@ -71,7 +72,7 @@ export class ScheduleService {
   }
 
   async today(organizationId: string): Promise<TodayScheduleResponse> {
-    const date = new Date().toISOString().slice(0, 10);
+    const date = saoPauloDatePart(new Date());
     const week = await this.week(organizationId, date);
     return {
       date,
@@ -274,8 +275,14 @@ export class ScheduleService {
         and(
           eq(classSessions.organizationId, organizationId),
           eq(classSessions.kind, "ad_hoc"),
-          gte(classSessions.scheduledStartAt, new Date(`${fromDate}T00:00:00.000Z`)),
-          lt(classSessions.scheduledStartAt, new Date(`${toDateExclusive}T00:00:00.000Z`)),
+          gte(
+            classSessions.scheduledStartAt,
+            new Date(toSaoPauloScheduledStartAt(fromDate, "00:00")),
+          ),
+          lt(
+            classSessions.scheduledStartAt,
+            new Date(toSaoPauloScheduledStartAt(toDateExclusive, "00:00")),
+          ),
         ),
       );
   }
@@ -389,8 +396,14 @@ export class ScheduleService {
         and(
           eq(classSessions.organizationId, organizationId),
           eq(classSessions.kind, "recurring"),
-          gte(classSessions.scheduledStartAt, new Date(`${fromDate}T00:00:00.000Z`)),
-          lt(classSessions.scheduledStartAt, new Date(`${toDateExclusive}T00:00:00.000Z`)),
+          gte(
+            classSessions.scheduledStartAt,
+            new Date(toSaoPauloScheduledStartAt(fromDate, "00:00")),
+          ),
+          lt(
+            classSessions.scheduledStartAt,
+            new Date(toSaoPauloScheduledStartAt(toDateExclusive, "00:00")),
+          ),
         ),
       );
   }

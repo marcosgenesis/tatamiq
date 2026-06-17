@@ -23,6 +23,7 @@ import {
 } from "@tatamiq/database";
 import { and, desc, eq, gte, inArray, isNull, lt, sql } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
+import { saoPauloDatePart, toSaoPauloScheduledStartAt } from "../schedule/schedule-rules";
 import {
   type AgendaAdHocRow,
   type AgendaRecurringCancellationRow,
@@ -46,8 +47,8 @@ export class StudentPortalService {
     const groupIds = groupLinks.map((l) => l.classGroupId);
     if (groupIds.length === 0) return { days: [] };
 
-    const today = new Date(`${new Date().toISOString().slice(0, 10)}T00:00:00.000Z`);
-    const todayDate = today.toISOString().slice(0, 10);
+    const todayDate = saoPauloDatePart(new Date());
+    const today = new Date(`${todayDate}T00:00:00.000Z`);
     const endDate = new Date(today);
     endDate.setUTCDate(endDate.getUTCDate() + 7);
     const endDateExclusive = endDate.toISOString().slice(0, 10);
@@ -133,8 +134,14 @@ export class StudentPortalService {
         and(
           inArray(classSessions.classGroupId, groupIds),
           eq(classSessions.kind, "ad_hoc"),
-          gte(classSessions.scheduledStartAt, new Date(`${fromDate}T00:00:00.000Z`)),
-          lt(classSessions.scheduledStartAt, new Date(`${toDateExclusive}T00:00:00.000Z`)),
+          gte(
+            classSessions.scheduledStartAt,
+            new Date(toSaoPauloScheduledStartAt(fromDate, "00:00")),
+          ),
+          lt(
+            classSessions.scheduledStartAt,
+            new Date(toSaoPauloScheduledStartAt(toDateExclusive, "00:00")),
+          ),
         ),
       );
   }
@@ -173,8 +180,14 @@ export class StudentPortalService {
         and(
           inArray(classSessions.classGroupId, groupIds),
           eq(classSessions.kind, "recurring"),
-          gte(classSessions.scheduledStartAt, new Date(`${fromDate}T00:00:00.000Z`)),
-          lt(classSessions.scheduledStartAt, new Date(`${toDateExclusive}T00:00:00.000Z`)),
+          gte(
+            classSessions.scheduledStartAt,
+            new Date(toSaoPauloScheduledStartAt(fromDate, "00:00")),
+          ),
+          lt(
+            classSessions.scheduledStartAt,
+            new Date(toSaoPauloScheduledStartAt(toDateExclusive, "00:00")),
+          ),
         ),
       );
   }
