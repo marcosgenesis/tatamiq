@@ -2,11 +2,15 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { api } from "../../api";
+import { useAppShell } from "../../components/app-shell";
+import { academyQueryKey } from "../../lib/academy-query-keys";
 
 export type DuplicateDecision = "link_to_existing" | "create_new" | "reject_as_duplicate";
 
 export function usePreRegistrationsWorkflow() {
   const queryClient = useQueryClient();
+  const { activeAcademy } = useAppShell();
+  const activeAcademyId = activeAcademy.id;
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [approvingId, setApprovingId] = useState<string | null>(null);
@@ -16,16 +20,17 @@ export function usePreRegistrationsWorkflow() {
   } | null>(null);
 
   const linkQuery = useQuery({
-    queryKey: ["students", "pre-registration-link"],
+    queryKey: academyQueryKey(activeAcademyId, "students", "pre-registration-link"),
     queryFn: async () => {
       const { data, error } = await api.GET("/students/pre-registration-link");
       if (error) throw new Error("Não foi possível carregar o link.");
       return data;
     },
+    enabled: !!activeAcademyId,
   });
 
   const requestsQuery = useQuery({
-    queryKey: ["students", "pre-registrations"],
+    queryKey: academyQueryKey(activeAcademyId, "students", "pre-registrations"),
     queryFn: async () => {
       const { data, error } = await api.GET("/students/pre-registrations");
       if (error) {
@@ -37,6 +42,7 @@ export function usePreRegistrationsWorkflow() {
       }
       return data;
     },
+    enabled: !!activeAcademyId,
   });
 
   const linkActionMutation = useMutation({
@@ -53,7 +59,7 @@ export function usePreRegistrationsWorkflow() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ["students", "pre-registration-link"],
+        queryKey: academyQueryKey(activeAcademyId, "students", "pre-registration-link"),
       });
     },
   });
@@ -68,7 +74,7 @@ export function usePreRegistrationsWorkflow() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ["students", "pre-registrations"],
+        queryKey: academyQueryKey(activeAcademyId, "students", "pre-registrations"),
       });
       setRejectingId(null);
       setRejectReason("");
@@ -98,7 +104,7 @@ export function usePreRegistrationsWorkflow() {
         });
       }
       await queryClient.invalidateQueries({
-        queryKey: ["students", "pre-registrations"],
+        queryKey: academyQueryKey(activeAcademyId, "students", "pre-registrations"),
       });
       setApprovingId(null);
     },

@@ -3,13 +3,17 @@ import { useNavigate } from "@tanstack/react-router";
 import { QRCodeSVG } from "qrcode.react";
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../../api";
+import { useAppShell } from "../../components/app-shell";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { academyQueryKey } from "../../lib/academy-query-keys";
 import { AttendanceList } from "./attendance-list";
 
 export function ActiveClassPage(props: { classId: string }) {
   const queryClient = useQueryClient();
+  const { activeAcademy } = useAppShell();
+  const activeAcademyId = activeAcademy.id;
   const navigate = useNavigate();
 
   const classQuery = useQuery({
@@ -45,8 +49,12 @@ export function ActiveClassPage(props: { classId: string }) {
       return data;
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["classes"] });
-      await queryClient.invalidateQueries({ queryKey: ["schedule"] });
+      await queryClient.invalidateQueries({
+        queryKey: academyQueryKey(activeAcademyId, "classes"),
+      });
+      await queryClient.invalidateQueries({
+        queryKey: academyQueryKey(activeAcademyId, "schedule"),
+      });
       await classQuery.refetch();
       await qrQuery.refetch();
     },
@@ -60,8 +68,12 @@ export function ActiveClassPage(props: { classId: string }) {
       if (error) throw new Error("Não foi possível encerrar a aula.");
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["classes"] });
-      await queryClient.invalidateQueries({ queryKey: ["schedule"] });
+      await queryClient.invalidateQueries({
+        queryKey: academyQueryKey(activeAcademyId, "classes"),
+      });
+      await queryClient.invalidateQueries({
+        queryKey: academyQueryKey(activeAcademyId, "schedule"),
+      });
       await classQuery.refetch();
       await qrQuery.refetch();
     },

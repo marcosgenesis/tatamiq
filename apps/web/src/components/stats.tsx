@@ -1,13 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api";
+import { useAppShell } from "@/components/app-shell";
 import { DashboardCard } from "@/components/dashboard-card";
 import { formatCurrency } from "@/components/formater";
 import { CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { academyQueryKey } from "../lib/academy-query-keys";
 import { Badge } from "./reui/badge";
 
 export function DashboardStats() {
+  const { activeAcademy } = useAppShell();
+  const activeAcademyId = activeAcademy.id;
   const studentsQuery = useQuery({
-    queryKey: ["students", "all"],
+    queryKey: academyQueryKey(activeAcademyId, "students", "all"),
     queryFn: async () => {
       const { data, error } = await api.GET("/students", { params: { query: { status: "all" } } });
       if (error) return null;
@@ -16,7 +20,7 @@ export function DashboardStats() {
   });
 
   const feesQuery = useQuery({
-    queryKey: ["monthly-fees", "dashboard-summary"],
+    queryKey: academyQueryKey(activeAcademyId, "monthly-fees", "dashboard-summary"),
     queryFn: async () => {
       const { data, error } = await api.GET("/monthly-fees", { params: { query: {} } });
       if (error) return null;
@@ -25,7 +29,7 @@ export function DashboardStats() {
   });
 
   const todayQuery = useQuery({
-    queryKey: ["schedule", "today"],
+    queryKey: academyQueryKey(activeAcademyId, "schedule", "today"),
     queryFn: async () => {
       const { data, error } = await api.GET("/schedule/today");
       if (error) return null;

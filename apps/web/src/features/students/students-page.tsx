@@ -15,9 +15,11 @@ import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagina
 import { DataGridTable } from "@/components/reui/data-grid/data-grid-table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/reui/tabs";
 import { api } from "../../api";
+import { useAppShell } from "../../components/app-shell";
 import { Button } from "../../components/ui/button";
 import { useBelts } from "../../hooks/use-belts";
 import { useStudents } from "../../hooks/use-students";
+import { academyQueryKey } from "../../lib/academy-query-keys";
 import { ageLabel, billingLabel, formatDate } from "../../lib/formatting";
 import { StudentCsvImport } from "./components/student-csv-import";
 import { StudentForm } from "./components/student-form";
@@ -27,17 +29,23 @@ type StudentStatusFilter = "active" | "inactive" | "all";
 type StudentsTab = "students" | "pre-registrations";
 export function StudentsPage() {
   const queryClient = useQueryClient();
+  const { activeAcademy } = useAppShell();
+  const activeAcademyId = activeAcademy.id;
   const [activeTab, setActiveTab] = useState<StudentsTab>("students");
   const [status, setStatus] = useState<StudentStatusFilter>("active");
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
 
-  const beltsQuery = useBelts();
-  const studentsQuery = useStudents(status, {
-    page: pagination.pageIndex,
-    pageSize: pagination.pageSize,
-  });
+  const beltsQuery = useBelts({ academyId: activeAcademyId, enabled: !!activeAcademyId });
+  const studentsQuery = useStudents(
+    status,
+    {
+      page: pagination.pageIndex,
+      pageSize: pagination.pageSize,
+    },
+    { academyId: activeAcademyId, enabled: !!activeAcademyId },
+  );
 
   const inviteMutation = useMutation({
     mutationFn: async (studentId: string) => {
@@ -48,7 +56,9 @@ export function StudentsPage() {
       return data;
     },
     onSuccess: async (data) => {
-      await queryClient.invalidateQueries({ queryKey: ["students"] });
+      await queryClient.invalidateQueries({
+        queryKey: academyQueryKey(activeAcademyId, "students"),
+      });
       toast("Link de convite gerado", {
         description: data.inviteLink,
         duration: Number.POSITIVE_INFINITY,
@@ -67,7 +77,8 @@ export function StudentsPage() {
       });
       if (error) throw new Error("Não foi possível revogar convite.");
     },
-    onSuccess: async () => queryClient.invalidateQueries({ queryKey: ["students"] }),
+    onSuccess: async () =>
+      queryClient.invalidateQueries({ queryKey: academyQueryKey(activeAcademyId, "students") }),
   });
 
   const revokeAccessMutation = useMutation({
@@ -77,7 +88,8 @@ export function StudentsPage() {
       });
       if (error) throw new Error("Não foi possível revogar acesso.");
     },
-    onSuccess: async () => queryClient.invalidateQueries({ queryKey: ["students"] }),
+    onSuccess: async () =>
+      queryClient.invalidateQueries({ queryKey: academyQueryKey(activeAcademyId, "students") }),
   });
 
   const statusMutation = useMutation({
@@ -96,7 +108,9 @@ export function StudentsPage() {
       if (error) throw new Error("Não foi possível atualizar o status do aluno.");
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["students"] });
+      await queryClient.invalidateQueries({
+        queryKey: academyQueryKey(activeAcademyId, "students"),
+      });
     },
   });
 
@@ -250,7 +264,9 @@ export function StudentsPage() {
             open={isImportOpen}
             onOpenChange={setIsImportOpen}
             onImportComplete={() => {
-              void queryClient.invalidateQueries({ queryKey: ["students"] });
+              void queryClient.invalidateQueries({
+                queryKey: academyQueryKey(activeAcademyId, "students"),
+              });
             }}
           />
           <Button onClick={openCreateForm} className="justify-center">
@@ -286,7 +302,9 @@ export function StudentsPage() {
             belts={beltsQuery.data?.belts ?? []}
             open={isFormOpen}
             onSubmit={() => {
-              void queryClient.invalidateQueries({ queryKey: ["students"] });
+              void queryClient.invalidateQueries({
+                queryKey: academyQueryKey(activeAcademyId, "students"),
+              });
             }}
             onClose={closeForm}
           />

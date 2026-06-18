@@ -5,6 +5,7 @@ import type { components } from "@tatamiq/contracts/generated";
 import { Calendar03Icon, Clock01Icon, PlusSignIcon, UserMultiple02Icon } from "hugeicons-react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { api } from "../../api";
+import { useAppShell } from "../../components/app-shell";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
@@ -17,6 +18,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "../../components/ui/drawer";
+import { academyQueryKey } from "../../lib/academy-query-keys";
 import { formatAttendanceSummary } from "../classes/attendance-summary";
 import { AdHocClassForm, type AdHocFormState } from "./ad-hoc-class-form";
 import {
@@ -44,6 +46,8 @@ type ScheduleDay = { date: string; weekday: number; occurrences: ScheduleOccurre
 
 export function SchedulePage() {
   const queryClient = useQueryClient();
+  const { activeAcademy } = useAppShell();
+  const activeAcademyId = activeAcademy.id;
   const gridRef = useRef<HTMLDivElement>(null);
   const [weekStart, setWeekStart] = useState(getMondayWeekStart(new Date()));
   const [selectedOccurrence, setSelectedOccurrence] = useState<ScheduleOccurrence | null>(null);
@@ -74,7 +78,7 @@ export function SchedulePage() {
   const isNowVisible = nowMinutes >= FIRST_HOUR * 60 && nowMinutes < LAST_HOUR * 60;
 
   const scheduleQuery = useQuery({
-    queryKey: ["schedule", "week", weekStart],
+    queryKey: academyQueryKey(activeAcademyId, "schedule", "week", weekStart),
     queryFn: async () => {
       const { data, error } = await api.GET("/schedule/week", {
         params: { query: { weekStart } },
@@ -82,10 +86,11 @@ export function SchedulePage() {
       if (error) throw new Error("Não foi possível carregar a agenda.");
       return data;
     },
+    enabled: !!activeAcademyId,
   });
 
   const classGroupsQuery = useQuery({
-    queryKey: ["class-groups", "active", "for-schedule"],
+    queryKey: academyQueryKey(activeAcademyId, "class-groups", "active", "for-schedule"),
     queryFn: async () => {
       const { data, error } = await api.GET("/class-groups", {
         params: { query: { status: "active" } },
@@ -93,6 +98,7 @@ export function SchedulePage() {
       if (error) throw new Error("Não foi possível carregar turmas.");
       return data.classGroups;
     },
+    enabled: !!activeAcademyId,
   });
 
   const createAdHocMutation = useMutation({
@@ -101,7 +107,7 @@ export function SchedulePage() {
       if (error) throw new Error("Não foi possível criar a aula avulsa.");
     },
     onSuccess: async () => {
-      await invalidateSchedule(queryClient);
+      await invalidateSchedule(queryClient, activeAcademyId);
       setIsFormOpen(false);
       setError(null);
     },
@@ -545,6 +551,8 @@ function OccurrenceDetail(props: {
 
 function useScheduleOccurrenceMutation() {
   const queryClient = useQueryClient();
+  const { activeAcademy } = useAppShell();
+  const activeAcademyId = activeAcademy.id;
   return useMutation({
     mutationFn: async ({
       occurrence,
@@ -589,12 +597,14 @@ function useScheduleOccurrenceMutation() {
         if (error) throw new Error("Não foi possível reverter o cancelamento.");
       }
     },
-    onSuccess: async () => invalidateSchedule(queryClient),
+    onSuccess: async () => invalidateSchedule(queryClient, activeAcademyId),
   });
 }
 
 function useStartClassMutation() {
   const queryClient = useQueryClient();
+  const { activeAcademy } = useAppShell();
+  const activeAcademyId = activeAcademy.id;
   const navigate = useNavigate();
   return useMutation({
     mutationFn: async (occurrence: ScheduleOccurrence) => {
@@ -619,7 +629,7 @@ function useStartClassMutation() {
       throw new Error("Ocorrência inválida para iniciar aula.");
     },
     onSuccess: async (data) => {
-      await invalidateSchedule(queryClient);
+      await invalidateSchedule(queryClient, activeAcademyId);
       if (data?.id) void navigate({ to: `/classes/${data.id}` });
     },
   });
@@ -627,6 +637,8 @@ function useStartClassMutation() {
 
 function useDeleteAdHocMutation(onSuccess: () => void) {
   const queryClient = useQueryClient();
+  const { activeAcademy } = useAppShell();
+  const activeAcademyId = activeAcademy.id;
   return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await api.DELETE("/schedule/ad-hoc-classes/{id}", {
@@ -635,7 +647,7 @@ function useDeleteAdHocMutation(onSuccess: () => void) {
       if (error) throw new Error("Não foi possível excluir a aula avulsa.");
     },
     onSuccess: async () => {
-      await invalidateSchedule(queryClient);
+      await invalidateSchedule(queryClient, activeAcademyId);
       onSuccess();
     },
   });
@@ -644,7 +656,13 @@ function useDeleteAdHocMutation(onSuccess: () => void) {
 /* ── dashboard cards (exports) ── */
 
 export function TodayScheduleCard() {
-  const q = useQuery({ queryKey: ["schedule", "today"], queryFn: fetchTodaySchedule });
+  const { activeAcademy } = useAppShell();
+  const activeAcademyId = activeAcademy.id;
+  const q = useQuery({
+    queryKey: academyQueryKey(activeAcademyId, "schedule", "today"),
+    queryFn: fetchTodaySchedule,
+    enabled: !!activeAcademyId,
+  });
   const occs =
     q.data?.occurrences.filter((o: ScheduleOccurrence) => o.status === "scheduled") ?? [];
   const next = occs[0];
@@ -673,13 +691,20 @@ export function TodayScheduleCard() {
 }
 
 export function TodayRoutineCard() {
-  const tq = useQuery({ queryKey: ["schedule", "today"], queryFn: fetchTodaySchedule });
+  const { activeAcademy } = useAppShell();
+  const activeAcademyId = activeAcademy.id;
+  const tq = useQuery({
+    queryKey: academyQueryKey(activeAcademyId, "schedule", "today"),
+    queryFn: fetchTodaySchedule,
+    enabled: !!activeAcademyId,
+  });
   const aq = useQuery({
-    queryKey: ["classes", "active"],
+    queryKey: academyQueryKey(activeAcademyId, "classes", "active"),
     queryFn: async () => {
       const { data } = await api.GET("/classes/active");
       return data ?? null;
     },
+    enabled: !!activeAcademyId,
   });
   const active = aq.data;
   const occ = tq.data?.occurrences.find((o: ScheduleOccurrence) => o.status === "scheduled");
@@ -772,8 +797,12 @@ async function fetchTodaySchedule() {
   return data;
 }
 
-async function invalidateSchedule(qc: ReturnType<typeof useQueryClient>) {
-  await qc.invalidateQueries({ queryKey: ["schedule"] });
+async function invalidateSchedule(
+  qc: ReturnType<typeof useQueryClient>,
+  academyId: string | null | undefined,
+) {
+  await qc.invalidateQueries({ queryKey: academyQueryKey(academyId, "schedule") });
+  await qc.invalidateQueries({ queryKey: academyQueryKey(academyId, "classes") });
 }
 
 function getMondayWeekStart(date: Date): string {

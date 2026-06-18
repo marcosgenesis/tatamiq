@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { CreateMonthlyFeeInput, MonthlyFee } from "@tatamiq/contracts";
 import { type FormEvent, useMemo, useState } from "react";
+import { useAppShell } from "../../components/app-shell";
 import { useStudents } from "../../hooks/use-students";
 import { centsToReais, reaisToCents } from "../../lib/formatting";
 import { CreateMonthlyFeeDrawer } from "./create-monthly-fee-drawer";
@@ -34,6 +35,8 @@ const emptyForm: FeeFormState = {
 
 export function MonthlyFeesPage() {
   const queryClient = useQueryClient();
+  const { activeAcademy } = useAppShell();
+  const activeAcademyId = activeAcademy.id;
   const [statusFilter] = useState<FeeStatusFilter>(() => {
     const status = new URLSearchParams(window.location.search).get("status");
     return isFeeStatusFilter(status) ? status : "all";
@@ -45,15 +48,19 @@ export function MonthlyFeesPage() {
   const [rejectReason, setRejectReason] = useState("");
 
   const feesQuery = useQuery({
-    queryKey: monthlyFeesKeys.list(statusFilter),
+    queryKey: monthlyFeesKeys.list(activeAcademyId, statusFilter),
     queryFn: () => fetchMonthlyFees(statusFilter),
+    enabled: !!activeAcademyId,
   });
 
-  const studentsQuery = useStudents("active", undefined, { enabled: isFormOpen });
+  const studentsQuery = useStudents("active", undefined, {
+    academyId: activeAcademyId,
+    enabled: isFormOpen && !!activeAcademyId,
+  });
 
   const detailQuery = useQuery({
-    queryKey: monthlyFeesKeys.detail(detailFeeId),
-    enabled: detailFeeId !== null,
+    queryKey: monthlyFeesKeys.detail(activeAcademyId, detailFeeId),
+    enabled: detailFeeId !== null && !!activeAcademyId,
     queryFn: () => {
       if (!detailFeeId) throw new Error("Mensalidade inválida.");
       return fetchMonthlyFeeDetail(detailFeeId);
@@ -63,7 +70,7 @@ export function MonthlyFeesPage() {
   const createMutation = useMutation({
     mutationFn: (input: CreateMonthlyFeeInput) => createMonthlyFee(input),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: monthlyFeesKeys.all });
+      await queryClient.invalidateQueries({ queryKey: monthlyFeesKeys.all(activeAcademyId) });
       closeForm();
     },
     onError: (mutationError) => {
@@ -81,7 +88,7 @@ export function MonthlyFeesPage() {
   const adjustMutation = useMutation({
     mutationFn: adjustMonthlyFee,
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: monthlyFeesKeys.all });
+      await queryClient.invalidateQueries({ queryKey: monthlyFeesKeys.all(activeAcademyId) });
       closeAction();
     },
   });
@@ -89,7 +96,7 @@ export function MonthlyFeesPage() {
   const waiveMutation = useMutation({
     mutationFn: waiveMonthlyFee,
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: monthlyFeesKeys.all });
+      await queryClient.invalidateQueries({ queryKey: monthlyFeesKeys.all(activeAcademyId) });
       closeAction();
     },
   });
@@ -98,8 +105,8 @@ export function MonthlyFeesPage() {
     mutationFn: approveMonthlyFeeReceipt,
     onSuccess: async () => {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: monthlyFeesKeys.all }),
-        queryClient.invalidateQueries({ queryKey: monthlyFeesKeys.detailRoot }),
+        queryClient.invalidateQueries({ queryKey: monthlyFeesKeys.all(activeAcademyId) }),
+        queryClient.invalidateQueries({ queryKey: monthlyFeesKeys.detailRoot(activeAcademyId) }),
       ]);
       setDetailFeeId(null);
     },
@@ -109,8 +116,8 @@ export function MonthlyFeesPage() {
     mutationFn: rejectMonthlyFeeReceipt,
     onSuccess: async () => {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: monthlyFeesKeys.all }),
-        queryClient.invalidateQueries({ queryKey: monthlyFeesKeys.detailRoot }),
+        queryClient.invalidateQueries({ queryKey: monthlyFeesKeys.all(activeAcademyId) }),
+        queryClient.invalidateQueries({ queryKey: monthlyFeesKeys.detailRoot(activeAcademyId) }),
       ]);
       setDetailFeeId(null);
       setRejectReason("");
@@ -120,7 +127,7 @@ export function MonthlyFeesPage() {
   const manualPayMutation = useMutation({
     mutationFn: registerManualMonthlyFeePayment,
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: monthlyFeesKeys.all });
+      await queryClient.invalidateQueries({ queryKey: monthlyFeesKeys.all(activeAcademyId) });
       closeAction();
     },
   });

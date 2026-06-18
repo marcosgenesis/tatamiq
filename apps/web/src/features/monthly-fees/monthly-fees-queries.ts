@@ -3,10 +3,14 @@ import { api } from "../../api";
 import type { FeeStatusFilter } from "./monthly-fees-types";
 
 export const monthlyFeesKeys = {
-  all: ["monthly-fees"] as const,
-  list: (status: FeeStatusFilter) => ["monthly-fees", status] as const,
-  detailRoot: ["monthly-fees", "detail"] as const,
-  detail: (feeId: string | null) => ["monthly-fees", "detail", feeId] as const,
+  all: (academyId: string | null | undefined) =>
+    ["academy", academyId ?? "no-academy", "monthly-fees"] as const,
+  list: (academyId: string | null | undefined, status: FeeStatusFilter) =>
+    [...monthlyFeesKeys.all(academyId), status] as const,
+  detailRoot: (academyId: string | null | undefined) =>
+    [...monthlyFeesKeys.all(academyId), "detail"] as const,
+  detail: (academyId: string | null | undefined, feeId: string | null) =>
+    [...monthlyFeesKeys.detailRoot(academyId), feeId] as const,
 };
 
 export async function fetchMonthlyFees(statusFilter: FeeStatusFilter) {

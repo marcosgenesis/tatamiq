@@ -30,6 +30,7 @@ import { Separator } from "../../components/ui/separator";
 import { Textarea } from "../../components/ui/textarea";
 import { useBelts } from "../../hooks/use-belts";
 import { formatBytes, useFileUpload } from "../../hooks/use-file-upload";
+import { academyQueryKey } from "../../lib/academy-query-keys";
 import { cn } from "../../lib/utils";
 
 type UpdateAcademyInput = components["schemas"]["UpdateAcademyDto"];
@@ -172,17 +173,19 @@ function LogoUpload({
 
 export function SettingsPage() {
   const queryClient = useQueryClient();
-  const { onRefreshAcademies } = useAppShell();
+  const { activeAcademy, onRefreshAcademies } = useAppShell();
+  const activeAcademyId = activeAcademy.id;
   const [form, setForm] = useState<SettingsFormState>(emptyForm);
   const [isUploading, setIsUploading] = useState(false);
 
   const academyQuery = useQuery({
-    queryKey: ["academy"],
+    queryKey: academyQueryKey(activeAcademyId, "academy"),
     queryFn: async () => {
       const { data, error } = await api.GET("/academy");
       if (error || !data) throw new Error("Não foi possível carregar dados da academia.");
       return data satisfies AcademyProfile;
     },
+    enabled: !!activeAcademyId,
   });
 
   useEffect(() => {
@@ -216,7 +219,9 @@ export function SettingsPage() {
     },
     onSuccess: async () => {
       toast.success("Configurações salvas com sucesso.");
-      await queryClient.invalidateQueries({ queryKey: ["academy"] });
+      await queryClient.invalidateQueries({
+        queryKey: academyQueryKey(activeAcademyId, "academy"),
+      });
     },
     onError: (err) => {
       toast.error(err instanceof Error ? err.message : "Erro ao salvar configurações.");
@@ -284,7 +289,9 @@ export function SettingsPage() {
         throw new Error("Não foi possível confirmar o logo.");
       }
 
-      await queryClient.invalidateQueries({ queryKey: ["academy"] });
+      await queryClient.invalidateQueries({
+        queryKey: academyQueryKey(activeAcademyId, "academy"),
+      });
       onRefreshAcademies();
       toast.success("Logo atualizado com sucesso.");
     } catch (err) {
@@ -496,10 +503,12 @@ export function SettingsPage() {
 
 function BeltRulesSection() {
   const queryClient = useQueryClient();
+  const { activeAcademy } = useAppShell();
+  const activeAcademyId = activeAcademy.id;
   const [editingBelts, setEditingBelts] = useState<Record<string, Partial<BeltRuleFields>>>({});
   const [savingBeltId, setSavingBeltId] = useState<string | null>(null);
 
-  const beltsQuery = useBelts();
+  const beltsQuery = useBelts({ academyId: activeAcademyId, enabled: !!activeAcademyId });
 
   const updateBeltMutation = useMutation({
     mutationFn: async ({ id, body }: { id: string; body: Partial<BeltRuleFields> }) => {
@@ -511,7 +520,7 @@ function BeltRulesSection() {
       if (error) throw new Error("Não foi possível salvar regras da faixa.");
     },
     onSuccess: async (_data, variables) => {
-      await queryClient.invalidateQueries({ queryKey: ["belts"] });
+      await queryClient.invalidateQueries({ queryKey: academyQueryKey(activeAcademyId, "belts") });
       setEditingBelts((current) => {
         const next = { ...current };
         delete next[variables.id];

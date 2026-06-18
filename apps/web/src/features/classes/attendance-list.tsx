@@ -2,9 +2,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { AttendanceRosterStudent } from "@tatamiq/contracts";
 import { useState } from "react";
 import { api } from "../../api";
+import { useAppShell } from "../../components/app-shell";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { academyQueryKey } from "../../lib/academy-query-keys";
 import { formatAttendanceSummary } from "./attendance-summary";
 
 export function AttendanceList(props: {
@@ -13,6 +15,8 @@ export function AttendanceList(props: {
   refetchInterval: number | false;
 }) {
   const queryClient = useQueryClient();
+  const { activeAcademy } = useAppShell();
+  const activeAcademyId = activeAcademy.id;
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [invalidatingId, setInvalidatingId] = useState<string | null>(null);
@@ -31,7 +35,7 @@ export function AttendanceList(props: {
   });
 
   const allStudentsQuery = useQuery({
-    queryKey: ["students", "for-attendance"],
+    queryKey: academyQueryKey(activeAcademyId, "students", "for-attendance"),
     queryFn: async () => {
       const { data, error } = await api.GET("/students", {
         params: { query: {} },
@@ -39,7 +43,7 @@ export function AttendanceList(props: {
       if (error) throw new Error("Não foi possível carregar alunos.");
       return data.students;
     },
-    enabled: showSearch,
+    enabled: showSearch && !!activeAcademyId,
   });
 
   const addMutation = useMutation({

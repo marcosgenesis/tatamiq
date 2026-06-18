@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight01Icon } from "hugeicons-react";
 import { api } from "@/api";
+import { useAppShell } from "@/components/app-shell";
 import { DashboardCard } from "@/components/dashboard-card";
 import { formatCurrency } from "@/components/formater";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { academyQueryKey } from "../lib/academy-query-keys";
 
 const statusLabels: Record<string, string> = {
   open: "Em aberto",
@@ -25,8 +27,10 @@ const statusLabels: Record<string, string> = {
 };
 
 export function DashboardInvoices() {
+  const { activeAcademy } = useAppShell();
+  const activeAcademyId = activeAcademy.id;
   const feesQuery = useQuery({
-    queryKey: ["monthly-fees", "dashboard-recent"],
+    queryKey: academyQueryKey(activeAcademyId, "monthly-fees", "dashboard-recent"),
     queryFn: async () => {
       const { data, error } = await api.GET("/monthly-fees", { params: { query: {} } });
       if (error) return null;
