@@ -26,10 +26,15 @@ export function PlatformUsersPage() {
   const [query, setQuery] = useState("");
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
 
-  const platform = useQuery(platformMeQuery());
+  const session = authClient.useSession();
+  const platform = useQuery({
+    ...platformMeQuery(session.data?.user.id),
+    enabled: !!session.data?.user.id,
+  });
   const users = useQuery(platformUsersQuery(query, pagination.pageIndex, pagination.pageSize));
 
-  if (platform.isLoading) return <PlatformLoading label="Carregando usuários..." />;
+  if (session.isPending || platform.isLoading)
+    return <PlatformLoading label="Carregando usuários..." />;
   if (platform.isError || !platform.data?.user) return <Navigate to="/choose-area" />;
 
   return (

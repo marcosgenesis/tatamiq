@@ -24,11 +24,15 @@ import { PlatformLoading, PlatformShell } from "./platform-shell";
 
 export function PlatformPage() {
   const navigate = useNavigate();
-  const platform = useQuery(platformMeQuery());
+  const session = authClient.useSession();
+  const platform = useQuery({
+    ...platformMeQuery(session.data?.user.id),
+    enabled: !!session.data?.user.id,
+  });
   const dashboard = useQuery(platformDashboardQuery());
   const activity = useQuery(platformAuditQuery("", 0, 7));
 
-  if (platform.isLoading) {
+  if (session.isPending || platform.isLoading) {
     return <PlatformLoading label="Carregando console do operador..." />;
   }
   if (platform.isError || !platform.data?.user) {

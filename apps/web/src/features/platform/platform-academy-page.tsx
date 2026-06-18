@@ -36,7 +36,11 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
   const [isSupportOpen, setIsSupportOpen] = useState(false);
   const [isTransferOpen, setIsTransferOpen] = useState(false);
 
-  const platform = useQuery(platformMeQuery());
+  const session = authClient.useSession();
+  const platform = useQuery({
+    ...platformMeQuery(session.data?.user.id),
+    enabled: !!session.data?.user.id,
+  });
   const academy = useQuery(platformAcademyQuery(academyId));
   const operational = useQuery(platformAcademyOperationalOverviewQuery(academyId));
 
@@ -77,7 +81,7 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
     },
   });
 
-  if (platform.isLoading || academy.isLoading) {
+  if (session.isPending || platform.isLoading || academy.isLoading) {
     return <PlatformLoading label="Carregando academia..." />;
   }
   if (platform.isError || !platform.data?.user) return <Navigate to="/choose-area" />;

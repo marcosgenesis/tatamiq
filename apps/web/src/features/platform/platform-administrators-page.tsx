@@ -43,7 +43,11 @@ export function PlatformAdministratorsPage() {
   const [form, setForm] = useState({ email: "", name: "" });
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
 
-  const platform = useQuery(platformMeQuery());
+  const session = authClient.useSession();
+  const platform = useQuery({
+    ...platformMeQuery(session.data?.user.id),
+    enabled: !!session.data?.user.id,
+  });
   const administrators = useQuery(
     platformAdministratorsQuery(pagination.pageIndex, pagination.pageSize),
   );
@@ -61,7 +65,8 @@ export function PlatformAdministratorsPage() {
       queryClient.invalidateQueries({ queryKey: ["platform", "administrators"] }),
   });
 
-  if (platform.isLoading) return <PlatformLoading label="Carregando administradores..." />;
+  if (session.isPending || platform.isLoading)
+    return <PlatformLoading label="Carregando administradores..." />;
   if (platform.isError || !platform.data?.user) return <Navigate to="/choose-area" />;
 
   return (

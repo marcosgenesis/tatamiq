@@ -47,7 +47,7 @@ export type StartPlatformSupportInput = {
 };
 
 export const platformKeys = {
-  me: ["platform", "me"] as const,
+  me: (userId: string | null | undefined) => ["platform", "me", userId ?? "anonymous"] as const,
   dashboard: ["platform", "dashboard"] as const,
   academies: (query: string, page: number, pageSize: number) =>
     ["platform", "academies", query, page, pageSize] as const,
@@ -66,9 +66,9 @@ export const platformKeys = {
   firstAccess: (token: string) => ["platform", "first-access", token] as const,
 };
 
-export function platformMeQuery() {
+export function platformMeQuery(userId?: string | null) {
   return queryOptions({
-    queryKey: platformKeys.me,
+    queryKey: platformKeys.me(userId),
     queryFn: async () => {
       const { data, error } = await api.GET("/platform/me");
       if (error) throw error;

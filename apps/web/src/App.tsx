@@ -581,9 +581,13 @@ function SupportBanner() {
 }
 
 function usePlatformAccess(): "loading" | "allowed" | "denied" {
-  const platform = useQuery(platformMeQuery());
+  const session = authClient.useSession();
+  const platform = useQuery({
+    ...platformMeQuery(session.data?.user.id),
+    enabled: !!session.data?.user.id,
+  });
 
-  if (platform.isLoading) return "loading";
+  if (session.isPending || platform.isLoading) return "loading";
   if (platform.isSuccess) return "allowed";
   return "denied";
 }

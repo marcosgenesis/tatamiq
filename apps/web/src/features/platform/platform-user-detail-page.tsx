@@ -45,7 +45,11 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
     mode: "preserve_history",
   });
 
-  const platform = useQuery(platformMeQuery());
+  const session = authClient.useSession();
+  const platform = useQuery({
+    ...platformMeQuery(session.data?.user.id),
+    enabled: !!session.data?.user.id,
+  });
   const userDetail = useQuery(platformUserQuery(userId));
   const deletionImpact = useQuery(platformUserDeletionImpactQuery(userId, showDeleteForm));
 
@@ -91,7 +95,7 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
     },
   });
 
-  if (platform.isLoading || userDetail.isLoading) {
+  if (session.isPending || platform.isLoading || userDetail.isLoading) {
     return <PlatformLoading label="Carregando usuário..." />;
   }
   if (platform.isError || !platform.data?.user) return <Navigate to="/choose-area" />;

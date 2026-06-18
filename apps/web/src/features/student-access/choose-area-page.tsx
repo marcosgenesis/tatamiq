@@ -31,7 +31,7 @@ export function ChooseAreaPage() {
     retry: false,
   });
   const platformQuery = useQuery({
-    ...platformMeQuery(),
+    ...platformMeQuery(session.data?.user.id),
     enabled: !!session.data?.user.id && !pendingSupportActivationId,
   });
 

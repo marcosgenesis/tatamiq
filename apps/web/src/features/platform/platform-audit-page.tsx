@@ -72,12 +72,17 @@ export function PlatformAuditPage() {
   const [actionFilter, setActionFilter] = useState("");
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
 
-  const platform = useQuery(platformMeQuery());
+  const session = authClient.useSession();
+  const platform = useQuery({
+    ...platformMeQuery(session.data?.user.id),
+    enabled: !!session.data?.user.id,
+  });
   const audit = useQuery(
     platformAuditQuery(actionFilter, pagination.pageIndex, pagination.pageSize),
   );
 
-  if (platform.isLoading) return <PlatformLoading label="Carregando auditoria..." />;
+  if (session.isPending || platform.isLoading)
+    return <PlatformLoading label="Carregando auditoria..." />;
   if (platform.isError || !platform.data?.user) return <Navigate to="/choose-area" />;
 
   const entries = (audit.data?.items ?? []) as PlatformAuditLogEntry[];

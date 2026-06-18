@@ -119,7 +119,10 @@ export function SignUpPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const params = new URLSearchParams(window.location.search);
-  const redirectTo = params.get("redirect") ?? "/onboarding/academy";
+  const requestedRedirect = params.get("redirect") ?? "/onboarding/academy";
+  const redirectTo = requestedRedirect.startsWith("/platform")
+    ? "/onboarding/academy"
+    : requestedRedirect;
   const [name, setName] = useState(params.get("name") ?? "");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
