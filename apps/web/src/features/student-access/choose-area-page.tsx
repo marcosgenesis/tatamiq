@@ -18,6 +18,8 @@ export function ChooseAreaPage() {
   const [pendingSupportActivationId, setPendingSupportActivationId] = useState(() =>
     readPendingPlatformSupportActivation(),
   );
+  const [supportActivationAttempt, setSupportActivationAttempt] = useState(0);
+  const [supportActivationError, setSupportActivationError] = useState(false);
   const organizations = authClient.useListOrganizations();
   const studentQuery = useQuery({
     queryKey: ["student", "me"],
@@ -28,7 +30,10 @@ export function ChooseAreaPage() {
     },
     retry: false,
   });
-  const platformQuery = useQuery({ ...platformMeQuery(), enabled: !!session.data?.user.id });
+  const platformQuery = useQuery({
+    ...platformMeQuery(),
+    enabled: !!session.data?.user.id && !pendingSupportActivationId,
+  });
 
   const isLoadingAreas =
     organizations.isPending || studentQuery.isLoading || platformQuery.isLoading;
@@ -38,20 +43,37 @@ export function ChooseAreaPage() {
   const availableAreaCount = [hasPlatform, hasInstructor, hasStudent].filter(Boolean).length;
 
   useEffect(() => {
-    if (!pendingSupportActivationId || session.isPending) return;
+    if (!pendingSupportActivationId || session.isPending || supportActivationError) return;
 
     let cancelled = false;
     void activatePlatformSupport(pendingSupportActivationId)
-      .catch(() => null)
-      .finally(() => {
+      .then(() => {
         clearPendingPlatformSupportActivation();
         if (!cancelled) setPendingSupportActivationId(null);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        if (supportActivationAttempt >= 10) {
+          setSupportActivationError(true);
+          return;
+        }
+        window.setTimeout(
+          () => {
+            if (!cancelled) setSupportActivationAttempt((attempt) => attempt + 1);
+          },
+          Math.min(250 * 2 ** supportActivationAttempt, 2_000),
+        );
       });
 
     return () => {
       cancelled = true;
     };
-  }, [pendingSupportActivationId, session.isPending]);
+  }, [
+    pendingSupportActivationId,
+    session.isPending,
+    supportActivationAttempt,
+    supportActivationError,
+  ]);
 
   useEffect(() => {
     if (pendingSupportActivationId || isLoadingAreas) return;
@@ -70,7 +92,19 @@ export function ChooseAreaPage() {
     navigate,
   ]);
 
-  if (pendingSupportActivationId || isLoadingAreas || availableAreaCount <= 1) {
+  if (pendingSupportActivationId) {
+    return (
+      <ChooseAreaLoading
+        message={
+          supportActivationError
+            ? "Não foi possível ativar o Suporte Assistido. Atualize a página para tentar novamente."
+            : "Ativando Suporte Assistido..."
+        }
+      />
+    );
+  }
+
+  if (isLoadingAreas || availableAreaCount <= 1) {
     return <ChooseAreaLoading />;
   }
 
@@ -123,10 +157,10 @@ export function ChooseAreaPage() {
   );
 }
 
-function ChooseAreaLoading() {
+function ChooseAreaLoading({ message = "Carregando..." }: { message?: string }) {
   return (
     <main className="grid min-h-screen place-items-center bg-background text-foreground">
-      <p className="text-sm text-muted-foreground">Carregando...</p>
+      <p className="text-sm text-muted-foreground">{message}</p>
     </main>
   );
 }
