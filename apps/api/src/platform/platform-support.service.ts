@@ -1,6 +1,13 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { type Database, organization, platformSupportSessions, user } from "@tatamiq/database";
-import { eq } from "drizzle-orm";
+import {
+  type Database,
+  member,
+  organization,
+  platformSupportSessions,
+  studentAccess,
+  user,
+} from "@tatamiq/database";
+import { and, eq } from "drizzle-orm";
 import { platformAdminUserIds } from "../auth";
 import { DATABASE } from "../database/database.module";
 import { isPlatformAdminUser } from "./platform-admin.service";
@@ -26,6 +33,24 @@ export class PlatformSupportService {
     if (isPlatformAdminUser(target, platformAdminUserIds())) {
       throw new BadRequestException(
         "Suporte Assistido não pode mirar outro Administrador da Plataforma.",
+      );
+    }
+
+    const [membership] = await this.db
+      .select({ id: member.id })
+      .from(member)
+      .where(eq(member.userId, input.targetUserId))
+      .limit(1);
+    const [activeStudentAccess] = await this.db
+      .select({ id: studentAccess.id })
+      .from(studentAccess)
+      .where(
+        and(eq(studentAccess.authUserId, input.targetUserId), eq(studentAccess.status, "active")),
+      )
+      .limit(1);
+    if (!membership && !activeStudentAccess) {
+      throw new BadRequestException(
+        "Suporte Assistido exige uma conta com área operacional disponível.",
       );
     }
 

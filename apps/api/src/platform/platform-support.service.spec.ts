@@ -46,4 +46,30 @@ describe("PlatformSupportService", () => {
 
     expect(insertValues).not.toHaveBeenCalled();
   });
+
+  it("rejects support targeting a user without an operational area", async () => {
+    const { db, insertValues } = createSupportDb([[{ id: "target-user", role: null }], [], []]);
+    const service = new PlatformSupportService(db as never);
+
+    await expect(
+      service.prepareSupport({ adminUserId: "admin-1", targetUserId: "target-user" }),
+    ).rejects.toThrow("Suporte Assistido exige uma conta com área operacional disponível.");
+
+    expect(insertValues).not.toHaveBeenCalled();
+  });
+
+  it("allows support targeting a user with an instructor area", async () => {
+    const { db, insertValues } = createSupportDb([
+      [{ id: "target-user", role: null, name: "Target", email: "target@test.com" }],
+      [{ id: "member-1" }],
+      [],
+    ]);
+    const service = new PlatformSupportService(db as never);
+
+    await expect(
+      service.prepareSupport({ adminUserId: "admin-1", targetUserId: "target-user" }),
+    ).resolves.toMatchObject({ targetUserId: "target-user" });
+
+    expect(insertValues).toHaveBeenCalledOnce();
+  });
 });

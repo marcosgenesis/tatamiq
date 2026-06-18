@@ -30,9 +30,12 @@ export function ChooseAreaPage() {
   });
   const platformQuery = useQuery({ ...platformMeQuery(), enabled: !!session.data?.user.id });
 
+  const isLoadingAreas =
+    organizations.isPending || studentQuery.isLoading || platformQuery.isLoading;
   const hasInstructor = (organizations.data?.length ?? 0) > 0;
   const hasStudent = !!studentQuery.data;
   const hasPlatform = platformQuery.isSuccess && !!platformQuery.data;
+  const availableAreaCount = [hasPlatform, hasInstructor, hasStudent].filter(Boolean).length;
 
   useEffect(() => {
     const impersonatedBy = (session.data?.session as { impersonatedBy?: string | null } | undefined)
@@ -58,21 +61,25 @@ export function ChooseAreaPage() {
   }, [pendingSupportActivationId, session.data?.session, navigate]);
 
   useEffect(() => {
-    if (pendingSupportActivationId) return;
-    if (organizations.isPending || studentQuery.isLoading || platformQuery.isLoading) return;
+    if (pendingSupportActivationId || isLoadingAreas) return;
+    if (availableAreaCount > 1) return;
     if (hasPlatform) void navigate({ to: "/platform" });
     else if (hasInstructor) void navigate({ to: "/" });
     else if (hasStudent) void navigate({ to: "/student" });
+    else void navigate({ to: "/onboarding/academy" });
   }, [
     pendingSupportActivationId,
+    isLoadingAreas,
+    availableAreaCount,
     hasPlatform,
     hasInstructor,
     hasStudent,
-    organizations.isPending,
-    studentQuery.isLoading,
-    platformQuery.isLoading,
     navigate,
   ]);
+
+  if (pendingSupportActivationId || isLoadingAreas || availableAreaCount <= 1) {
+    return <ChooseAreaLoading />;
+  }
 
   return (
     <main className="grid min-h-screen place-items-center bg-background p-6 text-foreground">
@@ -107,24 +114,6 @@ export function ChooseAreaPage() {
               Área do aluno
             </Button>
           ) : null}
-          {!organizations.isPending &&
-          !studentQuery.isLoading &&
-          !platformQuery.isLoading &&
-          !hasPlatform &&
-          !hasInstructor &&
-          !hasStudent ? (
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                Esta conta ainda não tem academia nem acesso de aluno.
-              </p>
-              <Button
-                className="w-full"
-                onClick={() => (window.location.href = "/onboarding/academy")}
-              >
-                Criar academia
-              </Button>
-            </div>
-          ) : null}
           <button
             type="button"
             className="block w-full text-center text-sm text-primary hover:underline"
@@ -137,6 +126,14 @@ export function ChooseAreaPage() {
           </button>
         </CardContent>
       </Card>
+    </main>
+  );
+}
+
+function ChooseAreaLoading() {
+  return (
+    <main className="grid min-h-screen place-items-center bg-background text-foreground">
+      <p className="text-sm text-muted-foreground">Carregando...</p>
     </main>
   );
 }

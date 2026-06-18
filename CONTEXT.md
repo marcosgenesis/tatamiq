@@ -234,11 +234,13 @@ _Avoid_: tarefa, lembrete, prontuário, workflow, comentário do aluno, exclusã
 - Um **Operador da Plataforma** é um papel futuro, não ativo na primeira versão da administração interna
 - Um **Administrador da Plataforma** não é membro da **Academia** por padrão; quando usa **Suporte Assistido**, sua atuação deve ser temporária, auditada e visivelmente indicada na interface
 - Durante o **Suporte Assistido**, ações operacionais permitidas ao usuário assistido também são permitidas ao administrador, mas devem ser registradas como ações assistidas
+- Durante o **Suporte Assistido**, a navegação inicial segue as mesmas áreas disponíveis para o usuário assistido: entrada direta quando há uma única área disponível e seletor explícito quando há duas ou mais
 - A auditoria de **Suporte Assistido** registra sessão, motivo opcional, participantes, academia quando aplicável, início/fim, IP/user agent e ações realizadas, sem persistir payload completo na V1
-- **Suporte Assistido** não pode ser iniciado sobre outro **Administrador da Plataforma**
+- **Suporte Assistido** não pode ser iniciado sobre outro **Administrador da Plataforma** nem sobre uma conta sem área operacional disponível
 - A **Auditoria Administrativa** registra ações como provisionar academia, transferir academia, bloquear/desbloquear usuário, revogar sessões, excluir usuário e adicionar/remover administrador
 - Um **Administrador da Plataforma** tem poder global fora do escopo de uma **Academia** e não deve ser confundido com o papel `owner` da academia
 - A **Administração da Plataforma** fica fora da área normal da **Academia**, não depende de `activeOrganizationId`, na primeira versão é acessada por **Administradores da Plataforma** e é o destino padrão após login de uma conta com papel global de administrador
+- Uma conta com uma única área disponível entra diretamente nessa área; o seletor explícito só aparece quando a conta combina duas ou mais áreas disponíveis
 - Uma conta que combina papel de **Administrador da Plataforma** com vínculos próprios de academia ou aluno troca de área por seletor explícito; isso não é **Suporte Assistido**
 - A **Administração da Plataforma** pode visualizar dados operacionais completos da **Academia**, incluindo arquivos privados sensíveis como fotos e **Comprovantes Pix**, preferencialmente reaproveitando telas operacionais em modo somente leitura, mas não edita diretamente alunos, turmas, mensalidades, presenças, Pix ou graduação; esse suporte ocorre por **Suporte Assistido**
 - Acesso administrativo a arquivos privados sensíveis deve registrar **Auditoria Administrativa**
@@ -249,7 +251,7 @@ _Avoid_: tarefa, lembrete, prontuário, workflow, comentário do aluno, exclusã
 - A **Transferência de Academia** cria ou reutiliza uma conta pelo email informado, vincula o novo dono como `owner` técnico e entrega um link de primeiro acesso para definição de senha quando necessário
 - Uma **Conta Reservada** não permite login por senha até que a pessoa defina senha no primeiro acesso
 - Regenerar o link de primeiro acesso de uma **Conta Reservada** invalida o link anterior, cria nova expiração de 7 dias e registra **Auditoria Administrativa**
-- Um **Dono/Instrutor Solo** sem **Academia** acessa apenas o **Onboarding da Academia**
+- Um **Dono/Instrutor Solo** sem **Academia** acessa apenas o **Onboarding da Academia** no login normal
 - Uma **Academia** tem um **Dono/Instrutor Solo** no MVP, mas pode ficar temporariamente sem dono após **Exclusão de Usuário** decidida por um **Administrador da Plataforma**
 - Bloquear o usuário de um **Dono/Instrutor Solo** impede login e revoga sessões, mas não inativa nem altera automaticamente a **Academia** ou seu histórico operacional
 - Uma **Exclusão de Usuário** exige escolha explícita entre exclusão definitiva e exclusão preservando histórico, com aviso de impacto antes da confirmação; a exclusão definitiva é permitida mesmo com histórico, desde que vínculos de dono de academia sejam resolvidos antes e o impacto seja confirmado
