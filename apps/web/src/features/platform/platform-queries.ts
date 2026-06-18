@@ -329,6 +329,21 @@ export function clearPendingPlatformSupportActivation() {
   window.sessionStorage.removeItem(PENDING_SUPPORT_ACTIVATION_KEY);
 }
 
+export async function impersonateWithPendingPlatformSupportActivation(input: {
+  supportSessionId: string;
+  userId: string;
+  impersonateUser: (input: {
+    userId: string;
+  }) => Promise<{ error?: { message?: string | undefined } | null }>;
+}) {
+  queuePlatformSupportActivation(input.supportSessionId);
+  const impersonation = await input.impersonateUser({ userId: input.userId });
+  if (impersonation.error) {
+    clearPendingPlatformSupportActivation();
+    throw new Error(impersonation.error.message ?? "Erro ao iniciar suporte.");
+  }
+}
+
 export async function activatePlatformSupport(supportSessionId: string) {
   const { data, error } = await api.POST("/platform/support/activate", {
     body: { supportSessionId },

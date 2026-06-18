@@ -38,27 +38,20 @@ export function ChooseAreaPage() {
   const availableAreaCount = [hasPlatform, hasInstructor, hasStudent].filter(Boolean).length;
 
   useEffect(() => {
-    const impersonatedBy = (session.data?.session as { impersonatedBy?: string | null } | undefined)
-      ?.impersonatedBy;
-    if (!pendingSupportActivationId || !impersonatedBy) return;
+    if (!pendingSupportActivationId || session.isPending) return;
 
     let cancelled = false;
     void activatePlatformSupport(pendingSupportActivationId)
-      .then(() => {
+      .catch(() => null)
+      .finally(() => {
         clearPendingPlatformSupportActivation();
         if (!cancelled) setPendingSupportActivationId(null);
-      })
-      .catch(async () => {
-        clearPendingPlatformSupportActivation();
-        if (!cancelled) setPendingSupportActivationId(null);
-        await authClient.admin.stopImpersonating();
-        await navigate({ to: "/platform" });
       });
 
     return () => {
       cancelled = true;
     };
-  }, [pendingSupportActivationId, session.data?.session, navigate]);
+  }, [pendingSupportActivationId, session.isPending]);
 
   useEffect(() => {
     if (pendingSupportActivationId || isLoadingAreas) return;

@@ -12,10 +12,10 @@ import { formatLongDate, getInitials } from "./platform-components";
 import {
   banPlatformUser,
   deletePlatformUser,
+  impersonateWithPendingPlatformSupportActivation,
   platformMeQuery,
   platformUserDeletionImpactQuery,
   platformUserQuery,
-  queuePlatformSupportActivation,
   revokePlatformUserSessions,
   startPlatformSupport,
   unbanPlatformUser,
@@ -79,10 +79,11 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
         targetUserId: userId,
         ...(supportReason ? { reason: supportReason } : {}),
       });
-      const impersonation = await authClient.admin.impersonateUser({ userId });
-      if (impersonation.error)
-        throw new Error(impersonation.error.message ?? "Erro ao iniciar suporte.");
-      queuePlatformSupportActivation(prepared.id);
+      await impersonateWithPendingPlatformSupportActivation({
+        supportSessionId: prepared.id,
+        userId,
+        impersonateUser: authClient.admin.impersonateUser,
+      });
     },
     onSuccess: () => {
       queryClient.clear();

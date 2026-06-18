@@ -17,12 +17,12 @@ import { Input } from "../../components/ui/input";
 import { authClient } from "../../lib/auth-client";
 import { AcademyAvatar, formatDate } from "./platform-components";
 import {
+  impersonateWithPendingPlatformSupportActivation,
   type PlatformAcademyOperationalOverview,
   platformAcademyOperationalOverviewQuery,
   platformAcademyQuery,
   platformKeys,
   platformMeQuery,
-  queuePlatformSupportActivation,
   startPlatformSupport,
   transferPlatformAcademy,
 } from "./platform-queries";
@@ -48,12 +48,11 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
         academyId,
         ...(supportReason ? { reason: supportReason } : {}),
       });
-      const impersonation = await authClient.admin.impersonateUser({
+      await impersonateWithPendingPlatformSupportActivation({
+        supportSessionId: prepared.id,
         userId: academy.data.owner.id,
+        impersonateUser: authClient.admin.impersonateUser,
       });
-      if (impersonation.error)
-        throw new Error(impersonation.error.message ?? "Erro ao iniciar suporte.");
-      queuePlatformSupportActivation(prepared.id);
     },
     onSuccess: () => {
       queryClient.clear();
