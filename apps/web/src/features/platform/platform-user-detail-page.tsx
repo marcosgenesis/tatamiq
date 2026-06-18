@@ -10,12 +10,12 @@ import { Input } from "../../components/ui/input";
 import { authClient } from "../../lib/auth-client";
 import { formatLongDate, getInitials } from "./platform-components";
 import {
-  activatePlatformSupport,
   banPlatformUser,
   deletePlatformUser,
   platformMeQuery,
   platformUserDeletionImpactQuery,
   platformUserQuery,
+  queuePlatformSupportActivation,
   revokePlatformUserSessions,
   startPlatformSupport,
   unbanPlatformUser,
@@ -82,12 +82,7 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
       const impersonation = await authClient.admin.impersonateUser({ userId });
       if (impersonation.error)
         throw new Error(impersonation.error.message ?? "Erro ao iniciar suporte.");
-      try {
-        await activatePlatformSupport(prepared.id);
-      } catch {
-        await authClient.admin.stopImpersonating();
-        throw new Error("Erro ao ativar suporte.");
-      }
+      queuePlatformSupportActivation(prepared.id);
     },
     onSuccess: () => {
       queryClient.clear();

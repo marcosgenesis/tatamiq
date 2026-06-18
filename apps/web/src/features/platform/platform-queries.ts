@@ -315,6 +315,20 @@ export async function startPlatformSupport(input: StartPlatformSupportInput) {
   return data;
 }
 
+const PENDING_SUPPORT_ACTIVATION_KEY = "tatamiq:pending-platform-support-activation";
+
+export function queuePlatformSupportActivation(supportSessionId: string) {
+  window.sessionStorage.setItem(PENDING_SUPPORT_ACTIVATION_KEY, supportSessionId);
+}
+
+export function readPendingPlatformSupportActivation() {
+  return window.sessionStorage.getItem(PENDING_SUPPORT_ACTIVATION_KEY);
+}
+
+export function clearPendingPlatformSupportActivation() {
+  window.sessionStorage.removeItem(PENDING_SUPPORT_ACTIVATION_KEY);
+}
+
 export async function activatePlatformSupport(supportSessionId: string) {
   const { data, error } = await api.POST("/platform/support/activate", {
     body: { supportSessionId },

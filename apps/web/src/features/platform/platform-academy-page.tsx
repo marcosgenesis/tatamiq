@@ -17,12 +17,12 @@ import { Input } from "../../components/ui/input";
 import { authClient } from "../../lib/auth-client";
 import { AcademyAvatar, formatDate } from "./platform-components";
 import {
-  activatePlatformSupport,
   type PlatformAcademyOperationalOverview,
   platformAcademyOperationalOverviewQuery,
   platformAcademyQuery,
   platformKeys,
   platformMeQuery,
+  queuePlatformSupportActivation,
   startPlatformSupport,
   transferPlatformAcademy,
 } from "./platform-queries";
@@ -53,12 +53,7 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
       });
       if (impersonation.error)
         throw new Error(impersonation.error.message ?? "Erro ao iniciar suporte.");
-      try {
-        await activatePlatformSupport(prepared.id);
-      } catch {
-        await authClient.admin.stopImpersonating();
-        throw new Error("Erro ao ativar suporte.");
-      }
+      queuePlatformSupportActivation(prepared.id);
     },
     onSuccess: () => {
       queryClient.clear();

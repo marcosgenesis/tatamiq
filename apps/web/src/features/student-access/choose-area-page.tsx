@@ -1,15 +1,23 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { api } from "../../api";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { authClient } from "../../lib/auth-client";
-import { platformMeQuery } from "../platform/platform-queries";
+import {
+  activatePlatformSupport,
+  clearPendingPlatformSupportActivation,
+  platformMeQuery,
+  readPendingPlatformSupportActivation,
+} from "../platform/platform-queries";
 
 export function ChooseAreaPage() {
   const navigate = useNavigate();
   const session = authClient.useSession();
+  const [pendingSupportActivationId, setPendingSupportActivationId] = useState(() =>
+    readPendingPlatformSupportActivation(),
+  );
   const organizations = authClient.useListOrganizations();
   const studentQuery = useQuery({
     queryKey: ["student", "me"],
@@ -27,11 +35,36 @@ export function ChooseAreaPage() {
   const hasPlatform = platformQuery.isSuccess && !!platformQuery.data;
 
   useEffect(() => {
+    const impersonatedBy = (session.data?.session as { impersonatedBy?: string | null } | undefined)
+      ?.impersonatedBy;
+    if (!pendingSupportActivationId || !impersonatedBy) return;
+
+    let cancelled = false;
+    void activatePlatformSupport(pendingSupportActivationId)
+      .then(() => {
+        clearPendingPlatformSupportActivation();
+        if (!cancelled) setPendingSupportActivationId(null);
+      })
+      .catch(async () => {
+        clearPendingPlatformSupportActivation();
+        if (!cancelled) setPendingSupportActivationId(null);
+        await authClient.admin.stopImpersonating();
+        await navigate({ to: "/platform" });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pendingSupportActivationId, session.data?.session, navigate]);
+
+  useEffect(() => {
+    if (pendingSupportActivationId) return;
     if (organizations.isPending || studentQuery.isLoading || platformQuery.isLoading) return;
     if (hasPlatform) void navigate({ to: "/platform" });
     else if (hasInstructor) void navigate({ to: "/" });
     else if (hasStudent) void navigate({ to: "/student" });
   }, [
+    pendingSupportActivationId,
     hasPlatform,
     hasInstructor,
     hasStudent,
