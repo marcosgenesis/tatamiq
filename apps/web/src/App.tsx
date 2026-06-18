@@ -452,6 +452,7 @@ function RootLayout() {
 
 function PublicLayout() {
   const session = authClient.useSession();
+  if (session.isPending) return <LoadingScreen />;
   if (session.data) return <AuthenticatedRedirect />;
   return <Outlet />;
 }
