@@ -3093,6 +3093,7 @@ export interface components {
             banReason: string | null;
             createdAt: string;
             emailVerified: boolean;
+            isPlatformAdmin: boolean;
             memberships: components["schemas"]["PlatformUserMembershipDto"][];
             studentAccessLinks: components["schemas"]["PlatformUserStudentAccessDto"][];
             activeSessions: number;

@@ -9479,6 +9479,9 @@
           "emailVerified": {
             "type": "boolean"
           },
+          "isPlatformAdmin": {
+            "type": "boolean"
+          },
           "memberships": {
             "type": "array",
             "items": {
@@ -9505,6 +9508,7 @@
           "banReason",
           "createdAt",
           "emailVerified",
+          "isPlatformAdmin",
           "memberships",
           "studentAccessLinks",
           "activeSessions"

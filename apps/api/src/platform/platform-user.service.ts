@@ -9,8 +9,9 @@ import {
   user,
 } from "@tatamiq/database";
 import { count, desc, eq, ilike, or } from "drizzle-orm";
+import { platformAdminUserIds } from "../auth";
 import { DATABASE } from "../database/database.module";
-import { PlatformAdminService } from "./platform-admin.service";
+import { isPlatformAdminUser, PlatformAdminService } from "./platform-admin.service";
 
 @Injectable()
 export class PlatformUserService {
@@ -74,6 +75,7 @@ export class PlatformUserService {
     return {
       ...toUserSummary(row),
       emailVerified: row.emailVerified,
+      isPlatformAdmin: isPlatformAdminUser(row, platformAdminUserIds()),
       memberships: memberships.map((m) => ({
         memberId: m.member.id,
         organizationId: m.organization.id,
