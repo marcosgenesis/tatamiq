@@ -6,6 +6,8 @@ import { api } from "../../api";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Skeleton } from "../../components/ui/skeleton";
+import { authClient } from "../../lib/auth-client";
+import { studentQueryKey } from "../../lib/session-query-keys";
 import { cn } from "../../lib/utils";
 import { StudentEmptyState } from "./components/student-empty-state";
 import { dayOfMonth, weekdayShort } from "./lib/student-format";
@@ -14,13 +16,16 @@ const MONTH_FMT = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numer
 
 export function StudentAttendanceSection() {
   const navigate = useNavigate();
+  const session = authClient.useSession();
+  const sessionUserId = session.data?.user.id;
   const query = useQuery({
-    queryKey: ["student", "attendances"],
+    queryKey: studentQueryKey(sessionUserId, "attendances"),
     queryFn: async () => {
       const { data, error } = await api.GET("/student/attendances");
       if (error || !data) throw new Error("Não foi possível carregar presenças.");
       return data satisfies StudentAttendancesResponse;
     },
+    enabled: !!sessionUserId,
   });
 
   if (query.isLoading) {

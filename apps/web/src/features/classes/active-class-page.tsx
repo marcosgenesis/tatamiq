@@ -17,7 +17,7 @@ export function ActiveClassPage(props: { classId: string }) {
   const navigate = useNavigate();
 
   const classQuery = useQuery({
-    queryKey: ["classes", props.classId],
+    queryKey: academyQueryKey(activeAcademyId, "classes", props.classId),
     queryFn: async () => {
       const { data, error } = await api.GET("/classes/{id}", {
         params: { path: { id: props.classId } },
@@ -25,10 +25,11 @@ export function ActiveClassPage(props: { classId: string }) {
       if (error) throw new Error("Não foi possível carregar a aula.");
       return data;
     },
+    enabled: !!activeAcademyId,
   });
 
   const qrQuery = useQuery({
-    queryKey: ["classes", props.classId, "qr-token"],
+    queryKey: academyQueryKey(activeAcademyId, "classes", props.classId, "qr-token"),
     queryFn: async () => {
       const { data, error } = await api.GET("/classes/{id}/qr-token", {
         params: { path: { id: props.classId } },
@@ -36,7 +37,7 @@ export function ActiveClassPage(props: { classId: string }) {
       if (error) throw new Error("Não foi possível obter o QR token.");
       return data;
     },
-    enabled: classQuery.data?.status === "active",
+    enabled: !!activeAcademyId && classQuery.data?.status === "active",
     refetchInterval: 10_000,
   });
 

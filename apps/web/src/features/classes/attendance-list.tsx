@@ -23,7 +23,7 @@ export function AttendanceList(props: {
   const [invalidationReason, setInvalidationReason] = useState("");
 
   const rosterQuery = useQuery({
-    queryKey: ["classes", props.classSessionId, "attendances"],
+    queryKey: academyQueryKey(activeAcademyId, "classes", props.classSessionId, "attendances"),
     queryFn: async () => {
       const { data, error } = await api.GET("/classes/{classSessionId}/attendances", {
         params: { path: { classSessionId: props.classSessionId } },
@@ -31,6 +31,7 @@ export function AttendanceList(props: {
       if (error) throw new Error("Não foi possível carregar presenças.");
       return data;
     },
+    enabled: !!activeAcademyId,
     refetchInterval: props.refetchInterval,
   });
 
@@ -56,7 +57,7 @@ export function AttendanceList(props: {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ["classes", props.classSessionId, "attendances"],
+        queryKey: academyQueryKey(activeAcademyId, "classes", props.classSessionId, "attendances"),
       });
       setShowSearch(false);
       setSearchQuery("");
@@ -78,7 +79,7 @@ export function AttendanceList(props: {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ["classes", props.classSessionId, "attendances"],
+        queryKey: academyQueryKey(activeAcademyId, "classes", props.classSessionId, "attendances"),
       });
       setInvalidatingId(null);
       setInvalidationReason("");

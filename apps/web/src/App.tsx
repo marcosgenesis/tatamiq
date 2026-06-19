@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createRootRoute,
   createRoute,
@@ -9,7 +9,7 @@ import {
   useNavigate,
 } from "@tanstack/react-router";
 import { CheckmarkSquare03Icon } from "hugeicons-react";
-import { type ComponentType, lazy, Suspense, useEffect } from "react";
+import { type ComponentType, lazy, Suspense, useEffect, useRef, useState } from "react";
 import { AppShell } from "./components/app-shell";
 import { LogoIcon } from "./components/logo";
 import { Button } from "./components/ui/button";
@@ -476,6 +476,7 @@ function InstructorLayout() {
   const session = authClient.useSession();
   const organizations = authClient.useListOrganizations();
   const activeOrganization = authClient.useActiveOrganization();
+  const [switchingAcademyId, setSwitchingAcademyId] = useState<string | null>(null);
 
   const firstOrganization = organizations.data?.[0] as OrganizationSummary | undefined;
   const activeAcademy = activeOrganization.data as OrganizationSummary | null | undefined;
@@ -494,8 +495,11 @@ function InstructorLayout() {
   }, [session.data, activeAcademy, firstOrganization, activeOrganization.refetch]);
 
   if (!session.data) return <Navigate to="/sign-in" />;
-  if (organizations.isPending || activeOrganization.isPending) return <LoadingScreen />;
+  if (organizations.isPending || activeOrganization.isPending || switchingAcademyId) {
+    return <LoadingScreen />;
+  }
   if (!firstOrganization) return <Navigate to="/onboarding/academy" />;
+  if (!activeAcademy) return <LoadingScreen />;
 
   const allAcademies = (organizations.data ?? []).map((org: OrganizationSummary) => ({
     id: org.id,
@@ -503,13 +507,23 @@ function InstructorLayout() {
     logo: org.logo,
   }));
 
-  const currentAcademy = activeAcademy
-    ? { id: activeAcademy.id, name: activeAcademy.name, logo: activeAcademy.logo }
-    : { id: firstOrganization.id, name: firstOrganization.name, logo: firstOrganization.logo };
+  const currentAcademy = {
+    id: activeAcademy.id,
+    name: activeAcademy.name,
+    logo: activeAcademy.logo,
+  };
 
   async function switchAcademy(orgId: string) {
-    await authClient.organization.setActive({ organizationId: orgId });
-    await activeOrganization.refetch();
+    if (orgId === currentAcademy.id) return;
+    setSwitchingAcademyId(orgId);
+    queryClient.clear();
+    try {
+      await authClient.organization.setActive({ organizationId: orgId });
+      await Promise.all([organizations.refetch(), activeOrganization.refetch()]);
+      queryClient.clear();
+    } finally {
+      setSwitchingAcademyId(null);
+    }
   }
 
   function refreshAcademies() {
@@ -519,6 +533,7 @@ function InstructorLayout() {
 
   async function signOut() {
     await authClient.signOut();
+    queryClient.clear();
     await navigate({ to: "/sign-in" });
   }
 
@@ -546,7 +561,8 @@ function InstructorLayout() {
 
 function SupportBanner() {
   const navigate = useNavigate();
-  const support = useQuery(currentPlatformSupportQuery());
+  const session = authClient.useSession();
+  const support = useQuery(currentPlatformSupportQuery(session.data?.user.id));
 
   if (!support.data) return null;
 
@@ -592,6 +608,30 @@ function usePlatformAccess(): "loading" | "allowed" | "denied" {
   return "denied";
 }
 
+export function cacheIdentityKey(userId: string | null | undefined) {
+  return userId ?? "anonymous";
+}
+
+function SessionCacheBoundary() {
+  const queryClientFromProvider = useQueryClient();
+  const session = authClient.useSession();
+  const identity = cacheIdentityKey(session.data?.user.id);
+  const previousIdentityRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (session.isPending) return;
+    if (previousIdentityRef.current === null) {
+      previousIdentityRef.current = identity;
+      return;
+    }
+    if (previousIdentityRef.current === identity) return;
+    previousIdentityRef.current = identity;
+    queryClientFromProvider.clear();
+  }, [identity, queryClientFromProvider, session.isPending]);
+
+  return null;
+}
+
 function LoadingScreen() {
   return (
     <main className="grid min-h-screen place-items-center bg-background text-foreground">
@@ -607,6 +647,7 @@ export function App() {
   return (
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
+        <SessionCacheBoundary />
         <RouterProvider router={router} />
         <Toaster />
       </QueryClientProvider>

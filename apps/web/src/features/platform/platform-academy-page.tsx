@@ -37,12 +37,13 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
   const [isTransferOpen, setIsTransferOpen] = useState(false);
 
   const session = authClient.useSession();
+  const sessionUserId = session.data?.user.id;
   const platform = useQuery({
-    ...platformMeQuery(session.data?.user.id),
-    enabled: !!session.data?.user.id,
+    ...platformMeQuery(sessionUserId),
+    enabled: !!sessionUserId,
   });
-  const academy = useQuery(platformAcademyQuery(academyId));
-  const operational = useQuery(platformAcademyOperationalOverviewQuery(academyId));
+  const academy = useQuery(platformAcademyQuery(sessionUserId, academyId));
+  const operational = useQuery(platformAcademyOperationalOverviewQuery(sessionUserId, academyId));
 
   const support = useMutation({
     mutationFn: async () => {
@@ -74,8 +75,8 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
     onSuccess: async () => {
       setTransferForm({ ownerEmail: "", ownerName: "" });
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: platformKeys.academy(academyId) }),
-        queryClient.invalidateQueries({ queryKey: platformKeys.dashboard }),
+        queryClient.invalidateQueries({ queryKey: platformKeys.academy(sessionUserId, academyId) }),
+        queryClient.invalidateQueries({ queryKey: platformKeys.dashboard(sessionUserId) }),
         queryClient.invalidateQueries({ queryKey: ["platform", "academies"] }),
       ]);
     },
@@ -91,7 +92,12 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
     return (
       <PlatformShell
         user={user}
-        onSignOut={() => authClient.signOut().then(() => navigate({ to: "/sign-in" }))}
+        onSignOut={() =>
+          authClient.signOut().then(() => {
+            queryClient.clear();
+            return navigate({ to: "/sign-in" });
+          })
+        }
         breadcrumb={[
           { label: "Academias", to: "/platform/academies" },
           { label: "Não encontrada" },
@@ -110,7 +116,12 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
   return (
     <PlatformShell
       user={user}
-      onSignOut={() => authClient.signOut().then(() => navigate({ to: "/sign-in" }))}
+      onSignOut={() =>
+        authClient.signOut().then(() => {
+          queryClient.clear();
+          return navigate({ to: "/sign-in" });
+        })
+      }
       breadcrumb={[{ label: "Academias", to: "/platform/academies" }, { label: data.name }]}
       actions={
         <>

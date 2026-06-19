@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, useNavigate } from "@tanstack/react-router";
 import {
   type ColumnDef,
@@ -23,15 +23,19 @@ type PlatformUserSummary = components["schemas"]["PlatformUserSummaryDto"];
 
 export function PlatformUsersPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
 
   const session = authClient.useSession();
+  const sessionUserId = session.data?.user.id;
   const platform = useQuery({
-    ...platformMeQuery(session.data?.user.id),
-    enabled: !!session.data?.user.id,
+    ...platformMeQuery(sessionUserId),
+    enabled: !!sessionUserId,
   });
-  const users = useQuery(platformUsersQuery(query, pagination.pageIndex, pagination.pageSize));
+  const users = useQuery(
+    platformUsersQuery(sessionUserId, query, pagination.pageIndex, pagination.pageSize),
+  );
 
   if (session.isPending || platform.isLoading)
     return <PlatformLoading label="Carregando usuários..." />;
@@ -40,7 +44,12 @@ export function PlatformUsersPage() {
   return (
     <PlatformShell
       user={platform.data.user}
-      onSignOut={() => authClient.signOut().then(() => navigate({ to: "/sign-in" }))}
+      onSignOut={() =>
+        authClient.signOut().then(() => {
+          queryClient.clear();
+          return navigate({ to: "/sign-in" });
+        })
+      }
       title="Usuários"
       description="Contas de toda a plataforma"
     >

@@ -4,6 +4,8 @@ import type { StudentGraduationResponse } from "@tatamiq/contracts";
 import { ArrowLeft01Icon, ChampionIcon, Tick02Icon } from "hugeicons-react";
 import { api } from "../../../api";
 import { Skeleton } from "../../../components/ui/skeleton";
+import { authClient } from "../../../lib/auth-client";
+import { studentQueryKey } from "../../../lib/session-query-keys";
 import { cn } from "../../../lib/utils";
 import { BeltVisual } from "../components/belt-visual";
 import { BELT_ORDER, beltProgress } from "../lib/belt-progress";
@@ -17,13 +19,16 @@ const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
 
 export function StudentGraduationScreen() {
   const navigate = useNavigate();
+  const session = authClient.useSession();
+  const sessionUserId = session.data?.user.id;
   const query = useQuery({
-    queryKey: ["student", "graduation"],
+    queryKey: studentQueryKey(sessionUserId, "graduation"),
     queryFn: async () => {
       const { data, error } = await api.GET("/student/graduation");
       if (error || !data) throw new Error("Não foi possível carregar graduação.");
       return data satisfies StudentGraduationResponse;
     },
+    enabled: !!sessionUserId,
   });
 
   const graduation = query.data ? toGraduationInput(query.data) : null;

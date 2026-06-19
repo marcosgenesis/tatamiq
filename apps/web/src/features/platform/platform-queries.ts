@@ -48,21 +48,44 @@ export type StartPlatformSupportInput = {
 
 export const platformKeys = {
   me: (userId: string | null | undefined) => ["platform", "me", userId ?? "anonymous"] as const,
-  dashboard: ["platform", "dashboard"] as const,
-  academies: (query: string, page: number, pageSize: number) =>
-    ["platform", "academies", query, page, pageSize] as const,
-  academy: (academyId: string) => ["platform", "academies", academyId] as const,
-  academyOperationalOverview: (academyId: string) =>
-    ["platform", "academies", academyId, "operational-overview"] as const,
-  users: (query: string, page: number, pageSize: number) =>
-    ["platform", "users", query, page, pageSize] as const,
-  user: (userId: string) => ["platform", "users", userId] as const,
-  userDeletionImpact: (userId: string) => ["platform", "users", userId, "deletion-impact"] as const,
-  administrators: (page: number, pageSize: number) =>
-    ["platform", "administrators", page, pageSize] as const,
-  audit: (action: string, page: number, pageSize: number) =>
-    ["platform", "audit", action, page, pageSize] as const,
-  currentSupport: ["platform", "support", "current"] as const,
+  dashboard: (sessionUserId: string | null | undefined) =>
+    ["platform", "dashboard", sessionUserId ?? "anonymous"] as const,
+  academies: (
+    sessionUserId: string | null | undefined,
+    query: string,
+    page: number,
+    pageSize: number,
+  ) => ["platform", "academies", sessionUserId ?? "anonymous", query, page, pageSize] as const,
+  academy: (sessionUserId: string | null | undefined, academyId: string) =>
+    ["platform", "academies", sessionUserId ?? "anonymous", academyId] as const,
+  academyOperationalOverview: (sessionUserId: string | null | undefined, academyId: string) =>
+    [
+      "platform",
+      "academies",
+      sessionUserId ?? "anonymous",
+      academyId,
+      "operational-overview",
+    ] as const,
+  users: (
+    sessionUserId: string | null | undefined,
+    query: string,
+    page: number,
+    pageSize: number,
+  ) => ["platform", "users", sessionUserId ?? "anonymous", query, page, pageSize] as const,
+  user: (sessionUserId: string | null | undefined, userId: string) =>
+    ["platform", "users", sessionUserId ?? "anonymous", userId] as const,
+  userDeletionImpact: (sessionUserId: string | null | undefined, userId: string) =>
+    ["platform", "users", sessionUserId ?? "anonymous", userId, "deletion-impact"] as const,
+  administrators: (sessionUserId: string | null | undefined, page: number, pageSize: number) =>
+    ["platform", "administrators", sessionUserId ?? "anonymous", page, pageSize] as const,
+  audit: (
+    sessionUserId: string | null | undefined,
+    action: string,
+    page: number,
+    pageSize: number,
+  ) => ["platform", "audit", sessionUserId ?? "anonymous", action, page, pageSize] as const,
+  currentSupport: (sessionUserId: string | null | undefined) =>
+    ["platform", "support", "current", sessionUserId ?? "anonymous"] as const,
   firstAccess: (token: string) => ["platform", "first-access", token] as const,
 };
 
@@ -78,21 +101,27 @@ export function platformMeQuery(userId?: string | null) {
   });
 }
 
-export function platformDashboardQuery() {
+export function platformDashboardQuery(sessionUserId?: string | null) {
   return queryOptions({
-    queryKey: platformKeys.dashboard,
+    queryKey: platformKeys.dashboard(sessionUserId),
     queryFn: async () => {
       const { data, error } = await api.GET("/platform/dashboard");
       if (error) throw error;
       return data;
     },
     retry: false,
+    enabled: !!sessionUserId,
   });
 }
 
-export function platformAcademiesQuery(query: string, page: number, pageSize: number) {
+export function platformAcademiesQuery(
+  sessionUserId: string | null | undefined,
+  query: string,
+  page: number,
+  pageSize: number,
+) {
   return queryOptions({
-    queryKey: platformKeys.academies(query, page, pageSize),
+    queryKey: platformKeys.academies(sessionUserId, query, page, pageSize),
     queryFn: async () => {
       const { data, error } = await api.GET("/platform/academies", {
         params: {
@@ -107,12 +136,13 @@ export function platformAcademiesQuery(query: string, page: number, pageSize: nu
       return data;
     },
     retry: false,
+    enabled: !!sessionUserId,
   });
 }
 
-export function platformAcademyQuery(academyId: string) {
+export function platformAcademyQuery(sessionUserId: string | null | undefined, academyId: string) {
   return queryOptions({
-    queryKey: platformKeys.academy(academyId),
+    queryKey: platformKeys.academy(sessionUserId, academyId),
     queryFn: async () => {
       const { data, error } = await api.GET("/platform/academies/{id}", {
         params: { path: { id: academyId } },
@@ -121,12 +151,16 @@ export function platformAcademyQuery(academyId: string) {
       return data;
     },
     retry: false,
+    enabled: !!sessionUserId,
   });
 }
 
-export function platformAcademyOperationalOverviewQuery(academyId: string) {
+export function platformAcademyOperationalOverviewQuery(
+  sessionUserId: string | null | undefined,
+  academyId: string,
+) {
   return queryOptions({
-    queryKey: platformKeys.academyOperationalOverview(academyId),
+    queryKey: platformKeys.academyOperationalOverview(sessionUserId, academyId),
     queryFn: async () => {
       const { data, error } = await api.GET("/platform/academies/{id}/operational-overview", {
         params: { path: { id: academyId } },
@@ -135,12 +169,18 @@ export function platformAcademyOperationalOverviewQuery(academyId: string) {
       return data;
     },
     retry: false,
+    enabled: !!sessionUserId,
   });
 }
 
-export function platformUsersQuery(query: string, page: number, pageSize: number) {
+export function platformUsersQuery(
+  sessionUserId: string | null | undefined,
+  query: string,
+  page: number,
+  pageSize: number,
+) {
   return queryOptions({
-    queryKey: platformKeys.users(query, page, pageSize),
+    queryKey: platformKeys.users(sessionUserId, query, page, pageSize),
     queryFn: async () => {
       const { data, error } = await api.GET("/platform/users", {
         params: {
@@ -155,12 +195,13 @@ export function platformUsersQuery(query: string, page: number, pageSize: number
       return data;
     },
     retry: false,
+    enabled: !!sessionUserId,
   });
 }
 
-export function platformUserQuery(userId: string) {
+export function platformUserQuery(sessionUserId: string | null | undefined, userId: string) {
   return queryOptions({
-    queryKey: platformKeys.user(userId),
+    queryKey: platformKeys.user(sessionUserId, userId),
     queryFn: async () => {
       const { data, error } = await api.GET("/platform/users/{id}", {
         params: { path: { id: userId } },
@@ -169,12 +210,17 @@ export function platformUserQuery(userId: string) {
       return data;
     },
     retry: false,
+    enabled: !!sessionUserId,
   });
 }
 
-export function platformUserDeletionImpactQuery(userId: string, enabled: boolean) {
+export function platformUserDeletionImpactQuery(
+  sessionUserId: string | null | undefined,
+  userId: string,
+  enabled: boolean,
+) {
   return queryOptions({
-    queryKey: platformKeys.userDeletionImpact(userId),
+    queryKey: platformKeys.userDeletionImpact(sessionUserId, userId),
     queryFn: async () => {
       const { data, error } = await api.GET("/platform/users/{id}/deletion-impact", {
         params: { path: { id: userId } },
@@ -183,13 +229,17 @@ export function platformUserDeletionImpactQuery(userId: string, enabled: boolean
       return data;
     },
     retry: false,
-    enabled,
+    enabled: !!sessionUserId && enabled,
   });
 }
 
-export function platformAdministratorsQuery(page: number, pageSize: number) {
+export function platformAdministratorsQuery(
+  sessionUserId: string | null | undefined,
+  page: number,
+  pageSize: number,
+) {
   return queryOptions({
-    queryKey: platformKeys.administrators(page, pageSize),
+    queryKey: platformKeys.administrators(sessionUserId, page, pageSize),
     queryFn: async () => {
       const { data, error } = await api.GET("/platform/administrators", {
         params: { query: { page, pageSize } },
@@ -198,12 +248,18 @@ export function platformAdministratorsQuery(page: number, pageSize: number) {
       return data;
     },
     retry: false,
+    enabled: !!sessionUserId,
   });
 }
 
-export function platformAuditQuery(action: string, page: number, pageSize: number) {
+export function platformAuditQuery(
+  sessionUserId: string | null | undefined,
+  action: string,
+  page: number,
+  pageSize: number,
+) {
   return queryOptions({
-    queryKey: platformKeys.audit(action, page, pageSize),
+    queryKey: platformKeys.audit(sessionUserId, action, page, pageSize),
     queryFn: async () => {
       const { data, error } = await api.GET("/platform/audit", {
         params: { query: { ...(action ? { action } : {}), page, pageSize } },
@@ -212,18 +268,20 @@ export function platformAuditQuery(action: string, page: number, pageSize: numbe
       return data;
     },
     retry: false,
+    enabled: !!sessionUserId,
   });
 }
 
-export function currentPlatformSupportQuery() {
+export function currentPlatformSupportQuery(sessionUserId?: string | null) {
   return queryOptions({
-    queryKey: platformKeys.currentSupport,
+    queryKey: platformKeys.currentSupport(sessionUserId),
     queryFn: async (): Promise<PlatformSupportSession | null> => {
       const { data, error } = await api.GET("/platform/support/current");
       if (error) throw error;
       return data ?? null;
     },
     retry: false,
+    enabled: !!sessionUserId,
     refetchInterval: 60_000,
   });
 }

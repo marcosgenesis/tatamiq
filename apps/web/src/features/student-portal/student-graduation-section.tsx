@@ -3,16 +3,21 @@ import type { StudentGraduationResponse } from "@tatamiq/contracts";
 import { api } from "../../api";
 import { Badge } from "../../components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { authClient } from "../../lib/auth-client";
+import { studentQueryKey } from "../../lib/session-query-keys";
 import { toGraduationInput } from "./lib/graduation-response";
 
 export function StudentGraduationSection() {
+  const session = authClient.useSession();
+  const sessionUserId = session.data?.user.id;
   const query = useQuery({
-    queryKey: ["student", "graduation"],
+    queryKey: studentQueryKey(sessionUserId, "graduation"),
     queryFn: async () => {
       const { data, error } = await api.GET("/student/graduation");
       if (error || !data) throw new Error("Não foi possível carregar graduação.");
       return data satisfies StudentGraduationResponse;
     },
+    enabled: !!sessionUserId,
   });
 
   if (query.isLoading) {

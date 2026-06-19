@@ -46,12 +46,15 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
   });
 
   const session = authClient.useSession();
+  const sessionUserId = session.data?.user.id;
   const platform = useQuery({
-    ...platformMeQuery(session.data?.user.id),
-    enabled: !!session.data?.user.id,
+    ...platformMeQuery(sessionUserId),
+    enabled: !!sessionUserId,
   });
-  const userDetail = useQuery(platformUserQuery(userId));
-  const deletionImpact = useQuery(platformUserDeletionImpactQuery(userId, showDeleteForm));
+  const userDetail = useQuery(platformUserQuery(sessionUserId, userId));
+  const deletionImpact = useQuery(
+    platformUserDeletionImpactQuery(sessionUserId, userId, showDeleteForm),
+  );
 
   const banMutation = useMutation({
     mutationFn: async () =>
@@ -105,7 +108,12 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
     return (
       <PlatformShell
         user={adminUser}
-        onSignOut={() => authClient.signOut().then(() => navigate({ to: "/sign-in" }))}
+        onSignOut={() =>
+          authClient.signOut().then(() => {
+            queryClient.clear();
+            return navigate({ to: "/sign-in" });
+          })
+        }
         breadcrumb={[{ label: "Usuários", to: "/platform/users" }, { label: "Não encontrado" }]}
       >
         <p className="rounded-2xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">
@@ -124,7 +132,12 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
   return (
     <PlatformShell
       user={adminUser}
-      onSignOut={() => authClient.signOut().then(() => navigate({ to: "/sign-in" }))}
+      onSignOut={() =>
+        authClient.signOut().then(() => {
+          queryClient.clear();
+          return navigate({ to: "/sign-in" });
+        })
+      }
       breadcrumb={[{ label: "Usuários", to: "/platform/users" }, { label: detail.name }]}
     >
       <div className="space-y-6">

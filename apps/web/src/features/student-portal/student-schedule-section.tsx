@@ -4,19 +4,24 @@ import { Calendar03Icon } from "hugeicons-react";
 import { api } from "../../api";
 import { Badge } from "../../components/ui/badge";
 import { Skeleton } from "../../components/ui/skeleton";
+import { authClient } from "../../lib/auth-client";
+import { studentQueryKey } from "../../lib/session-query-keys";
 import { cn } from "../../lib/utils";
 import { StudentEmptyState } from "./components/student-empty-state";
 
 type Day = StudentScheduleResponse["days"][number];
 
 export function StudentScheduleSection() {
+  const session = authClient.useSession();
+  const sessionUserId = session.data?.user.id;
   const query = useQuery({
-    queryKey: ["student", "schedule"],
+    queryKey: studentQueryKey(sessionUserId, "schedule"),
     queryFn: async () => {
       const { data, error } = await api.GET("/student/schedule");
       if (error || !data) throw new Error("Não foi possível carregar a agenda.");
       return data satisfies StudentScheduleResponse;
     },
+    enabled: !!sessionUserId,
   });
 
   const days = query.data?.days ?? [];

@@ -1,10 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { api } from "../../api";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { authClient } from "../../lib/auth-client";
+import { studentQueryKey } from "../../lib/session-query-keys";
 import {
   activatePlatformSupport,
   clearPendingPlatformSupportActivation,
@@ -14,7 +15,9 @@ import {
 
 export function ChooseAreaPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const session = authClient.useSession();
+  const sessionUserId = session.data?.user.id;
   const [pendingSupportActivationId, setPendingSupportActivationId] = useState(() =>
     readPendingPlatformSupportActivation(),
   );
@@ -22,17 +25,18 @@ export function ChooseAreaPage() {
   const [supportActivationError, setSupportActivationError] = useState(false);
   const organizations = authClient.useListOrganizations();
   const studentQuery = useQuery({
-    queryKey: ["student", "me"],
+    queryKey: studentQueryKey(sessionUserId, "me"),
     queryFn: async () => {
       const { data, error } = await api.GET("/student/me");
       if (error) throw new Error("Sem acesso de aluno.");
       return data;
     },
     retry: false,
+    enabled: !!sessionUserId && !pendingSupportActivationId,
   });
   const platformQuery = useQuery({
-    ...platformMeQuery(session.data?.user.id),
-    enabled: !!session.data?.user.id && !pendingSupportActivationId,
+    ...platformMeQuery(sessionUserId),
+    enabled: !!sessionUserId && !pendingSupportActivationId,
   });
 
   const isLoadingAreas =
@@ -47,8 +51,10 @@ export function ChooseAreaPage() {
 
     let cancelled = false;
     void activatePlatformSupport(pendingSupportActivationId)
-      .then(() => {
+      .then(async () => {
         clearPendingPlatformSupportActivation();
+        queryClient.clear();
+        await organizations.refetch();
         if (!cancelled) setPendingSupportActivationId(null);
       })
       .catch(() => {
@@ -71,6 +77,8 @@ export function ChooseAreaPage() {
   }, [
     pendingSupportActivationId,
     session.isPending,
+    organizations.refetch,
+    queryClient,
     supportActivationAttempt,
     supportActivationError,
   ]);

@@ -18,6 +18,7 @@ function AuthError({ message }: { message: string | null }) {
 
 export function SignInPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +29,9 @@ export function SignInPage() {
     event.preventDefault();
     setError(null);
     setIsSubmitting(true);
+    queryClient.clear();
     const result = await authClient.signIn.email({ email, password });
+    queryClient.clear();
     setIsSubmitting(false);
 
     if (result.error) {

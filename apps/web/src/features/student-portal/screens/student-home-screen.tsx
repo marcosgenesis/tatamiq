@@ -18,6 +18,8 @@ import {
 import type { ComponentType } from "react";
 import { api } from "../../../api";
 import { Skeleton } from "../../../components/ui/skeleton";
+import { authClient } from "../../../lib/auth-client";
+import { studentQueryKey } from "../../../lib/session-query-keys";
 import { cn } from "../../../lib/utils";
 import { getInitials } from "../../student-access/student-mobile-shell";
 import { BeltVisual } from "../components/belt-visual";
@@ -37,30 +39,35 @@ type ActivityItem = {
 
 export function StudentHomeScreen({ data }: { data: HomeData }) {
   const navigate = useNavigate();
+  const session = authClient.useSession();
+  const sessionUserId = session.data?.user.id;
 
   const graduationQuery = useQuery({
-    queryKey: ["student", "graduation"],
+    queryKey: studentQueryKey(sessionUserId, "graduation"),
     queryFn: async () => {
       const { data: g, error } = await api.GET("/student/graduation");
       if (error || !g) throw new Error("graduation");
       return g satisfies StudentGraduationResponse;
     },
+    enabled: !!sessionUserId,
   });
   const attendancesQuery = useQuery({
-    queryKey: ["student", "attendances"],
+    queryKey: studentQueryKey(sessionUserId, "attendances"),
     queryFn: async () => {
       const { data: a, error } = await api.GET("/student/attendances");
       if (error || !a) throw new Error("attendances");
       return a satisfies StudentAttendancesResponse;
     },
+    enabled: !!sessionUserId,
   });
   const feesQuery = useQuery({
-    queryKey: ["student", "monthly-fees"],
+    queryKey: studentQueryKey(sessionUserId, "monthly-fees"),
     queryFn: async () => {
       const { data: f, error } = await api.GET("/student/monthly-fees");
       if (error) throw new Error("fees");
       return f;
     },
+    enabled: !!sessionUserId,
   });
 
   const nextClass = data.upcomingClasses.find((c) => c.status !== "cancelled") ?? null;

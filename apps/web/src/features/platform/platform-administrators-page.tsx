@@ -44,12 +44,13 @@ export function PlatformAdministratorsPage() {
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
 
   const session = authClient.useSession();
+  const sessionUserId = session.data?.user.id;
   const platform = useQuery({
-    ...platformMeQuery(session.data?.user.id),
-    enabled: !!session.data?.user.id,
+    ...platformMeQuery(sessionUserId),
+    enabled: !!sessionUserId,
   });
   const administrators = useQuery(
-    platformAdministratorsQuery(pagination.pageIndex, pagination.pageSize),
+    platformAdministratorsQuery(sessionUserId, pagination.pageIndex, pagination.pageSize),
   );
   const addAdmin = useMutation({
     mutationFn: (input: AddPlatformAdministratorInput) => addPlatformAdministrator(input),
@@ -72,7 +73,12 @@ export function PlatformAdministratorsPage() {
   return (
     <PlatformShell
       user={platform.data.user}
-      onSignOut={() => authClient.signOut().then(() => navigate({ to: "/sign-in" }))}
+      onSignOut={() =>
+        authClient.signOut().then(() => {
+          queryClient.clear();
+          return navigate({ to: "/sign-in" });
+        })
+      }
       title="Administradores"
       description="Quem opera a plataforma"
       actions={
