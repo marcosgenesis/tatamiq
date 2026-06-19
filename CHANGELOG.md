@@ -1,3 +1,11 @@
+## [0.2.1](https://github.com/marcosgenesis/tatamiq/compare/v0.2.0...v0.2.1) (2026-06-16)
+
+
+### Bug Fixes
+
+* **api:** avoid express type dep in e2e r2 controller ([5cd7972](https://github.com/marcosgenesis/tatamiq/commit/5cd7972984fad1dc8279d298a73d3e967e2ff047))
+* tests ([eb843bf](https://github.com/marcosgenesis/tatamiq/commit/eb843bf3b9831bb5b898b85871fa2d4847aad091))
+
 # [0.2.0](https://github.com/marcosgenesis/tatamiq/compare/v0.1.0...v0.2.0) (2026-06-15)
 
 

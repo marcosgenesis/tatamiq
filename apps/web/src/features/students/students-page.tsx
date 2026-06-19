@@ -334,6 +334,15 @@ export function StudentsPage() {
 
       {activeTab === "students" ? (
         <>
+          <StudentCsvImport
+            open={isImportOpen}
+            onOpenChange={setIsImportOpen}
+            onImportComplete={() => {
+              void queryClient.invalidateQueries({
+                queryKey: academyQueryKey(activeAcademyId, "students"),
+              });
+            }}
+          />
           <StudentForm
             {...(editingStudent ? { student: editingStudent } : {})}
             belts={beltsQuery.data?.belts ?? []}
