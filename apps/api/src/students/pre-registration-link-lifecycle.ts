@@ -1,7 +1,7 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { PreRegistrationPublicProfile } from "@tatamiq/contracts";
-import { academyPreRegistrationLinks, type Database, organization } from "@tatamiq/database";
-import { eq } from "drizzle-orm";
+import { academyPreRegistrationLinks, belts, type Database, organization } from "@tatamiq/database";
+import { asc, eq } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
 import { createLinkToken, parseLinkStatus } from "./pre-registration-link-rules";
 
@@ -71,6 +71,12 @@ export class PreRegistrationLinkLifecycle {
     const found = await this.findPublicLink(token);
     if (!found) throw new NotFoundException("Link de pré-cadastro não encontrado.");
 
+    const academyBelts = await this.db
+      .select()
+      .from(belts)
+      .where(eq(belts.organizationId, found.link.organizationId))
+      .orderBy(asc(belts.position));
+
     return {
       academy: {
         name: found.academy.name,
@@ -80,6 +86,18 @@ export class PreRegistrationLinkLifecycle {
         instagram: found.academy.instagram ?? null,
       },
       link: { status: parseLinkStatus(found.link.status) },
+      belts: academyBelts.map((b) => ({
+        id: b.id,
+        name: b.name,
+        slug: b.slug,
+        path: b.path as "adult" | "child",
+        position: b.position,
+        maxDegrees: b.maxDegrees,
+        minMonthsForNextDegree: b.minMonthsForNextDegree,
+        minAttendancesForNextDegree: b.minAttendancesForNextDegree,
+        minMonthsForNextBelt: b.minMonthsForNextBelt,
+        minAttendancesForNextBelt: b.minAttendancesForNextBelt,
+      })),
     };
   }
 

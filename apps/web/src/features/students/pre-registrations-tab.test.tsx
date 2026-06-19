@@ -17,6 +17,9 @@ const baseRequest = {
   approvedStudentId: null,
   isInstructorAccount: false,
   duplicateStudentHasActiveAccess: false,
+  cpf: null,
+  declaredBeltId: null,
+  declaredDegree: null,
   createdAt: "2026-05-27T00:00:00.000Z",
   reviewedAt: null,
 };

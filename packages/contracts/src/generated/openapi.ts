@@ -1978,6 +1978,7 @@ export interface components {
                 /** @enum {string} */
                 status: "active" | "paused";
             };
+            belts: components["schemas"]["BeltDto"][];
         };
         CreatePreRegistrationRequestDto: {
             name: string;
@@ -1985,11 +1986,14 @@ export interface components {
             phone: string;
             /** Format: email */
             email: string;
+            cpf?: string | "";
             guardianName?: string | "";
             guardianPhone?: string | "";
             note?: string | "";
             /** @enum {boolean} */
             consentAccepted: true;
+            declaredBeltId?: string | "";
+            declaredDegree?: number;
         };
         PreRegistrationRequestDto: {
             id: string;
@@ -2010,6 +2014,9 @@ export interface components {
             approvedStudentId: string | null;
             isInstructorAccount: boolean;
             duplicateStudentHasActiveAccess: boolean;
+            cpf: string | null;
+            declaredBeltId: string | null;
+            declaredDegree: number | null;
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
@@ -2064,6 +2071,9 @@ export interface components {
                 approvedStudentId: string | null;
                 isInstructorAccount: boolean;
                 duplicateStudentHasActiveAccess: boolean;
+                cpf: string | null;
+                declaredBeltId: string | null;
+                declaredDegree: number | null;
                 /** Format: date-time */
                 createdAt: string;
                 /** Format: date-time */
@@ -2102,6 +2112,9 @@ export interface components {
                 approvedStudentId: string | null;
                 isInstructorAccount: boolean;
                 duplicateStudentHasActiveAccess: boolean;
+                cpf: string | null;
+                declaredBeltId: string | null;
+                declaredDegree: number | null;
                 /** Format: date-time */
                 createdAt: string;
                 /** Format: date-time */

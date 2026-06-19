@@ -231,6 +231,7 @@ export const preRegistrationPublicProfileSchema = z.object({
   link: z.object({
     status: preRegistrationLinkStatusSchema,
   }),
+  belts: z.array(beltSchema),
 });
 
 export const createPreRegistrationRequestSchema = z.object({
@@ -238,10 +239,13 @@ export const createPreRegistrationRequestSchema = z.object({
   birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   phone: z.string().trim().min(1),
   email: z.string().trim().email(),
+  cpf: z.string().trim().optional().or(z.literal("")),
   guardianName: z.string().trim().optional().or(z.literal("")),
   guardianPhone: z.string().trim().optional().or(z.literal("")),
   note: z.string().trim().optional().or(z.literal("")),
   consentAccepted: z.literal(true),
+  declaredBeltId: z.string().trim().optional().or(z.literal("")),
+  declaredDegree: z.number().int().min(0).max(9).optional(),
 });
 
 export const preRegistrationRequestSchema = z.object({
@@ -264,6 +268,9 @@ export const preRegistrationRequestSchema = z.object({
   approvedStudentId: z.string().nullable(),
   isInstructorAccount: z.boolean(),
   duplicateStudentHasActiveAccess: z.boolean(),
+  cpf: z.string().nullable(),
+  declaredBeltId: z.string().nullable(),
+  declaredDegree: z.number().int().nullable(),
   createdAt: z.string().datetime(),
   reviewedAt: z.string().datetime().nullable(),
 });
