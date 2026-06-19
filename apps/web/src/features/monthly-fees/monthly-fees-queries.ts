@@ -36,6 +36,12 @@ export async function createMonthlyFee(input: CreateMonthlyFeeInput) {
   return data;
 }
 
+export async function generateMissingMonthlyFees() {
+  const { data, error } = await api.POST("/monthly-fees/generate-missing");
+  if (error || !data) throw new Error("Não foi possível verificar mensalidades faltantes.");
+  return data;
+}
+
 export async function adjustMonthlyFee(input: {
   id: string;
   amountInCents: number;

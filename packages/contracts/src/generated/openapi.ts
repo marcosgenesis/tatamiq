@@ -84,6 +84,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/monthly-fees/generate-missing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["MonthlyFeesController_generateMissing"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/monthly-fees/{id}": {
         parameters: {
             query?: never;
@@ -1838,6 +1854,9 @@ export interface components {
                 total: number;
             };
         };
+        GenerateMissingMonthlyFeesResponseDto: {
+            created: number;
+        };
         CreateMonthlyFeeDto: {
             studentId: string;
             referenceYear: number;
@@ -1978,7 +1997,19 @@ export interface components {
                 /** @enum {string} */
                 status: "active" | "paused";
             };
-            belts: components["schemas"]["BeltDto"][];
+            belts: {
+                id: string;
+                name: string;
+                slug: string;
+                /** @enum {string} */
+                path: "adult" | "child";
+                position: number;
+                maxDegrees: number;
+                minMonthsForNextDegree: number;
+                minAttendancesForNextDegree: number;
+                minMonthsForNextBelt: number;
+                minAttendancesForNextBelt: number;
+            }[];
         };
         CreatePreRegistrationRequestDto: {
             name: string;
@@ -3291,6 +3322,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MonthlyFeeDetailDto"];
+                };
+            };
+        };
+    };
+    MonthlyFeesController_generateMissing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerateMissingMonthlyFeesResponseDto"];
                 };
             };
         };

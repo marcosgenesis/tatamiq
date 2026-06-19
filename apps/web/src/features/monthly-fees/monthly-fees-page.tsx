@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { MonthlyFee } from "@tatamiq/contracts";
 import { type FormEvent, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { useAppShell } from "../../components/app-shell";
 import { centsToReais, reaisToCents } from "../../lib/formatting";
 import { CreateMonthlyFeeDrawer } from "./create-monthly-fee-drawer";
@@ -13,6 +14,7 @@ import {
   fetchMonthlyFeeDetail,
   fetchMonthlyFeeReceiptViewUrl,
   fetchMonthlyFees,
+  generateMissingMonthlyFees,
   monthlyFeesExportUrl,
   monthlyFeesKeys,
   registerManualMonthlyFeePayment,
@@ -102,6 +104,21 @@ export function MonthlyFeesPage() {
     },
   });
 
+  const generateMissingMutation = useMutation({
+    mutationFn: generateMissingMonthlyFees,
+    onSuccess: async (result) => {
+      await queryClient.invalidateQueries({ queryKey: monthlyFeesKeys.all(activeAcademyId) });
+      toast.success(
+        result.created === 1
+          ? "1 mensalidade faltante foi criada."
+          : `${result.created} mensalidades faltantes foram criadas.`,
+      );
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Erro ao verificar mensalidades.");
+    },
+  });
+
   const fees = feesQuery.data?.fees ?? [];
   const detail = detailQuery.data ?? null;
   const pendingReceipt = useMemo(() => (detail ? activePendingReceipt(detail) : null), [detail]);
@@ -142,8 +159,10 @@ export function MonthlyFeesPage() {
   return (
     <div className="space-y-6 p-6">
       <MonthlyFeesHeader
+        generatingMissing={generateMissingMutation.isPending}
         onExportCsv={() => window.open(monthlyFeesExportUrl(statusFilter), "_blank")}
         onCreate={openCreateForm}
+        onGenerateMissing={() => generateMissingMutation.mutate()}
       />
 
       <CreateMonthlyFeeDrawer open={isFormOpen} onClose={() => setIsFormOpen(false)} />

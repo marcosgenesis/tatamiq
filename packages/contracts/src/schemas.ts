@@ -638,6 +638,10 @@ export const createMonthlyFeeSchema = z.object({
   dueDay: z.number().int().min(1).max(31),
 });
 
+export const generateMissingMonthlyFeesResponseSchema = z.object({
+  created: z.number().int().nonnegative(),
+});
+
 export const adjustMonthlyFeeSchema = z.object({
   amountInCents: z.number().int().positive(),
   reason: z.string().trim().min(1),
@@ -726,6 +730,9 @@ export type MonthlyFeeEvent = z.infer<typeof monthlyFeeEventSchema>;
 export type PaymentReceipt = z.infer<typeof paymentReceiptSchema>;
 export type ListMonthlyFeesResponse = z.infer<typeof listMonthlyFeesResponseSchema>;
 export type CreateMonthlyFeeInput = z.infer<typeof createMonthlyFeeSchema>;
+export type GenerateMissingMonthlyFeesResponse = z.infer<
+  typeof generateMissingMonthlyFeesResponseSchema
+>;
 
 // --- Student Notes ---
 
