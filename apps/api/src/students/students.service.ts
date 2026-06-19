@@ -135,7 +135,9 @@ export class StudentsService {
   async update(organizationId: string, id: string, input: UpdateStudentInput): Promise<Student> {
     const current = await this.findStudent(organizationId, id);
     validateStudentInput(input);
-    await this.assertUniqueEmail(organizationId, input.email, id);
+    if (normalizeEmail(input.email) !== normalizeEmail(current.email)) {
+      await this.assertUniqueEmail(organizationId, input.email, id);
+    }
 
     const belt = await this.beltsService.findById(organizationId, input.currentBeltId);
     if (!belt) {
@@ -211,7 +213,7 @@ export class StudentsService {
     email: string | null | undefined,
     ignoreStudentId?: string,
   ) {
-    const normalizedEmail = email?.trim().toLowerCase();
+    const normalizedEmail = normalizeEmail(email);
     if (!normalizedEmail) return;
 
     const conditions = [
@@ -353,6 +355,10 @@ function toStudentDto(
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
+}
+
+function normalizeEmail(value: string | null | undefined): string | null {
+  return value?.trim().toLowerCase() || null;
 }
 
 function emptyToNull(value: string | null | undefined): string | null {
