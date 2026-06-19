@@ -295,6 +295,17 @@ export function StudentsPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2 sm:justify-end">
+          {activeTab === "students" && (
+            <StudentCsvImport
+              open={isImportOpen}
+              onOpenChange={setIsImportOpen}
+              onImportComplete={() => {
+                void queryClient.invalidateQueries({
+                  queryKey: academyQueryKey(activeAcademyId, "students"),
+                });
+              }}
+            />
+          )}
           <Button onClick={openCreateForm}>
             <PlusCircle className="size-4" /> Novo aluno
           </Button>
@@ -323,15 +334,6 @@ export function StudentsPage() {
 
       {activeTab === "students" ? (
         <>
-          <StudentCsvImport
-            open={isImportOpen}
-            onOpenChange={setIsImportOpen}
-            onImportComplete={() => {
-              void queryClient.invalidateQueries({
-                queryKey: academyQueryKey(activeAcademyId, "students"),
-              });
-            }}
-          />
           <StudentForm
             {...(editingStudent ? { student: editingStudent } : {})}
             belts={beltsQuery.data?.belts ?? []}
