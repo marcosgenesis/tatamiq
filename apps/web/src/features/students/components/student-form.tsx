@@ -156,6 +156,17 @@ function maxDegreeForBelt(belt: BeltDto | undefined): number {
   return belt?.slug.includes("black") ? 9 : 4;
 }
 
+export function validateKnownBeltSelection(
+  currentBeltId: string,
+  belts: Pick<BeltDto, "id">[],
+): string | null {
+  if (!currentBeltId) return "Selecione a faixa.";
+  if (!belts.some((belt) => belt.id === currentBeltId)) {
+    return "Selecione uma faixa da Academia ativa.";
+  }
+  return null;
+}
+
 function apiErrorMessage(error: unknown, fallback: string): string {
   if (typeof error === "object" && error !== null && "message" in error) {
     const message = (error as { message?: unknown }).message;
@@ -226,6 +237,7 @@ export function StudentForm(props: {
     control,
     watch,
     setValue,
+    setError,
     handleSubmit,
     formState: { errors, isSubmitted },
   } = form;
@@ -262,6 +274,14 @@ export function StudentForm(props: {
     submitInFlightRef.current = false;
   }, [props.open, props.student, form]);
 
+  useEffect(() => {
+    if (!props.open || !currentBeltId || props.belts.length === 0) return;
+    if (validateKnownBeltSelection(currentBeltId, props.belts)) {
+      setValue("currentBeltId", "", { shouldValidate: true, shouldDirty: true });
+      setValue("currentDegree", "0", { shouldDirty: true });
+    }
+  }, [props.open, props.belts, currentBeltId, setValue]);
+
   const saveMutation = useMutation({
     mutationFn: async (input: StudentPayload) => {
       if (props.student) {
@@ -296,6 +316,14 @@ export function StudentForm(props: {
   function submitForm(values: StudentFormValues) {
     if (submitInFlightRef.current) return;
     submitInFlightRef.current = true;
+
+    const beltSelectionError = validateKnownBeltSelection(values.currentBeltId, props.belts);
+    if (beltSelectionError) {
+      setError("currentBeltId", { type: "validate", message: beltSelectionError });
+      submitInFlightRef.current = false;
+      return;
+    }
+
     saveMutation.mutate(toStudentPayload(values, Boolean(props.student)));
   }
 
