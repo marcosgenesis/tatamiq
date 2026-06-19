@@ -9,23 +9,22 @@ function createMockDb(selectResults: MockRow[][] = []) {
   const updates: MockRow[] = [];
   let selectCallIndex = 0;
 
+  const nextSelectResult = () => {
+    const result = selectResults[selectCallIndex] ?? [];
+    selectCallIndex++;
+    return Promise.resolve(result);
+  };
+
+  const whereChain = () => ({
+    limit: vi.fn().mockImplementation(nextSelectResult),
+    orderBy: vi.fn().mockImplementation(nextSelectResult),
+  });
+
   const chainableSelect = () => ({
     from: vi.fn().mockReturnValue({
-      where: vi.fn().mockReturnValue({
-        limit: vi.fn().mockImplementation(() => {
-          const result = selectResults[selectCallIndex] ?? [];
-          selectCallIndex++;
-          return Promise.resolve(result);
-        }),
-      }),
+      where: vi.fn().mockImplementation(whereChain),
       innerJoin: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          limit: vi.fn().mockImplementation(() => {
-            const result = selectResults[selectCallIndex] ?? [];
-            selectCallIndex++;
-            return Promise.resolve(result);
-          }),
-        }),
+        where: vi.fn().mockImplementation(whereChain),
       }),
     }),
   });

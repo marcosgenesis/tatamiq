@@ -10,7 +10,6 @@ import { MonthlyFeesList } from "./monthly-fees-list";
 import {
   adjustMonthlyFee,
   approveMonthlyFeeReceipt,
-  createMonthlyFee,
   fetchMonthlyFeeDetail,
   fetchMonthlyFeeReceiptViewUrl,
   fetchMonthlyFees,
