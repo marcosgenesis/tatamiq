@@ -6,7 +6,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import type { Student } from "@tatamiq/contracts";
-import { AlertCircle, ChevronRight, MoreHorizontal, PlusCircle, UploadCloud } from "lucide-react";
+import { AlertCircle, Download, MoreHorizontal, PlusCircle, UploadCloud } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DataGrid, DataGridContainer } from "@/components/reui/data-grid/data-grid";
@@ -34,15 +34,18 @@ import { StudentCsvImport } from "./components/student-csv-import";
 import { StudentForm } from "./components/student-form";
 import { PreRegistrationsTab } from "./pre-registrations-tab";
 
-type StudentStatusFilter = "active" | "inactive" | "all";
 type StudentsTab = "students" | "pre-registrations";
+
+function exportStudentsCsvUrl(): string {
+  const baseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3100";
+  return `${baseUrl}/students/export.csv`;
+}
 
 export function StudentsPage() {
   const queryClient = useQueryClient();
   const { activeAcademy } = useAppShell();
   const activeAcademyId = activeAcademy.id;
   const [activeTab, setActiveTab] = useState<StudentsTab>("students");
-  const [status, setStatus] = useState<StudentStatusFilter>("active");
   const [search, setSearch] = useState("");
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -50,7 +53,7 @@ export function StudentsPage() {
 
   const beltsQuery = useBelts({ academyId: activeAcademyId, enabled: !!activeAcademyId });
   const studentsQuery = useStudents(
-    status,
+    "all",
     { page: pagination.pageIndex, pageSize: pagination.pageSize },
     { academyId: activeAcademyId, enabled: !!activeAcademyId },
   );
@@ -288,11 +291,7 @@ export function StudentsPage() {
             <h1 className="text-2xl font-semibold">Alunos</h1>
             {summary && (
               <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                {status === "active"
-                  ? summary.active
-                  : status === "inactive"
-                    ? summary.inactive
-                    : summary.total}
+                {summary.total}
               </span>
             )}
           </div>
@@ -301,6 +300,9 @@ export function StudentsPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2 sm:justify-end">
+          <Button variant="outline" onClick={() => window.open(exportStudentsCsvUrl(), "_blank")}>
+            <Download className="size-4" /> Exportar CSV
+          </Button>
           <Button variant="outline" onClick={() => setIsImportOpen(true)}>
             <UploadCloud className="size-4" /> Importar CSV
           </Button>
@@ -353,41 +355,9 @@ export function StudentsPage() {
             onClose={closeForm}
           />
 
-          {/* Filters + Search */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="flex flex-wrap gap-2">
-              <StatusFilterButton
-                label="Ativos"
-                count={summary?.active ?? 0}
-                active={status === "active"}
-                onClick={() => {
-                  setStatus("active");
-                  setSearch("");
-                  setPagination((p) => ({ ...p, pageIndex: 0 }));
-                }}
-              />
-              <StatusFilterButton
-                label="Inativos"
-                count={summary?.inactive ?? 0}
-                active={status === "inactive"}
-                onClick={() => {
-                  setStatus("inactive");
-                  setSearch("");
-                  setPagination((p) => ({ ...p, pageIndex: 0 }));
-                }}
-              />
-              <StatusFilterButton
-                label="Todos"
-                count={summary?.total ?? 0}
-                active={status === "all"}
-                onClick={() => {
-                  setStatus("all");
-                  setSearch("");
-                  setPagination((p) => ({ ...p, pageIndex: 0 }));
-                }}
-              />
-            </div>
-            <div className="relative sm:ml-auto sm:w-64">
+          {/* Search */}
+          <div className="flex sm:justify-end">
+            <div className="relative w-full sm:w-64">
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -484,34 +454,6 @@ function OverflowMenu({
         )}
       </DropdownMenuContent>
     </DropdownMenu>
-  );
-}
-
-function StatusFilterButton(props: {
-  label: string;
-  count: number;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={props.onClick}
-      className={`inline-flex h-9 items-center gap-2 rounded-[12px] border px-3 text-sm font-medium transition ${
-        props.active
-          ? "border-primary bg-primary text-primary-foreground"
-          : "border-border bg-background text-foreground hover:border-primary/50"
-      }`}
-    >
-      {props.label}
-      <span
-        className={`rounded-full px-1.5 py-0.5 text-xs ${
-          props.active ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
-        }`}
-      >
-        {props.count}
-      </span>
-    </button>
   );
 }
 
