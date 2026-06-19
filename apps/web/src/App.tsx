@@ -9,6 +9,7 @@ import {
   useNavigate,
 } from "@tanstack/react-router";
 import { CheckmarkSquare03Icon } from "hugeicons-react";
+import { LogOut, Timer, VenetianMask } from "lucide-react";
 import { type ComponentType, lazy, Suspense, useEffect, useRef, useState } from "react";
 import { AppShell } from "./components/app-shell";
 import { LogoIcon } from "./components/logo";
@@ -574,23 +575,45 @@ function SupportBanner() {
     await navigate({ to: "/platform" });
   }
 
+  const adminName = support.data.adminName ?? "Administrador";
+  const expiresAt = new Intl.DateTimeFormat("pt-BR", { timeStyle: "short" }).format(
+    new Date(support.data.expiresAt),
+  );
+
   return (
-    <div className="border-b border-amber-300 bg-amber-50 px-4 py-3 text-amber-950">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
-        <div>
-          <p className="font-semibold text-sm">Suporte Assistido ativo</p>
-          <p className="text-sm">
-            Você está operando como cliente em nome de {support.data.adminName ?? "Administrador"}.
-            Expira às{" "}
-            {new Intl.DateTimeFormat("pt-BR", { timeStyle: "short" }).format(
-              new Date(support.data.expiresAt),
-            )}
-            .
-          </p>
+    <div className="border-amber-400/20 border-b bg-[#1c1402] px-4 py-3 sm:px-6">
+      <div className="mx-auto flex max-w-7xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+        <div className="flex items-start gap-3">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-[10px] border border-amber-400/20 bg-amber-400/8">
+            <VenetianMask className="size-4.5 text-amber-400" />
+          </span>
+          <div className="space-y-0.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="font-semibold text-sm text-zinc-50">Suporte assistido ativo</p>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/20 bg-amber-400/10 px-2 py-0.5">
+                <span className="size-1.5 rounded-full bg-amber-400" />
+                <span className="font-bold text-[10px] text-amber-400 tracking-wide">AO VIVO</span>
+              </span>
+            </div>
+            <p className="text-[13px] text-amber-100/70">
+              Você está operando como cliente em nome de {adminName}.
+            </p>
+          </div>
         </div>
-        <Button variant="outline" onClick={endSupport}>
-          Encerrar suporte
-        </Button>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5">
+            <Timer className="size-3.5 text-amber-100/50" />
+            <span className="text-[12.5px] text-amber-50/85">Expira às {expiresAt}</span>
+          </span>
+          <Button
+            variant="outline"
+            onClick={endSupport}
+            className="flex-1 gap-1.5 border-amber-400/30 bg-amber-400/6 text-amber-400 hover:bg-amber-400/15 hover:text-amber-300 sm:flex-none"
+          >
+            <LogOut className="size-3.5" />
+            Encerrar suporte
+          </Button>
+        </div>
       </div>
     </div>
   );
