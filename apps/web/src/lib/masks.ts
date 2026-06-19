@@ -80,6 +80,20 @@ export function brToIsoDate(value: string): string {
   return `${match[3]}-${match[2]}-${match[1]}`;
 }
 
+export function isoToBrDate(value: string): string {
+  const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return value;
+  return `${match[3]}/${match[2]}/${match[1]}`;
+}
+
+export function isFutureBrDate(value: string, today = new Date()): boolean {
+  const match = value.trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!match) return false;
+  const birth = new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
+  const current = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  return birth > current;
+}
+
 export function isMinorBirthDate(value: string, today = new Date()): boolean {
   const match = value.trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
   if (!match) return false;

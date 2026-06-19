@@ -2,10 +2,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import type { BeltDto, Student } from "@tatamiq/contracts";
 import type { components } from "@tatamiq/contracts/generated";
-import { useEffect, useId, useRef, useState } from "react";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { useEffect, useId, useRef } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { z } from "zod";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { DatePickerInput } from "@/components/ui/input-date-picker";
 import {
   Select,
@@ -17,7 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
 import { api } from "../../../api";
 import { Button } from "../../../components/ui/button";
 import {
@@ -29,71 +29,21 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "../../../components/ui/drawer";
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-  FieldLegend,
-  FieldSet,
-} from "../../../components/ui/field";
+import { Field, FieldError, FieldGroup, FieldLabel } from "../../../components/ui/field";
 import { Input } from "../../../components/ui/input";
-import { maskCurrency, maskPhone } from "../../../lib/masks";
+import {
+  brToIsoDate,
+  isFutureBrDate,
+  isMinorBirthDate,
+  isoToBrDate,
+  isValidBrDate,
+  maskCurrency,
+  maskPhone,
+} from "../../../lib/masks";
+import { BeltVisual } from "../../student-portal/components/belt-visual";
+import { beltKeyFromName } from "../../student-portal/lib/belt-progress";
 
 type StudentPayload = components["schemas"]["UpdateStudentDto"];
-
-// A API espera datas em ISO (aaaa-mm-dd); o input trabalha em dd/mm/aaaa.
-function isValidBrDate(value: string): boolean {
-  const match = value.trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-  if (!match) return false;
-  const day = Number(match[1]);
-  const month = Number(match[2]);
-  const year = Number(match[3]);
-  const date = new Date(year, month - 1, day);
-  return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
-}
-
-function brToIsoDate(value: string): string {
-  const match = value.trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-  if (!match) return "";
-  return `${match[3]}-${match[2]}-${match[1]}`;
-}
-
-function parseBrDate(value: string): Date | null {
-  if (!isValidBrDate(value)) return null;
-  const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-  if (!match) return null;
-  return new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
-}
-
-function isFutureBrDate(value: string, today = new Date()): boolean {
-  const date = parseBrDate(value);
-  if (!date) return false;
-  const current = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  return date > current;
-}
-
-function isMinorBirthDate(value: string, today = new Date()): boolean {
-  const birth = parseBrDate(value);
-  if (!birth) return false;
-
-  const current = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  if (birth > current) return false;
-  let age = current.getFullYear() - birth.getFullYear();
-  const hasBirthdayPassedThisYear =
-    current.getMonth() > birth.getMonth() ||
-    (current.getMonth() === birth.getMonth() && current.getDate() >= birth.getDate());
-
-  if (!hasBirthdayPassedThisYear) age -= 1;
-  return age < 18;
-}
-
-function isoToBrDate(value: string): string {
-  const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!match) return value;
-  return `${match[3]}/${match[2]}/${match[1]}`;
-}
 
 const maxMonthlyAmountInCents = 100_000_000;
 
@@ -211,7 +161,6 @@ function apiErrorMessage(error: unknown, fallback: string): string {
     const message = (error as { message?: unknown }).message;
     if (typeof message === "string" && message.trim()) return message;
   }
-
   return fallback;
 }
 
@@ -245,6 +194,14 @@ function toStudentPayload(values: StudentFormValues, isEditing: boolean): Studen
 
 const DUE_DAYS = ["1", "5", "10", "15", "30"];
 
+function SectionHeader({ title }: { title: string }) {
+  return (
+    <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+      {title}
+    </p>
+  );
+}
+
 export function StudentForm(props: {
   student?: Student;
   belts: BeltDto[];
@@ -253,11 +210,7 @@ export function StudentForm(props: {
   onClose: () => void;
 }) {
   const formId = useId();
-  const [error, setError] = useState<string | null>(null);
   const submitInFlightRef = useRef(false);
-  const [beltOpen, setBeltOpen] = useState(false);
-  const [gradeOpen, setGradeOpen] = useState(false);
-  const [guardianOpen, setGuardianOpen] = useState(false);
 
   const adultBelts = props.belts.filter((b) => b.path === "adult");
   const childBelts = props.belts.filter((b) => b.path === "child");
@@ -269,25 +222,25 @@ export function StudentForm(props: {
     defaultValues: studentToFormValues(props.student),
   });
 
-  const currentBeltId = form.watch("currentBeltId");
-  const currentDegree = form.watch("currentDegree");
-  const birthDate = form.watch("birthDate");
-  const guardianName = form.watch("guardianName");
-  const guardianPhone = form.watch("guardianPhone");
-  const guardianEmail = form.watch("guardianEmail");
-  const guardianRelationship = form.watch("guardianRelationship");
+  const {
+    control,
+    watch,
+    setValue,
+    handleSubmit,
+    formState: { errors, submitCount, isSubmitted },
+  } = form;
+
+  const currentBeltId = watch("currentBeltId");
+  const currentDegree = watch("currentDegree");
+  const birthDate = watch("birthDate");
+  const monthlyDueDay = watch("monthlyDueDay");
   const isMinor = isMinorBirthDate(birthDate);
-  const hasGuardianData = Boolean(
-    guardianName.trim() ||
-      guardianPhone.trim() ||
-      guardianEmail.trim() ||
-      guardianRelationship.trim(),
-  );
-  const shouldShowGuardianSection = isMinor || hasGuardianData;
   const selectedBelt = props.belts.find((b) => b.id === currentBeltId);
   const isBlackBelt = selectedBelt?.slug.includes("black") ?? false;
   const maxDegree = maxDegreeForBelt(selectedBelt);
   const degreeOptions = Array.from({ length: maxDegree + 1 }, (_, value) => value);
+
+  const hasErrors = Object.keys(errors).length > 0;
 
   function degreeLabel(value: number) {
     if (value === 0) return "Sem grau";
@@ -296,12 +249,10 @@ export function StudentForm(props: {
 
   function handleBeltChange(beltId: string) {
     const belt = props.belts.find((b) => b.id === beltId);
-    form.setValue("currentBeltId", beltId, { shouldValidate: true, shouldDirty: true });
-    // troca de faixa nao pode deixar grau acima do maximo da nova faixa
+    setValue("currentBeltId", beltId, { shouldValidate: true, shouldDirty: true });
     if (Number(form.getValues("currentDegree")) > maxDegreeForBelt(belt)) {
-      form.setValue("currentDegree", "0", { shouldDirty: true });
+      setValue("currentDegree", "0", { shouldDirty: true });
     }
-    setBeltOpen(false);
   }
 
   useEffect(() => {
@@ -309,18 +260,7 @@ export function StudentForm(props: {
     const values = studentToFormValues(props.student);
     form.reset(values);
     submitInFlightRef.current = false;
-    setGuardianOpen(isMinorBirthDate(values.birthDate) || Boolean(props.student?.guardian));
-    setError(null);
   }, [props.open, props.student, form]);
-
-  useEffect(() => {
-    if (isMinor) {
-      setGuardianOpen(true);
-      return;
-    }
-
-    if (!hasGuardianData) setGuardianOpen(false);
-  }, [isMinor, hasGuardianData]);
 
   const saveMutation = useMutation({
     mutationFn: async (input: StudentPayload) => {
@@ -332,18 +272,21 @@ export function StudentForm(props: {
         if (error) throw new Error(apiErrorMessage(error, "Não foi possível salvar o aluno."));
         return data;
       }
-
       const { data, error } = await api.POST("/students", { body: input });
       if (error) throw new Error(apiErrorMessage(error, "Não foi possível criar o aluno."));
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       props.onSubmit();
       props.onClose();
+      const name = data && "name" in data ? (data as { name: string }).name : undefined;
+      toast.success(props.student ? "Aluno atualizado" : "Aluno cadastrado", {
+        description: name ? `${name} foi adicionado com sucesso.` : undefined,
+      });
     },
     onError: (mutationError) => {
       submitInFlightRef.current = false;
-      setError(mutationError instanceof Error ? mutationError.message : "Erro ao salvar aluno.");
+      toast.error(mutationError instanceof Error ? mutationError.message : "Erro ao salvar aluno.");
     },
     onSettled: () => {
       submitInFlightRef.current = false;
@@ -353,14 +296,13 @@ export function StudentForm(props: {
   function submitForm(values: StudentFormValues) {
     if (submitInFlightRef.current) return;
     submitInFlightRef.current = true;
-    setError(null);
     saveMutation.mutate(toStudentPayload(values, Boolean(props.student)));
   }
 
   return (
     <Drawer direction="right" open={props.open} onOpenChange={(open) => !open && props.onClose()}>
       <DrawerContent className="data-[vaul-drawer-direction=right]:sm:max-w-2xl">
-        <form id={formId} className="flex h-full flex-col" onSubmit={form.handleSubmit(submitForm)}>
+        <form id={formId} className="flex h-full flex-col" onSubmit={handleSubmit(submitForm)}>
           <DrawerHeader>
             <DrawerTitle>{props.student ? "Editar aluno" : "Novo aluno"}</DrawerTitle>
             <DrawerDescription>
@@ -370,273 +312,412 @@ export function StudentForm(props: {
             </DrawerDescription>
           </DrawerHeader>
 
-          <div className="no-scrollbar flex-1 space-y-6 overflow-y-auto px-4">
-            <FieldGroup className="grid grid-cols-2 gap-4">
-              <Controller
-                name="name"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field className="col-span-2" data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor={`${formId}-name`}>Nome</FieldLabel>
-                    <Input
-                      {...field}
-                      id={`${formId}-name`}
-                      aria-invalid={fieldState.invalid}
-                      autoComplete="off"
-                      className="h-11 rounded-2xl px-3"
-                    />
-                    {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
-                  </Field>
-                )}
-              />
+          <div className="no-scrollbar flex-1 space-y-6 overflow-y-auto px-4 pb-2">
+            {/* Top error alert */}
+            {isSubmitted && hasErrors && (
+              <div className="flex items-center gap-2 rounded-[14px] border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                <AlertCircle className="size-4 shrink-0" />
+                Revise os campos destacados antes de salvar.
+              </div>
+            )}
 
-              <Controller
-                name="birthDate"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor={`${formId}-birth`}>Nascimento</FieldLabel>
-                    <DatePickerInput value={field.value} onChange={field.onChange} />
-                    {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
-                  </Field>
-                )}
-              />
+            {/* Dados pessoais */}
+            <section>
+              <SectionHeader title="Dados pessoais" />
+              <FieldGroup className="grid grid-cols-2 gap-4">
+                <Controller
+                  name="name"
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <Field className="col-span-2" data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor={`${formId}-name`}>
+                        Nome <span className="text-destructive">*</span>
+                      </FieldLabel>
+                      <Input
+                        {...field}
+                        id={`${formId}-name`}
+                        aria-invalid={fieldState.invalid}
+                        autoComplete="off"
+                        className="h-11 rounded-2xl px-3"
+                      />
+                      {fieldState.invalid ? (
+                        <FieldError errors={[fieldState.error]} />
+                      ) : fieldState.isDirty && !fieldState.invalid && isSubmitted ? (
+                        <p className="flex items-center gap-1 text-xs text-green-500">
+                          <CheckCircle2 className="size-3 shrink-0" /> Válido
+                        </p>
+                      ) : null}
+                    </Field>
+                  )}
+                />
 
-              <Controller
-                name="enrollmentDate"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor={`${formId}-enrollment`}>Matrícula</FieldLabel>
-                    <DatePickerInput value={field.value} onChange={field.onChange} />
-                    {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
-                  </Field>
-                )}
-              />
+                <Controller
+                  name="birthDate"
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor={`${formId}-birth`}>
+                        Nascimento <span className="text-destructive">*</span>
+                      </FieldLabel>
+                      <DatePickerInput value={field.value} onChange={field.onChange} />
+                      {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+                    </Field>
+                  )}
+                />
 
-              <Controller
-                name="phone"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor={`${formId}-phone`}>Telefone</FieldLabel>
-                    <Input
-                      id={`${formId}-phone`}
-                      name={field.name}
-                      ref={field.ref}
-                      onBlur={field.onBlur}
-                      value={maskPhone(field.value)}
-                      onChange={(event) => field.onChange(event.target.value.replace(/\D/g, ""))}
-                      aria-invalid={fieldState.invalid}
-                      placeholder="(00) 00000-0000"
-                      className="h-11 rounded-2xl px-3"
-                    />
-                    {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
-                  </Field>
-                )}
-              />
+                <Controller
+                  name="enrollmentDate"
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor={`${formId}-enrollment`}>Data de entrada</FieldLabel>
+                      <DatePickerInput value={field.value} onChange={field.onChange} />
+                      {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+                    </Field>
+                  )}
+                />
+              </FieldGroup>
+            </section>
 
-              <Controller
-                name="email"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor={`${formId}-email`}>Email</FieldLabel>
-                    <Input
-                      {...field}
-                      id={`${formId}-email`}
-                      type="email"
-                      aria-invalid={fieldState.invalid}
-                      className="h-11 rounded-2xl px-3"
-                    />
-                    {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
-                  </Field>
-                )}
-              />
+            {/* Contato */}
+            <section>
+              <SectionHeader title="Contato" />
+              <FieldGroup className="grid grid-cols-2 gap-4">
+                <Controller
+                  name="phone"
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor={`${formId}-phone`}>Telefone</FieldLabel>
+                      <Input
+                        id={`${formId}-phone`}
+                        name={field.name}
+                        ref={field.ref}
+                        onBlur={field.onBlur}
+                        value={maskPhone(field.value)}
+                        onChange={(event) => field.onChange(event.target.value.replace(/\D/g, ""))}
+                        aria-invalid={fieldState.invalid}
+                        placeholder="(00) 00000-0000"
+                        className="h-11 rounded-2xl px-3"
+                      />
+                      {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+                    </Field>
+                  )}
+                />
 
-              <Controller
-                name="monthlyAmount"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor={`${formId}-amount`}>Valor mensal (R$)</FieldLabel>
-                    <Input
-                      id={`${formId}-amount`}
-                      name={field.name}
-                      ref={field.ref}
-                      onBlur={field.onBlur}
-                      inputMode="numeric"
-                      placeholder="0,00"
-                      value={maskCurrency(field.value)}
-                      onChange={(event) => field.onChange(event.target.value.replace(/\D/g, ""))}
-                      aria-invalid={fieldState.invalid}
-                      className="h-11 rounded-2xl px-3"
-                    />
-                    {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
-                  </Field>
-                )}
-              />
+                <Controller
+                  name="email"
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor={`${formId}-email`}>Email</FieldLabel>
+                      <Input
+                        {...field}
+                        id={`${formId}-email`}
+                        type="email"
+                        aria-invalid={fieldState.invalid}
+                        className="h-11 rounded-2xl px-3"
+                      />
+                      {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+                    </Field>
+                  )}
+                />
+              </FieldGroup>
+            </section>
 
-              <Controller
-                name="monthlyDueDay"
-                control={form.control}
-                render={({ field }) => (
-                  <Field>
-                    <FieldLabel htmlFor={`${formId}-due-day`}>Dia de vencimento</FieldLabel>
-                    <div className="flex flex-nowrap">
-                      {DUE_DAYS.map((day, index) => {
-                        const selected = field.value === day;
-                        return (
-                          <Button
-                            key={day}
-                            type="button"
-                            variant={selected ? "default" : "outline"}
-                            size="lg"
-                            aria-pressed={selected}
-                            className={cn(
-                              "rounded-none border-r-0",
-                              index === 0 && "rounded-l-xl",
-                              index === DUE_DAYS.length - 1 && "rounded-r-xl border-r",
+            {/* Responsável (conditional: minor) */}
+            {isMinor && (
+              <section className="rounded-[14px] border border-border bg-muted/20 p-4">
+                <SectionHeader title="Responsável" />
+                <p className="mb-4 text-xs text-muted-foreground">
+                  Obrigatório para aluno menor de idade.
+                </p>
+                <FieldGroup className="grid grid-cols-2 gap-4">
+                  <Controller
+                    name="guardianName"
+                    control={control}
+                    render={({ field, fieldState }) => (
+                      <Field className="col-span-2" data-invalid={fieldState.invalid}>
+                        <FieldLabel htmlFor={`${formId}-guardian-name`}>
+                          Nome do responsável <span className="text-destructive">*</span>
+                        </FieldLabel>
+                        <Input
+                          {...field}
+                          id={`${formId}-guardian-name`}
+                          aria-invalid={fieldState.invalid}
+                          className="h-11 rounded-2xl px-3"
+                        />
+                        {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+                      </Field>
+                    )}
+                  />
+
+                  <Controller
+                    name="guardianPhone"
+                    control={control}
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <FieldLabel htmlFor={`${formId}-guardian-phone`}>
+                          Telefone <span className="text-destructive">*</span>
+                        </FieldLabel>
+                        <Input
+                          id={`${formId}-guardian-phone`}
+                          name={field.name}
+                          ref={field.ref}
+                          onBlur={field.onBlur}
+                          value={maskPhone(field.value)}
+                          onChange={(event) =>
+                            field.onChange(event.target.value.replace(/\D/g, ""))
+                          }
+                          aria-invalid={fieldState.invalid}
+                          placeholder="(00) 00000-0000"
+                          className="h-11 rounded-2xl px-3"
+                        />
+                        {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+                      </Field>
+                    )}
+                  />
+
+                  <Controller
+                    name="guardianEmail"
+                    control={control}
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <FieldLabel htmlFor={`${formId}-guardian-email`}>Email</FieldLabel>
+                        <Input
+                          {...field}
+                          id={`${formId}-guardian-email`}
+                          type="email"
+                          aria-invalid={fieldState.invalid}
+                          className="h-11 rounded-2xl px-3"
+                        />
+                        {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+                      </Field>
+                    )}
+                  />
+
+                  <Controller
+                    name="guardianRelationship"
+                    control={control}
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <FieldLabel htmlFor={`${formId}-guardian-relationship`}>
+                          Parentesco
+                        </FieldLabel>
+                        <Input
+                          {...field}
+                          id={`${formId}-guardian-relationship`}
+                          aria-invalid={fieldState.invalid}
+                          className="h-11 rounded-2xl px-3"
+                        />
+                        {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+                      </Field>
+                    )}
+                  />
+                </FieldGroup>
+              </section>
+            )}
+
+            {/* Mensalidade */}
+            <section>
+              <SectionHeader title="Mensalidade" />
+              <FieldGroup className="grid grid-cols-2 gap-4">
+                <Controller
+                  name="monthlyAmount"
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor={`${formId}-amount`}>Valor mensal</FieldLabel>
+                      <div className="relative">
+                        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                          R$
+                        </span>
+                        <Input
+                          id={`${formId}-amount`}
+                          name={field.name}
+                          ref={field.ref}
+                          onBlur={field.onBlur}
+                          inputMode="numeric"
+                          placeholder="0,00"
+                          value={maskCurrency(field.value)}
+                          onChange={(event) =>
+                            field.onChange(event.target.value.replace(/\D/g, ""))
+                          }
+                          aria-invalid={fieldState.invalid}
+                          className="h-11 rounded-2xl pl-9 pr-3"
+                        />
+                      </div>
+                      {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+                    </Field>
+                  )}
+                />
+
+                <Field>
+                  <FieldLabel>Dia de vencimento</FieldLabel>
+                  <div className="flex flex-nowrap">
+                    {DUE_DAYS.map((day, index) => {
+                      const selected = monthlyDueDay === day;
+                      return (
+                        <button
+                          key={day}
+                          type="button"
+                          aria-pressed={selected}
+                          onClick={() => setValue("monthlyDueDay", selected ? "" : day)}
+                          className={`h-11 flex-1 border text-sm font-medium transition ${
+                            index === 0 ? "rounded-l-2xl" : ""
+                          } ${index === DUE_DAYS.length - 1 ? "rounded-r-2xl" : "border-r-0"} ${
+                            selected
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-border bg-background text-foreground hover:border-primary/50"
+                          }`}
+                        >
+                          {day}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </Field>
+              </FieldGroup>
+            </section>
+
+            {/* Graduação */}
+            <section>
+              <SectionHeader title="Graduação" />
+              <FieldGroup className="grid grid-cols-2 gap-4">
+                <Controller
+                  name="currentBeltId"
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor={`${formId}-belt`}>
+                        Faixa <span className="text-destructive">*</span>
+                      </FieldLabel>
+                      <Select
+                        modal={false}
+                        value={field.value}
+                        onValueChange={(nextValue) => {
+                          if (nextValue) handleBeltChange(nextValue);
+                        }}
+                      >
+                        <SelectTrigger
+                          id={`${formId}-belt`}
+                          aria-invalid={fieldState.invalid}
+                          className="h-11 w-full rounded-2xl border-border bg-background px-3 text-foreground focus-visible:border-primary focus-visible:ring-primary/20"
+                        >
+                          <SelectValue placeholder="Selecione a faixa">
+                            {selectedBelt && (
+                              <span className="flex items-center gap-2">
+                                <BeltVisual
+                                  beltKey={beltKeyFromName(selectedBelt.name)}
+                                  degrees={0}
+                                  size="swatch"
+                                />
+                                {selectedBelt.name}
+                              </span>
                             )}
-                            onClick={() => field.onChange(selected ? "" : day)}
-                          >
-                            {day.padStart(2, "0")}
-                          </Button>
-                        );
-                      })}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent align="start" className="rounded-xl">
+                          <SelectGroup>
+                            <SelectLabel>Adulto</SelectLabel>
+                            {adultBelts.map((belt) => (
+                              <SelectItem key={belt.id} value={belt.id}>
+                                <span className="flex items-center gap-2">
+                                  <BeltVisual
+                                    beltKey={beltKeyFromName(belt.name)}
+                                    degrees={0}
+                                    size="swatch"
+                                  />
+                                  {belt.name}
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                          <SelectSeparator />
+                          <SelectGroup>
+                            <SelectLabel>Infantil</SelectLabel>
+                            {childBelts.map((belt) => (
+                              <SelectItem key={belt.id} value={belt.id}>
+                                <span className="flex items-center gap-2">
+                                  <BeltVisual
+                                    beltKey={beltKeyFromName(belt.name)}
+                                    degrees={0}
+                                    size="swatch"
+                                  />
+                                  {belt.name}
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                      {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+                    </Field>
+                  )}
+                />
+
+                <Controller
+                  name="currentDegree"
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor={`${formId}-degree`}>
+                        Grau <span className="text-destructive">*</span>
+                      </FieldLabel>
+                      <Select
+                        modal={false}
+                        value={field.value}
+                        onValueChange={(nextValue) => {
+                          if (nextValue) field.onChange(nextValue);
+                        }}
+                      >
+                        <SelectTrigger
+                          id={`${formId}-degree`}
+                          aria-invalid={fieldState.invalid}
+                          className="h-11 w-full rounded-2xl border-border bg-background px-3 text-foreground focus-visible:border-primary focus-visible:ring-primary/20"
+                        >
+                          <SelectValue placeholder="Selecione o grau">
+                            {degreeLabel(Number(currentDegree))}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent align="start" className="rounded-xl">
+                          {degreeOptions.map((value) => (
+                            <SelectItem key={value} value={String(value)}>
+                              {degreeLabel(value)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+                    </Field>
+                  )}
+                />
+
+                {selectedBelt && (
+                  <div className="col-span-2 flex items-center gap-3 rounded-[14px] border border-border bg-card p-3">
+                    <BeltVisual
+                      beltKey={beltKeyFromName(selectedBelt.name)}
+                      degrees={Number(currentDegree)}
+                      size="inline"
+                    />
+                    <div className="text-sm text-muted-foreground">
+                      {selectedBelt.name}
+                      {Number(currentDegree) > 0 && ` · ${degreeLabel(Number(currentDegree))}`}
                     </div>
-                  </Field>
+                  </div>
                 )}
-              />
+              </FieldGroup>
+            </section>
 
-              <Controller
-                name="currentBeltId"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor={`${formId}-belt`}>Faixa</FieldLabel>
-                    <Select
-                      modal={false}
-                      open={beltOpen}
-                      value={field.value}
-                      onOpenChange={setBeltOpen}
-                      onValueChange={(nextValue) => {
-                        if (nextValue) handleBeltChange(nextValue);
-                      }}
-                    >
-                      <SelectTrigger
-                        id={`${formId}-belt`}
-                        aria-invalid={fieldState.invalid}
-                        className="h-11 w-full rounded-2xl border-border bg-background px-3 text-foreground focus-visible:border-primary focus-visible:ring-primary/20"
-                        onPointerDown={(event) => {
-                          event.preventDefault();
-                          event.stopPropagation();
-                          setBeltOpen((current) => !current);
-                        }}
-                      >
-                        <SelectValue placeholder="Selecione a faixa">
-                          {selectedBelt?.name}
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent align="start" className="rounded-xl">
-                        <SelectGroup>
-                          <SelectLabel>Adulto</SelectLabel>
-                          {adultBelts.map((belt) => (
-                            <SelectItem
-                              key={belt.id}
-                              value={belt.id}
-                              onPointerDown={(event) => {
-                                event.preventDefault();
-                                event.stopPropagation();
-                                handleBeltChange(belt.id);
-                              }}
-                            >
-                              {belt.name}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                        <SelectSeparator />
-                        <SelectGroup>
-                          <SelectLabel>Infantil</SelectLabel>
-                          {childBelts.map((belt) => (
-                            <SelectItem
-                              key={belt.id}
-                              value={belt.id}
-                              onPointerDown={(event) => {
-                                event.preventDefault();
-                                event.stopPropagation();
-                                handleBeltChange(belt.id);
-                              }}
-                            >
-                              {belt.name}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                    {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
-                  </Field>
-                )}
-              />
-
-              <Controller
-                name="currentDegree"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor={`${formId}-degree`}>Grau</FieldLabel>
-                    <Select
-                      modal={false}
-                      open={gradeOpen}
-                      value={field.value}
-                      onOpenChange={setGradeOpen}
-                      onValueChange={(nextValue) => {
-                        if (nextValue) field.onChange(nextValue);
-                      }}
-                    >
-                      <SelectTrigger
-                        id={`${formId}-degree`}
-                        aria-invalid={fieldState.invalid}
-                        className="h-11 w-full rounded-2xl border-border bg-background px-3 text-foreground focus-visible:border-primary focus-visible:ring-primary/20"
-                        onPointerDown={(event) => {
-                          event.preventDefault();
-                          event.stopPropagation();
-                          setGradeOpen((current) => !current);
-                        }}
-                      >
-                        <SelectValue placeholder="Selecione o grau">
-                          {degreeLabel(Number(currentDegree))}
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent align="start" className="rounded-xl">
-                        {degreeOptions.map((value) => (
-                          <SelectItem
-                            key={value}
-                            value={String(value)}
-                            onPointerDown={(event) => {
-                              event.preventDefault();
-                              event.stopPropagation();
-                              field.onChange(String(value));
-                              setGradeOpen(false);
-                            }}
-                          >
-                            {degreeLabel(value)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
-                  </Field>
-                )}
-              />
-
-              {props.student ? (
+            {/* Status (edit only) */}
+            {props.student && (
+              <section>
+                <SectionHeader title="Status" />
                 <Controller
                   name="status"
-                  control={form.control}
+                  control={control}
                   render={({ field }) => (
                     <Field>
-                      <FieldLabel htmlFor={`${formId}-status`}>Status</FieldLabel>
                       <Select
                         modal={false}
                         value={field.value}
@@ -660,124 +741,8 @@ export function StudentForm(props: {
                     </Field>
                   )}
                 />
-              ) : null}
-            </FieldGroup>
-
-            {shouldShowGuardianSection ? (
-              <Collapsible
-                open={guardianOpen}
-                onOpenChange={setGuardianOpen}
-                className="group/guardian rounded-3xl border border-border bg-muted/30"
-              >
-                <FieldSet className="border-0 p-0">
-                  <CollapsibleTrigger
-                    className="flex w-full items-start justify-between gap-4 rounded-3xl p-4 text-left transition-colors hover:bg-muted/40"
-                    type="button"
-                  >
-                    <div>
-                      <FieldLegend>Responsável</FieldLegend>
-                      <FieldDescription>
-                        {isMinor
-                          ? "Obrigatório para aluno menor de idade."
-                          : "Dados opcionais já preenchidos para este aluno."}
-                      </FieldDescription>
-                    </div>
-                    <span className="mt-1 rounded-full border border-border px-2.5 py-1 text-xs font-medium text-muted-foreground transition-transform group-data-[state=open]/guardian:rotate-180">
-                      ▼
-                    </span>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="px-4 pb-4">
-                    <FieldGroup className="grid grid-cols-2 gap-4 border-t border-border/60 pt-4">
-                      <Controller
-                        name="guardianName"
-                        control={form.control}
-                        render={({ field, fieldState }) => (
-                          <Field className="col-span-2" data-invalid={fieldState.invalid}>
-                            <FieldLabel htmlFor={`${formId}-guardian-name`}>
-                              Nome do responsável
-                            </FieldLabel>
-                            <Input
-                              {...field}
-                              id={`${formId}-guardian-name`}
-                              aria-invalid={fieldState.invalid}
-                              className="h-11 rounded-2xl px-3"
-                            />
-                            {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
-                          </Field>
-                        )}
-                      />
-
-                      <Controller
-                        name="guardianPhone"
-                        control={form.control}
-                        render={({ field, fieldState }) => (
-                          <Field data-invalid={fieldState.invalid}>
-                            <FieldLabel htmlFor={`${formId}-guardian-phone`}>
-                              Telefone do responsável
-                            </FieldLabel>
-                            <Input
-                              id={`${formId}-guardian-phone`}
-                              name={field.name}
-                              ref={field.ref}
-                              onBlur={field.onBlur}
-                              value={maskPhone(field.value)}
-                              onChange={(event) =>
-                                field.onChange(event.target.value.replace(/\D/g, ""))
-                              }
-                              aria-invalid={fieldState.invalid}
-                              placeholder="(00) 00000-0000"
-                              className="h-11 rounded-2xl px-3"
-                            />
-                            {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
-                          </Field>
-                        )}
-                      />
-
-                      <Controller
-                        name="guardianEmail"
-                        control={form.control}
-                        render={({ field, fieldState }) => (
-                          <Field data-invalid={fieldState.invalid}>
-                            <FieldLabel htmlFor={`${formId}-guardian-email`}>
-                              Email do responsável
-                            </FieldLabel>
-                            <Input
-                              {...field}
-                              id={`${formId}-guardian-email`}
-                              type="email"
-                              aria-invalid={fieldState.invalid}
-                              className="h-11 rounded-2xl px-3"
-                            />
-                            {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
-                          </Field>
-                        )}
-                      />
-
-                      <Controller
-                        name="guardianRelationship"
-                        control={form.control}
-                        render={({ field, fieldState }) => (
-                          <Field data-invalid={fieldState.invalid}>
-                            <FieldLabel htmlFor={`${formId}-guardian-relationship`}>
-                              Parentesco
-                            </FieldLabel>
-                            <Input
-                              {...field}
-                              id={`${formId}-guardian-relationship`}
-                              aria-invalid={fieldState.invalid}
-                              className="h-11 rounded-2xl px-3"
-                            />
-                            {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
-                          </Field>
-                        )}
-                      />
-                    </FieldGroup>
-                  </CollapsibleContent>
-                </FieldSet>
-              </Collapsible>
-            ) : null}
-
-            {error ? <FieldError>{error}</FieldError> : null}
+              </section>
+            )}
           </div>
 
           <DrawerFooter>
