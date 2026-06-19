@@ -1,8 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { CreateMonthlyFeeInput, MonthlyFee } from "@tatamiq/contracts";
+import type { MonthlyFee } from "@tatamiq/contracts";
 import { type FormEvent, useMemo, useState } from "react";
 import { useAppShell } from "../../components/app-shell";
-import { useStudents } from "../../hooks/use-students";
 import { centsToReais, reaisToCents } from "../../lib/formatting";
 import { CreateMonthlyFeeDrawer } from "./create-monthly-fee-drawer";
 import { MonthlyFeeActionDrawer } from "./monthly-fee-action-drawer";
@@ -21,17 +20,9 @@ import {
   rejectMonthlyFeeReceipt,
   waiveMonthlyFee,
 } from "./monthly-fees-queries";
-import type { FeeFormState, FeeStatusFilter, MonthlyFeeActionType } from "./monthly-fees-types";
+import type { FeeStatusFilter, MonthlyFeeActionType } from "./monthly-fees-types";
 import { ReceiptReviewDrawer } from "./receipt-review-drawer";
 import { activePendingReceipt } from "./receipt-state";
-
-const emptyForm: FeeFormState = {
-  studentId: "",
-  referenceYear: new Date().getFullYear().toString(),
-  referenceMonth: (new Date().getMonth() + 1).toString(),
-  amountInCents: "",
-  dueDay: "",
-};
 
 export function MonthlyFeesPage() {
   const queryClient = useQueryClient();
@@ -42,8 +33,6 @@ export function MonthlyFeesPage() {
     return isFeeStatusFilter(status) ? status : "all";
   });
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [form, setForm] = useState<FeeFormState>(emptyForm);
-  const [error, setError] = useState<string | null>(null);
   const [detailFeeId, setDetailFeeId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
 
@@ -53,30 +42,12 @@ export function MonthlyFeesPage() {
     enabled: !!activeAcademyId,
   });
 
-  const studentsQuery = useStudents("active", undefined, {
-    academyId: activeAcademyId,
-    enabled: isFormOpen && !!activeAcademyId,
-  });
-
   const detailQuery = useQuery({
     queryKey: monthlyFeesKeys.detail(activeAcademyId, detailFeeId),
     enabled: detailFeeId !== null && !!activeAcademyId,
     queryFn: () => {
       if (!detailFeeId) throw new Error("Mensalidade inválida.");
       return fetchMonthlyFeeDetail(detailFeeId);
-    },
-  });
-
-  const createMutation = useMutation({
-    mutationFn: (input: CreateMonthlyFeeInput) => createMonthlyFee(input),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: monthlyFeesKeys.all(activeAcademyId) });
-      closeForm();
-    },
-    onError: (mutationError) => {
-      setError(
-        mutationError instanceof Error ? mutationError.message : "Erro ao criar mensalidade.",
-      );
     },
   });
 
@@ -166,53 +137,7 @@ export function MonthlyFeesPage() {
   }
 
   function openCreateForm() {
-    setForm(emptyForm);
-    setError(null);
     setIsFormOpen(true);
-  }
-
-  function closeForm() {
-    setIsFormOpen(false);
-    setError(null);
-  }
-
-  function updateForm(field: keyof FeeFormState, value: string) {
-    setForm((current) => ({ ...current, [field]: value }));
-  }
-
-  function onStudentSelect(studentId: string) {
-    const student = studentsQuery.data?.students.find((s) => s.id === studentId);
-    if (student) {
-      setForm((current) => ({
-        ...current,
-        studentId,
-        amountInCents: student.monthlyAmountInCents
-          ? centsToReais(student.monthlyAmountInCents)
-          : "",
-        dueDay: student.monthlyDueDay?.toString() ?? "",
-      }));
-    } else {
-      updateForm("studentId", studentId);
-    }
-  }
-
-  function submitForm(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(null);
-
-    const amountInCents = reaisToCents(form.amountInCents);
-    if (!amountInCents || amountInCents <= 0) {
-      setError("Informe um valor válido.");
-      return;
-    }
-
-    createMutation.mutate({
-      studentId: form.studentId,
-      referenceYear: Number(form.referenceYear),
-      referenceMonth: Number(form.referenceMonth),
-      amountInCents,
-      dueDay: Number(form.dueDay),
-    });
   }
 
   return (
@@ -222,20 +147,7 @@ export function MonthlyFeesPage() {
         onCreate={openCreateForm}
       />
 
-      <CreateMonthlyFeeDrawer
-        open={isFormOpen}
-        form={form}
-        studentOptions={(studentsQuery.data?.students ?? []).map((student) => ({
-          value: student.id,
-          label: student.name,
-        }))}
-        error={error}
-        creating={createMutation.isPending}
-        onClose={closeForm}
-        onSubmit={submitForm}
-        onStudentSelect={onStudentSelect}
-        onFormChange={updateForm}
-      />
+      <CreateMonthlyFeeDrawer open={isFormOpen} onClose={() => setIsFormOpen(false)} />
       <MonthlyFeesList
         fees={fees}
         loading={feesQuery.isLoading}
