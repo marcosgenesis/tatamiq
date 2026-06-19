@@ -93,6 +93,12 @@ export function usePreRegistrationsWorkflow() {
       });
       setRejectingId(null);
       setRejectReason("");
+      toast.success("Solicitação rejeitada.");
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Não foi possível rejeitar a solicitação.",
+      );
     },
   });
 
@@ -122,6 +128,30 @@ export function usePreRegistrationsWorkflow() {
         queryKey: academyQueryKey(activeAcademyId, "students", "pre-registrations"),
       });
       setApprovingId(null);
+      toast.success("Solicitação aprovada.");
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Não foi possível aprovar a solicitação.",
+      );
+    },
+  });
+
+  const generateFirstAccessLinkMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { data, error } = await api.POST(
+        "/students/pre-registrations/{id}/generate-first-access-link",
+        { params: { path: { id } } },
+      );
+      if (error || !data) throw new Error("Não foi possível gerar o link.");
+      return { requestId: id, firstAccessLink: data.firstAccessLink };
+    },
+    onSuccess: (data) => {
+      setApprovalResult(data);
+      copyFirstAccessLink(data.firstAccessLink);
+    },
+    onError: () => {
+      toast.error("Falha ao gerar link de primeiro acesso");
     },
   });
 

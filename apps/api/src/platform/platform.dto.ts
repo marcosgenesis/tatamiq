@@ -69,16 +69,13 @@ export class PlatformAcademyDetailDto extends PlatformAcademySummaryDto {
   instagram!: string | null;
 }
 
-export class ProvisionAcademyBodyDto {
-  @ApiProperty({ type: String })
-  academyName!: string;
+const provisionAcademyBodySchema = z.object({
+  academyName: z.string(),
+  ownerEmail: z.string(),
+  ownerName: z.string().optional(),
+});
 
-  @ApiProperty({ type: String })
-  ownerEmail!: string;
-
-  @ApiProperty({ type: String, required: false })
-  ownerName?: string;
-}
+export class ProvisionAcademyBodyDto extends createZodDto(provisionAcademyBodySchema) {}
 
 export class ProvisionAcademyResultDto {
   @ApiProperty({ type: () => PlatformAcademyDetailDto })
@@ -94,13 +91,12 @@ export class ProvisionAcademyResultDto {
   firstAccessLink!: string | null;
 }
 
-export class TransferAcademyBodyDto {
-  @ApiProperty({ type: String })
-  ownerEmail!: string;
+const transferAcademyBodySchema = z.object({
+  ownerEmail: z.string(),
+  ownerName: z.string().optional(),
+});
 
-  @ApiProperty({ type: String, required: false })
-  ownerName?: string;
-}
+export class TransferAcademyBodyDto extends createZodDto(transferAcademyBodySchema) {}
 
 export class TransferAcademyResultDto extends ProvisionAcademyResultDto {}
 
@@ -115,10 +111,13 @@ export class ReservedFirstAccessPreviewDto {
   email!: string | null;
 }
 
-export class CompleteReservedFirstAccessBodyDto {
-  @ApiProperty({ type: String })
-  password!: string;
-}
+const completeReservedFirstAccessBodySchema = z.object({
+  password: z.string(),
+});
+
+export class CompleteReservedFirstAccessBodyDto extends createZodDto(
+  completeReservedFirstAccessBodySchema,
+) {}
 
 export class CompleteReservedFirstAccessResponseDto {
   @ApiProperty({ type: Boolean })
@@ -502,10 +501,11 @@ export class PlatformUserDetailDto extends PlatformUserSummaryDto {
   activeSessions!: number;
 }
 
-export class PlatformBanUserBodyDto {
-  @ApiProperty({ type: String, required: false })
-  reason?: string;
-}
+const platformBanUserBodySchema = z.object({
+  reason: z.string().optional(),
+});
+
+export class PlatformBanUserBodyDto extends createZodDto(platformBanUserBodySchema) {}
 
 export class PlatformActionResultDto {
   @ApiProperty({ type: Boolean })
@@ -546,19 +546,14 @@ export class PlatformUserDeletionImpactDto {
   isPlatformAdmin!: boolean;
 }
 
-export class PlatformDeleteUserBodyDto {
-  @ApiProperty({ type: String, enum: ["definitive", "preserve_history"] })
-  mode!: "definitive" | "preserve_history";
+const platformDeleteUserBodySchema = z.object({
+  mode: z.enum(["definitive", "preserve_history"]),
+  ownerResolution: z.enum(["keep_ownerless", "transfer"]).optional(),
+  transferOwnerEmail: z.string().optional(),
+  transferOwnerName: z.string().optional(),
+});
 
-  @ApiProperty({ type: String, enum: ["keep_ownerless", "transfer"], required: false })
-  ownerResolution?: "keep_ownerless" | "transfer";
-
-  @ApiProperty({ type: String, required: false })
-  transferOwnerEmail?: string;
-
-  @ApiProperty({ type: String, required: false })
-  transferOwnerName?: string;
-}
+export class PlatformDeleteUserBodyDto extends createZodDto(platformDeleteUserBodySchema) {}
 
 export class PlatformAdministratorDto {
   @ApiProperty({ type: String })
@@ -591,13 +586,14 @@ export class PlatformAdministratorsResponseDto {
   pagination!: PlatformPaginationDto;
 }
 
-export class AddPlatformAdministratorBodyDto {
-  @ApiProperty({ type: String })
-  email!: string;
+const addPlatformAdministratorBodySchema = z.object({
+  email: z.string(),
+  name: z.string().optional(),
+});
 
-  @ApiProperty({ type: String, required: false })
-  name?: string;
-}
+export class AddPlatformAdministratorBodyDto extends createZodDto(
+  addPlatformAdministratorBodySchema,
+) {}
 
 export class AddPlatformAdministratorResultDto {
   @ApiProperty({ type: () => PlatformAdministratorDto })

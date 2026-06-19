@@ -282,6 +282,21 @@ describe("PreRegistrationService", () => {
     ).rejects.toThrow("Já existe uma solicitação em análise para este email.");
   });
 
+  it("blocks pre-registration when the email already belongs to a platform account", async () => {
+    // findOpenRequestByEmail -> none pending; findAuthUserByEmail -> existing platform user
+    mock.setSelectResults([[], [{ id: "user-1", name: "Já Existe", email: "taken@example.com" }]]);
+
+    await expect(
+      service.createRequest("public-token", {
+        name: "Aluno Teste",
+        birthDate: "2000-01-01",
+        phone: "11999999999",
+        email: "TAKEN@example.com",
+        consentAccepted: true,
+      }),
+    ).rejects.toThrow("Este email já está em uso na plataforma.");
+  });
+
   it("enriches the instructor queue with summary, duplicate student, and instructor-account warnings", async () => {
     const duplicateRequest = {
       ...requestRow,

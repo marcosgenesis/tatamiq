@@ -121,6 +121,11 @@ export class PreRegistrationService {
       throw new ConflictException("Já existe uma solicitação em análise para este email.");
     }
 
+    const existingAccount = await this.findAuthUserByEmail(normalizedEmail);
+    if (existingAccount) {
+      throw new ConflictException("Este email já está em uso na plataforma.");
+    }
+
     const duplicateStudent = await this.findDuplicateStudent(
       organizationId,
       input.name,

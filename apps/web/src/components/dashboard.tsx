@@ -8,10 +8,6 @@ import { DashboardStats } from "@/components/stats";
 export function Dashboard() {
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="font-semibold text-2xl tracking-tight">Painel</h1>
-      </header>
-
       <div className="grid grid-cols-1 gap-px bg-border md:grid-cols-2 lg:grid-cols-4">
         <DashboardStats />
         <WeeklyAttendanceChart />
