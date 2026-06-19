@@ -6,7 +6,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import type { Student } from "@tatamiq/contracts";
-import { AlertCircle, Download, MoreHorizontal, PlusCircle, UploadCloud } from "lucide-react";
+import { AlertCircle, MoreHorizontal, PlusCircle, UploadCloud } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DataGrid, DataGridContainer } from "@/components/reui/data-grid/data-grid";
@@ -35,11 +35,6 @@ import { StudentForm } from "./components/student-form";
 import { PreRegistrationsTab } from "./pre-registrations-tab";
 
 type StudentsTab = "students" | "pre-registrations";
-
-function exportStudentsCsvUrl(): string {
-  const baseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3100";
-  return `${baseUrl}/students/export.csv`;
-}
 
 export function StudentsPage() {
   const queryClient = useQueryClient();
@@ -300,12 +295,6 @@ export function StudentsPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2 sm:justify-end">
-          <Button variant="outline" onClick={() => window.open(exportStudentsCsvUrl(), "_blank")}>
-            <Download className="size-4" /> Exportar CSV
-          </Button>
-          <Button variant="outline" onClick={() => setIsImportOpen(true)}>
-            <UploadCloud className="size-4" /> Importar CSV
-          </Button>
           <Button onClick={openCreateForm}>
             <PlusCircle className="size-4" /> Novo aluno
           </Button>
