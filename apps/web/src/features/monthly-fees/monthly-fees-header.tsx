@@ -1,7 +1,12 @@
-import { Download04Icon, PlusSignIcon } from "hugeicons-react";
+import { Download04Icon, PlusSignIcon, RefreshIcon } from "hugeicons-react";
 import { Button } from "../../components/ui/button";
 
-export function MonthlyFeesHeader(props: { onExportCsv: () => void; onCreate: () => void }) {
+export function MonthlyFeesHeader(props: {
+  generatingMissing: boolean;
+  onExportCsv: () => void;
+  onCreate: () => void;
+  onGenerateMissing: () => void;
+}) {
   return (
     <div className="flex justify-between items-center">
       <div>
@@ -14,6 +19,14 @@ export function MonthlyFeesHeader(props: { onExportCsv: () => void; onCreate: ()
         </p>
       </div>
       <div className="flex gap-2">
+        <Button
+          variant="secondary"
+          onClick={props.onGenerateMissing}
+          disabled={props.generatingMissing}
+        >
+          <RefreshIcon className="size-4" />
+          {props.generatingMissing ? "Verificando..." : "Gerar faltantes"}
+        </Button>
         <Button variant="secondary" onClick={props.onExportCsv}>
           <Download04Icon className="size-4" /> Exportar CSV
         </Button>

@@ -19,7 +19,17 @@ export class EmailService {
 
     const resendApiKey = process.env.RESEND_API_KEY;
     if (!resendApiKey) {
-      console.log({ event: "email_dev_fallback", ...emailPayload });
+      if (!isLocalEmailFallbackAllowed(process.env)) {
+        throw new BadRequestException("Envio de email não configurado.");
+      }
+
+      console.log({
+        event: "email_dev_fallback",
+        from: emailPayload.from,
+        to: emailPayload.to,
+        subject: emailPayload.subject,
+        htmlLength: emailPayload.html.length,
+      });
       return;
     }
 
@@ -42,4 +52,9 @@ export class EmailService {
 
 function emailFrom(): string {
   return process.env.EMAIL_FROM ?? "Tatamiq <noreply@tatamiq.com.br>";
+}
+
+function isLocalEmailFallbackAllowed(env: NodeJS.ProcessEnv): boolean {
+  const nodeEnv = env.NODE_ENV?.trim().toLowerCase();
+  return !nodeEnv || nodeEnv === "development" || nodeEnv === "test" || env.E2E === "true";
 }

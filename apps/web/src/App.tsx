@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createRootRoute,
   createRoute,
@@ -9,50 +9,18 @@ import {
   useNavigate,
 } from "@tanstack/react-router";
 import { CheckmarkSquare03Icon } from "hugeicons-react";
-import { useEffect } from "react";
+import { LogOut, Timer, VenetianMask } from "lucide-react";
+import { type ComponentType, lazy, Suspense, useEffect, useRef, useState } from "react";
 import { AppShell } from "./components/app-shell";
 import { LogoIcon } from "./components/logo";
 import { Button } from "./components/ui/button";
 import { Toaster } from "./components/ui/sonner";
-import { AcademyOnboardingPage } from "./features/auth/academy-onboarding-page";
-import {
-  ForgotPasswordPage,
-  ResetPasswordPage,
-  SignInPage,
-  SignUpPage,
-} from "./features/auth/auth-pages";
-import { ClassGroupsPage } from "./features/class-groups/class-groups-page";
-import { ActiveClassPage } from "./features/classes/active-class-page";
-import { DashboardPage } from "./features/dashboard/dashboard-page";
-import { GraduationPage } from "./features/graduation/graduation-page";
-import { MonthlyFeesPage } from "./features/monthly-fees/monthly-fees-page";
 import { PlaceholderPage } from "./features/placeholder/placeholder-page";
-import { PlatformAcademiesPage } from "./features/platform/platform-academies-page";
-import { PlatformAcademyPage } from "./features/platform/platform-academy-page";
-import { PlatformAdministratorsPage } from "./features/platform/platform-administrators-page";
-import { PlatformAuditPage } from "./features/platform/platform-audit-page";
-import { PlatformFirstAccessPage } from "./features/platform/platform-first-access-page";
-import { PlatformPage } from "./features/platform/platform-page";
 import {
   currentPlatformSupportQuery,
   endPlatformSupport,
   platformMeQuery,
 } from "./features/platform/platform-queries";
-import { PlatformUserDetailPage } from "./features/platform/platform-user-detail-page";
-import { PlatformUsersPage } from "./features/platform/platform-users-page";
-import { SchedulePage } from "./features/schedule/schedule-page";
-import { SettingsPage } from "./features/settings/settings-page";
-import { AcceptStudentInvitePage } from "./features/student-access/accept-student-invite-page";
-import { ChooseAreaPage } from "./features/student-access/choose-area-page";
-import { StudentCheckInPage } from "./features/student-access/student-check-in-page";
-import { StudentDashboardPage } from "./features/student-access/student-dashboard-page";
-import {
-  StudentAttendancePage,
-  StudentGraduationPage,
-} from "./features/student-access/student-drilldown-pages";
-import { FirstAccessPage } from "./features/students/first-access-page";
-import { PreRegistrationPage } from "./features/students/pre-registration-page";
-import { StudentsPage } from "./features/students/students-page";
 import { ThemeProvider } from "./hooks/use-theme";
 import "./index.css";
 import { authClient } from "./lib/auth-client";
@@ -64,6 +32,123 @@ type OrganizationSummary = {
   name: string;
   logo?: string | null | undefined;
 };
+
+const SignInPage = lazyRoute(() => import("./features/auth/auth-pages"), "SignInPage");
+const SignUpPage = lazyRoute(() => import("./features/auth/auth-pages"), "SignUpPage");
+const ForgotPasswordPage = lazyRoute(
+  () => import("./features/auth/auth-pages"),
+  "ForgotPasswordPage",
+);
+const ResetPasswordPage = lazyRoute(
+  () => import("./features/auth/auth-pages"),
+  "ResetPasswordPage",
+);
+const AcceptStudentInvitePage = lazyRoute<{ token: string }>(
+  () => import("./features/student-access/accept-student-invite-page"),
+  "AcceptStudentInvitePage",
+);
+const StudentCheckInPage = lazyRoute(
+  () => import("./features/student-access/student-check-in-page"),
+  "StudentCheckInPage",
+);
+const PreRegistrationPage = lazyRoute<{ token: string }>(
+  () => import("./features/students/pre-registration-page"),
+  "PreRegistrationPage",
+);
+const FirstAccessPage = lazyRoute<{ token: string }>(
+  () => import("./features/students/first-access-page"),
+  "FirstAccessPage",
+);
+const PlatformFirstAccessPage = lazyRoute<{ token: string }>(
+  () => import("./features/platform/platform-first-access-page"),
+  "PlatformFirstAccessPage",
+);
+const ChooseAreaPage = lazyRoute(
+  () => import("./features/student-access/choose-area-page"),
+  "ChooseAreaPage",
+);
+const StudentDashboardPage = lazyRoute(
+  () => import("./features/student-access/student-dashboard-page"),
+  "StudentDashboardPage",
+);
+const StudentAttendancePage = lazyRoute(
+  () => import("./features/student-access/student-drilldown-pages"),
+  "StudentAttendancePage",
+);
+const StudentGraduationPage = lazyRoute(
+  () => import("./features/student-access/student-drilldown-pages"),
+  "StudentGraduationPage",
+);
+const AcademyOnboardingPage = lazyRoute(
+  () => import("./features/auth/academy-onboarding-page"),
+  "AcademyOnboardingPage",
+);
+const PlatformPage = lazyRoute(() => import("./features/platform/platform-page"), "PlatformPage");
+const PlatformAuditPage = lazyRoute(
+  () => import("./features/platform/platform-audit-page"),
+  "PlatformAuditPage",
+);
+const PlatformAdministratorsPage = lazyRoute(
+  () => import("./features/platform/platform-administrators-page"),
+  "PlatformAdministratorsPage",
+);
+const PlatformAcademiesPage = lazyRoute(
+  () => import("./features/platform/platform-academies-page"),
+  "PlatformAcademiesPage",
+);
+const PlatformAcademyPage = lazyRoute<{ academyId: string }>(
+  () => import("./features/platform/platform-academy-page"),
+  "PlatformAcademyPage",
+);
+const PlatformUsersPage = lazyRoute(
+  () => import("./features/platform/platform-users-page"),
+  "PlatformUsersPage",
+);
+const PlatformUserDetailPage = lazyRoute<{ userId: string }>(
+  () => import("./features/platform/platform-user-detail-page"),
+  "PlatformUserDetailPage",
+);
+const DashboardPage = lazyRoute(
+  () => import("./features/dashboard/dashboard-page"),
+  "DashboardPage",
+);
+const StudentsPage = lazyRoute(() => import("./features/students/students-page"), "StudentsPage");
+const ClassGroupsPage = lazyRoute(
+  () => import("./features/class-groups/class-groups-page"),
+  "ClassGroupsPage",
+);
+const SchedulePage = lazyRoute(() => import("./features/schedule/schedule-page"), "SchedulePage");
+const ActiveClassPage = lazyRoute<{ classId: string }>(
+  () => import("./features/classes/active-class-page"),
+  "ActiveClassPage",
+);
+const GraduationPage = lazyRoute(
+  () => import("./features/graduation/graduation-page"),
+  "GraduationPage",
+);
+const MonthlyFeesPage = lazyRoute(
+  () => import("./features/monthly-fees/monthly-fees-page"),
+  "MonthlyFeesPage",
+);
+const SettingsPage = lazyRoute(() => import("./features/settings/settings-page"), "SettingsPage");
+
+function lazyRoute<TProps extends object = Record<string, never>>(
+  loader: () => Promise<Record<string, unknown>>,
+  exportName: string,
+) {
+  const Component = lazy(async () => {
+    const module = await loader();
+    return { default: module[exportName] as ComponentType<TProps> };
+  });
+
+  return function LazyRouteComponent(props: TProps) {
+    return (
+      <Suspense fallback={<LoadingScreen />}>
+        <Component {...props} />
+      </Suspense>
+    );
+  };
+}
 
 // --- Root ---
 
@@ -368,6 +453,7 @@ function RootLayout() {
 
 function PublicLayout() {
   const session = authClient.useSession();
+  if (session.isPending) return <LoadingScreen />;
   if (session.data) return <AuthenticatedRedirect />;
   return <Outlet />;
 }
@@ -391,6 +477,7 @@ function InstructorLayout() {
   const session = authClient.useSession();
   const organizations = authClient.useListOrganizations();
   const activeOrganization = authClient.useActiveOrganization();
+  const [switchingAcademyId, setSwitchingAcademyId] = useState<string | null>(null);
 
   const firstOrganization = organizations.data?.[0] as OrganizationSummary | undefined;
   const activeAcademy = activeOrganization.data as OrganizationSummary | null | undefined;
@@ -409,8 +496,11 @@ function InstructorLayout() {
   }, [session.data, activeAcademy, firstOrganization, activeOrganization.refetch]);
 
   if (!session.data) return <Navigate to="/sign-in" />;
-  if (organizations.isPending || activeOrganization.isPending) return <LoadingScreen />;
+  if (organizations.isPending || activeOrganization.isPending || switchingAcademyId) {
+    return <LoadingScreen />;
+  }
   if (!firstOrganization) return <Navigate to="/onboarding/academy" />;
+  if (!activeAcademy) return <LoadingScreen />;
 
   const allAcademies = (organizations.data ?? []).map((org: OrganizationSummary) => ({
     id: org.id,
@@ -418,13 +508,23 @@ function InstructorLayout() {
     logo: org.logo,
   }));
 
-  const currentAcademy = activeAcademy
-    ? { id: activeAcademy.id, name: activeAcademy.name, logo: activeAcademy.logo }
-    : { id: firstOrganization.id, name: firstOrganization.name, logo: firstOrganization.logo };
+  const currentAcademy = {
+    id: activeAcademy.id,
+    name: activeAcademy.name,
+    logo: activeAcademy.logo,
+  };
 
   async function switchAcademy(orgId: string) {
-    await authClient.organization.setActive({ organizationId: orgId });
-    await activeOrganization.refetch();
+    if (orgId === currentAcademy.id) return;
+    setSwitchingAcademyId(orgId);
+    queryClient.clear();
+    try {
+      await authClient.organization.setActive({ organizationId: orgId });
+      await Promise.all([organizations.refetch(), activeOrganization.refetch()]);
+      queryClient.clear();
+    } finally {
+      setSwitchingAcademyId(null);
+    }
   }
 
   function refreshAcademies() {
@@ -434,6 +534,7 @@ function InstructorLayout() {
 
   async function signOut() {
     await authClient.signOut();
+    queryClient.clear();
     await navigate({ to: "/sign-in" });
   }
 
@@ -461,7 +562,8 @@ function InstructorLayout() {
 
 function SupportBanner() {
   const navigate = useNavigate();
-  const support = useQuery(currentPlatformSupportQuery());
+  const session = authClient.useSession();
+  const support = useQuery(currentPlatformSupportQuery(session.data?.user.id));
 
   if (!support.data) return null;
 
@@ -473,34 +575,90 @@ function SupportBanner() {
     await navigate({ to: "/platform" });
   }
 
+  const adminName = support.data.adminName ?? "Administrador";
+  const expiresAt = new Intl.DateTimeFormat("pt-BR", { timeStyle: "short" }).format(
+    new Date(support.data.expiresAt),
+  );
+
   return (
-    <div className="border-b border-amber-300 bg-amber-50 px-4 py-3 text-amber-950">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
-        <div>
-          <p className="font-semibold text-sm">Suporte Assistido ativo</p>
-          <p className="text-sm">
-            Você está operando como cliente em nome de {support.data.adminName ?? "Administrador"}.
-            Expira às{" "}
-            {new Intl.DateTimeFormat("pt-BR", { timeStyle: "short" }).format(
-              new Date(support.data.expiresAt),
-            )}
-            .
-          </p>
+    <div className="border-amber-200 border-b bg-amber-50 px-4 py-3 sm:px-6 dark:border-amber-400/20 dark:bg-[#1c1402]">
+      <div className="mx-auto flex max-w-7xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+        <div className="flex items-start gap-3">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-[10px] border border-amber-200 bg-amber-100 dark:border-amber-400/20 dark:bg-amber-400/8">
+            <VenetianMask className="size-4.5 text-amber-600 dark:text-amber-400" />
+          </span>
+          <div className="space-y-0.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="font-semibold text-sm text-amber-950 dark:text-zinc-50">
+                Suporte assistido ativo
+              </p>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-100 px-2 py-0.5 dark:border-amber-400/20 dark:bg-amber-400/10">
+                <span className="size-1.5 rounded-full bg-amber-500 dark:bg-amber-400" />
+                <span className="font-bold text-[10px] text-amber-800 tracking-wide dark:text-amber-400">
+                  AO VIVO
+                </span>
+              </span>
+            </div>
+            <p className="text-[13px] text-amber-900/80 dark:text-amber-100/70">
+              Você está operando como cliente em nome de {adminName}.
+            </p>
+          </div>
         </div>
-        <Button variant="outline" onClick={endSupport}>
-          Encerrar suporte
-        </Button>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-amber-200 bg-white/60 px-2.5 py-1.5 dark:border-white/10 dark:bg-white/5">
+            <Timer className="size-3.5 text-amber-600/70 dark:text-amber-100/50" />
+            <span className="text-[12.5px] text-amber-900 dark:text-amber-50/85">
+              Expira às {expiresAt}
+            </span>
+          </span>
+          <Button
+            variant="outline"
+            onClick={endSupport}
+            className="flex-1 gap-1.5 border-amber-300 bg-amber-100/50 text-amber-700 hover:bg-amber-100 hover:text-amber-800 sm:flex-none dark:border-amber-400/30 dark:bg-amber-400/6 dark:text-amber-400 dark:hover:bg-amber-400/15 dark:hover:text-amber-300"
+          >
+            <LogOut className="size-3.5" />
+            Encerrar suporte
+          </Button>
+        </div>
       </div>
     </div>
   );
 }
 
 function usePlatformAccess(): "loading" | "allowed" | "denied" {
-  const platform = useQuery(platformMeQuery());
+  const session = authClient.useSession();
+  const platform = useQuery({
+    ...platformMeQuery(session.data?.user.id),
+    enabled: !!session.data?.user.id,
+  });
 
-  if (platform.isLoading) return "loading";
+  if (session.isPending || platform.isLoading) return "loading";
   if (platform.isSuccess) return "allowed";
   return "denied";
+}
+
+export function cacheIdentityKey(userId: string | null | undefined) {
+  return userId ?? "anonymous";
+}
+
+function SessionCacheBoundary() {
+  const queryClientFromProvider = useQueryClient();
+  const session = authClient.useSession();
+  const identity = cacheIdentityKey(session.data?.user.id);
+  const previousIdentityRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (session.isPending) return;
+    if (previousIdentityRef.current === null) {
+      previousIdentityRef.current = identity;
+      return;
+    }
+    if (previousIdentityRef.current === identity) return;
+    previousIdentityRef.current = identity;
+    queryClientFromProvider.clear();
+  }, [identity, queryClientFromProvider, session.isPending]);
+
+  return null;
 }
 
 function LoadingScreen() {
@@ -518,6 +676,7 @@ export function App() {
   return (
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
+        <SessionCacheBoundary />
         <RouterProvider router={router} />
         <Toaster />
       </QueryClientProvider>

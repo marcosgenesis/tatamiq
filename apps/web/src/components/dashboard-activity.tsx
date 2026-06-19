@@ -1,12 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { Calendar03Icon, UserMultipleIcon } from "hugeicons-react";
 import { api } from "@/api";
+import { useAppShell } from "@/components/app-shell";
 import { DashboardCard } from "@/components/dashboard-card";
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { academyQueryKey } from "../lib/academy-query-keys";
 
 export function DashboardActivity() {
+  const { activeAcademy } = useAppShell();
+  const activeAcademyId = activeAcademy.id;
   const todayQuery = useQuery({
-    queryKey: ["schedule", "today"],
+    queryKey: academyQueryKey(activeAcademyId, "schedule", "today"),
     queryFn: async () => {
       const { data, error } = await api.GET("/schedule/today");
       if (error) return null;

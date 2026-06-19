@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Alert02Icon, ArrowRight01Icon, CheckmarkCircle02Icon } from "hugeicons-react";
 import { api } from "@/api";
+import { useAppShell } from "@/components/app-shell";
 import { DashboardCard } from "@/components/dashboard-card";
 import { Button } from "@/components/ui/button";
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,10 +14,13 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { academyQueryKey } from "../lib/academy-query-keys";
 
 export function BillingHealth() {
+  const { activeAcademy } = useAppShell();
+  const activeAcademyId = activeAcademy.id;
   const feesQuery = useQuery({
-    queryKey: ["monthly-fees", "dashboard-summary"],
+    queryKey: academyQueryKey(activeAcademyId, "monthly-fees", "dashboard-summary"),
     queryFn: async () => {
       const { data, error } = await api.GET("/monthly-fees", { params: { query: {} } });
       if (error) return null;

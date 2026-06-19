@@ -61,7 +61,7 @@ describe("weekly agenda projection", () => {
         id: "cg-1:sched-mon:2026-05-18",
         source: "recurring",
         status: "scheduled",
-        scheduledStartAt: "2026-05-18T08:00:00.000Z",
+        scheduledStartAt: "2026-05-18T11:00:00.000Z",
         startTime: "08:00",
       },
     ]);
@@ -69,7 +69,7 @@ describe("weekly agenda projection", () => {
       {
         id: "cg-1:sched-wed:2026-05-20",
         source: "recurring",
-        scheduledStartAt: "2026-05-20T19:30:00.000Z",
+        scheduledStartAt: "2026-05-20T22:30:00.000Z",
         startTime: "19:30",
       },
     ]);
@@ -84,7 +84,7 @@ describe("weekly agenda projection", () => {
           id: "adhoc-1",
           classGroupId: "cg-1",
           classGroupName: "Adulto manhã",
-          scheduledStartAt: new Date("2026-05-20T18:00:00.000Z"),
+          scheduledStartAt: new Date("2026-05-20T21:00:00.000Z"),
           durationMinutes: 90,
           status: "scheduled",
         },
@@ -131,7 +131,7 @@ describe("weekly agenda projection", () => {
         {
           id: "session-1",
           classGroupId: "cg-1",
-          scheduledStartAt: new Date("2026-05-20T19:30:00.000Z"),
+          scheduledStartAt: new Date("2026-05-20T22:30:00.000Z"),
           status: "active",
         },
       ],

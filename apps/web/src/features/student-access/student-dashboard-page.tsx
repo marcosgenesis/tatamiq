@@ -10,6 +10,8 @@ import { api } from "../../api";
 import { Badge } from "../../components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { useIsMobile } from "../../hooks/use-mobile";
+import { authClient } from "../../lib/auth-client";
+import { studentQueryKey } from "../../lib/session-query-keys";
 import { browserStorage, createOnboardingState } from "../student-portal/lib/onboarding-state";
 import { StudentHomeScreen } from "../student-portal/screens/student-home-screen";
 import { StudentOnboardingFlow } from "../student-portal/screens/student-onboarding-flow";
@@ -39,6 +41,8 @@ const tabs: Array<{ key: Tab; label: string }> = [
 ];
 
 export function StudentDashboardPage() {
+  const session = authClient.useSession();
+  const sessionUserId = session.data?.user.id;
   const [activeTab, setActiveTab] = useState<Tab>("home");
   const isMobile = useIsMobile();
   const [showOnboarding, setShowOnboarding] = useState(() =>
@@ -48,12 +52,13 @@ export function StudentDashboardPage() {
   const markSeen = useMarkIndicatorSeen();
 
   const query = useQuery({
-    queryKey: ["student", "me"],
+    queryKey: studentQueryKey(sessionUserId, "me"),
     queryFn: async () => {
       const { data, error } = await api.GET("/student/me");
       if (error || !data) throw new Error("Não foi possível carregar sua área de aluno.");
       return data satisfies StudentMeResponse;
     },
+    enabled: !!sessionUserId,
   });
 
   function handleTabChange(tab: Tab) {
@@ -226,13 +231,16 @@ function HomeTab({ data, mobile = false }: { data: StudentDashboardData; mobile?
 
 function AttendanceSummaryCard() {
   const navigate = useNavigate();
+  const session = authClient.useSession();
+  const sessionUserId = session.data?.user.id;
   const query = useQuery({
-    queryKey: ["student", "attendances"],
+    queryKey: studentQueryKey(sessionUserId, "attendances"),
     queryFn: async () => {
       const { data, error } = await api.GET("/student/attendances");
       if (error || !data) throw new Error("Não foi possível carregar presenças.");
       return data satisfies StudentAttendancesResponse;
     },
+    enabled: !!sessionUserId,
   });
 
   const now = new Date();
@@ -272,13 +280,16 @@ function AttendanceSummaryCard() {
 
 function GraduationSummaryCard() {
   const navigate = useNavigate();
+  const session = authClient.useSession();
+  const sessionUserId = session.data?.user.id;
   const query = useQuery({
-    queryKey: ["student", "graduation"],
+    queryKey: studentQueryKey(sessionUserId, "graduation"),
     queryFn: async () => {
       const { data, error } = await api.GET("/student/graduation");
       if (error || !data) throw new Error("Não foi possível carregar graduação.");
       return data satisfies StudentGraduationResponse;
     },
+    enabled: !!sessionUserId,
   });
 
   return (

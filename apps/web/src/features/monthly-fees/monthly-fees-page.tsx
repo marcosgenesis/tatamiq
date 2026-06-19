@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { CreateMonthlyFeeInput, MonthlyFee } from "@tatamiq/contracts";
+import type { MonthlyFee } from "@tatamiq/contracts";
 import { type FormEvent, useMemo, useState } from "react";
-import { useStudents } from "../../hooks/use-students";
+import { toast } from "sonner";
+import { useAppShell } from "../../components/app-shell";
 import { centsToReais, reaisToCents } from "../../lib/formatting";
 import { CreateMonthlyFeeDrawer } from "./create-monthly-fee-drawer";
 import { MonthlyFeeActionDrawer } from "./monthly-fee-action-drawer";
@@ -10,66 +11,44 @@ import { MonthlyFeesList } from "./monthly-fees-list";
 import {
   adjustMonthlyFee,
   approveMonthlyFeeReceipt,
-  createMonthlyFee,
   fetchMonthlyFeeDetail,
   fetchMonthlyFeeReceiptViewUrl,
   fetchMonthlyFees,
+  generateMissingMonthlyFees,
   monthlyFeesExportUrl,
   monthlyFeesKeys,
   registerManualMonthlyFeePayment,
   rejectMonthlyFeeReceipt,
   waiveMonthlyFee,
 } from "./monthly-fees-queries";
-import type { FeeFormState, FeeStatusFilter, MonthlyFeeActionType } from "./monthly-fees-types";
+import type { FeeStatusFilter, MonthlyFeeActionType } from "./monthly-fees-types";
 import { ReceiptReviewDrawer } from "./receipt-review-drawer";
 import { activePendingReceipt } from "./receipt-state";
 
-const emptyForm: FeeFormState = {
-  studentId: "",
-  referenceYear: new Date().getFullYear().toString(),
-  referenceMonth: (new Date().getMonth() + 1).toString(),
-  amountInCents: "",
-  dueDay: "",
-};
-
 export function MonthlyFeesPage() {
   const queryClient = useQueryClient();
+  const { activeAcademy } = useAppShell();
+  const activeAcademyId = activeAcademy.id;
   const [statusFilter] = useState<FeeStatusFilter>(() => {
     const status = new URLSearchParams(window.location.search).get("status");
     return isFeeStatusFilter(status) ? status : "all";
   });
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [form, setForm] = useState<FeeFormState>(emptyForm);
-  const [error, setError] = useState<string | null>(null);
   const [detailFeeId, setDetailFeeId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
 
   const feesQuery = useQuery({
-    queryKey: monthlyFeesKeys.list(statusFilter),
+    queryKey: monthlyFeesKeys.list(activeAcademyId, statusFilter),
     queryFn: () => fetchMonthlyFees(statusFilter),
+    enabled: !!activeAcademyId,
   });
 
-  const studentsQuery = useStudents("active", undefined, { enabled: isFormOpen });
-
   const detailQuery = useQuery({
-    queryKey: monthlyFeesKeys.detail(detailFeeId),
-    enabled: detailFeeId !== null,
+    queryKey: monthlyFeesKeys.detail(activeAcademyId, detailFeeId),
+    enabled: detailFeeId !== null && !!activeAcademyId,
     queryFn: () => {
       if (!detailFeeId) throw new Error("Mensalidade inválida.");
       return fetchMonthlyFeeDetail(detailFeeId);
-    },
-  });
-
-  const createMutation = useMutation({
-    mutationFn: (input: CreateMonthlyFeeInput) => createMonthlyFee(input),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: monthlyFeesKeys.all });
-      closeForm();
-    },
-    onError: (mutationError) => {
-      setError(
-        mutationError instanceof Error ? mutationError.message : "Erro ao criar mensalidade.",
-      );
     },
   });
 
@@ -81,7 +60,7 @@ export function MonthlyFeesPage() {
   const adjustMutation = useMutation({
     mutationFn: adjustMonthlyFee,
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: monthlyFeesKeys.all });
+      await queryClient.invalidateQueries({ queryKey: monthlyFeesKeys.all(activeAcademyId) });
       closeAction();
     },
   });
@@ -89,7 +68,7 @@ export function MonthlyFeesPage() {
   const waiveMutation = useMutation({
     mutationFn: waiveMonthlyFee,
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: monthlyFeesKeys.all });
+      await queryClient.invalidateQueries({ queryKey: monthlyFeesKeys.all(activeAcademyId) });
       closeAction();
     },
   });
@@ -98,8 +77,8 @@ export function MonthlyFeesPage() {
     mutationFn: approveMonthlyFeeReceipt,
     onSuccess: async () => {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: monthlyFeesKeys.all }),
-        queryClient.invalidateQueries({ queryKey: monthlyFeesKeys.detailRoot }),
+        queryClient.invalidateQueries({ queryKey: monthlyFeesKeys.all(activeAcademyId) }),
+        queryClient.invalidateQueries({ queryKey: monthlyFeesKeys.detailRoot(activeAcademyId) }),
       ]);
       setDetailFeeId(null);
     },
@@ -109,8 +88,8 @@ export function MonthlyFeesPage() {
     mutationFn: rejectMonthlyFeeReceipt,
     onSuccess: async () => {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: monthlyFeesKeys.all }),
-        queryClient.invalidateQueries({ queryKey: monthlyFeesKeys.detailRoot }),
+        queryClient.invalidateQueries({ queryKey: monthlyFeesKeys.all(activeAcademyId) }),
+        queryClient.invalidateQueries({ queryKey: monthlyFeesKeys.detailRoot(activeAcademyId) }),
       ]);
       setDetailFeeId(null);
       setRejectReason("");
@@ -120,8 +99,23 @@ export function MonthlyFeesPage() {
   const manualPayMutation = useMutation({
     mutationFn: registerManualMonthlyFeePayment,
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: monthlyFeesKeys.all });
+      await queryClient.invalidateQueries({ queryKey: monthlyFeesKeys.all(activeAcademyId) });
       closeAction();
+    },
+  });
+
+  const generateMissingMutation = useMutation({
+    mutationFn: generateMissingMonthlyFees,
+    onSuccess: async (result) => {
+      await queryClient.invalidateQueries({ queryKey: monthlyFeesKeys.all(activeAcademyId) });
+      toast.success(
+        result.created === 1
+          ? "1 mensalidade faltante foi criada."
+          : `${result.created} mensalidades faltantes foram criadas.`,
+      );
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Erro ao verificar mensalidades.");
     },
   });
 
@@ -159,76 +153,19 @@ export function MonthlyFeesPage() {
   }
 
   function openCreateForm() {
-    setForm(emptyForm);
-    setError(null);
     setIsFormOpen(true);
-  }
-
-  function closeForm() {
-    setIsFormOpen(false);
-    setError(null);
-  }
-
-  function updateForm(field: keyof FeeFormState, value: string) {
-    setForm((current) => ({ ...current, [field]: value }));
-  }
-
-  function onStudentSelect(studentId: string) {
-    const student = studentsQuery.data?.students.find((s) => s.id === studentId);
-    if (student) {
-      setForm((current) => ({
-        ...current,
-        studentId,
-        amountInCents: student.monthlyAmountInCents
-          ? centsToReais(student.monthlyAmountInCents)
-          : "",
-        dueDay: student.monthlyDueDay?.toString() ?? "",
-      }));
-    } else {
-      updateForm("studentId", studentId);
-    }
-  }
-
-  function submitForm(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(null);
-
-    const amountInCents = reaisToCents(form.amountInCents);
-    if (!amountInCents || amountInCents <= 0) {
-      setError("Informe um valor válido.");
-      return;
-    }
-
-    createMutation.mutate({
-      studentId: form.studentId,
-      referenceYear: Number(form.referenceYear),
-      referenceMonth: Number(form.referenceMonth),
-      amountInCents,
-      dueDay: Number(form.dueDay),
-    });
   }
 
   return (
     <div className="space-y-6 p-6">
       <MonthlyFeesHeader
+        generatingMissing={generateMissingMutation.isPending}
         onExportCsv={() => window.open(monthlyFeesExportUrl(statusFilter), "_blank")}
         onCreate={openCreateForm}
+        onGenerateMissing={() => generateMissingMutation.mutate()}
       />
 
-      <CreateMonthlyFeeDrawer
-        open={isFormOpen}
-        form={form}
-        studentOptions={(studentsQuery.data?.students ?? []).map((student) => ({
-          value: student.id,
-          label: student.name,
-        }))}
-        error={error}
-        creating={createMutation.isPending}
-        onClose={closeForm}
-        onSubmit={submitForm}
-        onStudentSelect={onStudentSelect}
-        onFormChange={updateForm}
-      />
+      <CreateMonthlyFeeDrawer open={isFormOpen} onClose={() => setIsFormOpen(false)} />
       <MonthlyFeesList
         fees={fees}
         loading={feesQuery.isLoading}

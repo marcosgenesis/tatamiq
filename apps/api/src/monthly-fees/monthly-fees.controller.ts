@@ -8,6 +8,7 @@ import {
   AdjustMonthlyFeeDto,
   ConfirmReceiptDto,
   CreateMonthlyFeeDto,
+  GenerateMissingMonthlyFeesResponseDto,
   ListMonthlyFeesResponseDto,
   ManualPaymentDto,
   MonthlyFeeDetailDto,
@@ -51,6 +52,16 @@ export class MonthlyFeesController {
       referenceYear: referenceYear ? Number(referenceYear) : undefined,
       referenceMonth: referenceMonth ? Number(referenceMonth) : undefined,
     });
+  }
+
+  @Post("generate-missing")
+  @HttpCode(200)
+  @ApiOkResponse({ type: GenerateMissingMonthlyFeesResponseDto })
+  async generateMissing(
+    @AcademyId() academyId: string,
+  ): Promise<GenerateMissingMonthlyFeesResponseDto> {
+    const created = await this.feeGenerationService.catchUp(academyId);
+    return { created };
   }
 
   @Post()

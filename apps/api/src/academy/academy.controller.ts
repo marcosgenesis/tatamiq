@@ -59,6 +59,6 @@ export class AcademyController {
     if (!body.fileKey) {
       throw new BadRequestException("fileKey é obrigatório.");
     }
-    return this.academyService.confirmLogo(academyId, body.fileKey);
+    return this.academyService.confirmLogo(academyId, body.fileKey, body.fileKeySignature);
   }
 }

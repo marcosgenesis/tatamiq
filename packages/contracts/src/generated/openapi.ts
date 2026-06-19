@@ -68,6 +68,182 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/monthly-fees": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["MonthlyFeesController_list"];
+        put?: never;
+        post: operations["MonthlyFeesController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/monthly-fees/generate-missing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["MonthlyFeesController_generateMissing"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/monthly-fees/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["MonthlyFeesController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/monthly-fees/{id}/upload-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["MonthlyFeesController_uploadUrl"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/monthly-fees/{id}/receipts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["MonthlyFeesController_listReceipts"];
+        put?: never;
+        post: operations["MonthlyFeesController_confirmReceipt"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/monthly-fees/{id}/adjust": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["MonthlyFeesController_adjust"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/monthly-fees/{id}/waive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["MonthlyFeesController_waive"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/monthly-fees/{id}/manual-payment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["MonthlyFeesController_manualPayment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/monthly-fees/{id}/receipts/{receiptId}/view-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["MonthlyFeesController_receiptViewUrl"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/monthly-fees/{id}/receipts/{receiptId}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["MonthlyFeesController_approveReceipt"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/monthly-fees/{id}/receipts/{receiptId}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["MonthlyFeesController_rejectReceipt"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/belts": {
         parameters: {
             query?: never;
@@ -286,6 +462,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["PreRegistrationController_approveRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/students/pre-registrations/{id}/generate-first-access-link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PreRegistrationController_generateFirstAccessLink"];
         delete?: never;
         options?: never;
         head?: never;
@@ -670,166 +862,6 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["StudentPortalController_markSeen"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/monthly-fees": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["MonthlyFeesController_list"];
-        put?: never;
-        post: operations["MonthlyFeesController_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/monthly-fees/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["MonthlyFeesController_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/monthly-fees/{id}/upload-url": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["MonthlyFeesController_uploadUrl"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/monthly-fees/{id}/receipts": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["MonthlyFeesController_listReceipts"];
-        put?: never;
-        post: operations["MonthlyFeesController_confirmReceipt"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/monthly-fees/{id}/adjust": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["MonthlyFeesController_adjust"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/monthly-fees/{id}/waive": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["MonthlyFeesController_waive"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/monthly-fees/{id}/manual-payment": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["MonthlyFeesController_manualPayment"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/monthly-fees/{id}/receipts/{receiptId}/view-url": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["MonthlyFeesController_receiptViewUrl"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/monthly-fees/{id}/receipts/{receiptId}/approve": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["MonthlyFeesController_approveReceipt"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/monthly-fees/{id}/receipts/{receiptId}/reject": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["MonthlyFeesController_rejectReceipt"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1785,9 +1817,138 @@ export interface components {
             /** Format: uri */
             uploadUrl: string;
             fileKey: string;
+            fileKeySignature: string;
+            /** Format: date-time */
+            expiresAt: string;
         };
         AcademyConfirmLogoDto: {
             fileKey: string;
+            fileKeySignature: string;
+        };
+        ListMonthlyFeesResponseDto: {
+            fees: {
+                id: string;
+                studentId: string;
+                studentName: string;
+                referenceYear: number;
+                referenceMonth: number;
+                amountInCents: number;
+                originalAmountInCents: number | null;
+                dueDate: string;
+                /** @enum {string} */
+                status: "open" | "under_review" | "paid" | "waived";
+                isOverdue: boolean;
+                /** Format: date-time */
+                paidAt: string | null;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+            }[];
+            summary: {
+                open: number;
+                overdue: number;
+                underReview: number;
+                paid: number;
+                waived: number;
+                total: number;
+            };
+        };
+        GenerateMissingMonthlyFeesResponseDto: {
+            created: number;
+        };
+        CreateMonthlyFeeDto: {
+            studentId: string;
+            referenceYear: number;
+            referenceMonth: number;
+            amountInCents: number;
+            dueDay: number;
+        };
+        MonthlyFeeDetailDto: {
+            id: string;
+            studentId: string;
+            studentName: string;
+            referenceYear: number;
+            referenceMonth: number;
+            amountInCents: number;
+            originalAmountInCents: number | null;
+            dueDate: string;
+            /** @enum {string} */
+            status: "open" | "under_review" | "paid" | "waived";
+            isOverdue: boolean;
+            /** Format: date-time */
+            paidAt: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** @enum {string|null} */
+            paymentOrigin: "manual_payment" | "receipt_approved" | null;
+            events: {
+                id: string;
+                monthlyFeeId: string;
+                /** @enum {string} */
+                type: "waived" | "adjusted" | "receipt_approved" | "receipt_rejected" | "receipt_replaced" | "manual_payment";
+                reason: string | null;
+                metadata: {
+                    [key: string]: unknown;
+                } | null;
+                createdByUserId: string;
+                /** Format: date-time */
+                createdAt: string;
+            }[];
+            receipts: {
+                id: string;
+                monthlyFeeId: string;
+                studentId: string;
+                fileKey: string;
+                fileUrl: string | null;
+                fileType: string;
+                fileSizeBytes: number;
+                note: string | null;
+                /** @enum {string} */
+                status: "pending" | "approved" | "rejected" | "replaced";
+                rejectionReason: string | null;
+                /** Format: date-time */
+                replacedAt: string | null;
+                createdByUserId: string;
+                /** Format: date-time */
+                createdAt: string;
+            }[];
+        };
+        UploadUrlResponseDto: {
+            /** Format: uri */
+            uploadUrl: string;
+            fileKey: string;
+            fileKeySignature: string;
+            /** Format: date-time */
+            expiresAt: string;
+        };
+        ConfirmReceiptDto: {
+            fileKey: string;
+            fileKeySignature: string;
+            fileType: string;
+            fileSizeBytes: number;
+            note?: string | "";
+        };
+        AdjustMonthlyFeeDto: {
+            amountInCents: number;
+            reason: string;
+        };
+        WaiveMonthlyFeeDto: {
+            reason: string;
+        };
+        ManualPaymentDto: {
+            note?: string | "";
+        };
+        ReceiptViewUrlResponseDto: {
+            /** Format: uri */
+            viewUrl: string;
+            /** Format: date-time */
+            expiresAt: string;
+        };
+        RejectReceiptDto: {
+            reason: string;
         };
         ListBeltsResponseDto: {
             belts: {
@@ -1836,6 +1997,19 @@ export interface components {
                 /** @enum {string} */
                 status: "active" | "paused";
             };
+            belts: {
+                id: string;
+                name: string;
+                slug: string;
+                /** @enum {string} */
+                path: "adult" | "child";
+                position: number;
+                maxDegrees: number;
+                minMonthsForNextDegree: number;
+                minAttendancesForNextDegree: number;
+                minMonthsForNextBelt: number;
+                minAttendancesForNextBelt: number;
+            }[];
         };
         CreatePreRegistrationRequestDto: {
             name: string;
@@ -1843,11 +2017,14 @@ export interface components {
             phone: string;
             /** Format: email */
             email: string;
+            cpf?: string | "";
             guardianName?: string | "";
             guardianPhone?: string | "";
             note?: string | "";
             /** @enum {boolean} */
             consentAccepted: true;
+            declaredBeltId?: string | "";
+            declaredDegree?: number;
         };
         PreRegistrationRequestDto: {
             id: string;
@@ -1868,6 +2045,9 @@ export interface components {
             approvedStudentId: string | null;
             isInstructorAccount: boolean;
             duplicateStudentHasActiveAccess: boolean;
+            cpf: string | null;
+            declaredBeltId: string | null;
+            declaredDegree: number | null;
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
@@ -1922,6 +2102,9 @@ export interface components {
                 approvedStudentId: string | null;
                 isInstructorAccount: boolean;
                 duplicateStudentHasActiveAccess: boolean;
+                cpf: string | null;
+                declaredBeltId: string | null;
+                declaredDegree: number | null;
                 /** Format: date-time */
                 createdAt: string;
                 /** Format: date-time */
@@ -1960,6 +2143,9 @@ export interface components {
                 approvedStudentId: string | null;
                 isInstructorAccount: boolean;
                 duplicateStudentHasActiveAccess: boolean;
+                cpf: string | null;
+                declaredBeltId: string | null;
+                declaredDegree: number | null;
                 /** Format: date-time */
                 createdAt: string;
                 /** Format: date-time */
@@ -1968,6 +2154,10 @@ export interface components {
             /** Format: uri */
             firstAccessLink: string;
             studentId: string;
+        };
+        GenerateFirstAccessLinkResponseDto: {
+            /** Format: uri */
+            firstAccessLink: string;
         };
         SendFirstAccessEmailResponseDto: {
             sent: boolean;
@@ -2248,75 +2438,6 @@ export interface components {
                 } | null;
             }[];
         };
-        UploadUrlResponseDto: {
-            /** Format: uri */
-            uploadUrl: string;
-            fileKey: string;
-        };
-        ConfirmReceiptDto: {
-            fileKey: string;
-            fileType: string;
-            fileSizeBytes: number;
-            note?: string | "";
-        };
-        MonthlyFeeDetailDto: {
-            id: string;
-            studentId: string;
-            studentName: string;
-            referenceYear: number;
-            referenceMonth: number;
-            amountInCents: number;
-            originalAmountInCents: number | null;
-            dueDate: string;
-            /** @enum {string} */
-            status: "open" | "under_review" | "paid" | "waived";
-            isOverdue: boolean;
-            /** Format: date-time */
-            paidAt: string | null;
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            updatedAt: string;
-            /** @enum {string|null} */
-            paymentOrigin: "manual_payment" | "receipt_approved" | null;
-            events: {
-                id: string;
-                monthlyFeeId: string;
-                /** @enum {string} */
-                type: "waived" | "adjusted" | "receipt_approved" | "receipt_rejected" | "receipt_replaced" | "manual_payment";
-                reason: string | null;
-                metadata: {
-                    [key: string]: unknown;
-                } | null;
-                createdByUserId: string;
-                /** Format: date-time */
-                createdAt: string;
-            }[];
-            receipts: {
-                id: string;
-                monthlyFeeId: string;
-                studentId: string;
-                fileKey: string;
-                fileUrl: string | null;
-                fileType: string;
-                fileSizeBytes: number;
-                note: string | null;
-                /** @enum {string} */
-                status: "pending" | "approved" | "rejected" | "replaced";
-                rejectionReason: string | null;
-                /** Format: date-time */
-                replacedAt: string | null;
-                createdByUserId: string;
-                /** Format: date-time */
-                createdAt: string;
-            }[];
-        };
-        ReceiptViewUrlResponseDto: {
-            /** Format: uri */
-            viewUrl: string;
-            /** Format: date-time */
-            expiresAt: string;
-        };
         StudentScheduleResponseDto: {
             days: {
                 date: string;
@@ -2386,55 +2507,6 @@ export interface components {
         MarkSeenDto: {
             /** @enum {string} */
             type: "fees" | "notes" | "graduation" | "schedule";
-        };
-        ListMonthlyFeesResponseDto: {
-            fees: {
-                id: string;
-                studentId: string;
-                studentName: string;
-                referenceYear: number;
-                referenceMonth: number;
-                amountInCents: number;
-                originalAmountInCents: number | null;
-                dueDate: string;
-                /** @enum {string} */
-                status: "open" | "under_review" | "paid" | "waived";
-                isOverdue: boolean;
-                /** Format: date-time */
-                paidAt: string | null;
-                /** Format: date-time */
-                createdAt: string;
-                /** Format: date-time */
-                updatedAt: string;
-            }[];
-            summary: {
-                open: number;
-                overdue: number;
-                underReview: number;
-                paid: number;
-                waived: number;
-                total: number;
-            };
-        };
-        CreateMonthlyFeeDto: {
-            studentId: string;
-            referenceYear: number;
-            referenceMonth: number;
-            amountInCents: number;
-            dueDay: number;
-        };
-        AdjustMonthlyFeeDto: {
-            amountInCents: number;
-            reason: string;
-        };
-        WaiveMonthlyFeeDto: {
-            reason: string;
-        };
-        ManualPaymentDto: {
-            note?: string | "";
-        };
-        RejectReceiptDto: {
-            reason: string;
         };
         ListStudentNotesResponseDto: {
             notes: {
@@ -3065,6 +3137,7 @@ export interface components {
             banReason: string | null;
             createdAt: string;
             emailVerified: boolean;
+            isPlatformAdmin: boolean;
             memberships: components["schemas"]["PlatformUserMembershipDto"][];
             studentAccessLinks: components["schemas"]["PlatformUserStudentAccessDto"][];
             activeSessions: number;
@@ -3202,6 +3275,305 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AcademyProfileDto"];
+                };
+            };
+        };
+    };
+    MonthlyFeesController_list: {
+        parameters: {
+            query?: {
+                referenceMonth?: unknown;
+                referenceYear?: unknown;
+                studentId?: unknown;
+                status?: "open" | "under_review" | "paid" | "waived" | "overdue" | "all";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListMonthlyFeesResponseDto"];
+                };
+            };
+        };
+    };
+    MonthlyFeesController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateMonthlyFeeDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonthlyFeeDetailDto"];
+                };
+            };
+        };
+    };
+    MonthlyFeesController_generateMissing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerateMissingMonthlyFeesResponseDto"];
+                };
+            };
+        };
+    };
+    MonthlyFeesController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonthlyFeeDetailDto"];
+                };
+            };
+        };
+    };
+    MonthlyFeesController_uploadUrl: {
+        parameters: {
+            query: {
+                contentType: unknown;
+            };
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadUrlResponseDto"];
+                };
+            };
+        };
+    };
+    MonthlyFeesController_listReceipts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    MonthlyFeesController_confirmReceipt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmReceiptDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonthlyFeeDetailDto"];
+                };
+            };
+        };
+    };
+    MonthlyFeesController_adjust: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdjustMonthlyFeeDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonthlyFeeDetailDto"];
+                };
+            };
+        };
+    };
+    MonthlyFeesController_waive: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WaiveMonthlyFeeDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonthlyFeeDetailDto"];
+                };
+            };
+        };
+    };
+    MonthlyFeesController_manualPayment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ManualPaymentDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonthlyFeeDetailDto"];
+                };
+            };
+        };
+    };
+    MonthlyFeesController_receiptViewUrl: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receiptId: unknown;
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptViewUrlResponseDto"];
+                };
+            };
+        };
+    };
+    MonthlyFeesController_approveReceipt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receiptId: unknown;
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonthlyFeeDetailDto"];
+                };
+            };
+        };
+    };
+    MonthlyFeesController_rejectReceipt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receiptId: unknown;
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectReceiptDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonthlyFeeDetailDto"];
                 };
             };
         };
@@ -3502,6 +3874,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApprovePreRegistrationResponseDto"];
+                };
+            };
+        };
+    };
+    PreRegistrationController_generateFirstAccessLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerateFirstAccessLinkResponseDto"];
                 };
             };
         };
@@ -4049,286 +4442,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
-            };
-        };
-    };
-    MonthlyFeesController_list: {
-        parameters: {
-            query?: {
-                referenceMonth?: unknown;
-                referenceYear?: unknown;
-                studentId?: unknown;
-                status?: "open" | "under_review" | "paid" | "waived" | "overdue" | "all";
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ListMonthlyFeesResponseDto"];
-                };
-            };
-        };
-    };
-    MonthlyFeesController_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateMonthlyFeeDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MonthlyFeeDetailDto"];
-                };
-            };
-        };
-    };
-    MonthlyFeesController_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: unknown;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MonthlyFeeDetailDto"];
-                };
-            };
-        };
-    };
-    MonthlyFeesController_uploadUrl: {
-        parameters: {
-            query: {
-                contentType: unknown;
-            };
-            header?: never;
-            path: {
-                id: unknown;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UploadUrlResponseDto"];
-                };
-            };
-        };
-    };
-    MonthlyFeesController_listReceipts: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: unknown;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    MonthlyFeesController_confirmReceipt: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: unknown;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ConfirmReceiptDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MonthlyFeeDetailDto"];
-                };
-            };
-        };
-    };
-    MonthlyFeesController_adjust: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: unknown;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AdjustMonthlyFeeDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MonthlyFeeDetailDto"];
-                };
-            };
-        };
-    };
-    MonthlyFeesController_waive: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: unknown;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WaiveMonthlyFeeDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MonthlyFeeDetailDto"];
-                };
-            };
-        };
-    };
-    MonthlyFeesController_manualPayment: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: unknown;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ManualPaymentDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MonthlyFeeDetailDto"];
-                };
-            };
-        };
-    };
-    MonthlyFeesController_receiptViewUrl: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                receiptId: unknown;
-                id: unknown;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ReceiptViewUrlResponseDto"];
-                };
-            };
-        };
-    };
-    MonthlyFeesController_approveReceipt: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                receiptId: unknown;
-                id: unknown;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MonthlyFeeDetailDto"];
-                };
-            };
-        };
-    };
-    MonthlyFeesController_rejectReceipt: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                receiptId: unknown;
-                id: unknown;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RejectReceiptDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MonthlyFeeDetailDto"];
-                };
             };
         };
     };

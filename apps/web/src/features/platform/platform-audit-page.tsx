@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Navigate, useNavigate } from "@tanstack/react-router";
 import {
   type ColumnDef,
@@ -69,15 +69,22 @@ function exportCsv(entries: PlatformAuditLogEntry[]) {
 
 export function PlatformAuditPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [actionFilter, setActionFilter] = useState("");
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
 
-  const platform = useQuery(platformMeQuery());
+  const session = authClient.useSession();
+  const sessionUserId = session.data?.user.id;
+  const platform = useQuery({
+    ...platformMeQuery(sessionUserId),
+    enabled: !!sessionUserId,
+  });
   const audit = useQuery(
-    platformAuditQuery(actionFilter, pagination.pageIndex, pagination.pageSize),
+    platformAuditQuery(sessionUserId, actionFilter, pagination.pageIndex, pagination.pageSize),
   );
 
-  if (platform.isLoading) return <PlatformLoading label="Carregando auditoria..." />;
+  if (session.isPending || platform.isLoading)
+    return <PlatformLoading label="Carregando auditoria..." />;
   if (platform.isError || !platform.data?.user) return <Navigate to="/choose-area" />;
 
   const entries = (audit.data?.items ?? []) as PlatformAuditLogEntry[];
@@ -85,7 +92,12 @@ export function PlatformAuditPage() {
   return (
     <PlatformShell
       user={platform.data.user}
-      onSignOut={() => authClient.signOut().then(() => navigate({ to: "/sign-in" }))}
+      onSignOut={() =>
+        authClient.signOut().then(() => {
+          queryClient.clear();
+          return navigate({ to: "/sign-in" });
+        })
+      }
       title="Auditoria"
       description="Registro de ações sensíveis"
       actions={

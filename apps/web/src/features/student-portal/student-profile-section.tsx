@@ -16,6 +16,7 @@ import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Skeleton } from "../../components/ui/skeleton";
 import { authClient } from "../../lib/auth-client";
+import { studentQueryKey } from "../../lib/session-query-keys";
 import { getInitials } from "../student-access/student-mobile-shell";
 import { BeltVisual } from "./components/belt-visual";
 import { beltProgress } from "./lib/belt-progress";
@@ -26,26 +27,30 @@ type UpdateStudentProfileInput = components["schemas"]["UpdateStudentProfileDto"
 export function StudentProfileSection() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const session = authClient.useSession();
+  const sessionUserId = session.data?.user.id;
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const meQuery = useQuery({
-    queryKey: ["student", "me"],
+    queryKey: studentQueryKey(sessionUserId, "me"),
     queryFn: async () => {
       const { data, error: err } = await api.GET("/student/me");
       if (err || !data) throw new Error("Erro ao carregar perfil.");
       return data satisfies StudentMeResponse;
     },
+    enabled: !!sessionUserId,
   });
   const graduationQuery = useQuery({
-    queryKey: ["student", "graduation"],
+    queryKey: studentQueryKey(sessionUserId, "graduation"),
     queryFn: async () => {
       const { data, error: err } = await api.GET("/student/graduation");
       if (err || !data) throw new Error("graduation");
       return data satisfies StudentGraduationResponse;
     },
+    enabled: !!sessionUserId,
   });
 
   useEffect(() => {
@@ -63,7 +68,7 @@ export function StudentProfileSection() {
     onSuccess: () => {
       setSuccess("Perfil atualizado com sucesso.");
       setError(null);
-      void queryClient.invalidateQueries({ queryKey: ["student", "me"] });
+      void queryClient.invalidateQueries({ queryKey: studentQueryKey(sessionUserId, "me") });
     },
     onError: (err: Error) => {
       setError(err.message);
@@ -84,6 +89,7 @@ export function StudentProfileSection() {
 
   async function handleSignOut() {
     await authClient.signOut();
+    queryClient.clear();
     window.location.href = "/sign-in";
   }
 

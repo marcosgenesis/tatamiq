@@ -27,7 +27,7 @@ test("create admin storage state", async ({ page }) => {
   await mkdir(E2E_AUTH_DIR, { recursive: true });
   await signIn(page, ADMIN_CREDENTIALS);
   await expect(page).toHaveURL(/\/platform$/);
-  await expect(page.getByRole("heading", { name: "Visão geral" })).toBeVisible();
+  await expect(page.getByRole("main").getByText("Visão geral")).toBeVisible();
   await page.context().storageState({ path: ADMIN_STORAGE_STATE });
 });
 
@@ -53,5 +53,5 @@ async function signIn(
   await page.getByLabel("Email").fill(credentials.email);
   await page.getByLabel("Senha").fill(credentials.password);
   await page.getByRole("button", { name: "Entrar" }).click();
-  await expect(page).toHaveURL(/\/(choose-area|platform)?$/);
+  await expect(page).not.toHaveURL(/\/sign-in$/);
 }

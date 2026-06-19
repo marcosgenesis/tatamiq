@@ -18,9 +18,6 @@ test("sign-up flows through onboarding into the instructor panel", async ({ page
   await page.getByLabel("Senha").fill(initialPassword);
   await page.getByRole("button", { name: "Criar conta" }).click();
 
-  await expect(page).toHaveURL(/\/choose-area$/);
-  await page.getByRole("button", { name: "Criar academia" }).click();
-
   await expect(page).toHaveURL(/\/onboarding\/academy$/);
   await page.getByPlaceholder("Ex: Arte Suave BJJ").fill(academyName);
   await page.getByRole("button", { name: "Continuar" }).click();

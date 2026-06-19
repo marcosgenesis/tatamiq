@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { validateStudentInput } from "./student-rules";
+import { nextInactiveAt, validateStudentInput } from "./student-rules";
 
 describe("student input rules", () => {
   it("allows an adult student without guardian", () => {
@@ -47,5 +47,40 @@ describe("student input rules", () => {
         new Date("2026-06-06T12:00:00.000Z"),
       ),
     ).toThrow("Data de matrícula não pode ser futura.");
+  });
+
+  it("sets inactiveAt when an active student becomes inactive", () => {
+    const now = new Date("2026-06-01T00:00:00.000Z");
+    expect(
+      nextInactiveAt({
+        currentStatus: "active",
+        currentInactiveAt: null,
+        nextStatus: "inactive",
+        now,
+      }),
+    ).toBe(now);
+  });
+
+  it("preserves inactiveAt when an inactive student remains inactive", () => {
+    const inactiveAt = new Date("2026-01-01T00:00:00.000Z");
+    expect(
+      nextInactiveAt({
+        currentStatus: "inactive",
+        currentInactiveAt: inactiveAt,
+        nextStatus: "inactive",
+        now: new Date("2026-06-01T00:00:00.000Z"),
+      }),
+    ).toBe(inactiveAt);
+  });
+
+  it("clears inactiveAt when a student is reactivated", () => {
+    expect(
+      nextInactiveAt({
+        currentStatus: "inactive",
+        currentInactiveAt: new Date("2026-01-01T00:00:00.000Z"),
+        nextStatus: "active",
+        now: new Date("2026-06-01T00:00:00.000Z"),
+      }),
+    ).toBeNull();
   });
 });

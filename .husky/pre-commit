@@ -1,1 +1,6 @@
-pnpm exec lint-staged
+# Skip lint-staged when only non-code files (e.g. .pen design files) are staged
+if git diff --cached --name-only --diff-filter=ACMR | grep -qiE '\.(js|jsx|ts|tsx|json|jsonc|css|md)$'; then
+  pnpm exec lint-staged
+else
+  echo "lint-staged: nenhum arquivo de código staged, pulando"
+fi

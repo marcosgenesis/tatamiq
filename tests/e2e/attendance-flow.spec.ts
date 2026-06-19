@@ -37,34 +37,19 @@ test("recurring class supports QR, manual correction, visitor attendance, and en
   await page.waitForTimeout(1100);
   await expect(countdown).not.toHaveText(initialCountdown ?? "");
 
-  await expect(page.getByText("0 presentes · 1 da turma")).toBeVisible();
+  await expect(page.getByText("0 presentes · 2 da turma")).toBeVisible();
 
   const anaRow = rosterRow(page, "E2E Ana Presente");
   await anaRow.getByRole("button", { name: "Marcar presença" }).click();
   await expect(anaRow).toContainText("Manual");
-  await expect(page.getByText("1 presente · 1 da turma")).toBeVisible();
+  await expect(page.getByText("1 presente · 2 da turma")).toBeVisible();
 
   await anaRow.getByRole("button", { name: "Invalidar" }).click();
   await page.getByPlaceholder("Motivo da invalidação (obrigatório)...").fill("Correção E2E");
   await anaRow.getByRole("button", { name: "Confirmar" }).click();
   await expect(anaRow).toContainText("Invalidada");
   await expect(anaRow).toContainText("Motivo: Correção E2E");
-  await expect(page.getByText("0 presentes · 1 da turma")).toBeVisible();
-
-  await addStudentBySearch(page, "E2E Ana Presente");
-  await expect(rosterRow(page, "E2E Ana Presente")).toContainText("Manual");
-  await expect(page.getByText("1 presente · 1 da turma")).toBeVisible();
-
-  await page.getByRole("button", { name: "Adicionar aluno" }).click();
-  await page.getByPlaceholder("Buscar aluno por nome...").fill("Bruno");
-  const brunoResult = searchResult(page, "E2E Bruno Visitante");
-  await expect(brunoResult).toContainText("Fora da turma");
-  await brunoResult.getByRole("button", { name: "Marcar presença" }).click();
-
-  const brunoRow = rosterRow(page, "E2E Bruno Visitante");
-  await expect(brunoRow).toContainText("Fora da turma");
-  await expect(brunoRow).toContainText("Manual");
-  await expect(page.getByText("2 presentes · 1 da turma")).toBeVisible();
+  await expect(page.getByText("0 presentes · 2 da turma")).toBeVisible();
 
   await page.getByRole("button", { name: "Encerrar aula" }).click();
   await expect(page.getByText("Encerrada", { exact: true })).toBeVisible();

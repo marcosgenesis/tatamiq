@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { GraduationScrollIcon } from "hugeicons-react";
 import { type FormEvent, useState } from "react";
+import { useAppShell } from "../../components/app-shell";
 import { Field, SelectField } from "../../components/form-field";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
@@ -15,6 +16,7 @@ import {
   DrawerTitle,
 } from "../../components/ui/drawer";
 import { useBelts } from "../../hooks/use-belts";
+import { academyQueryKey } from "../../lib/academy-query-keys";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3100";
 
@@ -59,6 +61,8 @@ const typeBadgeVariant: Record<EligibilityType, string> = {
 
 export function GraduationPage() {
   const queryClient = useQueryClient();
+  const { activeAcademy } = useAppShell();
+  const activeAcademyId = activeAcademy.id;
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
 
   // Promotion dialog state
@@ -75,7 +79,7 @@ export function GraduationPage() {
   const [dismissForm, setDismissForm] = useState({ reason: "", days: "" });
 
   const eligibleQuery = useQuery({
-    queryKey: ["graduation", "eligible", typeFilter],
+    queryKey: academyQueryKey(activeAcademyId, "graduation", "eligible", typeFilter),
     queryFn: () => {
       const qs = typeFilter === "all" ? "" : `?type=${typeFilter}`;
       return apiFetch<{
@@ -83,9 +87,13 @@ export function GraduationPage() {
         summary: { degree: number; belt: number; transition: number };
       }>(`/graduation/eligible${qs}`);
     },
+    enabled: !!activeAcademyId,
   });
 
-  const beltsQuery = useBelts({ enabled: promoteStudent !== null });
+  const beltsQuery = useBelts({
+    academyId: activeAcademyId,
+    enabled: promoteStudent !== null && !!activeAcademyId,
+  });
 
   const promoteMutation = useMutation({
     mutationFn: async ({
@@ -107,7 +115,9 @@ export function GraduationPage() {
       });
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["graduation"] });
+      await queryClient.invalidateQueries({
+        queryKey: academyQueryKey(activeAcademyId, "graduation"),
+      });
       closePromote();
     },
   });
@@ -133,7 +143,9 @@ export function GraduationPage() {
       });
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["graduation"] });
+      await queryClient.invalidateQueries({
+        queryKey: academyQueryKey(activeAcademyId, "graduation"),
+      });
       closeDismiss();
     },
   });

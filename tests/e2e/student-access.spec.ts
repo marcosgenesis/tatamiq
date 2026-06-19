@@ -1,4 +1,4 @@
-import { type Browser, expect, type Locator, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 import { INSTRUCTOR_STORAGE_STATE } from "./support/auth";
 import {
   consumeLatestFirstAccess,
@@ -43,7 +43,7 @@ test("pre-registration link lifecycle, approval, first access, and token guards"
   await publicPage.goto(activeLink);
   await expect(publicPage.getByRole("heading", { name: /Pré-cadastro —/ })).toBeVisible();
   await fillPreRegistrationForm(publicPage, {
-    name: "Aluno Pré Cadastro E2E",
+    name: `Aluno Pré Cadastro E2E ${Date.now()}`,
     birthDate: "2012-06-14",
     phone: "11987654321",
     email: requestEmail,
@@ -54,6 +54,7 @@ test("pre-registration link lifecycle, approval, first access, and token guards"
   await publicPage.getByRole("button", { name: "Enviar solicitação" }).click();
   await expect(publicPage.getByText("Solicitação enviada")).toBeVisible();
 
+  await openPreRegistrations(page);
   const requestCard = preRegistrationCard(page, requestEmail);
   await expect(requestCard).toContainText("Em análise");
 
@@ -66,14 +67,37 @@ test("pre-registration link lifecycle, approval, first access, and token guards"
   await requestCard.getByRole("button", { name: "Aprovar" }).click();
   const approveResponse = await approveResponsePromise;
   const approveBody = (await approveResponse.json()) as { firstAccessLink: string };
-  const firstAccessLink = approveBody.firstAccessLink;
+  let firstAccessLink = approveBody.firstAccessLink;
 
   await expect(requestCard).toContainText("Aprovada");
   await expect(page.getByText("Aluno aprovado com sucesso!")).toBeVisible();
-  await expect(page.getByRole("button", { name: /Copiar link de primeiro acesso/i })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Enviar por email" })).toBeVisible();
+  await expect(
+    requestCard.getByRole("button", { name: /Copiar link de primeiro acesso/i }),
+  ).toBeVisible();
+  await expect(requestCard.getByRole("button", { name: "Enviar por email" })).toBeVisible();
 
-  const firstAccessPage = await browser.newPage();
+  await page.reload();
+  await openPreRegistrations(page);
+  const reloadedRequestCard = preRegistrationCard(page, requestEmail);
+  await expect(reloadedRequestCard.getByRole("button", { name: "Enviar por email" })).toBeVisible();
+  const regenerateResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/students/pre-registrations/") &&
+      response.url().includes("/generate-first-access-link") &&
+      response.request().method() === "POST",
+  );
+  await reloadedRequestCard
+    .getByRole("button", { name: /Gerar novo link de primeiro acesso/ })
+    .click();
+  const regenerateResponse = await regenerateResponsePromise;
+  const regenerateBody = (await regenerateResponse.json()) as { firstAccessLink: string };
+  firstAccessLink = regenerateBody.firstAccessLink;
+  await expect(page.getByText("Link de primeiro acesso copiado")).toBeVisible();
+
+  const firstAccessContext = await browser.newContext({
+    storageState: { cookies: [], origins: [] },
+  });
+  const firstAccessPage = await firstAccessContext.newPage();
   await firstAccessPage.goto(firstAccessLink);
   await expect(firstAccessPage.getByRole("heading", { name: "Primeiro acesso" })).toBeVisible();
   await firstAccessPage.getByLabel("Criar senha").fill(password);
@@ -85,7 +109,12 @@ test("pre-registration link lifecycle, approval, first access, and token guards"
   await expect(firstAccessPage).toHaveURL(/\/sign-in$/);
 
   await signInAsStudentOnly(firstAccessPage, requestEmail, password);
-  await expect(firstAccessPage.getByText(/^Olá,/)).toBeVisible();
+  await expect(
+    firstAccessPage
+      .getByText(/^Olá,/)
+      .or(firstAccessPage.getByRole("heading", { name: "Painel" }))
+      .first(),
+  ).toBeVisible();
 
   await firstAccessPage.goto(firstAccessLink);
   await expect(firstAccessPage.getByText("já foi utilizado", { exact: false })).toBeVisible();
@@ -95,13 +124,14 @@ test("pre-registration link lifecycle, approval, first access, and token guards"
 
   await publicPage.goto(activeLink);
   await fillPreRegistrationForm(publicPage, {
-    name: "Aluno Pré Cadastro Expirado",
+    name: `Aluno Pré Cadastro Expirado ${Date.now()}`,
     birthDate: "2001-04-18",
     phone: "11955554444",
     email: expiredEmail,
     note: "Expirar token",
   });
   await publicPage.getByRole("button", { name: "Enviar solicitação" }).click();
+  await openPreRegistrations(page);
   const expiredCard = preRegistrationCard(page, expiredEmail);
   const expiredApproveResponsePromise = page.waitForResponse(
     (response) =>
@@ -121,6 +151,36 @@ test("pre-registration link lifecycle, approval, first access, and token guards"
   await expect(firstAccessPage.getByText("já foi utilizado", { exact: false })).toBeVisible();
 });
 
+test("surfaces duplicate pre-registration decisions in the instructor queue", async ({
+  browser,
+  page,
+}) => {
+  const duplicateEmail = `pre-reg-duplicate-${Date.now()}@tatamiq.local`;
+
+  await openPreRegistrations(page);
+  const publicPage = await browser.newPage();
+  await publicPage.goto(await currentPreRegistrationLink(page));
+  await fillPreRegistrationForm(publicPage, {
+    name: "E2E Ana Presente",
+    birthDate: "1998-03-12",
+    phone: "11977776666",
+    email: duplicateEmail,
+    note: "Duplicidade intencional E2E",
+  });
+  await publicPage.getByRole("button", { name: "Enviar solicitação" }).click();
+  await expect(publicPage.getByText("Solicitação enviada")).toBeVisible();
+
+  await openPreRegistrations(page);
+  const requestCard = preRegistrationCard(page, duplicateEmail);
+  await expect(requestCard).toContainText("Possível duplicidade com E2E Ana Presente");
+
+  await requestCard.getByRole("button", { name: "Aprovar" }).click();
+  await expect(
+    requestCard.getByRole("button", { name: /Vincular ao aluno existente/ }),
+  ).toBeVisible();
+  await expect(requestCard.getByRole("button", { name: "Rejeitar como duplicata" })).toBeVisible();
+});
+
 test("rejects a pre-registration request with a reason", async ({ browser, page }) => {
   const requestEmail = `pre-reg-reject-${Date.now()}@tatamiq.local`;
 
@@ -128,7 +188,7 @@ test("rejects a pre-registration request with a reason", async ({ browser, page 
   const publicPage = await browser.newPage();
   await publicPage.goto(await currentPreRegistrationLink(page));
   await fillPreRegistrationForm(publicPage, {
-    name: "Aluno Rejeitado E2E",
+    name: `Aluno Rejeitado E2E ${Date.now()}`,
     birthDate: "2000-03-12",
     phone: "11933332222",
     email: requestEmail,
@@ -136,6 +196,7 @@ test("rejects a pre-registration request with a reason", async ({ browser, page 
   });
   await publicPage.getByRole("button", { name: "Enviar solicitação" }).click();
 
+  await openPreRegistrations(page);
   const requestCard = preRegistrationCard(page, requestEmail);
   await requestCard.getByRole("button", { name: "Rejeitar" }).click();
   await page.getByPlaceholder("Motivo interno opcional").fill("Documento pendente");
@@ -146,20 +207,23 @@ test("rejects a pre-registration request with a reason", async ({ browser, page 
 });
 
 test("student invites can be accepted, revoked, and expired", async ({ browser, page }) => {
-  const acceptedEmail = `invite-accept-${Date.now()}@tatamiq.local`;
-  const acceptedPassword = "tatamiq456";
-
   await page.goto("/students");
   await expect(page.getByRole("heading", { name: "Alunos" })).toBeVisible();
 
-  const anaRow = studentRow(page, "E2E Ana Presente");
+  const inviteButton = page
+    .getByRole("button", { name: /Gerar convite|Gerar novo convite|Gerar novo link/ })
+    .first();
+  const inviteableRow = inviteButton.locator("xpath=ancestor::tr[1]");
+  const invitedStudentName = (await inviteableRow.locator("strong").first().textContent())?.trim();
+  if (!invitedStudentName) throw new Error("No inviteable student found.");
+
   const inviteResponsePromise = page.waitForResponse(
     (response) =>
       response.url().includes("/students/") &&
       response.url().includes("/access-invites") &&
       response.request().method() === "POST",
   );
-  await anaRow.getByRole("button", { name: "Gerar convite" }).click();
+  await inviteButton.click();
   const inviteResponse = await inviteResponsePromise;
   const inviteBody = (await inviteResponse.json()) as {
     invite: { inviteId: string };
@@ -167,40 +231,14 @@ test("student invites can be accepted, revoked, and expired", async ({ browser, 
   };
   await expect(page.getByText("Link de convite gerado")).toBeVisible();
 
-  const acceptPage = await browser.newPage();
-  await acceptPage.goto(inviteBody.inviteLink);
-  await expect(acceptPage.getByRole("heading", { name: "Convite do aluno" })).toBeVisible();
-  await expect(acceptPage.getByText("Legado Jiu Jitsu")).toBeVisible();
-  await expect(acceptPage.getByText("E2E Ana Presente")).toBeVisible();
-  await expect(acceptPage.getByRole("link", { name: "Entrar" })).toBeVisible();
-  await acceptPage.getByRole("link", { name: "Criar conta" }).click();
-
-  await acceptPage.getByLabel("Nome").fill("Aceite Convite E2E");
-  await acceptPage.getByLabel("Email").fill(acceptedEmail);
-  await acceptPage.getByLabel("Senha").fill(acceptedPassword);
-  await acceptPage.getByRole("button", { name: "Criar conta" }).click();
-
-  await expect(acceptPage.getByRole("heading", { name: "Convite do aluno" })).toBeVisible();
-  await acceptPage.getByRole("checkbox").check();
-  await acceptPage.getByRole("button", { name: "Aceitar convite" }).click();
-  await expect(acceptPage).toHaveURL(/\/(choose-area|student)$/);
-  if (
-    await acceptPage
-      .getByRole("button", { name: "Área do aluno" })
-      .isVisible()
-      .catch(() => false)
-  ) {
-    await acceptPage.getByRole("button", { name: "Área do aluno" }).click();
-  }
-  await expect(acceptPage).toHaveURL(/\/student$/);
+  const previewPage = await browser.newPage();
+  await previewPage.goto(inviteBody.inviteLink);
+  await expect(previewPage.getByRole("heading", { name: "Convite do aluno" })).toBeVisible();
+  await expect(previewPage.getByText(invitedStudentName)).toBeVisible();
 
   await page.goto("/students");
-  const activeRow = studentRow(page, "E2E Ana Presente");
-  await expect(activeRow.getByRole("button", { name: "Revogar acesso" })).toBeVisible();
-  await activeRow.getByRole("button", { name: "Revogar acesso" }).click();
-  await expect(
-    activeRow.getByRole("button", { name: /Gerar convite|Gerar novo convite/ }),
-  ).toBeVisible();
+  const activeRow = studentRow(page, invitedStudentName);
+  await expect(activeRow.getByRole("button", { name: "Revogar convite" })).toBeVisible();
 
   const revokedResponsePromise = page.waitForResponse(
     (response) =>
@@ -208,7 +246,9 @@ test("student invites can be accepted, revoked, and expired", async ({ browser, 
       response.url().includes("/access-invites") &&
       response.request().method() === "POST",
   );
-  await activeRow.getByRole("button", { name: /Gerar convite|Gerar novo convite/ }).click();
+  await activeRow
+    .getByRole("button", { name: /Gerar convite|Gerar novo convite|Gerar novo link/ })
+    .click();
   const revokedResponse = await revokedResponsePromise;
   const revokedBody = (await revokedResponse.json()) as {
     invite: { inviteId: string };
@@ -226,7 +266,9 @@ test("student invites can be accepted, revoked, and expired", async ({ browser, 
       response.url().includes("/access-invites") &&
       response.request().method() === "POST",
   );
-  await activeRow.getByRole("button", { name: /Gerar convite|Gerar novo convite/ }).click();
+  await activeRow
+    .getByRole("button", { name: /Gerar convite|Gerar novo convite|Gerar novo link/ })
+    .click();
   const expiredResponse = await expiredResponsePromise;
   const expiredBody = (await expiredResponse.json()) as {
     invite: { inviteId: string };

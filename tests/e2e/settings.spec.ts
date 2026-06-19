@@ -36,7 +36,9 @@ test("updates academy data, Pix config, uploads logo, and edits belt rules", asy
 
   await page.reload();
   await choosePixMode(page, "Chave Pix");
-  await expect(page.getByLabel("Chave Pix")).toHaveValue("pix-chave@tatamiq.local");
+  await expect
+    .poll(() => page.getByLabel("Chave Pix").inputValue())
+    .toBe("pix-chave@tatamiq.local");
   await expect(page.locator("#pix-key-type")).toContainText("email");
 
   await choosePixMode(page, "Copia e cola");
@@ -48,9 +50,9 @@ test("updates academy data, Pix config, uploads logo, and edits belt rules", asy
 
   await page.reload();
   await choosePixMode(page, "Copia e cola");
-  await expect(page.getByLabel("Código Pix copia e cola")).toHaveValue(
-    "00020126360014BR.GOV.BCB.PIX0114pix-copia-e-cola5204000053039865802BR",
-  );
+  await expect
+    .poll(() => page.getByLabel("Código Pix copia e cola").inputValue())
+    .toBe("00020126360014BR.GOV.BCB.PIX0114pix-copia-e-cola5204000053039865802BR");
 
   await choosePixMode(page, "Sem Pix");
   await page.getByRole("button", { name: "Salvar configurações" }).click();
@@ -70,6 +72,7 @@ test("updates academy data, Pix config, uploads logo, and edits belt rules", asy
   const uploadUrlPayload = (await uploadUrlResponse.json()) as {
     uploadUrl: string;
     fileKey: string;
+    fileKeySignature: string;
   };
   const uploadResponse = await fetch(uploadUrlPayload.uploadUrl, {
     method: "PUT",
@@ -78,7 +81,10 @@ test("updates academy data, Pix config, uploads logo, and edits belt rules", asy
   });
   expect(uploadResponse.ok).toBeTruthy();
   const confirmResponse = await page.request.post(`${API_URL}/academy/logo/confirm`, {
-    data: { fileKey: uploadUrlPayload.fileKey },
+    data: {
+      fileKey: uploadUrlPayload.fileKey,
+      fileKeySignature: uploadUrlPayload.fileKeySignature,
+    },
   });
   expect(confirmResponse.ok()).toBeTruthy();
 
@@ -106,13 +112,9 @@ async function openSettings(page: Page) {
   await expect(page.getByText("Dados da academia")).toBeVisible();
 }
 
-async function choosePixMode(page: Page, label: string) {
-  const indexByLabel: Record<string, number> = {
-    "Sem Pix": 0,
-    "Chave Pix": 1,
-    "Copia e cola": 2,
-  };
-  await page.getByRole("radio").nth(indexByLabel[label]).click();
+async function choosePixMode(page: Page, label: "Sem Pix" | "Chave Pix" | "Copia e cola") {
+  const option = page.locator('[data-slot="radio-group"] > div').filter({ hasText: label }).first();
+  await option.locator('[data-slot="radio-group-item"]').click();
 }
 
 function beltRuleCard(page: Page, slug: string): Locator {

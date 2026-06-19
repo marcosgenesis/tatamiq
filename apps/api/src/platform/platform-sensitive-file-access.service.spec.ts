@@ -158,7 +158,7 @@ describe("PlatformSensitiveFileAccessService", () => {
     expect(r2.getPublicUrl).not.toHaveBeenCalled();
   });
 
-  it("does not sign or audit missing receipts", async () => {
+  it("does not sign missing receipts and audits the failed access attempt", async () => {
     const { sensitiveFileAccess, auditService, platformAcademyService, r2 } = service();
     platformAcademyService.getReceipt.mockResolvedValueOnce(null);
 
@@ -171,6 +171,17 @@ describe("PlatformSensitiveFileAccessService", () => {
     ).rejects.toThrow(NotFoundException);
 
     expect(r2.generateReadUrl).not.toHaveBeenCalled();
-    expect(auditService.write).not.toHaveBeenCalled();
+    expect(auditService.write).toHaveBeenCalledWith(
+      expect.objectContaining({
+        adminUserId: "admin-1",
+        action: "platform.sensitive_file.accessed",
+        targetType: "payment_receipt",
+        result: "failure",
+        metadata: {
+          errorName: "NotFoundException",
+          errorMessage: "Comprovante não encontrado.",
+        },
+      }),
+    );
   });
 });

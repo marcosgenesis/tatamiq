@@ -30,6 +30,7 @@ import {
 import { and, eq, gte, inArray, isNull, lt } from "drizzle-orm";
 import { parseClassStatus } from "../class-status";
 import { DATABASE } from "../database/database.module";
+import { saoPauloDatePart, toSaoPauloScheduledStartAt } from "../schedule/schedule-rules";
 import { StudentAccessActivationService } from "./student-access-activation.service";
 import {
   hashToken,
@@ -433,7 +434,7 @@ export class StudentAccessService {
     const now = new Date();
     const end = new Date(now);
     end.setDate(end.getDate() + 7);
-    const today = now.toISOString().slice(0, 10);
+    const today = saoPauloDatePart(now);
     const dates = Array.from({ length: 8 }, (_, index) => {
       const date = new Date(today);
       date.setDate(date.getDate() + index);
@@ -493,7 +494,7 @@ export class StudentAccessService {
       dates
         .filter((date) => weekdayForDate(date) === schedule.weekday)
         .map((date) => {
-          const scheduledStartAt = new Date(`${date}T${schedule.startTime}:00.000Z`);
+          const scheduledStartAt = new Date(toSaoPauloScheduledStartAt(date, schedule.startTime));
           const cancellation = cancellations.find(
             (item) =>
               item.classGroupScheduleId === schedule.scheduleId && item.occurrenceDate === date,

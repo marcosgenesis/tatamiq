@@ -4,6 +4,7 @@ import { classGroupSchedules, classGroups, classSessions, type Database } from "
 import { and, eq } from "drizzle-orm";
 import { resolveQrTokenSecret } from "../auth";
 import { DATABASE } from "../database/database.module";
+import { toSaoPauloScheduledStartAt } from "../schedule/schedule-rules";
 import { canTransition } from "./class-rules";
 import { generateQrToken, QR_WINDOW_SECONDS } from "./qr-token";
 
@@ -47,7 +48,9 @@ export class ClassesService {
 
     const now = new Date();
     const id = crypto.randomUUID();
-    const scheduledStartAt = new Date(`${input.scheduledDate}T${schedule.startTime}:00.000Z`);
+    const scheduledStartAt = new Date(
+      toSaoPauloScheduledStartAt(input.scheduledDate, schedule.startTime),
+    );
 
     await this.db.insert(classSessions).values({
       id,

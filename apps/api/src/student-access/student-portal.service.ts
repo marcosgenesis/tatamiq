@@ -21,8 +21,9 @@ import {
   studentNotes,
   students,
 } from "@tatamiq/database";
-import { and, desc, eq, gte, inArray, isNull, lt, sql } from "drizzle-orm";
+import { and, desc, eq, gte, type InferSelectModel, inArray, isNull, lt, sql } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
+import { saoPauloDatePart, toSaoPauloScheduledStartAt } from "../schedule/schedule-rules";
 import {
   type AgendaAdHocRow,
   type AgendaRecurringCancellationRow,
@@ -46,8 +47,8 @@ export class StudentPortalService {
     const groupIds = groupLinks.map((l) => l.classGroupId);
     if (groupIds.length === 0) return { days: [] };
 
-    const today = new Date(`${new Date().toISOString().slice(0, 10)}T00:00:00.000Z`);
-    const todayDate = today.toISOString().slice(0, 10);
+    const todayDate = saoPauloDatePart(new Date());
+    const today = new Date(`${todayDate}T00:00:00.000Z`);
     const endDate = new Date(today);
     endDate.setUTCDate(endDate.getUTCDate() + 7);
     const endDateExclusive = endDate.toISOString().slice(0, 10);
@@ -133,8 +134,14 @@ export class StudentPortalService {
         and(
           inArray(classSessions.classGroupId, groupIds),
           eq(classSessions.kind, "ad_hoc"),
-          gte(classSessions.scheduledStartAt, new Date(`${fromDate}T00:00:00.000Z`)),
-          lt(classSessions.scheduledStartAt, new Date(`${toDateExclusive}T00:00:00.000Z`)),
+          gte(
+            classSessions.scheduledStartAt,
+            new Date(toSaoPauloScheduledStartAt(fromDate, "00:00")),
+          ),
+          lt(
+            classSessions.scheduledStartAt,
+            new Date(toSaoPauloScheduledStartAt(toDateExclusive, "00:00")),
+          ),
         ),
       );
   }
@@ -173,8 +180,14 @@ export class StudentPortalService {
         and(
           inArray(classSessions.classGroupId, groupIds),
           eq(classSessions.kind, "recurring"),
-          gte(classSessions.scheduledStartAt, new Date(`${fromDate}T00:00:00.000Z`)),
-          lt(classSessions.scheduledStartAt, new Date(`${toDateExclusive}T00:00:00.000Z`)),
+          gte(
+            classSessions.scheduledStartAt,
+            new Date(toSaoPauloScheduledStartAt(fromDate, "00:00")),
+          ),
+          lt(
+            classSessions.scheduledStartAt,
+            new Date(toSaoPauloScheduledStartAt(toDateExclusive, "00:00")),
+          ),
         ),
       );
   }
@@ -183,27 +196,32 @@ export class StudentPortalService {
     const twelveMonthsAgo = new Date();
     twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
 
-    const rows = await this.db
-      .select({
-        attendance: attendances,
-        classGroupName: classGroups.name,
-      })
-      .from(attendances)
-      .innerJoin(classSessions, eq(attendances.classSessionId, classSessions.id))
-      .innerJoin(classGroups, eq(classSessions.classGroupId, classGroups.id))
-      .where(and(eq(attendances.studentId, studentId), gte(attendances.createdAt, twelveMonthsAgo)))
-      .orderBy(desc(attendances.createdAt));
+    const [rows, activeLinks] = await Promise.all([
+      this.db
+        .select({
+          attendance: attendances,
+          classGroupId: classSessions.classGroupId,
+          classGroupName: classGroups.name,
+        })
+        .from(attendances)
+        .innerJoin(classSessions, eq(attendances.classSessionId, classSessions.id))
+        .innerJoin(classGroups, eq(classSessions.classGroupId, classGroups.id))
+        .where(
+          and(eq(attendances.studentId, studentId), gte(attendances.createdAt, twelveMonthsAgo)),
+        )
+        .orderBy(desc(attendances.createdAt)),
+      this.db
+        .select({ classGroupId: studentClassGroups.classGroupId })
+        .from(studentClassGroups)
+        .where(
+          and(eq(studentClassGroups.studentId, studentId), isNull(studentClassGroups.activeUntil)),
+        ),
+    ]);
 
-    return {
-      attendances: rows.map((r) => ({
-        id: r.attendance.id,
-        classGroupName: r.classGroupName,
-        source: r.attendance.source as "qr" | "manual",
-        isOutOfGroup: false,
-        invalidatedAt: r.attendance.invalidatedAt?.toISOString() ?? null,
-        createdAt: r.attendance.createdAt.toISOString(),
-      })),
-    };
+    return projectStudentAttendanceHistory(
+      rows,
+      new Set(activeLinks.map((link) => link.classGroupId)),
+    );
   }
 
   async updateProfile(
@@ -350,4 +368,26 @@ export class StudentPortalService {
       .set({ [column]: new Date(), updatedAt: new Date() })
       .where(and(eq(studentAccess.studentId, studentId), eq(studentAccess.status, "active")));
   }
+}
+
+type StudentAttendanceHistoryRow = {
+  attendance: InferSelectModel<typeof attendances>;
+  classGroupId: string;
+  classGroupName: string;
+};
+
+export function projectStudentAttendanceHistory(
+  rows: StudentAttendanceHistoryRow[],
+  activeClassGroupIds: Set<string>,
+): StudentAttendancesResponse {
+  return {
+    attendances: rows.map((r) => ({
+      id: r.attendance.id,
+      classGroupName: r.classGroupName,
+      source: r.attendance.source as "qr" | "manual",
+      isOutOfGroup: !activeClassGroupIds.has(r.classGroupId),
+      invalidatedAt: r.attendance.invalidatedAt?.toISOString() ?? null,
+      createdAt: r.attendance.createdAt.toISOString(),
+    })),
+  };
 }

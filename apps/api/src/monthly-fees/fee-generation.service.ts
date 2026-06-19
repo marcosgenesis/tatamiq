@@ -5,6 +5,8 @@ import { and, eq, sql } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
 import { clampDueDay, formatDueDate } from "./monthly-fee-rules";
 
+type FeeGenerationMode = { kind: "cron"; daysAheadLimit: number } | { kind: "catch_up" };
+
 @Injectable()
 export class FeeGenerationService {
   private readonly logger = new Logger(FeeGenerationService.name);
@@ -21,19 +23,22 @@ export class FeeGenerationService {
 
     let total = 0;
     for (const { organizationId } of orgs) {
-      const count = await this.generateForOrganization(organizationId, 5);
+      const count = await this.generateForOrganization(organizationId, {
+        kind: "cron",
+        daysAheadLimit: 5,
+      });
       total += count;
     }
     this.logger.log(`Daily fee generation complete. Created ${total} fee(s).`);
   }
 
   async catchUp(organizationId: string): Promise<number> {
-    return this.generateForOrganization(organizationId, null);
+    return this.generateForOrganization(organizationId, { kind: "catch_up" });
   }
 
   private async generateForOrganization(
     organizationId: string,
-    daysAheadLimit: number | null,
+    mode: FeeGenerationMode,
   ): Promise<number> {
     if (!(await this.organizationHasOwner(organizationId))) {
       this.logger.warn(`Skipping fee generation for ownerless organization ${organizationId}.`);
@@ -64,17 +69,17 @@ export class FeeGenerationService {
 
     let created = 0;
     for (const student of eligibleStudents) {
-      const dueDay = student.monthlyDueDay!;
-      const amount = student.monthlyAmountInCents!;
+      if (student.monthlyDueDay === null || student.monthlyAmountInCents === null) continue;
+
+      const dueDay = student.monthlyDueDay;
+      const amount = student.monthlyAmountInCents;
 
       const dueDate = clampDueDay(dueDay, currentYear, currentMonth);
       const dueDateDay = dueDate.getDate();
 
-      if (daysAheadLimit !== null) {
+      if (mode.kind === "cron") {
         const daysUntilDue = dueDateDay - currentDay;
-        if (daysUntilDue < 0 || daysUntilDue > daysAheadLimit) continue;
-      } else {
-        if (dueDateDay < currentDay) continue;
+        if (daysUntilDue < 0 || daysUntilDue > mode.daysAheadLimit) continue;
       }
 
       const existing = await this.db

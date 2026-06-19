@@ -5,13 +5,15 @@ import { and, count, eq, inArray, ne, sql } from "drizzle-orm";
 import { BeltsService, toBeltDto } from "../belts/belts.service";
 import { DATABASE } from "../database/database.module";
 import { StudentAccessService } from "../student-access/student-access.service";
-import { validateStudentInput } from "./student-rules";
+import { nextInactiveAt, validateStudentInput } from "./student-rules";
 
 type StudentRow = typeof students.$inferSelect;
 type GuardianRow = typeof studentGuardians.$inferSelect;
 type BeltRow = typeof belts.$inferSelect;
 
 type StudentStatusFilter = "active" | "inactive" | "all";
+type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
+type ServiceDb = Database | Transaction;
 
 @Injectable()
 export class StudentsService {
@@ -96,27 +98,29 @@ export class StudentsService {
     const studentId = crypto.randomUUID();
     const now = new Date();
 
-    await this.db.insert(students).values({
-      id: studentId,
-      organizationId,
-      name: input.name.trim(),
-      birthDate: input.birthDate,
-      enrollmentDate: input.enrollmentDate,
-      status: "active",
-      inactiveAt: null,
-      phone: emptyToNull(input.phone),
-      email: emptyToNull(input.email),
-      monthlyAmountInCents: input.monthlyAmountInCents ?? null,
-      monthlyDueDay: input.monthlyDueDay ?? null,
-      currentBeltId: input.currentBeltId,
-      currentDegree: input.currentDegree,
-      createdAt: now,
-      updatedAt: now,
-    });
+    await this.db.transaction(async (tx) => {
+      await tx.insert(students).values({
+        id: studentId,
+        organizationId,
+        name: input.name.trim(),
+        birthDate: input.birthDate,
+        enrollmentDate: input.enrollmentDate,
+        status: "active",
+        inactiveAt: null,
+        phone: emptyToNull(input.phone),
+        email: emptyToNull(input.email),
+        monthlyAmountInCents: input.monthlyAmountInCents ?? null,
+        monthlyDueDay: input.monthlyDueDay ?? null,
+        currentBeltId: input.currentBeltId,
+        currentDegree: input.currentDegree,
+        createdAt: now,
+        updatedAt: now,
+      });
 
-    if (input.guardian) {
-      await this.insertGuardian(studentId, input.guardian);
-    }
+      if (input.guardian) {
+        await this.insertGuardian(studentId, input.guardian, tx);
+      }
+    });
 
     return this.get(organizationId, studentId);
   }
@@ -129,9 +133,11 @@ export class StudentsService {
   }
 
   async update(organizationId: string, id: string, input: UpdateStudentInput): Promise<Student> {
-    await this.findStudent(organizationId, id);
+    const current = await this.findStudent(organizationId, id);
     validateStudentInput(input);
-    await this.assertUniqueEmail(organizationId, input.email, id);
+    if (normalizeEmail(input.email) !== normalizeEmail(current.email)) {
+      await this.assertUniqueEmail(organizationId, input.email, id);
+    }
 
     const belt = await this.beltsService.findById(organizationId, input.currentBeltId);
     if (!belt) {
@@ -139,36 +145,54 @@ export class StudentsService {
     }
 
     const status = input.status;
+    const nextStatus = status ?? current.status;
     const now = new Date();
 
-    await this.db
-      .update(students)
-      .set({
-        name: input.name.trim(),
-        birthDate: input.birthDate,
-        enrollmentDate: input.enrollmentDate,
-        status,
-        inactiveAt: status === "inactive" ? now : status === "active" ? null : undefined,
-        phone: emptyToNull(input.phone),
-        email: emptyToNull(input.email),
-        monthlyAmountInCents: input.monthlyAmountInCents ?? null,
-        monthlyDueDay: input.monthlyDueDay ?? null,
-        currentBeltId: input.currentBeltId,
-        currentDegree: input.currentDegree,
-        updatedAt: now,
-      })
-      .where(and(eq(students.id, id), eq(students.organizationId, organizationId)));
+    await this.db.transaction(async (tx) => {
+      await tx
+        .update(students)
+        .set({
+          name: input.name.trim(),
+          birthDate: input.birthDate,
+          enrollmentDate: input.enrollmentDate,
+          status,
+          inactiveAt: nextInactiveAt({
+            currentStatus: current.status,
+            currentInactiveAt: current.inactiveAt,
+            nextStatus,
+            now,
+          }),
+          phone: emptyToNull(input.phone),
+          email: emptyToNull(input.email),
+          monthlyAmountInCents: input.monthlyAmountInCents ?? null,
+          monthlyDueDay: input.monthlyDueDay ?? null,
+          currentBeltId: input.currentBeltId,
+          currentDegree: input.currentDegree,
+          updatedAt: now,
+        })
+        .where(and(eq(students.id, id), eq(students.organizationId, organizationId)));
 
-    await this.replaceGuardian(id, input.guardian ?? null);
+      await this.replaceGuardian(id, input.guardian ?? null, tx);
+    });
 
     return this.get(organizationId, id);
   }
 
   async inactivate(organizationId: string, id: string): Promise<Student> {
-    await this.findStudent(organizationId, id);
+    const current = await this.findStudent(organizationId, id);
+    const now = new Date();
     await this.db
       .update(students)
-      .set({ status: "inactive", inactiveAt: new Date(), updatedAt: new Date() })
+      .set({
+        status: "inactive",
+        inactiveAt: nextInactiveAt({
+          currentStatus: current.status,
+          currentInactiveAt: current.inactiveAt,
+          nextStatus: "inactive",
+          now,
+        }),
+        updatedAt: now,
+      })
       .where(and(eq(students.id, id), eq(students.organizationId, organizationId)));
 
     return this.get(organizationId, id);
@@ -189,7 +213,7 @@ export class StudentsService {
     email: string | null | undefined,
     ignoreStudentId?: string,
   ) {
-    const normalizedEmail = email?.trim().toLowerCase();
+    const normalizedEmail = normalizeEmail(email);
     if (!normalizedEmail) return;
 
     const conditions = [
@@ -265,20 +289,22 @@ export class StudentsService {
   private async replaceGuardian(
     studentId: string,
     guardian: CreateStudentInput["guardian"],
+    db: ServiceDb = this.db,
   ): Promise<void> {
-    await this.db.delete(studentGuardians).where(eq(studentGuardians.studentId, studentId));
+    await db.delete(studentGuardians).where(eq(studentGuardians.studentId, studentId));
 
     if (guardian) {
-      await this.insertGuardian(studentId, guardian);
+      await this.insertGuardian(studentId, guardian, db);
     }
   }
 
   private async insertGuardian(
     studentId: string,
     guardian: NonNullable<CreateStudentInput["guardian"]>,
+    db: ServiceDb = this.db,
   ) {
     const now = new Date();
-    await this.db.insert(studentGuardians).values({
+    await db.insert(studentGuardians).values({
       id: crypto.randomUUID(),
       studentId,
       name: guardian.name.trim(),
@@ -329,6 +355,10 @@ function toStudentDto(
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
+}
+
+function normalizeEmail(value: string | null | undefined): string | null {
+  return value?.trim().toLowerCase() || null;
 }
 
 function emptyToNull(value: string | null | undefined): string | null {

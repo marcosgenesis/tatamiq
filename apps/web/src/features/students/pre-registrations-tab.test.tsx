@@ -17,6 +17,9 @@ const baseRequest = {
   approvedStudentId: null,
   isInstructorAccount: false,
   duplicateStudentHasActiveAccess: false,
+  cpf: null,
+  declaredBeltId: null,
+  declaredDegree: null,
   createdAt: "2026-05-27T00:00:00.000Z",
   reviewedAt: null,
 };
@@ -31,6 +34,7 @@ describe("RequestCard", () => {
         approving={false}
         approvalResult={null}
         approvePending={false}
+        generateFirstAccessLinkPending={false}
         sendEmailPending={false}
         onStartReject={vi.fn()}
         onCancelReject={vi.fn()}
@@ -39,12 +43,41 @@ describe("RequestCard", () => {
         onApprove={vi.fn()}
         onCancelApprove={vi.fn()}
         onCopyFirstAccess={vi.fn()}
+        onGenerateFirstAccessLink={vi.fn()}
         onSendEmail={vi.fn()}
       />,
     );
 
     expect(html).toContain("Aprovar");
     expect(html).toContain("Rejeitar");
+  });
+
+  it("keeps approved requests read-only when no fresh approval result is available", () => {
+    const html = renderToStaticMarkup(
+      <RequestCard
+        request={{ ...baseRequest, status: "approved", reviewedAt: "2026-05-27T01:00:00.000Z" }}
+        rejecting={false}
+        rejectReason=""
+        approving={false}
+        approvalResult={null}
+        approvePending={false}
+        generateFirstAccessLinkPending={false}
+        sendEmailPending={false}
+        onStartReject={vi.fn()}
+        onCancelReject={vi.fn()}
+        onRejectReasonChange={vi.fn()}
+        onReject={vi.fn()}
+        onApprove={vi.fn()}
+        onCancelApprove={vi.fn()}
+        onCopyFirstAccess={vi.fn()}
+        onGenerateFirstAccessLink={vi.fn()}
+        onSendEmail={vi.fn()}
+      />,
+    );
+
+    expect(html).toContain("Aprovada");
+    expect(html).toContain("Gerar novo link de primeiro acesso");
+    expect(html).toContain("Enviar por email");
   });
 
   it("renders copy and email actions after approval result", () => {
@@ -56,6 +89,7 @@ describe("RequestCard", () => {
         approving={false}
         approvalResult={{ firstAccessLink: "http://localhost:5173/student/first-access/token" }}
         approvePending={false}
+        generateFirstAccessLinkPending={false}
         sendEmailPending={false}
         onStartReject={vi.fn()}
         onCancelReject={vi.fn()}
@@ -64,6 +98,7 @@ describe("RequestCard", () => {
         onApprove={vi.fn()}
         onCancelApprove={vi.fn()}
         onCopyFirstAccess={vi.fn()}
+        onGenerateFirstAccessLink={vi.fn()}
         onSendEmail={vi.fn()}
       />,
     );
@@ -86,6 +121,7 @@ describe("RequestCard", () => {
         approving={false}
         approvalResult={null}
         approvePending={false}
+        generateFirstAccessLinkPending={false}
         sendEmailPending={false}
         onStartReject={vi.fn()}
         onCancelReject={vi.fn()}
@@ -94,6 +130,7 @@ describe("RequestCard", () => {
         onApprove={vi.fn()}
         onCancelApprove={vi.fn()}
         onCopyFirstAccess={vi.fn()}
+        onGenerateFirstAccessLink={vi.fn()}
         onSendEmail={vi.fn()}
       />,
     );
@@ -117,6 +154,7 @@ describe("RequestCard", () => {
         approving={false}
         approvalResult={null}
         approvePending={false}
+        generateFirstAccessLinkPending={false}
         sendEmailPending={false}
         onStartReject={vi.fn()}
         onCancelReject={vi.fn()}
@@ -125,6 +163,7 @@ describe("RequestCard", () => {
         onApprove={vi.fn()}
         onCancelApprove={vi.fn()}
         onCopyFirstAccess={vi.fn()}
+        onGenerateFirstAccessLink={vi.fn()}
         onSendEmail={vi.fn()}
       />,
     );

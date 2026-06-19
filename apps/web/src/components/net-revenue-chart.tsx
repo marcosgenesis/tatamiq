@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import type * as React from "react";
 import { Bar, BarChart, XAxis } from "recharts";
 import { api } from "@/api";
+import { useAppShell } from "@/components/app-shell";
 import { DashboardCard } from "@/components/dashboard-card";
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -10,6 +11,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { academyQueryKey } from "../lib/academy-query-keys";
 
 const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
@@ -51,10 +53,12 @@ function CustomGradientBar(
 }
 
 export function WeeklyAttendanceChart() {
+  const { activeAcademy } = useAppShell();
+  const activeAcademyId = activeAcademy.id;
   const weekStart = getWeekStart();
 
   const weekQuery = useQuery({
-    queryKey: ["schedule", "week", weekStart],
+    queryKey: academyQueryKey(activeAcademyId, "schedule", "week", weekStart),
     queryFn: async () => {
       const { data, error } = await api.GET("/schedule/week", {
         params: { query: { weekStart } },

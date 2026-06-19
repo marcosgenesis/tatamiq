@@ -260,6 +260,15 @@ async function deleteUserByEmail(email: string) {
   await db.delete(user).where(eq(user.id, existing.id));
 }
 
+export async function ensureStandalonePasswordUser(input: {
+  email: string;
+  name: string;
+  password: string;
+  role?: string | null;
+}) {
+  return ensurePasswordUser(input);
+}
+
 async function ensurePasswordUser(input: {
   email: string;
   name: string;

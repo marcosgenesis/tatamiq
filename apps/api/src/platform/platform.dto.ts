@@ -489,6 +489,9 @@ export class PlatformUserDetailDto extends PlatformUserSummaryDto {
   @ApiProperty({ type: Boolean })
   emailVerified!: boolean;
 
+  @ApiProperty({ type: Boolean })
+  isPlatformAdmin!: boolean;
+
   @ApiProperty({ type: () => [PlatformUserMembershipDto] })
   memberships!: PlatformUserMembershipDto[];
 

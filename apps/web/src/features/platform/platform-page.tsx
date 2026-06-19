@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, useNavigate } from "@tanstack/react-router";
 import { ArrowRight01Icon, ShieldUserIcon } from "hugeicons-react";
 import { Skeleton } from "../../components/ui/skeleton";
@@ -24,11 +24,17 @@ import { PlatformLoading, PlatformShell } from "./platform-shell";
 
 export function PlatformPage() {
   const navigate = useNavigate();
-  const platform = useQuery(platformMeQuery());
-  const dashboard = useQuery(platformDashboardQuery());
-  const activity = useQuery(platformAuditQuery("", 0, 7));
+  const queryClient = useQueryClient();
+  const session = authClient.useSession();
+  const sessionUserId = session.data?.user.id;
+  const platform = useQuery({
+    ...platformMeQuery(sessionUserId),
+    enabled: !!sessionUserId,
+  });
+  const dashboard = useQuery(platformDashboardQuery(sessionUserId));
+  const activity = useQuery(platformAuditQuery(sessionUserId, "", 0, 7));
 
-  if (platform.isLoading) {
+  if (session.isPending || platform.isLoading) {
     return <PlatformLoading label="Carregando console do operador..." />;
   }
   if (platform.isError || !platform.data?.user) {
@@ -42,7 +48,12 @@ export function PlatformPage() {
   return (
     <PlatformShell
       user={platform.data.user}
-      onSignOut={() => authClient.signOut().then(() => navigate({ to: "/sign-in" }))}
+      onSignOut={() =>
+        authClient.signOut().then(() => {
+          queryClient.clear();
+          return navigate({ to: "/sign-in" });
+        })
+      }
       title="Visão geral"
       description="Operação da plataforma"
       actions={<ProvisionAcademyDialog />}

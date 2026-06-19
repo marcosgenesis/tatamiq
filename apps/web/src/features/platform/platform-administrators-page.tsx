@@ -43,9 +43,14 @@ export function PlatformAdministratorsPage() {
   const [form, setForm] = useState({ email: "", name: "" });
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
 
-  const platform = useQuery(platformMeQuery());
+  const session = authClient.useSession();
+  const sessionUserId = session.data?.user.id;
+  const platform = useQuery({
+    ...platformMeQuery(sessionUserId),
+    enabled: !!sessionUserId,
+  });
   const administrators = useQuery(
-    platformAdministratorsQuery(pagination.pageIndex, pagination.pageSize),
+    platformAdministratorsQuery(sessionUserId, pagination.pageIndex, pagination.pageSize),
   );
   const addAdmin = useMutation({
     mutationFn: (input: AddPlatformAdministratorInput) => addPlatformAdministrator(input),
@@ -61,13 +66,19 @@ export function PlatformAdministratorsPage() {
       queryClient.invalidateQueries({ queryKey: ["platform", "administrators"] }),
   });
 
-  if (platform.isLoading) return <PlatformLoading label="Carregando administradores..." />;
+  if (session.isPending || platform.isLoading)
+    return <PlatformLoading label="Carregando administradores..." />;
   if (platform.isError || !platform.data?.user) return <Navigate to="/choose-area" />;
 
   return (
     <PlatformShell
       user={platform.data.user}
-      onSignOut={() => authClient.signOut().then(() => navigate({ to: "/sign-in" }))}
+      onSignOut={() =>
+        authClient.signOut().then(() => {
+          queryClient.clear();
+          return navigate({ to: "/sign-in" });
+        })
+      }
       title="Administradores"
       description="Quem opera a plataforma"
       actions={

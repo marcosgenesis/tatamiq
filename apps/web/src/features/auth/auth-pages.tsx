@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { AtIcon, LockIcon, UserIcon } from "hugeicons-react";
 import { useState } from "react";
@@ -17,6 +18,7 @@ function AuthError({ message }: { message: string | null }) {
 
 export function SignInPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +29,9 @@ export function SignInPage() {
     event.preventDefault();
     setError(null);
     setIsSubmitting(true);
+    queryClient.clear();
     const result = await authClient.signIn.email({ email, password });
+    queryClient.clear();
     setIsSubmitting(false);
 
     if (result.error) {
@@ -91,10 +95,37 @@ export function SignInPage() {
   );
 }
 
+export async function createPublicAccount(input: {
+  name: string;
+  email: string;
+  password: string;
+  signOut: () => Promise<unknown>;
+  signUp: (input: {
+    name: string;
+    email: string;
+    password: string;
+  }) => Promise<{ error?: unknown }>;
+  clearSessionCache: () => void;
+}) {
+  await input.signOut().catch(() => undefined);
+  input.clearSessionCache();
+  const result = await input.signUp({
+    name: input.name,
+    email: input.email,
+    password: input.password,
+  });
+  input.clearSessionCache();
+  return result;
+}
+
 export function SignUpPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const params = new URLSearchParams(window.location.search);
-  const redirectTo = params.get("redirect") ?? "/onboarding/academy";
+  const requestedRedirect = params.get("redirect") ?? "/onboarding/academy";
+  const redirectTo = requestedRedirect.startsWith("/platform")
+    ? "/onboarding/academy"
+    : requestedRedirect;
   const [name, setName] = useState(params.get("name") ?? "");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -105,7 +136,14 @@ export function SignUpPage() {
     event.preventDefault();
     setError(null);
     setIsSubmitting(true);
-    const result = await authClient.signUp.email({ name, email, password });
+    const result = await createPublicAccount({
+      name,
+      email,
+      password,
+      signOut: () => authClient.signOut(),
+      signUp: (input) => authClient.signUp.email(input),
+      clearSessionCache: () => queryClient.clear(),
+    });
     setIsSubmitting(false);
 
     if (result.error) {

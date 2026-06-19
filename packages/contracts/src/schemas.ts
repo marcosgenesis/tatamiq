@@ -231,6 +231,7 @@ export const preRegistrationPublicProfileSchema = z.object({
   link: z.object({
     status: preRegistrationLinkStatusSchema,
   }),
+  belts: z.array(beltSchema),
 });
 
 export const createPreRegistrationRequestSchema = z.object({
@@ -238,10 +239,13 @@ export const createPreRegistrationRequestSchema = z.object({
   birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   phone: z.string().trim().min(1),
   email: z.string().trim().email(),
+  cpf: z.string().trim().optional().or(z.literal("")),
   guardianName: z.string().trim().optional().or(z.literal("")),
   guardianPhone: z.string().trim().optional().or(z.literal("")),
   note: z.string().trim().optional().or(z.literal("")),
   consentAccepted: z.literal(true),
+  declaredBeltId: z.string().trim().optional().or(z.literal("")),
+  declaredDegree: z.number().int().min(0).max(9).optional(),
 });
 
 export const preRegistrationRequestSchema = z.object({
@@ -264,6 +268,9 @@ export const preRegistrationRequestSchema = z.object({
   approvedStudentId: z.string().nullable(),
   isInstructorAccount: z.boolean(),
   duplicateStudentHasActiveAccess: z.boolean(),
+  cpf: z.string().nullable(),
+  declaredBeltId: z.string().nullable(),
+  declaredDegree: z.number().int().nullable(),
   createdAt: z.string().datetime(),
   reviewedAt: z.string().datetime().nullable(),
 });
@@ -322,6 +329,10 @@ export const completeFirstAccessResponseSchema = z.object({
   redirectTo: z.enum(["sign-in", "student"]),
 });
 
+export const generateFirstAccessLinkResponseSchema = z.object({
+  firstAccessLink: z.string().url(),
+});
+
 export const sendFirstAccessEmailResponseSchema = z.object({
   sent: z.boolean(),
 });
@@ -342,6 +353,7 @@ export type ApprovePreRegistrationResponse = z.infer<typeof approvePreRegistrati
 export type FirstAccessPreview = z.infer<typeof firstAccessPreviewSchema>;
 export type CompleteFirstAccessInput = z.infer<typeof completeFirstAccessSchema>;
 export type CompleteFirstAccessResponse = z.infer<typeof completeFirstAccessResponseSchema>;
+export type GenerateFirstAccessLinkResponse = z.infer<typeof generateFirstAccessLinkResponseSchema>;
 export type SendFirstAccessEmailResponse = z.infer<typeof sendFirstAccessEmailResponseSchema>;
 
 export const classGroupStatusSchema = z.enum(["active", "archived"]);
@@ -626,6 +638,10 @@ export const createMonthlyFeeSchema = z.object({
   dueDay: z.number().int().min(1).max(31),
 });
 
+export const generateMissingMonthlyFeesResponseSchema = z.object({
+  created: z.number().int().nonnegative(),
+});
+
 export const adjustMonthlyFeeSchema = z.object({
   amountInCents: z.number().int().positive(),
   reason: z.string().trim().min(1),
@@ -646,10 +662,13 @@ export type ManualPaymentInput = z.infer<typeof manualPaymentSchema>;
 export const uploadUrlResponseSchema = z.object({
   uploadUrl: z.string().url(),
   fileKey: z.string(),
+  fileKeySignature: z.string().min(1),
+  expiresAt: z.string().datetime(),
 });
 
 export const confirmReceiptSchema = z.object({
   fileKey: z.string().min(1),
+  fileKeySignature: z.string().min(1),
   fileType: z.string().min(1),
   fileSizeBytes: z
     .number()
@@ -711,6 +730,9 @@ export type MonthlyFeeEvent = z.infer<typeof monthlyFeeEventSchema>;
 export type PaymentReceipt = z.infer<typeof paymentReceiptSchema>;
 export type ListMonthlyFeesResponse = z.infer<typeof listMonthlyFeesResponseSchema>;
 export type CreateMonthlyFeeInput = z.infer<typeof createMonthlyFeeSchema>;
+export type GenerateMissingMonthlyFeesResponse = z.infer<
+  typeof generateMissingMonthlyFeesResponseSchema
+>;
 
 // --- Student Notes ---
 
@@ -772,10 +794,13 @@ export const updateAcademySchema = z.object({
 export const academyLogoUploadResponseSchema = z.object({
   uploadUrl: z.string().url(),
   fileKey: z.string(),
+  fileKeySignature: z.string().min(1),
+  expiresAt: z.string().datetime(),
 });
 
 export const academyConfirmLogoSchema = z.object({
   fileKey: z.string().trim().min(1),
+  fileKeySignature: z.string().min(1),
 });
 
 export type AcademyProfile = z.infer<typeof academyProfileSchema>;

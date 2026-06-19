@@ -2,6 +2,7 @@ import {
   adjustMonthlyFeeSchema,
   confirmReceiptSchema,
   createMonthlyFeeSchema,
+  generateMissingMonthlyFeesResponseSchema,
   listMonthlyFeesResponseSchema,
   manualPaymentSchema,
   monthlyFeeDetailSchema,
@@ -20,6 +21,9 @@ export class MonthlyFeeDetailDto extends createZodDto(monthlyFeeDetailSchema) {}
 export class ListMonthlyFeesResponseDto extends createZodDto(listMonthlyFeesResponseSchema) {}
 export class StudentMonthlyFeesResponseDto extends createZodDto(studentMonthlyFeesResponseSchema) {}
 export class CreateMonthlyFeeDto extends createZodDto(createMonthlyFeeSchema) {}
+export class GenerateMissingMonthlyFeesResponseDto extends createZodDto(
+  generateMissingMonthlyFeesResponseSchema,
+) {}
 export class AdjustMonthlyFeeDto extends createZodDto(adjustMonthlyFeeSchema) {}
 export class WaiveMonthlyFeeDto extends createZodDto(waiveMonthlyFeeSchema) {}
 export class ManualPaymentDto extends createZodDto(manualPaymentSchema) {}

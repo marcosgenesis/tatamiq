@@ -1,4 +1,10 @@
-import { BadRequestException, ForbiddenException, Inject, Injectable } from "@nestjs/common";
+import {
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { type Database, session, user } from "@tatamiq/database";
 import type { UserSession } from "@thallesp/nestjs-better-auth";
 import { count, eq, inArray, or } from "drizzle-orm";
@@ -149,27 +155,34 @@ export class PlatformAdminService {
     };
   }
 
-  async removeAdministrator(id: string) {
+  async assertCanDisablePlatformUser(id: string): Promise<void> {
     const db = this.dbRequired;
+    const configuredIds = platformAdminUserIds();
     const [target] = await db.select().from(user).where(eq(user.id, id)).limit(1);
-    if (!target || !isPlatformAdminUser(target, platformAdminUserIds())) {
-      throw new BadRequestException("Administrador da Plataforma não encontrado.");
+
+    if (!target) throw new NotFoundException("Usuário não encontrado.");
+    if (!isPlatformAdminUser(target, configuredIds)) return;
+
+    if (configuredIds.includes(id)) {
+      throw new BadRequestException(
+        "Administrador configurado por ambiente não pode ser desativado ou excluído aqui.",
+      );
     }
 
-    const configuredIds = platformAdminUserIds();
-    const [{ total }] = await db
-      .select({ total: count() })
-      .from(user)
-      .where(eq(user.role, "admin"));
-    const activeAdminCount = new Set([
-      ...configuredIds,
-      ...((await db.select({ id: user.id }).from(user).where(eq(user.role, "admin"))) ?? []).map(
-        (row) => row.id,
-      ),
-    ]).size;
+    const remainingActiveAdmins = await this.activePlatformAdminIdsExcluding(id, configuredIds);
+    if (remainingActiveAdmins.size === 0) {
+      throw new BadRequestException(
+        "Não é possível desativar o último Administrador da Plataforma.",
+      );
+    }
+  }
 
-    if ((total ?? 0) <= 1 || activeAdminCount <= 1) {
-      throw new BadRequestException("Não é possível remover o último Administrador da Plataforma.");
+  async removeAdministrator(id: string) {
+    const db = this.dbRequired;
+    const configuredIds = platformAdminUserIds();
+    const [target] = await db.select().from(user).where(eq(user.id, id)).limit(1);
+    if (!target || !isPlatformAdminUser(target, configuredIds)) {
+      throw new BadRequestException("Administrador da Plataforma não encontrado.");
     }
 
     if (configuredIds.includes(id)) {
@@ -178,10 +191,33 @@ export class PlatformAdminService {
       );
     }
 
+    const [{ total }] = await db
+      .select({ total: count() })
+      .from(user)
+      .where(eq(user.role, "admin"));
+    const activeAdminCount = (await this.activePlatformAdminIdsExcluding(id, configuredIds)).size;
+
+    if ((total ?? 0) <= 1 || activeAdminCount <= 0) {
+      throw new BadRequestException("Não é possível remover o último Administrador da Plataforma.");
+    }
+
     await db.update(user).set({ role: null, updatedAt: new Date() }).where(eq(user.id, id));
     await db.delete(session).where(eq(session.userId, id));
 
     return { success: true };
+  }
+
+  private async activePlatformAdminIdsExcluding(id: string, configuredIds: string[]) {
+    const roleCondition = eq(user.role, "admin");
+    const where =
+      configuredIds.length > 0 ? or(roleCondition, inArray(user.id, configuredIds)) : roleCondition;
+    const rows = await this.dbRequired.select().from(user).where(where);
+
+    return new Set(
+      rows
+        .filter((row) => row.id !== id && !row.banned && isPlatformAdminUser(row, configuredIds))
+        .map((row) => row.id),
+    );
   }
 }
 

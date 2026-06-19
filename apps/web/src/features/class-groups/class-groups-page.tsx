@@ -12,6 +12,7 @@ import {
 } from "hugeicons-react";
 import { useMemo, useState } from "react";
 import { api } from "../../api";
+import { useAppShell } from "../../components/app-shell";
 import { Tabs, TabsList, TabsTrigger } from "../../components/reui/tabs";
 import { Avatar, AvatarFallback, AvatarGroup, AvatarGroupCount } from "../../components/ui/avatar";
 import { Badge, BadgeDot } from "../../components/ui/badge";
@@ -34,6 +35,7 @@ import {
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu";
 import { Input } from "../../components/ui/input";
+import { academyQueryKey } from "../../lib/academy-query-keys";
 import { ClassGroupForm, type ClassGroupPayload } from "./class-group-form";
 
 type ClassGroupStatusFilter = "active" | "archived" | "all";
@@ -42,8 +44,19 @@ const weekdays = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "
 const weekdaysShort = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const weekdayInitials = ["D", "S", "T", "Q", "Q", "S", "S"];
 
+export const classGroupsKeys = {
+  all: (academyId: string | null | undefined) =>
+    ["class-groups", academyId ?? "no-academy"] as const,
+  list: (academyId: string | null | undefined, status: ClassGroupStatusFilter) =>
+    [...classGroupsKeys.all(academyId), status] as const,
+  students: (academyId: string | null | undefined) =>
+    ["students", academyId ?? "no-academy", "active", "for-class-groups"] as const,
+};
+
 export function ClassGroupsPage() {
   const queryClient = useQueryClient();
+  const { activeAcademy } = useAppShell();
+  const activeAcademyId = activeAcademy.id;
   const [statusFilter, setStatusFilter] = useState<ClassGroupStatusFilter>("active");
   const [search, setSearch] = useState("");
   const [editingClassGroup, setEditingClassGroup] = useState<ClassGroup | null>(null);
@@ -52,7 +65,7 @@ export function ClassGroupsPage() {
   const [archivingClassGroup, setArchivingClassGroup] = useState<ClassGroup | null>(null);
 
   const classGroupsQuery = useQuery({
-    queryKey: ["class-groups", statusFilter],
+    queryKey: classGroupsKeys.list(activeAcademyId, statusFilter),
     queryFn: async () => {
       const { data, error } = await api.GET("/class-groups", {
         params: { query: { status: statusFilter } },
@@ -60,10 +73,11 @@ export function ClassGroupsPage() {
       if (error) throw new Error("Não foi possível carregar turmas.");
       return data;
     },
+    enabled: !!activeAcademyId,
   });
 
   const studentsQuery = useQuery({
-    queryKey: ["students", "active", "for-class-groups"],
+    queryKey: classGroupsKeys.students(activeAcademyId),
     queryFn: async () => {
       const { data, error } = await api.GET("/students", {
         params: { query: { status: "active" } },
@@ -71,6 +85,7 @@ export function ClassGroupsPage() {
       if (error) throw new Error("Não foi possível carregar alunos.");
       return data.students;
     },
+    enabled: !!activeAcademyId,
   });
 
   const saveMutation = useMutation({
@@ -89,7 +104,10 @@ export function ClassGroupsPage() {
       return data;
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["class-groups"] });
+      await queryClient.invalidateQueries({ queryKey: classGroupsKeys.all(activeAcademyId) });
+      await queryClient.invalidateQueries({
+        queryKey: academyQueryKey(activeAcademyId, "schedule"),
+      });
       closeForm();
     },
     onError: (mutationError) => {
@@ -112,7 +130,10 @@ export function ClassGroupsPage() {
       if (error) throw new Error("Não foi possível reativar a turma.");
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["class-groups"] });
+      await queryClient.invalidateQueries({ queryKey: classGroupsKeys.all(activeAcademyId) });
+      await queryClient.invalidateQueries({
+        queryKey: academyQueryKey(activeAcademyId, "schedule"),
+      });
     },
   });
 

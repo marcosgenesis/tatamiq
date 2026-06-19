@@ -8,7 +8,9 @@ import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Skeleton } from "../../components/ui/skeleton";
 import { Textarea } from "../../components/ui/textarea";
+import { authClient } from "../../lib/auth-client";
 import { formatCurrency, formatDate, monthNames } from "../../lib/formatting";
+import { studentQueryKey } from "../../lib/session-query-keys";
 import {
   deriveStudentReceiptStatus,
   studentLastReceiptMessage,
@@ -22,18 +24,21 @@ const MAX_SIZE_BYTES = 10 * 1024 * 1024;
 
 export function StudentMonthlyFeesSection({ me }: { me: StudentMeResponse }) {
   const queryClient = useQueryClient();
+  const session = authClient.useSession();
+  const sessionUserId = session.data?.user.id;
   const [selectedFee, setSelectedFee] = useState<StudentMonthlyFee | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const feesQuery = useQuery({
-    queryKey: ["student", "monthly-fees"],
+    queryKey: studentQueryKey(sessionUserId, "monthly-fees"),
     queryFn: async () => {
       const { data, error } = await api.GET("/student/monthly-fees");
       if (error) throw new Error("Não foi possível carregar mensalidades.");
       return data;
     },
+    enabled: !!sessionUserId,
   });
 
   const uploadMutation = useMutation({
@@ -58,14 +63,20 @@ export function StudentMonthlyFeesSection({ me }: { me: StudentMeResponse }) {
 
       const { error: confirmError } = await api.POST("/student/monthly-fees/{id}/receipts", {
         params: { path: { id: selectedFee.id } },
-        body: { fileKey: uploadData.fileKey, fileType: file.type, fileSizeBytes: file.size, note },
+        body: {
+          fileKey: uploadData.fileKey,
+          fileKeySignature: uploadData.fileKeySignature,
+          fileType: file.type,
+          fileSizeBytes: file.size,
+          note,
+        },
       });
       if (confirmError) throw new Error("Não foi possível confirmar o comprovante.");
     },
     onSuccess: async () => {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["student", "monthly-fees"] }),
-        queryClient.invalidateQueries({ queryKey: ["student", "indicators"] }),
+        queryClient.invalidateQueries({ queryKey: studentQueryKey(sessionUserId, "monthly-fees") }),
+        queryClient.invalidateQueries({ queryKey: studentQueryKey(sessionUserId, "indicators") }),
       ]);
       setSelectedFee(null);
       setFile(null);

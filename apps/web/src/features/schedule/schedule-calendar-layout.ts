@@ -22,8 +22,8 @@ export function eventColorClasses(occ: ScheduleOccurrence): string {
 }
 
 export function localStartMinutes(occ: ScheduleOccurrence): number {
-  const d = new Date(occ.scheduledStartAt);
-  return d.getHours() * 60 + d.getMinutes();
+  const [hours = 0, minutes = 0] = occ.startTime.split(":").map(Number);
+  return hours * 60 + minutes;
 }
 
 export function getEventPosition(occ: ScheduleOccurrence) {

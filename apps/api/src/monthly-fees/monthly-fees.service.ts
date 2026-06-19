@@ -33,6 +33,7 @@ import {
   projectStudentMonthlyFeeHistory,
   studentMonthlyFeeHistoryCutoffDate,
 } from "./student-monthly-fee-history-projection";
+import { assertValidUploadKeySignature, issueUploadKeySignature } from "./upload-key-signature";
 
 type FeeRow = typeof monthlyFees.$inferSelect;
 type EventRow = typeof monthlyFeeEvents.$inferSelect;
@@ -269,8 +270,15 @@ export class MonthlyFeesService {
 
     const fileKey = `receipts/${organizationId}/${feeId}/${crypto.randomUUID()}`;
     const uploadUrl = await this.r2.generatePresignedUrl(fileKey, contentType);
+    const signature = issueUploadKeySignature({
+      purpose: "receipt",
+      organizationId,
+      subjectId: feeId,
+      fileKey,
+      ...(studentId ? { studentId } : {}),
+    });
 
-    return { uploadUrl, fileKey };
+    return { uploadUrl, fileKey, ...signature };
   }
 
   async confirmReceipt(
@@ -281,6 +289,21 @@ export class MonthlyFeesService {
     studentId?: string,
   ): Promise<MonthlyFeeDetail> {
     this.validateReceiptFileType(input.fileType);
+
+    if (!input.fileKey.startsWith(`receipts/${organizationId}/${feeId}/`)) {
+      throw new BadRequestException("Upload inválido ou expirado.");
+    }
+
+    assertValidUploadKeySignature(
+      {
+        purpose: "receipt",
+        organizationId,
+        subjectId: feeId,
+        fileKey: input.fileKey,
+        ...(studentId ? { studentId } : {}),
+      },
+      input.fileKeySignature,
+    );
 
     if (input.fileSizeBytes > 10 * 1024 * 1024) {
       throw new BadRequestException("Arquivo excede o limite de 10 MB.");

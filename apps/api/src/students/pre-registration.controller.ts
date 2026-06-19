@@ -1,9 +1,12 @@
-import { Controller, Get, HttpCode, Inject, Param, Post } from "@nestjs/common";
+import { Controller, Get, HttpCode, Inject, Param, Post, Req } from "@nestjs/common";
 import { ApiBody, ApiOkResponse, ApiParam, ApiTags } from "@nestjs/swagger";
 import { AllowAnonymous, OrgRoles } from "@thallesp/nestjs-better-auth";
 import { AcademyId, ActorId } from "../academy-request";
 import { ZodBody } from "../zod-body.decorator";
 import { PreRegistrationService } from "./pre-registration.service";
+
+type PreRegistrationRequestMetadata = { ip?: string };
+
 import {
   ApprovePreRegistrationRequestDto,
   ApprovePreRegistrationResponseDto,
@@ -11,6 +14,7 @@ import {
   CompleteFirstAccessResponseDto,
   CreatePreRegistrationRequestDto,
   FirstAccessPreviewDto,
+  GenerateFirstAccessLinkResponseDto,
   ListPreRegistrationRequestsResponseDto,
   PreRegistrationLinkDto,
   PreRegistrationPublicProfileDto,
@@ -46,8 +50,9 @@ export class PreRegistrationController {
   createRequest(
     @Param("token") token: string,
     @ZodBody(CreatePreRegistrationRequestDto) body: CreatePreRegistrationRequestDto,
+    @Req() request: PreRegistrationRequestMetadata,
   ): Promise<PreRegistrationRequestDto> {
-    return this.preRegistrationService.createRequest(token, body);
+    return this.preRegistrationService.createRequest(token, body, request.ip ?? null);
   }
 
   // --- First access (anonymous) ---
@@ -145,7 +150,19 @@ export class PreRegistrationController {
     return this.preRegistrationService.approveRequest(academyId, id, actorId, body);
   }
 
-  // --- Instructor: email ---
+  // --- Instructor: first-access follow-up ---
+
+  @Post("students/pre-registrations/:id/generate-first-access-link")
+  @OrgRoles(["owner"])
+  @HttpCode(200)
+  @ApiParam({ name: "id" })
+  @ApiOkResponse({ type: GenerateFirstAccessLinkResponseDto })
+  generateFirstAccessLink(
+    @AcademyId() academyId: string,
+    @Param("id") id: string,
+  ): Promise<GenerateFirstAccessLinkResponseDto> {
+    return this.preRegistrationService.generateFirstAccessLink(academyId, id);
+  }
 
   @Post("students/pre-registrations/:id/send-first-access-email")
   @OrgRoles(["owner"])

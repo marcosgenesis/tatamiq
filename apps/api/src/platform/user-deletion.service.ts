@@ -12,6 +12,7 @@ import { count, eq } from "drizzle-orm";
 import { platformAdminUserIds } from "../auth";
 import { DATABASE } from "../database/database.module";
 import { AcademyOwnershipService } from "./academy-ownership.service";
+import { PlatformAdminService } from "./platform-admin.service";
 
 export type UserDeletionImpact = {
   userId: string;
@@ -35,6 +36,7 @@ export class UserDeletionService {
     @Inject(DATABASE) private readonly db: Database,
     @Inject(AcademyOwnershipService)
     private readonly academyOwnership: AcademyOwnershipService,
+    @Inject(PlatformAdminService) private readonly platformAdmins: PlatformAdminService,
   ) {}
 
   async impact(id: string): Promise<UserDeletionImpact> {
@@ -67,6 +69,7 @@ export class UserDeletionService {
   }
 
   async delete(id: string, input: DeleteUserInput) {
+    await this.platformAdmins.assertCanDisablePlatformUser(id);
     const impact = await this.impact(id);
     const onlyOwnerAcademies = impact.ownedAcademies.filter((academy) => academy.isOnlyOwner);
 

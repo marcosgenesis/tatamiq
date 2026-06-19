@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { PreRegistrationService } from "./pre-registration.service";
+import {
+  PreRegistrationService,
+  resetPreRegistrationThrottleForTests,
+} from "./pre-registration.service";
 
 type MockRow = Record<string, unknown>;
 
@@ -94,6 +97,12 @@ const whiteBeltRow = {
   name: "Branca",
 };
 
+function futureDate() {
+  const date = new Date();
+  date.setDate(date.getDate() + 1);
+  return date;
+}
+
 const requestRow = {
   id: "request-1",
   organizationId: "academy-1",
@@ -128,6 +137,7 @@ describe("PreRegistrationService", () => {
   let activationService: { activate: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
+    resetPreRegistrationThrottleForTests();
     mock = createMockDb();
     emailService = { send: vi.fn() };
     activationService = { activate: vi.fn().mockResolvedValue({ accessId: "access-1" }) };
@@ -172,6 +182,62 @@ describe("PreRegistrationService", () => {
       status: "pending_review",
       consentAcceptedAt: expect.any(Date),
     });
+  });
+
+  it("blocks repeated public submissions for the same email within the throttle window", async () => {
+    mock.setSelectResults(Array.from({ length: 6 }, () => []));
+
+    for (let index = 0; index < 3; index++) {
+      await service.createRequest("public-token", {
+        name: `Aluno ${index}`,
+        birthDate: "2000-01-01",
+        phone: "11999999999",
+        email: "throttled@example.com",
+        consentAccepted: true,
+      });
+    }
+
+    await expect(
+      service.createRequest("public-token", {
+        name: "Aluno Bloqueado",
+        birthDate: "2000-01-01",
+        phone: "11999999999",
+        email: "throttled@example.com",
+        consentAccepted: true,
+      }),
+    ).rejects.toThrow("Muitas tentativas de pré-cadastro");
+  });
+
+  it("blocks repeated public submissions from the same IP within the throttle window", async () => {
+    mock.setSelectResults(Array.from({ length: 40 }, () => []));
+
+    for (let index = 0; index < 20; index++) {
+      await service.createRequest(
+        "public-token",
+        {
+          name: `Aluno ${index}`,
+          birthDate: "2000-01-01",
+          phone: "11999999999",
+          email: `ip-${index}@example.com`,
+          consentAccepted: true,
+        },
+        "203.0.113.20",
+      );
+    }
+
+    await expect(
+      service.createRequest(
+        "public-token",
+        {
+          name: "Aluno Bloqueado",
+          birthDate: "2000-01-01",
+          phone: "11999999999",
+          email: "ip-blocked@example.com",
+          consentAccepted: true,
+        },
+        "203.0.113.20",
+      ),
+    ).rejects.toThrow("Muitas tentativas de pré-cadastro");
   });
 
   it("requires Consentimento de Pré-Cadastro", async () => {
@@ -394,6 +460,86 @@ describe("PreRegistrationService", () => {
       studentId: "",
       request: { status: "rejected", rejectionReason: "Rejeitada como duplicata." },
     });
+  });
+
+  it("routes new-account first access to sign-in after defining a password", async () => {
+    mock.setSelectResults([
+      [
+        {
+          request: { ...requestRow, firstAccessTokenExpiresAt: futureDate() },
+          academy: academyRow,
+        },
+      ],
+      [{ id: "auth-new", email: "aluno@example.com", name: "Aluno Teste" }],
+      [{ password: null }],
+    ]);
+
+    const result = await service.completeFirstAccess("token", {
+      password: "tatamiq456",
+      termsAccepted: true,
+      termsVersion: "student-access-v1",
+    });
+
+    expect(result).toEqual({ redirectTo: "sign-in" });
+    expect(mock.updatedSets).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ password: expect.any(String) }),
+        expect.objectContaining({ firstAccessConsumedAt: expect.any(Date) }),
+      ]),
+    );
+  });
+
+  it("routes existing-account first access to the student area", async () => {
+    mock.setSelectResults([
+      [
+        {
+          request: { ...requestRow, firstAccessTokenExpiresAt: futureDate() },
+          academy: academyRow,
+        },
+      ],
+      [{ id: "auth-existing", email: "aluno@example.com", name: "Aluno Teste" }],
+      [{ password: "hashed_password" }],
+    ]);
+
+    const result = await service.completeFirstAccess("token", {
+      termsAccepted: true,
+      termsVersion: "student-access-v1",
+    });
+
+    expect(result).toEqual({ redirectTo: "student" });
+    expect(mock.updatedSets).toEqual([
+      expect.objectContaining({ firstAccessConsumedAt: expect.any(Date) }),
+    ]);
+  });
+
+  it("generates a fresh first-access link for approved requests", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-27T12:00:00.000Z"));
+    try {
+      mock.setSelectResults([
+        [{ ...requestRow, status: "approved", firstAccessConsumedAt: new Date() }],
+      ]);
+
+      const result = await service.generateFirstAccessLink("academy-1", "request-1");
+
+      expect(result.firstAccessLink).toContain("/student/first-access/");
+      expect(mock.updatedSets[0]).toMatchObject({
+        firstAccessTokenHash: expect.any(String),
+        firstAccessTokenExpiresAt: new Date("2026-06-03T12:00:00.000Z"),
+        firstAccessConsumedAt: null,
+      });
+      expect(emailService.send).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("rejects first-access link generation for non-approved requests", async () => {
+    mock.setSelectResults([[requestRow]]);
+
+    await expect(service.generateFirstAccessLink("academy-1", "request-1")).rejects.toThrow(
+      "Link de primeiro acesso só pode ser gerado para solicitações aprovadas.",
+    );
   });
 
   it("rejects first-access email for non-approved requests", async () => {

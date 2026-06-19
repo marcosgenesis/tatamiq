@@ -15,6 +15,8 @@ import { normalizeClassGroupInput } from "./class-group-rules";
 type ClassGroupRow = typeof classGroups.$inferSelect;
 type ScheduleRow = typeof classGroupSchedules.$inferSelect;
 type ClassGroupStatusFilter = "active" | "archived" | "all";
+type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
+type ServiceDb = Database | Transaction;
 
 @Injectable()
 export class ClassGroupsService {
@@ -52,20 +54,22 @@ export class ClassGroupsService {
     const id = crypto.randomUUID();
     const now = new Date();
 
-    await this.db.insert(classGroups).values({
-      id,
-      organizationId,
-      name: normalized.name.trim(),
-      defaultDurationMinutes: normalized.defaultDurationMinutes,
-      status: "active",
-      archivedAt: null,
-      createdAt: now,
-      updatedAt: now,
-    });
+    await this.db.transaction(async (tx) => {
+      await tx.insert(classGroups).values({
+        id,
+        organizationId,
+        name: normalized.name.trim(),
+        defaultDurationMinutes: normalized.defaultDurationMinutes,
+        status: "active",
+        archivedAt: null,
+        createdAt: now,
+        updatedAt: now,
+      });
 
-    await this.replaceSchedules(organizationId, id, normalized.schedules);
-    await this.replaceTags(organizationId, id, normalized.tags);
-    await this.replaceStudentLinks(organizationId, id, normalized.studentIds ?? []);
+      await this.replaceSchedules(organizationId, id, normalized.schedules, tx);
+      await this.replaceTags(organizationId, id, normalized.tags, tx);
+      await this.replaceStudentLinks(organizationId, id, normalized.studentIds ?? [], tx);
+    });
 
     return this.get(organizationId, id);
   }
@@ -88,20 +92,22 @@ export class ClassGroupsService {
 
     const now = new Date();
     const status = normalized.status;
-    await this.db
-      .update(classGroups)
-      .set({
-        name: normalized.name.trim(),
-        defaultDurationMinutes: normalized.defaultDurationMinutes,
-        status,
-        archivedAt: status === "archived" ? now : status === "active" ? null : undefined,
-        updatedAt: now,
-      })
-      .where(and(eq(classGroups.id, id), eq(classGroups.organizationId, organizationId)));
+    await this.db.transaction(async (tx) => {
+      await tx
+        .update(classGroups)
+        .set({
+          name: normalized.name.trim(),
+          defaultDurationMinutes: normalized.defaultDurationMinutes,
+          status,
+          archivedAt: status === "archived" ? now : status === "active" ? null : undefined,
+          updatedAt: now,
+        })
+        .where(and(eq(classGroups.id, id), eq(classGroups.organizationId, organizationId)));
 
-    await this.replaceSchedules(organizationId, id, normalized.schedules);
-    await this.replaceTags(organizationId, id, normalized.tags);
-    await this.replaceStudentLinks(organizationId, id, normalized.studentIds ?? []);
+      await this.replaceSchedules(organizationId, id, normalized.schedules, tx);
+      await this.replaceTags(organizationId, id, normalized.tags, tx);
+      await this.replaceStudentLinks(organizationId, id, normalized.studentIds ?? [], tx);
+    });
 
     return this.get(organizationId, id);
   }
@@ -152,11 +158,10 @@ export class ClassGroupsService {
     organizationId: string,
     classGroupId: string,
     schedules: CreateClassGroupInput["schedules"],
+    db: ServiceDb = this.db,
   ) {
-    await this.db
-      .delete(classGroupSchedules)
-      .where(eq(classGroupSchedules.classGroupId, classGroupId));
-    await this.db.insert(classGroupSchedules).values(
+    await db.delete(classGroupSchedules).where(eq(classGroupSchedules.classGroupId, classGroupId));
+    await db.insert(classGroupSchedules).values(
       schedules.map((schedule) => ({
         id: crypto.randomUUID(),
         organizationId,
@@ -168,10 +173,15 @@ export class ClassGroupsService {
     );
   }
 
-  private async replaceTags(organizationId: string, classGroupId: string, tags: string[]) {
-    await this.db.delete(classGroupTags).where(eq(classGroupTags.classGroupId, classGroupId));
+  private async replaceTags(
+    organizationId: string,
+    classGroupId: string,
+    tags: string[],
+    db: ServiceDb = this.db,
+  ) {
+    await db.delete(classGroupTags).where(eq(classGroupTags.classGroupId, classGroupId));
     if (tags.length === 0) return;
-    await this.db.insert(classGroupTags).values(
+    await db.insert(classGroupTags).values(
       tags.map((label) => ({
         id: crypto.randomUUID(),
         organizationId,
@@ -185,9 +195,10 @@ export class ClassGroupsService {
     organizationId: string,
     classGroupId: string,
     studentIds: string[],
+    db: ServiceDb = this.db,
   ) {
     const uniqueIds = [...new Set(studentIds)];
-    const activeLinks = await this.db
+    const activeLinks = await db
       .select()
       .from(studentClassGroups)
       .where(
@@ -203,7 +214,7 @@ export class ClassGroupsService {
 
     for (const link of activeLinks) {
       if (!nextIds.has(link.studentId)) {
-        await this.db
+        await db
           .update(studentClassGroups)
           .set({ activeUntil: today })
           .where(eq(studentClassGroups.id, link.id));
@@ -213,7 +224,7 @@ export class ClassGroupsService {
     const newLinks = uniqueIds.filter((studentId) => !currentIds.has(studentId));
     if (newLinks.length === 0) return;
 
-    await this.db.insert(studentClassGroups).values(
+    await db.insert(studentClassGroups).values(
       newLinks.map((studentId) => ({
         id: crypto.randomUUID(),
         organizationId,

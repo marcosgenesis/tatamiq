@@ -17,7 +17,7 @@ import { Input } from "../../components/ui/input";
 import { authClient } from "../../lib/auth-client";
 import { AcademyAvatar, formatDate } from "./platform-components";
 import {
-  activatePlatformSupport,
+  impersonateWithPendingPlatformSupportActivation,
   type PlatformAcademyOperationalOverview,
   platformAcademyOperationalOverviewQuery,
   platformAcademyQuery,
@@ -36,9 +36,14 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
   const [isSupportOpen, setIsSupportOpen] = useState(false);
   const [isTransferOpen, setIsTransferOpen] = useState(false);
 
-  const platform = useQuery(platformMeQuery());
-  const academy = useQuery(platformAcademyQuery(academyId));
-  const operational = useQuery(platformAcademyOperationalOverviewQuery(academyId));
+  const session = authClient.useSession();
+  const sessionUserId = session.data?.user.id;
+  const platform = useQuery({
+    ...platformMeQuery(sessionUserId),
+    enabled: !!sessionUserId,
+  });
+  const academy = useQuery(platformAcademyQuery(sessionUserId, academyId));
+  const operational = useQuery(platformAcademyOperationalOverviewQuery(sessionUserId, academyId));
 
   const support = useMutation({
     mutationFn: async () => {
@@ -48,17 +53,11 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
         academyId,
         ...(supportReason ? { reason: supportReason } : {}),
       });
-      const impersonation = await authClient.admin.impersonateUser({
+      await impersonateWithPendingPlatformSupportActivation({
+        supportSessionId: prepared.id,
         userId: academy.data.owner.id,
+        impersonateUser: authClient.admin.impersonateUser,
       });
-      if (impersonation.error)
-        throw new Error(impersonation.error.message ?? "Erro ao iniciar suporte.");
-      try {
-        await activatePlatformSupport(prepared.id);
-      } catch {
-        await authClient.admin.stopImpersonating();
-        throw new Error("Erro ao ativar suporte.");
-      }
     },
     onSuccess: () => {
       queryClient.clear();
@@ -76,14 +75,14 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
     onSuccess: async () => {
       setTransferForm({ ownerEmail: "", ownerName: "" });
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: platformKeys.academy(academyId) }),
-        queryClient.invalidateQueries({ queryKey: platformKeys.dashboard }),
+        queryClient.invalidateQueries({ queryKey: platformKeys.academy(sessionUserId, academyId) }),
+        queryClient.invalidateQueries({ queryKey: platformKeys.dashboard(sessionUserId) }),
         queryClient.invalidateQueries({ queryKey: ["platform", "academies"] }),
       ]);
     },
   });
 
-  if (platform.isLoading || academy.isLoading) {
+  if (session.isPending || platform.isLoading || academy.isLoading) {
     return <PlatformLoading label="Carregando academia..." />;
   }
   if (platform.isError || !platform.data?.user) return <Navigate to="/choose-area" />;
@@ -93,7 +92,12 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
     return (
       <PlatformShell
         user={user}
-        onSignOut={() => authClient.signOut().then(() => navigate({ to: "/sign-in" }))}
+        onSignOut={() =>
+          authClient.signOut().then(() => {
+            queryClient.clear();
+            return navigate({ to: "/sign-in" });
+          })
+        }
         breadcrumb={[
           { label: "Academias", to: "/platform/academies" },
           { label: "Não encontrada" },
@@ -112,7 +116,12 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
   return (
     <PlatformShell
       user={user}
-      onSignOut={() => authClient.signOut().then(() => navigate({ to: "/sign-in" }))}
+      onSignOut={() =>
+        authClient.signOut().then(() => {
+          queryClient.clear();
+          return navigate({ to: "/sign-in" });
+        })
+      }
       breadcrumb={[{ label: "Academias", to: "/platform/academies" }, { label: data.name }]}
       actions={
         <>

@@ -10,9 +10,9 @@ import { Input } from "../../components/ui/input";
 import { authClient } from "../../lib/auth-client";
 import { formatLongDate, getInitials } from "./platform-components";
 import {
-  activatePlatformSupport,
   banPlatformUser,
   deletePlatformUser,
+  impersonateWithPendingPlatformSupportActivation,
   platformMeQuery,
   platformUserDeletionImpactQuery,
   platformUserQuery,
@@ -45,9 +45,16 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
     mode: "preserve_history",
   });
 
-  const platform = useQuery(platformMeQuery());
-  const userDetail = useQuery(platformUserQuery(userId));
-  const deletionImpact = useQuery(platformUserDeletionImpactQuery(userId, showDeleteForm));
+  const session = authClient.useSession();
+  const sessionUserId = session.data?.user.id;
+  const platform = useQuery({
+    ...platformMeQuery(sessionUserId),
+    enabled: !!sessionUserId,
+  });
+  const userDetail = useQuery(platformUserQuery(sessionUserId, userId));
+  const deletionImpact = useQuery(
+    platformUserDeletionImpactQuery(sessionUserId, userId, showDeleteForm),
+  );
 
   const banMutation = useMutation({
     mutationFn: async () =>
@@ -79,15 +86,11 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
         targetUserId: userId,
         ...(supportReason ? { reason: supportReason } : {}),
       });
-      const impersonation = await authClient.admin.impersonateUser({ userId });
-      if (impersonation.error)
-        throw new Error(impersonation.error.message ?? "Erro ao iniciar suporte.");
-      try {
-        await activatePlatformSupport(prepared.id);
-      } catch {
-        await authClient.admin.stopImpersonating();
-        throw new Error("Erro ao ativar suporte.");
-      }
+      await impersonateWithPendingPlatformSupportActivation({
+        supportSessionId: prepared.id,
+        userId,
+        impersonateUser: authClient.admin.impersonateUser,
+      });
     },
     onSuccess: () => {
       queryClient.clear();
@@ -95,7 +98,7 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
     },
   });
 
-  if (platform.isLoading || userDetail.isLoading) {
+  if (session.isPending || platform.isLoading || userDetail.isLoading) {
     return <PlatformLoading label="Carregando usuário..." />;
   }
   if (platform.isError || !platform.data?.user) return <Navigate to="/choose-area" />;
@@ -105,7 +108,12 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
     return (
       <PlatformShell
         user={adminUser}
-        onSignOut={() => authClient.signOut().then(() => navigate({ to: "/sign-in" }))}
+        onSignOut={() =>
+          authClient.signOut().then(() => {
+            queryClient.clear();
+            return navigate({ to: "/sign-in" });
+          })
+        }
         breadcrumb={[{ label: "Usuários", to: "/platform/users" }, { label: "Não encontrado" }]}
       >
         <p className="rounded-2xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">
@@ -116,14 +124,20 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
   }
 
   const detail = userDetail.data as PlatformUserDetail;
-  const isAdmin = detail.role === "admin";
+  const isPlatformAdmin = isSupportBlockedForPlatformUser(detail);
   const ownsAcademy = detail.memberships.some((m) => m.role === "owner");
   const impact = deletionImpact.data as PlatformUserDeletionImpact | undefined;
+  const blocksUserDestructiveActions = isPlatformAdmin || impact?.isPlatformAdmin === true;
 
   return (
     <PlatformShell
       user={adminUser}
-      onSignOut={() => authClient.signOut().then(() => navigate({ to: "/sign-in" }))}
+      onSignOut={() =>
+        authClient.signOut().then(() => {
+          queryClient.clear();
+          return navigate({ to: "/sign-in" });
+        })
+      }
       breadcrumb={[{ label: "Usuários", to: "/platform/users" }, { label: detail.name }]}
     >
       <div className="space-y-6">
@@ -139,7 +153,7 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
             <p className="truncate text-sm text-muted-foreground">{detail.email}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {isAdmin ? <Badge variant="warning">Operador</Badge> : null}
+            {isPlatformAdmin ? <Badge variant="warning">Administrador da Plataforma</Badge> : null}
             {detail.banned ? (
               <Badge variant="destructive">Bloqueado</Badge>
             ) : (
@@ -156,7 +170,10 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
                   label="ID do usuário"
                   value={<span className="font-mono text-xs">{detail.id}</span>}
                 />
-                <DetailRow label="Papel" value={isAdmin ? "Operador da plataforma" : "Usuário"} />
+                <DetailRow
+                  label="Papel"
+                  value={isPlatformAdmin ? "Administrador da plataforma" : "Usuário"}
+                />
                 <DetailRow label="E-mail verificado" value={detail.emailVerified ? "Sim" : "Não"} />
                 <DetailRow label="Sessões ativas" value={String(detail.activeSessions)} />
                 <DetailRow label="Cadastrado em" value={formatLongDate(detail.createdAt)} />
@@ -230,12 +247,12 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
                   placeholder="Motivo do suporte (opcional)"
                   value={supportReason}
                   onChange={(event) => setSupportReason(event.target.value)}
-                  disabled={isAdmin || supportMutation.isPending}
+                  disabled={isPlatformAdmin || supportMutation.isPending}
                 />
                 <Button
                   className="w-full"
                   onClick={() => supportMutation.mutate()}
-                  disabled={isAdmin || supportMutation.isPending}
+                  disabled={isPlatformAdmin || supportMutation.isPending}
                 >
                   <HeadphonesIcon className="size-4" />
                   {supportMutation.isPending ? "Iniciando..." : "Iniciar suporte"}
@@ -259,6 +276,11 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
                   </Button>
                 ) : (
                   <div className="space-y-2">
+                    {blocksUserDestructiveActions ? (
+                      <p className="rounded-xl bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
+                        Administradores da Plataforma não podem ser bloqueados por esta tela.
+                      </p>
+                    ) : null}
                     {ownsAcademy ? (
                       <p className="rounded-xl bg-primary/5 px-3 py-2 text-xs text-muted-foreground">
                         Este usuário é dono de academia. Bloquear impede o acesso à academia dele.
@@ -274,7 +296,7 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
                         <div className="flex gap-2">
                           <Button
                             onClick={() => banMutation.mutate()}
-                            disabled={banMutation.isPending}
+                            disabled={blocksUserDestructiveActions || banMutation.isPending}
                           >
                             {banMutation.isPending ? "Bloqueando..." : "Confirmar"}
                           </Button>
@@ -294,6 +316,7 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
                         variant="outline"
                         className="w-full"
                         onClick={() => setShowBanForm(true)}
+                        disabled={blocksUserDestructiveActions}
                       >
                         Bloquear usuário
                       </Button>
@@ -326,6 +349,11 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
                 <p className="text-sm text-muted-foreground">
                   Exclua definitivamente ou preservando o histórico operacional.
                 </p>
+                {isPlatformAdmin ? (
+                  <p className="rounded-xl bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
+                    Administradores da Plataforma são protegidos contra exclusão por este fluxo.
+                  </p>
+                ) : null}
                 {showDeleteForm ? (
                   <div className="space-y-3">
                     {impact ? (
@@ -406,7 +434,7 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
                       <Button
                         variant="destructive"
                         onClick={() => deleteMutation.mutate()}
-                        disabled={deleteMutation.isPending}
+                        disabled={blocksUserDestructiveActions || deleteMutation.isPending}
                       >
                         {deleteMutation.isPending ? "Excluindo..." : "Confirmar exclusão"}
                       </Button>
@@ -420,6 +448,7 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
                     variant="destructive"
                     className="w-full"
                     onClick={() => setShowDeleteForm(true)}
+                    disabled={blocksUserDestructiveActions}
                   >
                     <Delete02Icon className="size-4" />
                     Excluir usuário
@@ -455,4 +484,11 @@ function DetailRow({ label, value }: { label: string; value: ReactNode }) {
       <dd className="text-right text-sm font-medium">{value}</dd>
     </div>
   );
+}
+
+export function isSupportBlockedForPlatformUser(user: {
+  role: string | null;
+  isPlatformAdmin?: boolean;
+}) {
+  return user.isPlatformAdmin === true || user.role === "admin";
 }
