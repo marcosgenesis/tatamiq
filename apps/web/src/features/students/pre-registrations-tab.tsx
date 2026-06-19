@@ -13,21 +13,10 @@ import { useMemo, useState } from "react";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Textarea } from "../../components/ui/textarea";
-import { formatDate } from "../../lib/formatting";
+import { ageLabel, formatDate } from "../../lib/formatting";
 import { type DuplicateDecision, usePreRegistrationsWorkflow } from "./pre-registrations-workflow";
 
 type RequestFilter = "pending_review" | "approved" | "rejected";
-
-function ageFromBirthDate(iso: string): string {
-  const birth = new Date(iso);
-  const now = new Date();
-  let age = now.getFullYear() - birth.getFullYear();
-  const passed =
-    now.getMonth() > birth.getMonth() ||
-    (now.getMonth() === birth.getMonth() && now.getDate() >= birth.getDate());
-  if (!passed) age -= 1;
-  return `${age} anos`;
-}
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -322,7 +311,7 @@ export function RequestCard(props: {
               <StatusBadge status={request.status} />
             </div>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              {ageFromBirthDate(request.birthDate)} · {formatDate(request.birthDate)}
+              {ageLabel(request.birthDate)} · {formatDate(request.birthDate)}
               {request.phone ? ` · ${request.phone}` : ""}
             </p>
             {request.declaredBeltId && (

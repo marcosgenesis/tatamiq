@@ -227,7 +227,7 @@ export function StudentForm(props: {
     watch,
     setValue,
     handleSubmit,
-    formState: { errors, submitCount, isSubmitted },
+    formState: { errors, isSubmitted },
   } = form;
 
   const currentBeltId = watch("currentBeltId");
