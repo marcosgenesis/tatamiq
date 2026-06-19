@@ -581,34 +581,40 @@ function SupportBanner() {
   );
 
   return (
-    <div className="border-amber-400/20 border-b bg-[#1c1402] px-4 py-3 sm:px-6">
+    <div className="border-amber-200 border-b bg-amber-50 px-4 py-3 sm:px-6 dark:border-amber-400/20 dark:bg-[#1c1402]">
       <div className="mx-auto flex max-w-7xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
         <div className="flex items-start gap-3">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-[10px] border border-amber-400/20 bg-amber-400/8">
-            <VenetianMask className="size-4.5 text-amber-400" />
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-[10px] border border-amber-200 bg-amber-100 dark:border-amber-400/20 dark:bg-amber-400/8">
+            <VenetianMask className="size-4.5 text-amber-600 dark:text-amber-400" />
           </span>
           <div className="space-y-0.5">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="font-semibold text-sm text-zinc-50">Suporte assistido ativo</p>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/20 bg-amber-400/10 px-2 py-0.5">
-                <span className="size-1.5 rounded-full bg-amber-400" />
-                <span className="font-bold text-[10px] text-amber-400 tracking-wide">AO VIVO</span>
+              <p className="font-semibold text-sm text-amber-950 dark:text-zinc-50">
+                Suporte assistido ativo
+              </p>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-100 px-2 py-0.5 dark:border-amber-400/20 dark:bg-amber-400/10">
+                <span className="size-1.5 rounded-full bg-amber-500 dark:bg-amber-400" />
+                <span className="font-bold text-[10px] text-amber-800 tracking-wide dark:text-amber-400">
+                  AO VIVO
+                </span>
               </span>
             </div>
-            <p className="text-[13px] text-amber-100/70">
+            <p className="text-[13px] text-amber-900/80 dark:text-amber-100/70">
               Você está operando como cliente em nome de {adminName}.
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
-          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5">
-            <Timer className="size-3.5 text-amber-100/50" />
-            <span className="text-[12.5px] text-amber-50/85">Expira às {expiresAt}</span>
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-amber-200 bg-white/60 px-2.5 py-1.5 dark:border-white/10 dark:bg-white/5">
+            <Timer className="size-3.5 text-amber-600/70 dark:text-amber-100/50" />
+            <span className="text-[12.5px] text-amber-900 dark:text-amber-50/85">
+              Expira às {expiresAt}
+            </span>
           </span>
           <Button
             variant="outline"
             onClick={endSupport}
-            className="flex-1 gap-1.5 border-amber-400/30 bg-amber-400/6 text-amber-400 hover:bg-amber-400/15 hover:text-amber-300 sm:flex-none"
+            className="flex-1 gap-1.5 border-amber-300 bg-amber-100/50 text-amber-700 hover:bg-amber-100 hover:text-amber-800 sm:flex-none dark:border-amber-400/30 dark:bg-amber-400/6 dark:text-amber-400 dark:hover:bg-amber-400/15 dark:hover:text-amber-300"
           >
             <LogOut className="size-3.5" />
             Encerrar suporte
