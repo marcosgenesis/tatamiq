@@ -146,8 +146,6 @@ export function CreateMonthlyFeeDrawer({ open, onClose }: { open: boolean; onClo
     return allStudents.filter((s) => s.name.toLowerCase().includes(q));
   }, [allStudents, studentSearch]);
 
-  const showSelector = !selectedStudentId;
-
   const yearOptions = Array.from({ length: 5 }, (_, i) => currentYear - 1 + i);
 
   const cents = reaisToCents(amountDisplay);
@@ -356,45 +354,36 @@ export function CreateMonthlyFeeDrawer({ open, onClose }: { open: boolean; onClo
               </p>
               <div className="flex flex-wrap gap-2">
                 {QUICK_DUE_DAYS.map((d) => (
-                  <Controller
+                  <button
                     key={d}
-                    name="dueDay"
-                    control={control}
-                    render={({ field }) => (
-                      <button
-                        type="button"
-                        onClick={() => field.onChange(d)}
-                        className={`h-9 min-w-[3rem] rounded-[10px] border px-3 text-sm font-medium transition ${
-                          field.value === d
-                            ? "border-primary bg-primary text-primary-foreground"
-                            : "border-border bg-background text-foreground hover:border-primary/50"
-                        }`}
-                      >
-                        {d}
-                      </button>
-                    )}
-                  />
+                    type="button"
+                    onClick={() => setValue("dueDay", d)}
+                    className={`h-9 min-w-[3rem] rounded-[10px] border px-3 text-sm font-medium transition ${
+                      dueDay === d
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-background text-foreground hover:border-primary/50"
+                    }`}
+                  >
+                    {d}
+                  </button>
                 ))}
                 <Controller
                   name="dueDay"
                   control={control}
-                  render={({ field }) => {
-                    const isCustom = !QUICK_DUE_DAYS.includes(field.value);
-                    return (
-                      <input
-                        type="number"
-                        min={1}
-                        max={31}
-                        value={isCustom ? field.value : ""}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
-                        placeholder="Outro"
-                        className="h-9 w-20 rounded-[10px] border border-border bg-background px-3 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
-                      />
-                    );
-                  }}
+                  render={({ field }) => (
+                    <input
+                      type="number"
+                      min={1}
+                      max={31}
+                      value={QUICK_DUE_DAYS.includes(field.value) ? "" : field.value}
+                      onChange={(e) => field.onChange(Number(e.target.value))}
+                      placeholder="Outro"
+                      className="h-9 w-20 rounded-[10px] border border-border bg-background px-3 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    />
+                  )}
                 />
               </div>
-              {dueDay >= 1 && referenceMonth && referenceYear ? (
+              {referenceMonth && referenceYear ? (
                 <p
                   className={`mt-1.5 text-xs ${
                     isValidDueDay(dueDay, referenceMonth, referenceYear)
