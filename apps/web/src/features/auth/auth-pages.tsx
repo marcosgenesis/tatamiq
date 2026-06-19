@@ -48,7 +48,7 @@ export function SignInPage() {
         <h1 className="font-bold text-2xl tracking-wide">Entrar no Tatamiq</h1>
         <p className="text-base text-muted-foreground">Acesse sua área de instrutor.</p>
       </div>
-      <form className="space-y-2" onSubmit={submit}>
+      <form className="flex flex-col gap-3" onSubmit={submit}>
         <AuthError message={error} />
         <InputGroup>
           <InputGroupInput
@@ -76,7 +76,7 @@ export function SignInPage() {
             <LockIcon />
           </InputGroupAddon>
         </InputGroup>
-        <Button className="w-full" size="sm" type="submit" disabled={isSubmitting}>
+        <Button className="w-full" type="submit" disabled={isSubmitting}>
           {isSubmitting ? "Entrando..." : "Entrar"}
         </Button>
       </form>
@@ -162,7 +162,7 @@ export function SignUpPage() {
           Comece com seu login de Dono/Instrutor Solo.
         </p>
       </div>
-      <form className="space-y-2" onSubmit={submit}>
+      <form className="flex flex-col gap-3" onSubmit={submit}>
         <AuthError message={error} />
         <InputGroup>
           <InputGroupInput
@@ -248,7 +248,7 @@ export function ForgotPasswordPage() {
           Enviaremos um link para definir uma nova senha.
         </p>
       </div>
-      <form className="space-y-2" onSubmit={submit}>
+      <form className="flex flex-col gap-3" onSubmit={submit}>
         <AuthError message={error} />
         {sent && (
           <p className="rounded-lg border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-primary">
@@ -310,7 +310,7 @@ export function ResetPasswordPage() {
         <h1 className="font-bold text-2xl tracking-wide">Definir nova senha</h1>
         <p className="text-base text-muted-foreground">Escolha uma nova senha para sua conta.</p>
       </div>
-      <form className="space-y-2" onSubmit={submit}>
+      <form className="flex flex-col gap-3" onSubmit={submit}>
         <AuthError message={error} />
         <InputGroup>
           <InputGroupInput
