@@ -93,6 +93,12 @@ export function usePreRegistrationsWorkflow() {
       });
       setRejectingId(null);
       setRejectReason("");
+      toast.success("Solicitação rejeitada.");
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Não foi possível rejeitar a solicitação.",
+      );
     },
   });
 
@@ -122,6 +128,12 @@ export function usePreRegistrationsWorkflow() {
         queryKey: academyQueryKey(activeAcademyId, "students", "pre-registrations"),
       });
       setApprovingId(null);
+      toast.success("Solicitação aprovada.");
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Não foi possível aprovar a solicitação.",
+      );
     },
   });
 
