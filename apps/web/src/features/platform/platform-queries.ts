@@ -35,9 +35,8 @@ export type AddPlatformAdministratorInput = {
 export type DeletePlatformUserInput = {
   userId: string;
   mode: "definitive" | "preserve_history";
-  ownerResolution?: "keep_ownerless" | "transfer";
-  transferOwnerEmail?: string;
-  transferOwnerName?: string;
+  ownerResolution?: "keep_ownerless";
+  confirmLeaveOwnerless?: boolean;
 };
 
 export type StartPlatformSupportInput = {
@@ -313,6 +312,31 @@ export async function transferPlatformAcademy(input: TransferPlatformAcademyInpu
       ownerEmail: input.ownerEmail,
       ...(input.ownerName ? { ownerName: input.ownerName } : {}),
     },
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function addPlatformAcademyResponsible(input: TransferPlatformAcademyInput) {
+  const { data, error } = await api.POST("/platform/academies/{id}/responsibles", {
+    params: { path: { id: input.academyId } },
+    body: {
+      ownerEmail: input.ownerEmail,
+      ...(input.ownerName ? { ownerName: input.ownerName } : {}),
+    },
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function removePlatformAcademyResponsible(input: {
+  academyId: string;
+  userId: string;
+  allowLeavingOwnerless?: boolean;
+}) {
+  const { data, error } = await api.POST("/platform/academies/{id}/responsibles/{userId}/remove", {
+    params: { path: { id: input.academyId, userId: input.userId } },
+    body: input.allowLeavingOwnerless ? { allowLeavingOwnerless: true } : {},
   });
   if (error) throw error;
   return data;

@@ -115,7 +115,9 @@ export function PlatformPage() {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold">{academy.name}</p>
                       <p className="truncate text-xs text-muted-foreground">
-                        {academy.owner?.email ?? `Sem dono · /${academy.slug}`}
+                        {academy.responsibles.length > 0
+                          ? academy.responsibles.map((responsible) => responsible.email).join(" · ")
+                          : `Sem responsável · /${academy.slug}`}
                       </p>
                     </div>
                     <span className="shrink-0 text-xs text-muted-foreground">

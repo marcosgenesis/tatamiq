@@ -3041,6 +3041,94 @@
         ]
       }
     },
+    "/platform/academies/{id}/responsibles": {
+      "post": {
+        "operationId": "PlatformController_addResponsible",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddResponsibleBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferAcademyResultDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/platform/academies/{id}/responsibles/{userId}/remove": {
+      "post": {
+        "operationId": "PlatformController_removeResponsible",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RemoveResponsibleBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformActionResultDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "platform"
+        ]
+      }
+    },
     "/platform/academies/{id}": {
       "get": {
         "operationId": "PlatformController_academy",
@@ -8653,7 +8741,7 @@
           "bannedUsers"
         ]
       },
-      "PlatformAcademyOwnerDto": {
+      "PlatformAcademyResponsibleDto": {
         "type": "object",
         "properties": {
           "id": {
@@ -8691,14 +8779,11 @@
           "createdAt": {
             "type": "string"
           },
-          "owner": {
-            "nullable": true,
-            "type": "object",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PlatformAcademyOwnerDto"
-              }
-            ]
+          "responsibles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlatformAcademyResponsibleDto"
+            }
           }
         },
         "required": [
@@ -8707,7 +8792,7 @@
           "slug",
           "logo",
           "createdAt",
-          "owner"
+          "responsibles"
         ]
       },
       "PlatformDashboardDto": {
@@ -8806,14 +8891,11 @@
           "createdAt": {
             "type": "string"
           },
-          "owner": {
-            "nullable": true,
-            "type": "object",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PlatformAcademyOwnerDto"
-              }
-            ]
+          "responsibles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlatformAcademyResponsibleDto"
+            }
           },
           "address": {
             "type": "string",
@@ -8834,7 +8916,7 @@
           "slug",
           "logo",
           "createdAt",
-          "owner",
+          "responsibles",
           "address",
           "phone",
           "instagram"
@@ -8900,6 +8982,39 @@
           "ownerUserId",
           "ownerWasCreated",
           "firstAccessLink"
+        ]
+      },
+      "AddResponsibleBodyDto": {
+        "type": "object",
+        "properties": {
+          "ownerEmail": {
+            "type": "string"
+          },
+          "ownerName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ownerEmail"
+        ]
+      },
+      "RemoveResponsibleBodyDto": {
+        "type": "object",
+        "properties": {
+          "allowLeavingOwnerless": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PlatformActionResultDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success"
         ]
       },
       "PlatformStudentsOperationalSummaryDto": {
@@ -9320,17 +9435,6 @@
           "administrator",
           "userWasCreated",
           "firstAccessLink"
-        ]
-      },
-      "PlatformActionResultDto": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "success"
         ]
       },
       "StartPlatformSupportBodyDto": {
@@ -9776,6 +9880,9 @@
           },
           "transferOwnerName": {
             "type": "string"
+          },
+          "confirmLeaveOwnerless": {
+            "type": "boolean"
           }
         },
         "required": [

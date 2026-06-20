@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Navigate, useNavigate } from "@tanstack/react-router";
-import { HeadphonesIcon, MapPinIcon, RepeatIcon } from "hugeicons-react";
+import { Delete02Icon, HeadphonesIcon, MapPinIcon, PlusSignIcon } from "hugeicons-react";
 import { type ReactNode, useState } from "react";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
@@ -17,24 +17,25 @@ import { Input } from "../../components/ui/input";
 import { authClient } from "../../lib/auth-client";
 import { AcademyAvatar, formatDate } from "./platform-components";
 import {
+  addPlatformAcademyResponsible,
   impersonateWithPendingPlatformSupportActivation,
   type PlatformAcademyOperationalOverview,
   platformAcademyOperationalOverviewQuery,
   platformAcademyQuery,
   platformKeys,
   platformMeQuery,
+  removePlatformAcademyResponsible,
   startPlatformSupport,
-  transferPlatformAcademy,
 } from "./platform-queries";
 import { PlatformLoading, PlatformShell } from "./platform-shell";
 
 export function PlatformAcademyPage({ academyId }: { academyId: string }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [transferForm, setTransferForm] = useState({ ownerEmail: "", ownerName: "" });
   const [supportReason, setSupportReason] = useState("");
   const [isSupportOpen, setIsSupportOpen] = useState(false);
-  const [isTransferOpen, setIsTransferOpen] = useState(false);
+  const [isAddResponsibleOpen, setIsAddResponsibleOpen] = useState(false);
+  const [responsibleForm, setResponsibleForm] = useState({ ownerEmail: "", ownerName: "" });
 
   const session = authClient.useSession();
   const sessionUserId = session.data?.user.id;
@@ -45,40 +46,56 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
   const academy = useQuery(platformAcademyQuery(sessionUserId, academyId));
   const operational = useQuery(platformAcademyOperationalOverviewQuery(sessionUserId, academyId));
 
+  const addResponsible = useMutation({
+    mutationFn: async () =>
+      addPlatformAcademyResponsible({
+        academyId,
+        ownerEmail: responsibleForm.ownerEmail,
+        ...(responsibleForm.ownerName ? { ownerName: responsibleForm.ownerName } : {}),
+      }),
+    onSuccess: async () => {
+      setResponsibleForm({ ownerEmail: "", ownerName: "" });
+      setIsAddResponsibleOpen(false);
+      await queryClient.invalidateQueries({
+        queryKey: platformKeys.academy(sessionUserId, academyId),
+      });
+      await queryClient.invalidateQueries({ queryKey: ["platform", "academies"] });
+    },
+  });
+
+  const removeResponsible = useMutation({
+    mutationFn: async (target: { userId: string; allowLeavingOwnerless?: boolean }) =>
+      removePlatformAcademyResponsible({
+        academyId,
+        userId: target.userId,
+        ...(target.allowLeavingOwnerless ? { allowLeavingOwnerless: true } : {}),
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: platformKeys.academy(sessionUserId, academyId),
+      });
+      await queryClient.invalidateQueries({ queryKey: ["platform", "academies"] });
+    },
+  });
+
   const support = useMutation({
     mutationFn: async () => {
-      if (!academy.data?.owner) throw new Error("Academia sem dono.");
+      const targetResponsible = academy.data?.responsibles[0];
+      if (!targetResponsible) throw new Error("Academia sem responsável.");
       const prepared = await startPlatformSupport({
-        targetUserId: academy.data.owner.id,
+        targetUserId: targetResponsible.id,
         academyId,
         ...(supportReason ? { reason: supportReason } : {}),
       });
       await impersonateWithPendingPlatformSupportActivation({
         supportSessionId: prepared.id,
-        userId: academy.data.owner.id,
+        userId: targetResponsible.id,
         impersonateUser: authClient.admin.impersonateUser,
       });
     },
     onSuccess: () => {
       queryClient.clear();
       window.location.href = "/choose-area";
-    },
-  });
-
-  const transfer = useMutation({
-    mutationFn: async () =>
-      transferPlatformAcademy({
-        academyId,
-        ownerEmail: transferForm.ownerEmail,
-        ...(transferForm.ownerName ? { ownerName: transferForm.ownerName } : {}),
-      }),
-    onSuccess: async () => {
-      setTransferForm({ ownerEmail: "", ownerName: "" });
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: platformKeys.academy(sessionUserId, academyId) }),
-        queryClient.invalidateQueries({ queryKey: platformKeys.dashboard(sessionUserId) }),
-        queryClient.invalidateQueries({ queryKey: ["platform", "academies"] }),
-      ]);
     },
   });
 
@@ -111,7 +128,7 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
   }
 
   const data = academy.data;
-  const hasOwner = Boolean(data.owner);
+  const hasResponsibles = data.responsibles.length > 0;
 
   return (
     <PlatformShell
@@ -125,6 +142,59 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
       breadcrumb={[{ label: "Academias", to: "/platform/academies" }, { label: data.name }]}
       actions={
         <>
+          <Dialog open={isAddResponsibleOpen} onOpenChange={setIsAddResponsibleOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" onClick={() => addResponsible.reset()}>
+                <PlusSignIcon className="size-4" />
+                Adicionar responsável
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Adicionar responsável</DialogTitle>
+                <DialogDescription>
+                  Vincule uma nova conta operacional à academia sem remover os responsáveis atuais.
+                </DialogDescription>
+              </DialogHeader>
+              <form
+                className="grid gap-3"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  addResponsible.mutate();
+                }}
+              >
+                <Input
+                  required
+                  type="email"
+                  placeholder="E-mail do responsável"
+                  value={responsibleForm.ownerEmail}
+                  onChange={(event) =>
+                    setResponsibleForm((c) => ({ ...c, ownerEmail: event.target.value }))
+                  }
+                />
+                <Input
+                  placeholder="Nome do responsável (opcional)"
+                  value={responsibleForm.ownerName}
+                  onChange={(event) =>
+                    setResponsibleForm((c) => ({ ...c, ownerName: event.target.value }))
+                  }
+                />
+                <DialogFooter className="pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsAddResponsibleOpen(false)}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button type="submit" disabled={addResponsible.isPending}>
+                    {addResponsible.isPending ? "Adicionando..." : "Adicionar"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+
           <Dialog open={isSupportOpen} onOpenChange={setIsSupportOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" size="sm" onClick={() => support.reset()}>
@@ -136,8 +206,8 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
               <DialogHeader>
                 <DialogTitle>Suporte assistido</DialogTitle>
                 <DialogDescription>
-                  Entre como o dono por até 1 hora para prestar suporte operacional visível e
-                  auditado.
+                  Entre como o responsável da academia por até 1 hora para prestar suporte
+                  operacional visível e auditado.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-3">
@@ -145,10 +215,12 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
                   placeholder="Motivo do suporte (opcional)"
                   value={supportReason}
                   onChange={(event) => setSupportReason(event.target.value)}
-                  disabled={!hasOwner || support.isPending}
+                  disabled={!hasResponsibles || support.isPending}
                 />
-                {!hasOwner ? (
-                  <p className="text-muted-foreground text-sm">Academia sem dono para suporte.</p>
+                {!hasResponsibles ? (
+                  <p className="text-muted-foreground text-sm">
+                    Academia sem responsável para suporte.
+                  </p>
                 ) : null}
                 {support.isError ? (
                   <p className="text-destructive text-sm">Não foi possível iniciar o suporte.</p>
@@ -160,79 +232,12 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
                   <Button
                     type="button"
                     onClick={() => support.mutate()}
-                    disabled={!hasOwner || support.isPending}
+                    disabled={!hasResponsibles || support.isPending}
                   >
-                    {support.isPending ? "Iniciando..." : "Iniciar como dono"}
+                    {support.isPending ? "Iniciando..." : "Iniciar como responsável"}
                   </Button>
                 </DialogFooter>
               </div>
-            </DialogContent>
-          </Dialog>
-
-          <Dialog open={isTransferOpen} onOpenChange={setIsTransferOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" onClick={() => transfer.reset()}>
-                <RepeatIcon className="size-4" />
-                Transferir
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Transferência de academia</DialogTitle>
-                <DialogDescription>
-                  Troque o dono operacional sem acessar senha ou caixa de e-mail do cliente.
-                </DialogDescription>
-              </DialogHeader>
-              <form
-                className="grid gap-3"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  transfer.mutate();
-                }}
-              >
-                <Input
-                  required
-                  type="email"
-                  placeholder="Novo e-mail do dono"
-                  value={transferForm.ownerEmail}
-                  onChange={(event) =>
-                    setTransferForm((c) => ({ ...c, ownerEmail: event.target.value }))
-                  }
-                />
-                <Input
-                  placeholder="Nome do novo dono (opcional)"
-                  value={transferForm.ownerName}
-                  onChange={(event) =>
-                    setTransferForm((c) => ({ ...c, ownerName: event.target.value }))
-                  }
-                />
-                {transfer.data?.firstAccessLink ? (
-                  <div className="rounded-xl border bg-muted/40 p-3 text-sm">
-                    <p className="font-medium">Link de primeiro acesso</p>
-                    <p className="mt-1 break-all text-muted-foreground">
-                      {transfer.data.firstAccessLink}
-                    </p>
-                  </div>
-                ) : null}
-                {transfer.data && !transfer.data.firstAccessLink ? (
-                  <p className="text-muted-foreground text-sm">
-                    Academia transferida para conta existente.
-                  </p>
-                ) : null}
-                {transfer.isError ? (
-                  <p className="text-destructive text-sm">
-                    Não foi possível transferir a academia.
-                  </p>
-                ) : null}
-                <DialogFooter className="pt-2">
-                  <Button type="button" variant="outline" onClick={() => setIsTransferOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button type="submit" disabled={transfer.isPending}>
-                    {transfer.isPending ? "Transferindo..." : "Transferir academia"}
-                  </Button>
-                </DialogFooter>
-              </form>
             </DialogContent>
           </Dialog>
         </>
@@ -255,19 +260,36 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
                 <span>Cliente desde {formatDate(data.createdAt)}</span>
               </div>
             </div>
-            {!hasOwner ? <Badge variant="muted">Sem dono</Badge> : null}
+            {!hasResponsibles ? <Badge variant="muted">Sem responsável</Badge> : null}
           </div>
-          {data.owner ? (
-            <div className="mt-4 flex items-center gap-3 rounded-xl bg-muted/50 px-4 py-3">
-              <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Dono
-                </p>
-                <p className="mt-0.5 truncate text-sm font-medium">
-                  {data.owner.name}{" "}
-                  <span className="font-normal text-muted-foreground">· {data.owner.email}</span>
-                </p>
-              </div>
+          {data.responsibles.length > 0 ? (
+            <div className="mt-4 space-y-2">
+              {data.responsibles.map((r) => (
+                <div
+                  key={r.id}
+                  className="flex items-center justify-between gap-3 rounded-xl bg-muted/50 px-4 py-3"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{r.name}</p>
+                    <p className="truncate text-xs text-muted-foreground">{r.email}</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (window.confirm("Remover responsável?"))
+                        removeResponsible.mutate({
+                          userId: r.id,
+                          allowLeavingOwnerless: data.responsibles.length === 1,
+                        });
+                    }}
+                    disabled={removeResponsible.isPending}
+                  >
+                    <Delete02Icon className="size-4" />
+                    Remover
+                  </Button>
+                </div>
+              ))}
             </div>
           ) : null}
         </section>

@@ -1508,6 +1508,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/platform/academies/{id}/responsibles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PlatformController_addResponsible"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/platform/academies/{id}/responsibles/{userId}/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PlatformController_removeResponsible"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/platform/academies/{id}": {
         parameters: {
             query?: never;
@@ -2890,7 +2922,7 @@ export interface components {
             admins: number;
             bannedUsers: number;
         };
-        PlatformAcademyOwnerDto: {
+        PlatformAcademyResponsibleDto: {
             id: string;
             name: string;
             email: string;
@@ -2901,7 +2933,7 @@ export interface components {
             slug: string;
             logo: string | null;
             createdAt: string;
-            owner: components["schemas"]["PlatformAcademyOwnerDto"] | null;
+            responsibles: components["schemas"]["PlatformAcademyResponsibleDto"][];
         };
         PlatformDashboardDto: {
             totals: components["schemas"]["PlatformDashboardTotalsDto"];
@@ -2928,7 +2960,7 @@ export interface components {
             slug: string;
             logo: string | null;
             createdAt: string;
-            owner: components["schemas"]["PlatformAcademyOwnerDto"] | null;
+            responsibles: components["schemas"]["PlatformAcademyResponsibleDto"][];
             address: string | null;
             phone: string | null;
             instagram: string | null;
@@ -2948,6 +2980,16 @@ export interface components {
             ownerUserId: string;
             ownerWasCreated: boolean;
             firstAccessLink: string | null;
+        };
+        AddResponsibleBodyDto: {
+            ownerEmail: string;
+            ownerName?: string;
+        };
+        RemoveResponsibleBodyDto: {
+            allowLeavingOwnerless?: boolean;
+        };
+        PlatformActionResultDto: {
+            success: boolean;
         };
         PlatformStudentsOperationalSummaryDto: {
             total: number;
@@ -3052,9 +3094,6 @@ export interface components {
             administrator: components["schemas"]["PlatformAdministratorDto"];
             userWasCreated: boolean;
             firstAccessLink: string | null;
-        };
-        PlatformActionResultDto: {
-            success: boolean;
         };
         StartPlatformSupportBodyDto: {
             targetUserId: string;
@@ -3163,6 +3202,7 @@ export interface components {
             ownerResolution?: "keep_ownerless" | "transfer";
             transferOwnerEmail?: string;
             transferOwnerName?: string;
+            confirmLeaveOwnerless?: boolean;
         };
         PlatformBanUserBodyDto: {
             reason?: string;
@@ -5407,6 +5447,57 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TransferAcademyResultDto"];
+                };
+            };
+        };
+    };
+    PlatformController_addResponsible: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddResponsibleBodyDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferAcademyResultDto"];
+                };
+            };
+        };
+    };
+    PlatformController_removeResponsible: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RemoveResponsibleBodyDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformActionResultDto"];
                 };
             };
         };

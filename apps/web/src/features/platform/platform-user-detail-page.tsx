@@ -29,9 +29,8 @@ type PlatformUserDeletionImpact = components["schemas"]["PlatformUserDeletionImp
 
 type DeletePlatformUserInput = {
   mode: "definitive" | "preserve_history";
-  ownerResolution?: "keep_ownerless" | "transfer";
-  transferOwnerEmail?: string;
-  transferOwnerName?: string;
+  ownerResolution?: "keep_ownerless";
+  confirmLeaveOwnerless?: boolean;
 };
 
 export function PlatformUserDetailPage({ userId }: { userId: string }) {
@@ -125,8 +124,9 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
 
   const detail = userDetail.data as PlatformUserDetail;
   const isPlatformAdmin = isSupportBlockedForPlatformUser(detail);
-  const ownsAcademy = detail.memberships.some((m) => m.role === "owner");
   const impact = deletionImpact.data as PlatformUserDeletionImpact | undefined;
+  const ownsAcademy = detail.memberships.some((m) => m.role === "owner");
+  const hasOnlyOwnerAcademies = impact?.ownedAcademies.some((a) => a.isOnlyOwner) ?? false;
   const blocksUserDestructiveActions = isPlatformAdmin || impact?.isPlatformAdmin === true;
 
   return (
@@ -363,7 +363,7 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
                         <p>Sessões ativas: {impact.activeSessions}</p>
                         {impact.ownedAcademies.length > 0 ? (
                           <p className="font-medium text-primary">
-                            Dono de {impact.ownedAcademies.length} academia(s).
+                            Responsável de {impact.ownedAcademies.length} academia(s).
                           </p>
                         ) : null}
                       </div>
@@ -400,33 +400,23 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
                           }}
                         >
                           <option value="">O que fazer com a academia?</option>
-                          <option value="keep_ownerless">Manter sem dono</option>
-                          <option value="transfer">Transferir antes de excluir</option>
+                          <option value="keep_ownerless">Deixar sem responsável</option>
                         </select>
-                        {deleteForm.ownerResolution === "transfer" ? (
-                          <>
-                            <Input
-                              type="email"
-                              placeholder="E-mail do novo dono"
-                              value={deleteForm.transferOwnerEmail ?? ""}
+                        {hasOnlyOwnerAcademies ? (
+                          <label className="flex items-start gap-3 rounded-xl bg-warning/10 p-3 text-sm">
+                            <input
+                              type="checkbox"
+                              className="mt-1"
+                              checked={deleteForm.confirmLeaveOwnerless ?? false}
                               onChange={(event) =>
                                 setDeleteForm((c) => ({
                                   ...c,
-                                  transferOwnerEmail: event.target.value,
+                                  confirmLeaveOwnerless: event.target.checked,
                                 }))
                               }
                             />
-                            <Input
-                              placeholder="Nome do novo dono"
-                              value={deleteForm.transferOwnerName ?? ""}
-                              onChange={(event) =>
-                                setDeleteForm((c) => ({
-                                  ...c,
-                                  transferOwnerName: event.target.value,
-                                }))
-                              }
-                            />
-                          </>
+                            <span>Confirmo que a academia ficará sem responsável.</span>
+                          </label>
                         ) : null}
                       </div>
                     ) : null}
@@ -434,7 +424,11 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
                       <Button
                         variant="destructive"
                         onClick={() => deleteMutation.mutate()}
-                        disabled={blocksUserDestructiveActions || deleteMutation.isPending}
+                        disabled={
+                          blocksUserDestructiveActions ||
+                          deleteMutation.isPending ||
+                          (hasOnlyOwnerAcademies && !deleteForm.confirmLeaveOwnerless)
+                        }
                       >
                         {deleteMutation.isPending ? "Excluindo..." : "Confirmar exclusão"}
                       </Button>
