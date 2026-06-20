@@ -80,7 +80,7 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
 
   const support = useMutation({
     mutationFn: async () => {
-      const targetResponsible = academy.data?.responsibles[0];
+      const targetResponsible = academy.data?.responsibles?.[0];
       if (!targetResponsible) throw new Error("Academia sem responsável.");
       const prepared = await startPlatformSupport({
         targetUserId: targetResponsible.id,
@@ -128,7 +128,8 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
   }
 
   const data = academy.data;
-  const hasResponsibles = data.responsibles.length > 0;
+  const responsibles = data.responsibles ?? [];
+  const hasResponsibles = responsibles.length > 0;
 
   return (
     <PlatformShell
@@ -262,9 +263,9 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
             </div>
             {!hasResponsibles ? <Badge variant="muted">Sem responsável</Badge> : null}
           </div>
-          {data.responsibles.length > 0 ? (
+          {responsibles.length > 0 ? (
             <div className="mt-4 space-y-2">
-              {data.responsibles.map((r) => (
+              {responsibles.map((r) => (
                 <div
                   key={r.id}
                   className="flex items-center justify-between gap-3 rounded-xl bg-muted/50 px-4 py-3"
@@ -280,7 +281,7 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
                       if (window.confirm("Remover responsável?"))
                         removeResponsible.mutate({
                           userId: r.id,
-                          allowLeavingOwnerless: data.responsibles.length === 1,
+                          allowLeavingOwnerless: responsibles.length === 1,
                         });
                     }}
                     disabled={removeResponsible.isPending}
