@@ -35,6 +35,25 @@ type OnboardingData = {
 
 const TOTAL_STEPS = 3;
 
+const MAX_ACADEMY_NAME_LENGTH = 120;
+
+/** Maps a Better Auth organization error into a friendly, actionable message. */
+export function describeCreateAcademyError(error: unknown): string {
+  const code =
+    typeof error === "object" && error !== null && "code" in error
+      ? String((error as { code?: unknown }).code ?? "")
+      : "";
+
+  switch (code) {
+    case "NAME_TOO_SHORT":
+      return "O nome da academia deve ter ao menos 2 caracteres.";
+    case "NAME_TOO_LONG":
+      return `O nome da academia deve ter no máximo ${MAX_ACADEMY_NAME_LENGTH} caracteres.`;
+    default:
+      return "Não foi possível criar sua academia. Tente novamente.";
+  }
+}
+
 export function AcademyOnboardingPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
@@ -59,14 +78,15 @@ export function AcademyOnboardingPage() {
     setError(null);
     setIsSubmitting(true);
 
+    const trimmedName = data.academyName.trim();
     const result = await authClient.organization.create({
-      name: data.academyName,
-      slug: createAcademySlug(data.academyName),
+      name: trimmedName,
+      slug: createAcademySlug(trimmedName),
     });
 
     if (result.error || !result.data) {
       setIsSubmitting(false);
-      setError("Não foi possível criar sua academia. Tente novamente.");
+      setError(describeCreateAcademyError(result.error));
       return;
     }
 
@@ -305,6 +325,7 @@ function NameStep(props: {
           placeholder="Ex: Arte Suave BJJ"
           value={props.data.academyName}
           onChange={(e) => props.onDataChange((prev) => ({ ...prev, academyName: e.target.value }))}
+          maxLength={MAX_ACADEMY_NAME_LENGTH}
           required
         />
       </Field>
@@ -477,6 +498,7 @@ function DetailsStep(props: {
             placeholder="Rua, número, bairro — cidade/UF"
             value={props.data.address}
             onChange={(e) => props.onDataChange((prev) => ({ ...prev, address: e.target.value }))}
+            maxLength={200}
           />
         </Field>
 
@@ -486,6 +508,7 @@ function DetailsStep(props: {
             placeholder="(11) 99999-9999"
             value={props.data.phone}
             onChange={(e) => props.onDataChange((prev) => ({ ...prev, phone: e.target.value }))}
+            maxLength={30}
           />
         </Field>
 
@@ -495,6 +518,7 @@ function DetailsStep(props: {
             placeholder="@suaacademia"
             value={props.data.instagram}
             onChange={(e) => props.onDataChange((prev) => ({ ...prev, instagram: e.target.value }))}
+            maxLength={60}
           />
         </Field>
       </div>
