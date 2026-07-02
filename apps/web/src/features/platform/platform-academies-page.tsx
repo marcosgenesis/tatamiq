@@ -15,6 +15,7 @@ import { Badge } from "../../components/ui/badge";
 import { authClient } from "../../lib/auth-client";
 import {
   AcademyAvatar,
+  formatAcademyResponsiblesSummary,
   formatDate,
   ProvisionAcademyDialog,
   SearchInput,
@@ -120,22 +121,16 @@ function AcademiesDataGrid({
         id: "responsibles",
         header: "Responsáveis",
         size: 280,
-        cell: ({ row }) =>
-          row.original.responsibles.length > 0 ? (
-            <div className="min-w-0 space-y-0.5">
-              <p className="truncate text-sm font-medium">
-                {row.original.responsibles[0]!.name}
-                {row.original.responsibles.length > 1
-                  ? ` +${row.original.responsibles.length - 1}`
-                  : ""}
-              </p>
-              <p className="truncate text-muted-foreground text-xs">
-                {row.original.responsibles[0]!.email}
-              </p>
-            </div>
-          ) : (
-            <Badge variant="muted">Sem responsável</Badge>
-          ),
+        cell: ({ row }) => (
+          <div className="min-w-0 space-y-0.5">
+            <p className="truncate text-sm font-medium">
+              {(row.original.responsibles ?? [])[0]?.name ?? "Sem responsável"}
+            </p>
+            <p className="truncate text-muted-foreground text-xs">
+              {formatAcademyResponsiblesSummary(row.original.responsibles)}
+            </p>
+          </div>
+        ),
       },
       {
         accessorKey: "createdAt",

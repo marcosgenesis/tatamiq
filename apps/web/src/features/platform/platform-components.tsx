@@ -63,6 +63,17 @@ export function getInitials(name: string): string {
   return ((first[0] ?? "") + (last[0] ?? "")).toUpperCase();
 }
 
+export type AcademyResponsible = { name: string; email: string };
+
+export function formatAcademyResponsiblesSummary(
+  responsibles?: AcademyResponsible[] | null,
+): string {
+  const list = responsibles ?? [];
+  if (list.length === 0) return "Sem responsável";
+  const first = list[0];
+  return list.length > 1 ? `${first?.email ?? ""} · +${list.length - 1}` : (first?.email ?? "");
+}
+
 // --- Audit action metadata ------------------------------------------------
 
 export const ACTION_LABELS: Record<string, string> = {
