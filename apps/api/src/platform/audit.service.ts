@@ -7,6 +7,8 @@ export type AuditAction =
   | "platform.dashboard.viewed"
   | "platform.academy.provisioned"
   | "platform.academy.transferred"
+  | "platform.academy.responsible_added"
+  | "platform.academy.responsible_removed"
   | "platform.user.banned"
   | "platform.user.unbanned"
   | "platform.user.sessions_revoked"

@@ -7,6 +7,54 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/in
 import { authClient } from "@/lib/auth-client";
 import { AuthLayout } from "./auth-layout";
 
+const MIN_PASSWORD_LENGTH = 8;
+const MIN_NAME_LENGTH = 2;
+
+/** Client-side pre-flight validation for the sign-up form. Returns the first
+ * problem found as a user-facing message, or null when the input is valid. */
+export function validateSignUpInput(input: {
+  name: string;
+  email: string;
+  password: string;
+}): string | null {
+  if (input.name.trim().length < MIN_NAME_LENGTH) {
+    return "Informe seu nome completo.";
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email.trim())) {
+    return "Informe um email válido.";
+  }
+  if (input.password.length < MIN_PASSWORD_LENGTH) {
+    return `A senha deve ter ao menos ${MIN_PASSWORD_LENGTH} caracteres.`;
+  }
+  return null;
+}
+
+/** Maps a Better Auth error into a friendly, actionable message. */
+export function describeSignUpError(error: unknown): string {
+  const code =
+    typeof error === "object" && error !== null && "code" in error
+      ? String((error as { code?: unknown }).code ?? "")
+      : "";
+
+  switch (code) {
+    case "USER_ALREADY_EXISTS":
+    case "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL":
+      return "Este email já está em uso. Tente entrar ou recuperar sua senha.";
+    case "PASSWORD_TOO_SHORT":
+      return `A senha deve ter ao menos ${MIN_PASSWORD_LENGTH} caracteres.`;
+    case "PASSWORD_TOO_LONG":
+      return "A senha é muito longa.";
+    case "NAME_TOO_SHORT":
+      return "Informe seu nome completo.";
+    case "NAME_TOO_LONG":
+      return "O nome informado é muito longo.";
+    case "VALIDATION_ERROR":
+      return "Informe um email válido.";
+    default:
+      return "Não foi possível criar a conta. Tente novamente em instantes.";
+  }
+}
+
 function AuthError({ message }: { message: string | null }) {
   if (!message) return null;
   return (
@@ -135,10 +183,17 @@ export function SignUpPage() {
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+
+    const validationError = validateSignUpInput({ name, email, password });
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     setIsSubmitting(true);
     const result = await createPublicAccount({
-      name,
-      email,
+      name: name.trim(),
+      email: email.trim(),
       password,
       signOut: () => authClient.signOut(),
       signUp: (input) => authClient.signUp.email(input),
@@ -147,7 +202,7 @@ export function SignUpPage() {
     setIsSubmitting(false);
 
     if (result.error) {
-      setError("Não foi possível criar a conta. Tente entrar ou recuperar sua senha.");
+      setError(describeSignUpError(result.error));
       return;
     }
 
@@ -170,6 +225,7 @@ export function SignUpPage() {
             placeholder="Seu nome"
             value={name}
             onChange={(event) => setName(event.target.value)}
+            maxLength={120}
             required
           />
           <InputGroupAddon align="inline-start">
@@ -192,10 +248,11 @@ export function SignUpPage() {
         <InputGroup>
           <InputGroupInput
             aria-label="Senha"
-            placeholder="Senha"
+            placeholder="Senha (mín. 8 caracteres)"
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
+            minLength={8}
             required
           />
           <InputGroupAddon align="inline-start">

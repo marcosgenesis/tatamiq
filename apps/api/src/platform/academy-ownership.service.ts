@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { type Database, member, organization } from "@tatamiq/database";
 import { and, count, eq } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
@@ -7,6 +7,11 @@ import { ReservedAccountService } from "./reserved-account.service";
 export type AssignAcademyOwnerInput = {
   ownerEmail: string;
   ownerName?: string;
+};
+
+export type RemoveAcademyResponsibleInput = {
+  userId: string;
+  allowLeavingOwnerless?: boolean;
 };
 
 export type AcademyOwnerAssignment = {
@@ -41,6 +46,36 @@ export class AcademyOwnershipService {
     input: AssignAcademyOwnerInput,
   ): Promise<AcademyOwnerAssignment> {
     return this.assignOwnerByEmail(academyId, input, { replaceExistingOwners: true });
+  }
+
+  async addResponsibleByEmail(
+    academyId: string,
+    input: AssignAcademyOwnerInput,
+  ): Promise<AcademyOwnerAssignment> {
+    return this.assignOwnerByEmail(academyId, input, { replaceExistingOwners: false });
+  }
+
+  async removeResponsible(academyId: string, input: RemoveAcademyResponsibleInput) {
+    await this.assertAcademyExists(academyId);
+    const [{ total }] = await this.db
+      .select({ total: count() })
+      .from(member)
+      .where(and(eq(member.organizationId, academyId), eq(member.role, "owner")));
+    const totalOwners = total ?? 0;
+    if (totalOwners <= 1 && !input.allowLeavingOwnerless) {
+      throw new BadRequestException(
+        "A academia precisa de confirmação para ficar sem responsável.",
+      );
+    }
+    await this.db
+      .delete(member)
+      .where(
+        and(
+          eq(member.organizationId, academyId),
+          eq(member.userId, input.userId),
+          eq(member.role, "owner"),
+        ),
+      );
   }
 
   async keepOwnerless(academyId: string, ownerUserId: string) {

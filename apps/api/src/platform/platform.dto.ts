@@ -27,7 +27,7 @@ export class PlatformMeDto {
   user!: PlatformMeUserDto;
 }
 
-export class PlatformAcademyOwnerDto {
+export class PlatformAcademyResponsibleDto {
   @ApiProperty({ type: String })
   id!: string;
 
@@ -54,8 +54,8 @@ export class PlatformAcademySummaryDto {
   @ApiProperty({ type: String })
   createdAt!: string;
 
-  @ApiProperty({ type: () => PlatformAcademyOwnerDto, nullable: true })
-  owner!: PlatformAcademyOwnerDto | null;
+  @ApiProperty({ type: () => PlatformAcademyResponsibleDto, isArray: true })
+  responsibles!: PlatformAcademyResponsibleDto[];
 }
 
 export class PlatformAcademyDetailDto extends PlatformAcademySummaryDto {
@@ -97,6 +97,19 @@ const transferAcademyBodySchema = z.object({
 });
 
 export class TransferAcademyBodyDto extends createZodDto(transferAcademyBodySchema) {}
+
+const addResponsibleBodySchema = z.object({
+  ownerEmail: z.string(),
+  ownerName: z.string().optional(),
+});
+
+export class AddResponsibleBodyDto extends createZodDto(addResponsibleBodySchema) {}
+
+const removeResponsibleBodySchema = z.object({
+  allowLeavingOwnerless: z.boolean().optional(),
+});
+
+export class RemoveResponsibleBodyDto extends createZodDto(removeResponsibleBodySchema) {}
 
 export class TransferAcademyResultDto extends ProvisionAcademyResultDto {}
 
@@ -551,6 +564,7 @@ const platformDeleteUserBodySchema = z.object({
   ownerResolution: z.enum(["keep_ownerless", "transfer"]).optional(),
   transferOwnerEmail: z.string().optional(),
   transferOwnerName: z.string().optional(),
+  confirmLeaveOwnerless: z.boolean().optional(),
 });
 
 export class PlatformDeleteUserBodyDto extends createZodDto(platformDeleteUserBodySchema) {}

@@ -41,6 +41,12 @@ function createController() {
       ownerUserId: "owner-2",
       ownerWasCreated: false,
     }),
+    addResponsible: vi.fn().mockResolvedValue({
+      academy: { id: "academy-1" },
+      ownerUserId: "owner-3",
+      ownerWasCreated: false,
+    }),
+    removeResponsible: vi.fn().mockResolvedValue({ success: true }),
   };
   const platformAdminService = {
     assertPlatformAdmin: vi.fn().mockReturnValue({
@@ -118,7 +124,7 @@ function createController() {
 }
 
 describe("PlatformController audited action seams", () => {
-  it("routes academy provisioning and transfer through administrative audit descriptors", async () => {
+  it("routes academy provisioning and responsible changes through administrative audit descriptors", async () => {
     const { controller, auditedDescriptors } = createController();
 
     await controller.provisionAcademy(
@@ -132,6 +138,13 @@ describe("PlatformController audited action seams", () => {
     await controller.transferAcademy(adminSession as never, "academy-1", {
       ownerEmail: "new-owner@example.com",
       ownerName: "New Owner",
+    } as never);
+    await controller.addResponsible(adminSession as never, "academy-1", {
+      ownerEmail: "extra@example.com",
+      ownerName: "Extra",
+    } as never);
+    await controller.removeResponsible(adminSession as never, "academy-1", "owner-3", {
+      allowLeavingOwnerless: true,
     } as never);
 
     expect(auditedDescriptors[0]).toMatchObject({
@@ -149,6 +162,18 @@ describe("PlatformController audited action seams", () => {
     });
     expect(auditedDescriptors[1]).toMatchObject({
       action: "platform.academy.transferred",
+      targetType: "academy",
+      targetId: "academy-1",
+      academyId: "academy-1",
+    });
+    expect(auditedDescriptors[2]).toMatchObject({
+      action: "platform.academy.responsible_added",
+      targetType: "academy",
+      targetId: "academy-1",
+      academyId: "academy-1",
+    });
+    expect(auditedDescriptors[3]).toMatchObject({
+      action: "platform.academy.responsible_removed",
       targetType: "academy",
       targetId: "academy-1",
       academyId: "academy-1",

@@ -7,6 +7,7 @@ import {
   AcademyAvatar,
   ActionDot,
   actionLabel,
+  formatAcademyResponsiblesSummary,
   formatDate,
   formatRelative,
   ProvisionAcademyDialog,
@@ -115,7 +116,10 @@ export function PlatformPage() {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold">{academy.name}</p>
                       <p className="truncate text-xs text-muted-foreground">
-                        {academy.owner?.email ?? `Sem dono · /${academy.slug}`}
+                        {formatAcademyResponsiblesSummary(academy.responsibles) ===
+                        "Sem responsável"
+                          ? `Sem responsável · /${academy.slug}`
+                          : formatAcademyResponsiblesSummary(academy.responsibles)}
                       </p>
                     </div>
                     <span className="shrink-0 text-xs text-muted-foreground">

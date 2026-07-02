@@ -15,6 +15,7 @@ import { Badge } from "../../components/ui/badge";
 import { authClient } from "../../lib/auth-client";
 import {
   AcademyAvatar,
+  formatAcademyResponsiblesSummary,
   formatDate,
   ProvisionAcademyDialog,
   SearchInput,
@@ -66,7 +67,7 @@ export function PlatformAcademiesPage() {
             setQuery(value);
             setPagination((c) => ({ ...c, pageIndex: 0 }));
           }}
-          placeholder="Buscar academia por nome ou slug"
+          placeholder="Buscar academia por nome, slug ou responsável"
         />
         <AcademiesDataGrid
           academies={academies.data?.items ?? []}
@@ -117,18 +118,19 @@ function AcademiesDataGrid({
         ),
       },
       {
-        id: "owner",
-        header: "Dono",
+        id: "responsibles",
+        header: "Responsáveis",
         size: 280,
-        cell: ({ row }) =>
-          row.original.owner ? (
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium">{row.original.owner.name}</p>
-              <p className="truncate text-muted-foreground text-xs">{row.original.owner.email}</p>
-            </div>
-          ) : (
-            <Badge variant="muted">Sem dono</Badge>
-          ),
+        cell: ({ row }) => (
+          <div className="min-w-0 space-y-0.5">
+            <p className="truncate text-sm font-medium">
+              {(row.original.responsibles ?? [])[0]?.name ?? "Sem responsável"}
+            </p>
+            <p className="truncate text-muted-foreground text-xs">
+              {formatAcademyResponsiblesSummary(row.original.responsibles)}
+            </p>
+          </div>
+        ),
       },
       {
         accessorKey: "createdAt",

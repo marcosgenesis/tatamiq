@@ -13,7 +13,7 @@ import {
   students,
   user,
 } from "@tatamiq/database";
-import { and, count, desc, eq, ilike, isNotNull, isNull, or } from "drizzle-orm";
+import { and, count, desc, eq, ilike, inArray, isNotNull, isNull, or } from "drizzle-orm";
 import { seedIbjjfBelts } from "../belts/seed-belts";
 import { DATABASE } from "../database/database.module";
 import { AcademyOwnershipService, type AssignAcademyOwnerInput } from "./academy-ownership.service";
@@ -34,7 +34,7 @@ export type PlatformAcademySummary = {
   slug: string;
   logo: string | null;
   createdAt: string;
-  owner: PlatformAcademyOwner | null;
+  responsibles: PlatformAcademyResponsible[];
 };
 
 export type PlatformAcademyDetail = PlatformAcademySummary & {
@@ -63,7 +63,7 @@ export type TransferAcademyResult = {
   firstAccessLink: string | null;
 };
 
-type PlatformAcademyOwner = {
+type PlatformAcademyResponsible = {
   id: string;
   name: string;
   email: string;
@@ -157,30 +157,22 @@ export class PlatformAcademyService {
       : undefined;
 
     const baseRows = this.db
-      .select({ organization, owner: user })
+      .select({ organization })
       .from(organization)
-      .leftJoin(
-        member,
-        // Only the technical owner represents the Dono/Instrutor Solo in V1.
-        and(eq(member.organizationId, organization.id), eq(member.role, "owner")),
-      )
-      .leftJoin(user, eq(user.id, member.userId))
       .where(where)
       .orderBy(desc(organization.createdAt))
       .limit(pageSize)
       .offset(page * pageSize);
 
-    const totalRows = this.db
-      .select({ total: count() })
-      .from(organization)
-      .leftJoin(member, and(eq(member.organizationId, organization.id), eq(member.role, "owner")))
-      .leftJoin(user, eq(user.id, member.userId))
-      .where(where);
+    const totalRows = this.db.select({ total: count() }).from(organization).where(where);
 
     const [rows, [{ total }]] = await Promise.all([baseRows, totalRows]);
+    const responsiblesByOrg = await this.loadResponsibles(rows.map((row) => row.organization.id));
 
     return {
-      items: rows.map((row) => toAcademySummary(row.organization, row.owner)),
+      items: rows.map((row) =>
+        toAcademySummary(row.organization, responsiblesByOrg.get(row.organization.id) ?? []),
+      ),
       pagination: {
         page,
         pageSize,
@@ -222,12 +214,28 @@ export class PlatformAcademyService {
     return { academy, ...owner };
   }
 
+  async addResponsible(
+    academyId: string,
+    input: AssignAcademyOwnerInput,
+  ): Promise<TransferAcademyResult> {
+    const owner = await this.academyOwnership.addResponsibleByEmail(academyId, input);
+    const academy = await this.getAcademy(academyId);
+
+    return { academy, ...owner };
+  }
+
+  async removeResponsible(
+    academyId: string,
+    input: { userId: string; allowLeavingOwnerless?: boolean },
+  ) {
+    await this.academyOwnership.removeResponsible(academyId, input);
+    return { success: true };
+  }
+
   async getAcademy(id: string): Promise<PlatformAcademyDetail> {
     const [row] = await this.db
-      .select({ organization, owner: user })
+      .select({ organization })
       .from(organization)
-      .leftJoin(member, and(eq(member.organizationId, organization.id), eq(member.role, "owner")))
-      .leftJoin(user, eq(user.id, member.userId))
       .where(eq(organization.id, id))
       .limit(1);
 
@@ -235,8 +243,10 @@ export class PlatformAcademyService {
       throw new NotFoundException("Academia não encontrada.");
     }
 
+    const responsiblesByOrg = await this.loadResponsibles([row.organization.id]);
+
     return {
-      ...toAcademySummary(row.organization, row.owner),
+      ...toAcademySummary(row.organization, responsiblesByOrg.get(row.organization.id) ?? []),
       address: row.organization.address,
       phone: row.organization.phone,
       instagram: row.organization.instagram,
@@ -457,6 +467,22 @@ export class PlatformAcademyService {
       );
   }
 
+  private async loadResponsibles(organizationIds: string[]) {
+    if (organizationIds.length === 0) return new Map<string, PlatformAcademyResponsible[]>();
+    const rows = await this.db
+      .select({ organizationId: member.organizationId, user })
+      .from(member)
+      .innerJoin(user, eq(user.id, member.userId))
+      .where(and(eq(member.role, "owner"), inArray(member.organizationId, organizationIds)));
+    const map = new Map<string, PlatformAcademyResponsible[]>();
+    for (const row of rows) {
+      const list = map.get(row.organizationId) ?? [];
+      list.push({ id: row.user.id, name: row.user.name, email: row.user.email });
+      map.set(row.organizationId, list);
+    }
+    return map;
+  }
+
   private countPromotions(organizationId: string) {
     return this.db
       .select({ total: count() })
@@ -489,19 +515,16 @@ function slugify(value: string): string {
     .replace(/-{2,}/g, "-");
 }
 
-function toAcademySummary(org: OrganizationRow, owner: UserRow | null): PlatformAcademySummary {
+function toAcademySummary(
+  org: OrganizationRow,
+  responsibles: PlatformAcademyResponsible[],
+): PlatformAcademySummary {
   return {
     id: org.id,
     name: org.name,
     slug: org.slug,
     logo: org.logo,
     createdAt: org.createdAt.toISOString(),
-    owner: owner
-      ? {
-          id: owner.id,
-          name: owner.name,
-          email: owner.email,
-        }
-      : null,
+    responsibles,
   };
 }

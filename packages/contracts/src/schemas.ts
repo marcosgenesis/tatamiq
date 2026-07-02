@@ -782,13 +782,13 @@ export const academyProfileSchema = z.object({
 });
 
 export const updateAcademySchema = z.object({
-  name: z.string().trim().min(1).optional(),
-  address: z.string().trim().optional().or(z.literal("")),
-  phone: z.string().trim().optional().or(z.literal("")),
-  instagram: z.string().trim().optional().or(z.literal("")),
+  name: z.string().trim().min(2).max(120).optional(),
+  address: z.string().trim().max(200).optional().or(z.literal("")),
+  phone: z.string().trim().max(30).optional().or(z.literal("")),
+  instagram: z.string().trim().max(60).optional().or(z.literal("")),
   pixKeyType: pixKeyTypeSchema.nullable().optional(),
-  pixKey: z.string().trim().optional().or(z.literal("")),
-  pixCopyPaste: z.string().trim().optional().or(z.literal("")),
+  pixKey: z.string().trim().max(140).optional().or(z.literal("")),
+  pixCopyPaste: z.string().trim().max(1000).optional().or(z.literal("")),
 });
 
 export const academyLogoUploadResponseSchema = z.object({

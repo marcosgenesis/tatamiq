@@ -445,15 +445,27 @@ declare module "@tanstack/react-router" {
 
 // --- Layout components ---
 
-function RootLayout() {
+/**
+ * Returns true only while the session is loading for the FIRST time.
+ * Background refetches (e.g. triggered by signOut/signUp during a form submit)
+ * keep returning false so layouts don't unmount their children mid-flow —
+ * otherwise form state and error messages would be wiped by the remount.
+ */
+function useInitialSessionPending() {
   const session = authClient.useSession();
-  if (session.isPending) return <LoadingScreen />;
+  const hasResolvedRef = useRef(false);
+  if (!session.isPending) hasResolvedRef.current = true;
+  return session.isPending && !hasResolvedRef.current;
+}
+
+function RootLayout() {
+  if (useInitialSessionPending()) return <LoadingScreen />;
   return <Outlet />;
 }
 
 function PublicLayout() {
   const session = authClient.useSession();
-  if (session.isPending) return <LoadingScreen />;
+  if (useInitialSessionPending()) return <LoadingScreen />;
   if (session.data) return <AuthenticatedRedirect />;
   return <Outlet />;
 }

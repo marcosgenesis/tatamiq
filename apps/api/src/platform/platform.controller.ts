@@ -19,6 +19,7 @@ import {
   ActivatePlatformSupportBodyDto,
   AddPlatformAdministratorBodyDto,
   AddPlatformAdministratorResultDto,
+  AddResponsibleBodyDto,
   CompleteReservedFirstAccessBodyDto,
   CompleteReservedFirstAccessResponseDto,
   PlatformAcademiesResponseDto,
@@ -38,6 +39,7 @@ import {
   PlatformUsersResponseDto,
   ProvisionAcademyBodyDto,
   ProvisionAcademyResultDto,
+  RemoveResponsibleBodyDto,
   ReservedFirstAccessPreviewDto,
   StartPlatformSupportBodyDto,
   TransferAcademyBodyDto,
@@ -175,6 +177,59 @@ export class PlatformController {
           ownerUserId: result.ownerUserId,
           ownerWasCreated: result.ownerWasCreated,
         }),
+      },
+    );
+  }
+
+  @Post("academies/:id/responsibles")
+  @ApiParam({ name: "id", type: String })
+  @ApiBody({ type: AddResponsibleBodyDto })
+  @ApiOkResponse({ type: TransferAcademyResultDto })
+  async addResponsible(
+    @Session() session: PlatformSession,
+    @Param("id") id: string,
+    @ZodBody(AddResponsibleBodyDto) body: AddResponsibleBodyDto,
+  ) {
+    return this.auditedAction.run(
+      session,
+      () => this.platformAcademyService.addResponsible(id, parseOwnerInput(body)),
+      {
+        action: "platform.academy.responsible_added",
+        targetType: "academy",
+        targetId: id,
+        academyId: id,
+        metadata: (result) => ({
+          ownerUserId: result.ownerUserId,
+          ownerWasCreated: result.ownerWasCreated,
+        }),
+      },
+    );
+  }
+
+  @Post("academies/:id/responsibles/:userId/remove")
+  @ApiParam({ name: "id", type: String })
+  @ApiParam({ name: "userId", type: String })
+  @ApiBody({ type: RemoveResponsibleBodyDto })
+  @ApiOkResponse({ type: PlatformActionResultDto })
+  async removeResponsible(
+    @Session() session: PlatformSession,
+    @Param("id") id: string,
+    @Param("userId") userId: string,
+    @ZodBody(RemoveResponsibleBodyDto) body: RemoveResponsibleBodyDto,
+  ) {
+    return this.auditedAction.run(
+      session,
+      () =>
+        this.platformAcademyService.removeResponsible(id, {
+          userId,
+          allowLeavingOwnerless: body.allowLeavingOwnerless,
+        }),
+      {
+        action: "platform.academy.responsible_removed",
+        targetType: "academy",
+        targetId: id,
+        academyId: id,
+        metadata: { userId, allowLeavingOwnerless: body.allowLeavingOwnerless ?? false },
       },
     );
   }

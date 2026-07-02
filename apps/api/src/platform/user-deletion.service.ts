@@ -28,6 +28,7 @@ export type DeleteUserInput = {
   ownerResolution?: "keep_ownerless" | "transfer";
   transferOwnerEmail?: string;
   transferOwnerName?: string;
+  confirmLeaveOwnerless?: boolean;
 };
 
 @Injectable()
@@ -123,6 +124,10 @@ export class UserDeletionService {
         ),
       );
       return;
+    }
+
+    if (!input.confirmLeaveOwnerless) {
+      throw new BadRequestException("Confirme para deixar a academia sem responsável.");
     }
 
     await Promise.all(
