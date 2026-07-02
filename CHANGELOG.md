@@ -1,3 +1,16 @@
+# [0.4.0](https://github.com/marcosgenesis/tatamiq/compare/v0.3.0...v0.4.0) (2026-07-02)
+
+
+### Bug Fixes
+
+* responsibles ([a136895](https://github.com/marcosgenesis/tatamiq/commit/a1368955bb2eaed8e93d8bbf6c087877711b49be))
+
+
+### Features
+
+* **auth:** validate and normalize user, academy and profile names ([5059f65](https://github.com/marcosgenesis/tatamiq/commit/5059f654a7d9f429d8a2f7da1a3d55b29cb7a66c))
+* **platform:** support multiple academy responsibles ([f00783f](https://github.com/marcosgenesis/tatamiq/commit/f00783f7559658c176afa76445c83359c719a4e8))
+
 # [0.3.0](https://github.com/marcosgenesis/tatamiq/compare/v0.2.1...v0.3.0) (2026-06-19)
 
 
