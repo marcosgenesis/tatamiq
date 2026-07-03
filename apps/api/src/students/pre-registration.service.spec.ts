@@ -184,6 +184,39 @@ describe("PreRegistrationService", () => {
     });
   });
 
+  it("rejects a declaredBeltId that does not belong to the academy", async () => {
+    // findOpenRequestByEmail, findAuthUserByEmail, findDuplicateStudent, assertBeltBelongsToOrg
+    mock.setSelectResults([[], [], [], []]);
+
+    await expect(
+      service.createRequest("public-token", {
+        name: "Aluno Teste",
+        birthDate: "2000-01-01",
+        phone: "11999999999",
+        email: "belt@example.com",
+        consentAccepted: true,
+        declaredBeltId: "belt-from-another-academy",
+      }),
+    ).rejects.toThrow("Faixa informada é inválida.");
+    expect(mock.insertedRows).toHaveLength(0);
+  });
+
+  it("stores a declaredBeltId that belongs to the academy", async () => {
+    mock.setSelectResults([[], [], [], [{ id: "belt-white" }]]);
+
+    const result = await service.createRequest("public-token", {
+      name: "Aluno Teste",
+      birthDate: "2000-01-01",
+      phone: "11999999999",
+      email: "belt@example.com",
+      consentAccepted: true,
+      declaredBeltId: "belt-white",
+    });
+
+    expect(result.status).toBe("pending_review");
+    expect(mock.insertedRows[0]).toMatchObject({ declaredBeltId: "belt-white" });
+  });
+
   it("blocks repeated public submissions for the same email within the throttle window", async () => {
     mock.setSelectResults(Array.from({ length: 6 }, () => []));
 

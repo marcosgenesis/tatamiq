@@ -1,5 +1,30 @@
 import { z } from "zod";
 
+const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+/** True only for a real calendar date (rejects 9999-99-99, 2024-02-30, etc.). */
+function isRealCalendarDate(value: string): boolean {
+  const [year = 0, month = 0, day = 0] = value.split("-").map(Number);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return false;
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return (
+    date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day
+  );
+}
+
+/**
+ * ISO `YYYY-MM-DD` date that must be a real calendar date and not in the future.
+ * String comparison is safe because ISO dates sort chronologically.
+ */
+export const birthDateSchema = z
+  .string()
+  .regex(ISO_DATE_PATTERN, "Data de nascimento inválida.")
+  .refine(isRealCalendarDate, "Data de nascimento inválida.")
+  .refine(
+    (value) => value <= new Date().toISOString().slice(0, 10),
+    "A data de nascimento não pode estar no futuro.",
+  );
+
 export const healthResponseSchema = z.object({
   status: z.literal("ok"),
   timestamp: z.string().datetime(),
@@ -105,8 +130,8 @@ export const guardianInputSchema = z
   .optional();
 
 export const createStudentSchema = z.object({
-  name: z.string().trim().min(1),
-  birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  name: z.string().trim().min(2).max(120),
+  birthDate: birthDateSchema,
   enrollmentDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   phone: z.string().trim().optional().or(z.literal("")),
   email: z.string().trim().email().optional().or(z.literal("")),
@@ -235,16 +260,16 @@ export const preRegistrationPublicProfileSchema = z.object({
 });
 
 export const createPreRegistrationRequestSchema = z.object({
-  name: z.string().trim().min(1),
-  birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  phone: z.string().trim().min(1),
-  email: z.string().trim().email(),
-  cpf: z.string().trim().optional().or(z.literal("")),
-  guardianName: z.string().trim().optional().or(z.literal("")),
-  guardianPhone: z.string().trim().optional().or(z.literal("")),
-  note: z.string().trim().optional().or(z.literal("")),
+  name: z.string().trim().min(2).max(120),
+  birthDate: birthDateSchema,
+  phone: z.string().trim().min(1).max(30),
+  email: z.string().trim().email().max(254),
+  cpf: z.string().trim().max(14).optional().or(z.literal("")),
+  guardianName: z.string().trim().max(120).optional().or(z.literal("")),
+  guardianPhone: z.string().trim().max(30).optional().or(z.literal("")),
+  note: z.string().trim().max(1000).optional().or(z.literal("")),
   consentAccepted: z.literal(true),
-  declaredBeltId: z.string().trim().optional().or(z.literal("")),
+  declaredBeltId: z.string().trim().max(64).optional().or(z.literal("")),
   declaredDegree: z.number().int().min(0).max(9).optional(),
 });
 

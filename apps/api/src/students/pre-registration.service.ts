@@ -132,6 +132,11 @@ export class PreRegistrationService {
       input.birthDate,
     );
 
+    const declaredBeltId = emptyToNull(input.declaredBeltId);
+    if (declaredBeltId) {
+      await this.assertBeltBelongsToOrg(organizationId, declaredBeltId);
+    }
+
     const now = new Date();
     const [created] = await this.db
       .insert(preRegistrationRequests)
@@ -148,7 +153,7 @@ export class PreRegistrationService {
         guardianPhone: emptyToNull(input.guardianPhone),
         note: emptyToNull(input.note),
         cpf: emptyToNull(input.cpf),
-        declaredBeltId: emptyToNull(input.declaredBeltId) ?? null,
+        declaredBeltId,
         declaredDegree: input.declaredDegree ?? null,
         consentAcceptedAt: now,
         reviewedByUserId: null,
@@ -529,6 +534,21 @@ export class PreRegistrationService {
 
   // --- Private helpers ---
 
+  /**
+   * Ensures a declared belt exists AND belongs to this academy. Without the
+   * org check, an anonymous submitter could reference another academy's belt
+   * (cross-tenant leak) or a non-existent id, which would surface as a raw
+   * foreign-key 500 instead of a clean validation error.
+   */
+  private async assertBeltBelongsToOrg(organizationId: string, beltId: string): Promise<void> {
+    const [belt] = await this.db
+      .select({ id: belts.id })
+      .from(belts)
+      .where(and(eq(belts.organizationId, organizationId), eq(belts.id, beltId)))
+      .limit(1);
+    if (!belt) throw new BadRequestException("Faixa informada é inválida.");
+  }
+
   private async findWhiteBelt(organizationId: string, birthDate: string) {
     const path = isMinor(birthDate) ? "child" : "adult";
     const slug = `${path}-white`;
@@ -789,15 +809,27 @@ function webAppUrl(): string {
   return process.env.WEB_APP_URL ?? process.env.CORS_ORIGIN ?? "http://localhost:5173";
 }
 
+/** Escapes text before interpolating it into email HTML (prevents HTML/script injection). */
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function buildFirstAccessEmailHtml(
   academyName: string,
   studentName: string,
   firstAccessUrl: string,
 ): string {
+  const safeAcademyName = escapeHtml(academyName);
+  const safeStudentName = escapeHtml(studentName);
   return `
     <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 16px;">
-      <h2 style="margin: 0 0 8px;">Bem-vindo ao ${academyName}!</h2>
-      <p>Olá ${studentName},</p>
+      <h2 style="margin: 0 0 8px;">Bem-vindo ao ${safeAcademyName}!</h2>
+      <p>Olá ${safeStudentName},</p>
       <p>Seu pré-cadastro foi aprovado. Use o link abaixo para configurar seu acesso ao Tatamiq:</p>
       <p style="margin: 24px 0;">
         <a href="${firstAccessUrl}" style="background: #18181b; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; display: inline-block;">
