@@ -88,6 +88,34 @@ export const platformKeys = {
   firstAccess: (token: string) => ["platform", "first-access", token] as const,
 };
 
+/**
+ * Decides platform-console access from the session + `/platform/me` query state.
+ *
+ * Two guards prevent a NON-admin (e.g. a freshly created account) from being
+ * routed to `/platform`:
+ * - An in-flight or not-yet-fetched query counts as "loading", so a redirect
+ *   never fires off a previous identity's result during a session transition
+ *   (the admin→new-account switch right after creating an account).
+ * - Success is only trusted when `/platform/me` was resolved FOR THE CURRENT
+ *   session user (`data.user.id === sessionUserId`), never a stale admin result.
+ */
+export function resolvePlatformAccess(input: {
+  sessionPending: boolean;
+  sessionUserId: string | null | undefined;
+  platform: {
+    isPending: boolean;
+    isFetching: boolean;
+    isSuccess: boolean;
+    data?: { user?: { id?: string | null } | null } | null | undefined;
+  };
+}): "loading" | "allowed" | "denied" {
+  const { sessionPending, sessionUserId, platform } = input;
+  if (sessionPending || !sessionUserId) return "loading";
+  if (platform.isPending || platform.isFetching) return "loading";
+  if (platform.isSuccess && platform.data?.user?.id === sessionUserId) return "allowed";
+  return "denied";
+}
+
 export function platformMeQuery(userId?: string | null) {
   return queryOptions({
     queryKey: platformKeys.me(userId),

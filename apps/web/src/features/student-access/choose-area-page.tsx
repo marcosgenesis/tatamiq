@@ -40,10 +40,15 @@ export function ChooseAreaPage() {
   });
 
   const isLoadingAreas =
-    organizations.isPending || studentQuery.isLoading || platformQuery.isLoading;
+    organizations.isPending ||
+    studentQuery.isLoading ||
+    platformQuery.isLoading ||
+    platformQuery.isFetching;
   const hasInstructor = (organizations.data?.length ?? 0) > 0;
   const hasStudent = !!studentQuery.data;
-  const hasPlatform = platformQuery.isSuccess && !!platformQuery.data;
+  // Tie platform access to the current session user so a stale admin result
+  // can't grant a freshly created account access to the operator console.
+  const hasPlatform = platformQuery.isSuccess && platformQuery.data?.user?.id === sessionUserId;
   const availableAreaCount = [hasPlatform, hasInstructor, hasStudent].filter(Boolean).length;
 
   useEffect(() => {

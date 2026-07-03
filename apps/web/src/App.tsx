@@ -20,6 +20,7 @@ import {
   currentPlatformSupportQuery,
   endPlatformSupport,
   platformMeQuery,
+  resolvePlatformAccess,
 } from "./features/platform/platform-queries";
 import { ThemeProvider } from "./hooks/use-theme";
 import "./index.css";
@@ -667,14 +668,17 @@ function SupportBanner() {
 
 function usePlatformAccess(): "loading" | "allowed" | "denied" {
   const session = authClient.useSession();
+  const sessionUserId = session.data?.user.id;
   const platform = useQuery({
-    ...platformMeQuery(session.data?.user.id),
-    enabled: !!session.data?.user.id,
+    ...platformMeQuery(sessionUserId),
+    enabled: !!sessionUserId,
   });
 
-  if (session.isPending || platform.isLoading) return "loading";
-  if (platform.isSuccess) return "allowed";
-  return "denied";
+  return resolvePlatformAccess({
+    sessionPending: session.isPending,
+    sessionUserId,
+    platform,
+  });
 }
 
 export function cacheIdentityKey(userId: string | null | undefined) {
