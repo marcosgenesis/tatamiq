@@ -27,6 +27,10 @@ import { authClient } from "./lib/auth-client";
 
 const queryClient = new QueryClient();
 
+/** Bounded retry for the post-login org-list race (transient 401 before the session settles). */
+const MAX_ORG_LOAD_RETRIES = 5;
+const ORG_LOAD_RETRY_DELAY_MS = 400;
+
 type OrganizationSummary = {
   id: string;
   name: string;
@@ -491,6 +495,8 @@ function InstructorLayout() {
   const activeOrganization = authClient.useActiveOrganization();
   const [switchingAcademyId, setSwitchingAcademyId] = useState<string | null>(null);
 
+  const [orgLoadRetries, setOrgLoadRetries] = useState(0);
+
   const firstOrganization = organizations.data?.[0] as OrganizationSummary | undefined;
   const activeAcademy = activeOrganization.data as OrganizationSummary | null | undefined;
 
@@ -499,6 +505,26 @@ function InstructorLayout() {
     void organizations.refetch();
     void activeOrganization.refetch();
   }, [session.data, organizations.refetch, activeOrganization.refetch]);
+
+  // On a fresh login the org-list request can fire before the session cookie
+  // has propagated and come back 401. Without this, an existing instructor gets
+  // bounced to /onboarding/academy (where "create academy" then fails with a
+  // max-organizations error). Retry the transient failure a few times instead.
+  useEffect(() => {
+    if (!session.data || !organizations.error || orgLoadRetries >= MAX_ORG_LOAD_RETRIES) return;
+    const timer = setTimeout(() => {
+      setOrgLoadRetries((count) => count + 1);
+      void organizations.refetch();
+      void activeOrganization.refetch();
+    }, ORG_LOAD_RETRY_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [
+    session.data,
+    organizations.error,
+    orgLoadRetries,
+    organizations.refetch,
+    activeOrganization.refetch,
+  ]);
 
   useEffect(() => {
     if (!session.data || activeAcademy || !firstOrganization) return;
@@ -511,6 +537,8 @@ function InstructorLayout() {
   if (organizations.isPending || activeOrganization.isPending || switchingAcademyId) {
     return <LoadingScreen />;
   }
+  // Still recovering from a transient org-list failure — don't route to onboarding yet.
+  if (organizations.error && orgLoadRetries < MAX_ORG_LOAD_RETRIES) return <LoadingScreen />;
   if (!firstOrganization) return <Navigate to="/onboarding/academy" />;
   if (!activeAcademy) return <LoadingScreen />;
 
