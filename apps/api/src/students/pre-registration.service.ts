@@ -135,6 +135,10 @@ export class PreRegistrationService {
     const declaredBeltId = emptyToNull(input.declaredBeltId);
     if (declaredBeltId) {
       await this.assertBeltBelongsToOrg(organizationId, declaredBeltId, input.declaredDegree ?? 0);
+    } else if (input.declaredDegree) {
+      // A degree with no belt is meaningless — reject rather than store a
+      // dangling value the instructor can't interpret at review.
+      throw new BadRequestException("Informe a faixa para declarar o grau.");
     }
 
     const now = new Date();

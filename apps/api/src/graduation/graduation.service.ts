@@ -90,6 +90,10 @@ export class GraduationService {
   }
 
   async listPromotions(organizationId: string, studentId: string): Promise<ListPromotionsResponse> {
+    // Return 404 for a student outside this academy instead of a misleading
+    // empty list (keeps the ownership contract consistent across endpoints).
+    await this.findStudent(organizationId, studentId);
+
     const rows = await this.db
       .select({
         promotion: promotions,

@@ -42,6 +42,12 @@ import { StudentsModule } from "./students/students.module";
       },
     }),
     DatabaseModule,
+    // MUST stay first among feature modules: its literal `*/export.csv` and
+    // `*/import-csv` routes must register before the `:id` routes of Students
+    // and MonthlyFees (Express matches in registration order — otherwise
+    // `export.csv` is read as a record id and 404s). AcademyModule pulls in
+    // MonthlyFeesModule, so CsvModule has to come before AcademyModule too.
+    CsvModule,
     AcademyModule,
     BeltsModule,
     StudentsModule,
@@ -53,7 +59,6 @@ import { StudentsModule } from "./students/students.module";
     StudentNotesModule,
     MonthlyFeesModule,
     GraduationModule,
-    CsvModule,
     PlatformModule,
   ],
   controllers: [HealthController],

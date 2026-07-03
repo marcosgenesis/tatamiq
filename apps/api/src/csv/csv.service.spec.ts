@@ -175,6 +175,39 @@ describe("CsvService", () => {
     expect(row?.split(",")).toEqual(["2026-06-01", "João Silva", "Adulto", "manual", "Não"]);
   });
 
+  it("neutralizes spreadsheet formula injection in exported student cells", async () => {
+    const db = {
+      select: vi.fn().mockReturnValueOnce(
+        createSelectChain([
+          {
+            student: {
+              name: "=cmd|'/c calc'!A1",
+              birthDate: "2000-01-01",
+              enrollmentDate: "2026-01-01",
+              status: "active",
+              email: "@evil.com",
+              phone: "119",
+              currentDegree: 0,
+              monthlyAmountInCents: null,
+              monthlyDueDay: null,
+            },
+            beltName: "Branca",
+            beltPath: "adult",
+          },
+        ]),
+      ),
+    };
+    const service = new CsvService(db as never, new ImportPreviewStore());
+
+    const csv = await service.exportStudents("org-1");
+    const row = csv.replace(/^﻿/, "").split("\n")[1] ?? "";
+
+    // Leading = and @ must be prefixed with ' and quoted so Excel/Sheets
+    // render them as text rather than evaluating a formula.
+    expect(row).toContain(`"'=cmd`);
+    expect(row).toContain(`"'@evil.com"`);
+  });
+
   it("confirms imports inside a transaction and inserts student plus guardian data", async () => {
     const previewStore = new ImportPreviewStore();
     previewStore.save("preview-1", {

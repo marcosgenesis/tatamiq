@@ -7,13 +7,17 @@ import type {
 } from "@tatamiq/contracts";
 import { type Database, studentNotes } from "@tatamiq/database";
 import { and, desc, eq, isNull } from "drizzle-orm";
+import { AcademiaScope } from "../academy-scope/academia-scope.service";
 import { DATABASE } from "../database/database.module";
 
 type NoteRow = typeof studentNotes.$inferSelect;
 
 @Injectable()
 export class StudentNotesService {
-  constructor(@Inject(DATABASE) private readonly db: Database) {}
+  constructor(
+    @Inject(DATABASE) private readonly db: Database,
+    @Inject(AcademiaScope) private readonly academiaScope: AcademiaScope,
+  ) {}
 
   async create(
     organizationId: string,
@@ -21,6 +25,10 @@ export class StudentNotesService {
     createdByUserId: string,
     input: CreateStudentNoteInput,
   ): Promise<StudentNoteDto> {
+    // Without this the path studentId is trusted blindly, letting an instructor
+    // attach notes to another academy's student (cross-tenant IDOR write).
+    await this.academiaScope.assertStudentBelongsToAcademia(organizationId, studentId);
+
     const id = crypto.randomUUID();
     const now = new Date();
 
@@ -81,6 +89,8 @@ export class StudentNotesService {
   }
 
   async listAll(organizationId: string, studentId: string): Promise<ListStudentNotesResponse> {
+    await this.academiaScope.assertStudentBelongsToAcademia(organizationId, studentId);
+
     const rows = await this.db
       .select()
       .from(studentNotes)
