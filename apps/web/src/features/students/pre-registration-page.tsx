@@ -8,6 +8,7 @@ import { api } from "../../api";
 import { Button } from "../../components/ui/button";
 import {
   brToIsoDate,
+  isFutureBrDate,
   isMinorBirthDate,
   isValidBrDate,
   isValidCpf,
@@ -32,20 +33,21 @@ function degreeLabel(value: number, isBlack: boolean) {
 
 const schema = z
   .object({
-    name: z.string().trim().min(2, "Nome obrigatório"),
+    name: z.string().trim().min(2, "Nome obrigatório").max(120, "Nome muito longo"),
     birthDate: z
       .string()
       .min(1, "Data obrigatória")
-      .refine((v) => isValidBrDate(v), "Data inválida"),
+      .refine((v) => isValidBrDate(v), "Data inválida")
+      .refine((v) => !isFutureBrDate(v), "A data não pode estar no futuro"),
     cpf: z
       .string()
       .optional()
       .refine((v) => !v || isValidCpf(v), "CPF inválido"),
-    phone: z.string().min(1, "Telefone obrigatório"),
-    email: z.string().email("E-mail inválido"),
-    guardianName: z.string().optional(),
-    guardianPhone: z.string().optional(),
-    note: z.string().optional(),
+    phone: z.string().min(1, "Telefone obrigatório").max(30, "Telefone muito longo"),
+    email: z.string().email("E-mail inválido").max(254, "E-mail muito longo"),
+    guardianName: z.string().max(120, "Nome muito longo").optional(),
+    guardianPhone: z.string().max(30, "Telefone muito longo").optional(),
+    note: z.string().max(1000, "Observação muito longa").optional(),
     declaredBeltId: z.string().optional(),
     declaredDegree: z.number().int().min(0).max(9).optional(),
     consentAccepted: z.boolean().refine((v) => v === true, "Aceite o consentimento para continuar"),
@@ -347,7 +349,17 @@ export function PreRegistrationPage({ token }: { token: string }) {
                   render={({ field }) => (
                     <select
                       value={field.value ?? ""}
-                      onChange={(e) => field.onChange(e.target.value)}
+                      onChange={(e) => {
+                        field.onChange(e.target.value);
+                        // Reset the degree: a stale value (e.g. 6th dan) would
+                        // otherwise be submitted for a belt that only allows 0-4,
+                        // while the (clamped) dropdown misleadingly shows "Sem grau".
+                        const nextBelt = belts.find((b) => b.id === e.target.value);
+                        const nextMax = maxDegreeForBelt(nextBelt);
+                        if ((watch("declaredDegree") ?? 0) > nextMax) {
+                          form.setValue("declaredDegree", 0);
+                        }
+                      }}
                       className={cn(inputClass, "cursor-pointer")}
                     >
                       <option value="">Selecione a faixa (opcional)</option>

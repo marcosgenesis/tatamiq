@@ -134,7 +134,7 @@ export class PreRegistrationService {
 
     const declaredBeltId = emptyToNull(input.declaredBeltId);
     if (declaredBeltId) {
-      await this.assertBeltBelongsToOrg(organizationId, declaredBeltId);
+      await this.assertBeltBelongsToOrg(organizationId, declaredBeltId, input.declaredDegree ?? 0);
     }
 
     const now = new Date();
@@ -535,18 +535,27 @@ export class PreRegistrationService {
   // --- Private helpers ---
 
   /**
-   * Ensures a declared belt exists AND belongs to this academy. Without the
-   * org check, an anonymous submitter could reference another academy's belt
-   * (cross-tenant leak) or a non-existent id, which would surface as a raw
-   * foreign-key 500 instead of a clean validation error.
+   * Ensures a declared belt exists, belongs to this academy, and that the
+   * declared degree fits the belt. Without the org check, an anonymous
+   * submitter could reference another academy's belt (cross-tenant leak) or a
+   * non-existent id, which would surface as a raw foreign-key 500. The degree
+   * check rejects impossible combinations (e.g. a white belt with 6 degrees)
+   * that the client could send when its state gets out of sync.
    */
-  private async assertBeltBelongsToOrg(organizationId: string, beltId: string): Promise<void> {
+  private async assertBeltBelongsToOrg(
+    organizationId: string,
+    beltId: string,
+    declaredDegree: number,
+  ): Promise<void> {
     const [belt] = await this.db
-      .select({ id: belts.id })
+      .select({ id: belts.id, maxDegrees: belts.maxDegrees })
       .from(belts)
       .where(and(eq(belts.organizationId, organizationId), eq(belts.id, beltId)))
       .limit(1);
     if (!belt) throw new BadRequestException("Faixa informada é inválida.");
+    if (declaredDegree > belt.maxDegrees) {
+      throw new BadRequestException("Grau informado é inválido para a faixa selecionada.");
+    }
   }
 
   private async findWhiteBelt(organizationId: string, birthDate: string) {
