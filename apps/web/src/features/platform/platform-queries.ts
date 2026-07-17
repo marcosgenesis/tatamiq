@@ -4,6 +4,7 @@ import { api } from "../../api";
 
 export type PlatformMe = components["schemas"]["PlatformMeDto"];
 export type PlatformAcademySummary = components["schemas"]["PlatformAcademySummaryDto"];
+export type PlatformAcademiesResponse = components["schemas"]["PlatformAcademiesResponseDto"];
 export type PlatformAcademyOperationalOverview =
   components["schemas"]["PlatformAcademyOperationalOverviewDto"];
 export type PlatformAcademyDeletionPreview =
@@ -125,6 +126,27 @@ export function resolvePlatformAccess(input: {
   if (platform.isPending || platform.isFetching) return "loading";
   if (platform.isSuccess && platform.data?.user?.id === sessionUserId) return "allowed";
   return "denied";
+}
+
+export function removeAcademyFromAcademiesResponse(
+  response: PlatformAcademiesResponse | undefined,
+  academyId: string,
+): PlatformAcademiesResponse | undefined {
+  if (!response) return response;
+  const items = response.items.filter((academy) => academy.id !== academyId);
+  if (items.length === response.items.length) return response;
+  return {
+    ...response,
+    items,
+    pagination: {
+      ...response.pagination,
+      total: Math.max(0, response.pagination.total - 1),
+      totalPages: Math.max(
+        0,
+        Math.ceil(Math.max(0, response.pagination.total - 1) / response.pagination.pageSize),
+      ),
+    },
+  };
 }
 
 export function platformMeQuery(userId?: string | null) {
