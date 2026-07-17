@@ -15,6 +15,7 @@ import {
 } from "../../components/ui/dialog";
 import { Input } from "../../components/ui/input";
 import { authClient } from "../../lib/auth-client";
+import { PlatformAcademyDangerZone } from "./platform-academy-danger-zone";
 import { AcademyAvatar, formatDate } from "./platform-components";
 import {
   addPlatformAcademyResponsible,
@@ -302,6 +303,8 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
         ) : operational.data ? (
           <OperationalOverview overview={operational.data} />
         ) : null}
+
+        <PlatformAcademyDangerZone academy={data} sessionUserId={sessionUserId} />
       </div>
     </PlatformShell>
   );

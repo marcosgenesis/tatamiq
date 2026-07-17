@@ -48,6 +48,27 @@ function createController() {
     }),
     removeResponsible: vi.fn().mockResolvedValue({ success: true }),
   };
+  const academyDeletionService = {
+    preview: vi.fn().mockResolvedValue({ academy: { id: "academy-1" } }),
+    delete: vi.fn().mockResolvedValue({
+      success: true,
+      deletedAcademyId: "academy-1",
+      deletedAcademyName: "Tatame Centro",
+      deletedAcademySlug: "tatame-centro",
+      impact: {
+        students: 0,
+        classGroups: 0,
+        classSessions: 0,
+        attendances: 0,
+        monthlyFees: 0,
+        paymentReceipts: 0,
+        preRegistrationRequests: 0,
+        files: 0,
+      },
+      deletedFiles: 0,
+      affectedResponsibles: [],
+    }),
+  };
   const platformAdminService = {
     assertPlatformAdmin: vi.fn().mockReturnValue({
       isAdmin: true,
@@ -105,6 +126,7 @@ function createController() {
     auditedDescriptors,
     impersonatedDescriptors,
     platformAcademyService,
+    academyDeletionService,
     platformAdminService,
     platformUserService,
     userDeletionService,
@@ -112,6 +134,7 @@ function createController() {
     controller: new PlatformController(
       platformAdminService as never,
       platformAcademyService as never,
+      academyDeletionService as never,
       platformSupportService as never,
       platformUserService as never,
       userDeletionService as never,
@@ -177,6 +200,40 @@ describe("PlatformController audited action seams", () => {
       targetType: "academy",
       targetId: "academy-1",
       academyId: "academy-1",
+    });
+  });
+
+  it("routes academy deletion through administrative audit with deleted academy metadata", async () => {
+    const { controller, auditedDescriptors } = createController();
+
+    await controller.deleteAcademy(adminSession as never, "academy-1", {
+      confirmationSlug: "tatame-centro",
+      irreversibleAccepted: true,
+      reason: "cleanup test academy",
+    } as never);
+
+    expect(auditedDescriptors[0]).toMatchObject({
+      action: "platform.academy.deleted",
+      targetType: "academy",
+      targetId: "academy-1",
+    });
+    expect(auditedDescriptors[0]?.academyId).toBeUndefined();
+    expect(
+      resolveMetadata(auditedDescriptors[0]!, {
+        deletedAcademyId: "academy-1",
+        deletedAcademyName: "Tatame Centro",
+        deletedAcademySlug: "tatame-centro",
+        impact: { students: 0 },
+        deletedFiles: 0,
+        affectedResponsibles: [],
+      }),
+    ).toEqual({
+      deletedAcademyId: "academy-1",
+      deletedAcademyName: "Tatame Centro",
+      deletedAcademySlug: "tatame-centro",
+      impact: { students: 0 },
+      deletedFiles: 0,
+      affectedResponsibles: [],
     });
   });
 

@@ -6,6 +6,8 @@ export type PlatformMe = components["schemas"]["PlatformMeDto"];
 export type PlatformAcademySummary = components["schemas"]["PlatformAcademySummaryDto"];
 export type PlatformAcademyOperationalOverview =
   components["schemas"]["PlatformAcademyOperationalOverviewDto"];
+export type PlatformAcademyDeletionPreview =
+  components["schemas"]["PlatformAcademyDeletionPreviewDto"];
 export type PlatformUserDetail = components["schemas"]["PlatformUserDetailDto"];
 export type PlatformUserDeletionImpact = components["schemas"]["PlatformUserDeletionImpactDto"];
 export type PlatformAdministrator = components["schemas"]["PlatformAdministratorDto"];
@@ -39,6 +41,13 @@ export type DeletePlatformUserInput = {
   confirmLeaveOwnerless?: boolean;
 };
 
+export type DeletePlatformAcademyInput = {
+  academyId: string;
+  confirmationSlug: string;
+  irreversibleAccepted: boolean;
+  reason?: string;
+};
+
 export type StartPlatformSupportInput = {
   targetUserId: string;
   academyId?: string;
@@ -65,6 +74,8 @@ export const platformKeys = {
       academyId,
       "operational-overview",
     ] as const,
+  academyDeletionPreview: (sessionUserId: string | null | undefined, academyId: string) =>
+    ["platform", "academies", sessionUserId ?? "anonymous", academyId, "deletion-preview"] as const,
   users: (
     sessionUserId: string | null | undefined,
     query: string,
@@ -180,6 +191,38 @@ export function platformAcademyQuery(sessionUserId: string | null | undefined, a
     retry: false,
     enabled: !!sessionUserId,
   });
+}
+
+export function platformAcademyDeletionPreviewQuery(
+  sessionUserId: string | null | undefined,
+  academyId: string,
+  enabled: boolean,
+) {
+  return queryOptions({
+    queryKey: platformKeys.academyDeletionPreview(sessionUserId, academyId),
+    queryFn: async () => {
+      const { data, error } = await api.GET("/platform/academies/{id}/deletion-preview", {
+        params: { path: { id: academyId } },
+      });
+      if (error) throw error;
+      return data;
+    },
+    retry: false,
+    enabled: !!sessionUserId && enabled,
+  });
+}
+
+export async function deletePlatformAcademy(input: DeletePlatformAcademyInput) {
+  const { data, error } = await api.DELETE("/platform/academies/{id}", {
+    params: { path: { id: input.academyId } },
+    body: {
+      confirmationSlug: input.confirmationSlug,
+      irreversibleAccepted: input.irreversibleAccepted,
+      ...(input.reason ? { reason: input.reason } : {}),
+    },
+  });
+  if (error) throw error;
+  return data;
 }
 
 export function platformAcademyOperationalOverviewQuery(

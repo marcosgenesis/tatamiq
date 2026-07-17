@@ -63,7 +63,7 @@ Campos adicionais futuros da Academia podem ser adicionados como `additionalFiel
 Regras:
 
 - cada usuário instrutor da V0 pode criar apenas uma organization/academia;
-- exclusão de organization/academia fica desabilitada na V0;
+- exclusão de organization/academia é permitida para **Administradores da Plataforma** via **Exclusão de Academia**, com hard delete real, confirmação forte, auditoria resumida e remoção prévia de arquivos associados;
 - dados da academia aparecem apenas para alunos vinculados;
 - a UI e a documentação de domínio usam **Academia**, não “organization”.
 

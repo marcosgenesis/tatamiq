@@ -1,0 +1,3 @@
+# Academy deletion uses hard delete with audit summary
+
+Tatamiq will allow any **Administrador da Plataforma** to execute **Exclusão de Academia** as a real hard delete, including operational data, academy-scoped access links, memberships and associated files, while preserving user accounts and an administrative audit summary. We chose hard delete instead of soft delete because the primary need is to completely remove test academies from the platform; the risk is mitigated by strong confirmation, storage cleanup before database deletion, session revocation for affected users, and audit metadata containing the deleted academy identity and impact counts without retaining full operational payloads.

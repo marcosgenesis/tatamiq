@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Controller,
+  Delete,
   Get,
   Inject,
   Param,
@@ -22,7 +23,10 @@ import {
   AddResponsibleBodyDto,
   CompleteReservedFirstAccessBodyDto,
   CompleteReservedFirstAccessResponseDto,
+  DeletePlatformAcademyBodyDto,
+  DeletePlatformAcademyResultDto,
   PlatformAcademiesResponseDto,
+  PlatformAcademyDeletionPreviewDto,
   PlatformAcademyDetailDto,
   PlatformAcademyOperationalOverviewDto,
   PlatformActionResultDto,
@@ -46,6 +50,7 @@ import {
   TransferAcademyResultDto,
 } from "./platform.dto";
 import { PlatformAcademyService } from "./platform-academy.service";
+import { PlatformAcademyDeletionService } from "./platform-academy-deletion.service";
 import {
   PlatformAdminService,
   type PlatformMe,
@@ -64,6 +69,8 @@ export class PlatformController {
   constructor(
     @Inject(PlatformAdminService) private readonly platformAdminService: PlatformAdminService,
     @Inject(PlatformAcademyService) private readonly platformAcademyService: PlatformAcademyService,
+    @Inject(PlatformAcademyDeletionService)
+    private readonly academyDeletionService: PlatformAcademyDeletionService,
     @Inject(PlatformSupportService) private readonly platformSupportService: PlatformSupportService,
     @Inject(PlatformUserService) private readonly platformUserService: PlatformUserService,
     @Inject(UserDeletionService) private readonly userDeletionService: UserDeletionService,
@@ -230,6 +237,43 @@ export class PlatformController {
         targetId: id,
         academyId: id,
         metadata: { userId, allowLeavingOwnerless: body.allowLeavingOwnerless ?? false },
+      },
+    );
+  }
+
+  @Get("academies/:id/deletion-preview")
+  @ApiParam({ name: "id", type: String })
+  @ApiOkResponse({ type: PlatformAcademyDeletionPreviewDto })
+  academyDeletionPreview(@Session() session: PlatformSession, @Param("id") id: string) {
+    this.platformAdminService.assertPlatformAdmin(session);
+    return this.academyDeletionService.preview(id);
+  }
+
+  @Delete("academies/:id")
+  @ApiParam({ name: "id", type: String })
+  @ApiBody({ type: DeletePlatformAcademyBodyDto })
+  @ApiOkResponse({ type: DeletePlatformAcademyResultDto })
+  async deleteAcademy(
+    @Session() session: PlatformSession,
+    @Param("id") id: string,
+    @ZodBody(DeletePlatformAcademyBodyDto) body: DeletePlatformAcademyBodyDto,
+  ) {
+    return this.auditedAction.run(
+      session,
+      () => this.academyDeletionService.delete(id, parseDeleteAcademyBody(body)),
+      {
+        action: "platform.academy.deleted",
+        targetType: "academy",
+        targetId: id,
+        reason: body.reason?.trim() || undefined,
+        metadata: (result) => ({
+          deletedAcademyId: result.deletedAcademyId,
+          deletedAcademyName: result.deletedAcademyName,
+          deletedAcademySlug: result.deletedAcademySlug,
+          impact: result.impact,
+          deletedFiles: result.deletedFiles,
+          affectedResponsibles: result.affectedResponsibles,
+        }),
       },
     );
   }
@@ -551,6 +595,16 @@ function parseProvisionAcademyBody(body: ProvisionAcademyBodyDto) {
 
 function parseTransferAcademyBody(body: TransferAcademyBodyDto) {
   return parseOwnerInput(body);
+}
+
+function parseDeleteAcademyBody(body: DeletePlatformAcademyBodyDto) {
+  const confirmationSlug = body.confirmationSlug?.trim();
+  if (!confirmationSlug) throw new BadRequestException("Slug de confirmação é obrigatório.");
+  return {
+    confirmationSlug,
+    irreversibleAccepted: body.irreversibleAccepted === true,
+    reason: body.reason?.trim() || undefined,
+  };
 }
 
 function parseAdministratorBody(body: AddPlatformAdministratorBodyDto) {
