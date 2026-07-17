@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { Delete02Icon } from "hugeicons-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "../../components/ui/button";
 import {
@@ -34,6 +34,7 @@ export function PlatformAcademyDangerZone({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
+  const deleteGateRef = useRef(createSingleFlightGate());
   const [form, setForm] = useState({
     confirmationSlug: "",
     irreversibleAccepted: false,
@@ -68,11 +69,19 @@ export function PlatformAcademyDangerZone({
       await navigate({ to: "/platform/academies" });
     },
     onError: () => {
+      deleteGateRef.current.release();
       toast.error(
         "Não foi possível excluir a academia. Nenhum dado foi excluído se a remoção de arquivos falhou.",
       );
     },
   });
+
+  const deleteLocked = deleteGateRef.current.locked || deleteAcademy.isPending;
+
+  function submitDeleteAcademy() {
+    if (!deleteGateRef.current.enter()) return;
+    deleteAcademy.mutate();
+  }
 
   return (
     <section className="overflow-hidden rounded-2xl border border-destructive/30 bg-card shadow-sm">
@@ -87,8 +96,10 @@ export function PlatformAcademyDangerZone({
         <Dialog
           open={isOpen}
           onOpenChange={(open) => {
+            if (deleteLocked) return;
             setIsOpen(open);
             if (open) {
+              deleteGateRef.current.release();
               deleteAcademy.reset();
               setForm({ confirmationSlug: "", irreversibleAccepted: false, reason: "" });
             }
@@ -156,14 +167,14 @@ export function PlatformAcademyDangerZone({
               ) : null}
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsOpen(false)}>
+              <Button variant="outline" onClick={() => setIsOpen(false)} disabled={deleteLocked}>
                 Cancelar
               </Button>
               <Button
                 variant="destructive"
-                onClick={() => deleteAcademy.mutate()}
+                onClick={submitDeleteAcademy}
                 disabled={
-                  deleteAcademy.isPending ||
+                  deleteLocked ||
                   deletionPreview.isLoading ||
                   form.confirmationSlug !== academy.slug ||
                   !form.irreversibleAccepted
@@ -177,6 +188,23 @@ export function PlatformAcademyDangerZone({
       </div>
     </section>
   );
+}
+
+export function createSingleFlightGate() {
+  let locked = false;
+  return {
+    enter() {
+      if (locked) return false;
+      locked = true;
+      return true;
+    },
+    release() {
+      locked = false;
+    },
+    get locked() {
+      return locked;
+    },
+  };
 }
 
 function DeletionImpactSummary({ preview }: { preview: PlatformAcademyDeletionPreview }) {
