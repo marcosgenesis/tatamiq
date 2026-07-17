@@ -16,6 +16,7 @@ const academy = {
 
 function createDb(selectRows: unknown[][]) {
   const deletes: unknown[] = [];
+  const whereConditions: unknown[] = [];
   const db = {
     select: vi.fn().mockImplementation(() => ({
       from: vi.fn().mockImplementation(() => ({
@@ -26,16 +27,21 @@ function createDb(selectRows: unknown[][]) {
       callback({
         delete: vi.fn().mockImplementation((table) => {
           deletes.push(table);
-          return { where: vi.fn().mockResolvedValue(undefined) };
+          return {
+            where: vi.fn().mockImplementation((condition) => {
+              whereConditions.push(condition);
+              return Promise.resolve();
+            }),
+          };
         }),
       }),
     ),
   };
-  return { db, deletes };
+  return { db, deletes, whereConditions };
 }
 
 function createService(input: { selectRows: unknown[][]; deleteObjects?: () => Promise<void> }) {
-  const { db, deletes } = createDb(input.selectRows);
+  const { db, deletes, whereConditions } = createDb(input.selectRows);
   const r2 = {
     extractFileKey: vi.fn((value: string | null | undefined) =>
       value ? value.replace("https://cdn.example/", "") : null,
@@ -44,7 +50,7 @@ function createService(input: { selectRows: unknown[][]; deleteObjects?: () => P
   };
   const academies = { getAcademy: vi.fn().mockResolvedValue(academy) };
   const service = new PlatformAcademyDeletionService(db as never, r2 as never, academies as never);
-  return { service, db, r2, academies, deletes };
+  return { service, db, r2, academies, deletes, whereConditions };
 }
 
 const countRows = [
@@ -56,6 +62,14 @@ const countRows = [
   [{ total: 1 }],
   [{ total: 7 }],
 ];
+
+function collectStringValues(value: unknown, seen = new Set<unknown>()): string[] {
+  if (typeof value === "string") return [value];
+  if (!value || typeof value !== "object" || seen.has(value)) return [];
+  seen.add(value);
+  if (Array.isArray(value)) return value.flatMap((item) => collectStringValues(item, seen));
+  return Object.values(value).flatMap((item) => collectStringValues(item, seen));
+}
 
 describe("PlatformAcademyDeletionService", () => {
   it("previews deletion impact with academy-owned files", async () => {
@@ -123,6 +137,27 @@ describe("PlatformAcademyDeletionService", () => {
       deletedFiles: 2,
       affectedResponsibles: [{ id: "owner-1" }],
     });
+  });
+
+  it("does not revoke the executing administrator session when the admin is linked to the deleted academy", async () => {
+    const { service, whereConditions } = createService({
+      selectRows: [
+        [{ fileKey: "receipts/academy-1/receipt.png" }],
+        [{ userId: "admin-1" }],
+        [{ userId: "student-user-1" }, { userId: "admin-1" }],
+        ...countRows.map((rows) => [...rows]),
+      ],
+    });
+
+    await service.delete(
+      "academy-1",
+      { confirmationSlug: "tatame-centro", irreversibleAccepted: true },
+      "admin-1",
+    );
+
+    const revokedSessionConditionValues = collectStringValues(whereConditions[0]);
+    expect(revokedSessionConditionValues).toContain("student-user-1");
+    expect(revokedSessionConditionValues).not.toContain("admin-1");
   });
 
   it("aborts before database deletion when storage deletion fails", async () => {

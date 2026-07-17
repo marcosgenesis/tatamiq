@@ -204,7 +204,7 @@ describe("PlatformController audited action seams", () => {
   });
 
   it("routes academy deletion through administrative audit with deleted academy metadata", async () => {
-    const { controller, auditedDescriptors } = createController();
+    const { controller, auditedDescriptors, academyDeletionService } = createController();
 
     await controller.deleteAcademy(adminSession as never, "academy-1", {
       confirmationSlug: "tatame-centro",
@@ -212,6 +212,15 @@ describe("PlatformController audited action seams", () => {
       reason: "cleanup test academy",
     } as never);
 
+    expect(academyDeletionService.delete).toHaveBeenCalledWith(
+      "academy-1",
+      {
+        confirmationSlug: "tatame-centro",
+        irreversibleAccepted: true,
+        reason: "cleanup test academy",
+      },
+      "admin-1",
+    );
     expect(auditedDescriptors[0]).toMatchObject({
       action: "platform.academy.deleted",
       targetType: "academy",

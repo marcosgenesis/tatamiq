@@ -260,7 +260,8 @@ export class PlatformController {
   ) {
     return this.auditedAction.run(
       session,
-      () => this.academyDeletionService.delete(id, parseDeleteAcademyBody(body)),
+      (admin) =>
+        this.academyDeletionService.delete(id, parseDeleteAcademyBody(body), admin.user.id),
       {
         action: "platform.academy.deleted",
         targetType: "academy",

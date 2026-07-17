@@ -76,13 +76,17 @@ export class PlatformAcademyDeletionService {
     };
   }
 
-  async delete(id: string, input: DeleteAcademyInput): Promise<DeleteAcademyResult> {
+  async delete(
+    id: string,
+    input: DeleteAcademyInput,
+    executingAdminUserId?: string,
+  ): Promise<DeleteAcademyResult> {
     const academy = await this.academies.getAcademy(id);
     this.assertDeletionConfirmed(academy, input);
 
     const [fileKeys, affectedUserIds] = await Promise.all([
       this.collectAcademyFileKeys(id, academy),
-      this.collectAffectedUserIds(id),
+      this.collectAffectedUserIds(id, executingAdminUserId),
     ]);
     const impact = await this.buildDeletionImpact(id, fileKeys.length);
 
@@ -115,7 +119,10 @@ export class PlatformAcademyDeletionService {
     }
   }
 
-  private async collectAffectedUserIds(organizationId: string): Promise<string[]> {
+  private async collectAffectedUserIds(
+    organizationId: string,
+    executingAdminUserId?: string,
+  ): Promise<string[]> {
     const [memberRows, accessRows] = await Promise.all([
       this.db
         .select({ userId: member.userId })
@@ -127,7 +134,9 @@ export class PlatformAcademyDeletionService {
         .where(eq(studentAccess.organizationId, organizationId)),
     ]);
 
-    return [...new Set([...memberRows, ...accessRows].map((row) => row.userId))];
+    return [...new Set([...memberRows, ...accessRows].map((row) => row.userId))].filter(
+      (userId) => userId !== executingAdminUserId,
+    );
   }
 
   private async collectAcademyFileKeys(

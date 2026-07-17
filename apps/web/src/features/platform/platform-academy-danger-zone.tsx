@@ -16,9 +16,12 @@ import {
 import { Input } from "../../components/ui/input";
 import {
   deletePlatformAcademy,
+  type PlatformAcademiesResponse,
   type PlatformAcademyDeletionPreview,
   type PlatformAcademySummary,
   platformAcademyDeletionPreviewQuery,
+  platformKeys,
+  removeAcademyFromAcademiesResponse,
 } from "./platform-queries";
 
 export function PlatformAcademyDangerZone({
@@ -48,8 +51,19 @@ export function PlatformAcademyDangerZone({
         irreversibleAccepted: form.irreversibleAccepted,
         ...(form.reason ? { reason: form.reason } : {}),
       }),
-    onSuccess: async () => {
+    onSuccess: async (result) => {
       toast.success("Academia excluída definitivamente.");
+      queryClient.setQueriesData<PlatformAcademiesResponse | undefined>(
+        { queryKey: ["platform", "academies"] },
+        (current) => removeAcademyFromAcademiesResponse(current, result.deletedAcademyId),
+      );
+      queryClient.removeQueries({ queryKey: platformKeys.academy(sessionUserId, academy.id) });
+      queryClient.removeQueries({
+        queryKey: platformKeys.academyOperationalOverview(sessionUserId, academy.id),
+      });
+      queryClient.removeQueries({
+        queryKey: platformKeys.academyDeletionPreview(sessionUserId, academy.id),
+      });
       await queryClient.invalidateQueries({ queryKey: ["platform", "academies"] });
       await navigate({ to: "/platform/academies" });
     },
