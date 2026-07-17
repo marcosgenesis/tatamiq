@@ -63,7 +63,7 @@ export type TransferAcademyResult = {
   firstAccessLink: string | null;
 };
 
-type PlatformAcademyResponsible = {
+export type PlatformAcademyResponsible = {
   id: string;
   name: string;
   email: string;
@@ -503,7 +503,6 @@ export class PlatformAcademyService {
 }
 
 type OrganizationRow = typeof organization.$inferSelect;
-type UserRow = typeof user.$inferSelect;
 
 function slugify(value: string): string {
   return value

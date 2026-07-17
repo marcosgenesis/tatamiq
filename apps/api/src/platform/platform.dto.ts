@@ -111,6 +111,77 @@ const removeResponsibleBodySchema = z.object({
 
 export class RemoveResponsibleBodyDto extends createZodDto(removeResponsibleBodySchema) {}
 
+const deleteAcademyBodySchema = z.object({
+  confirmationSlug: z.string().trim().min(1),
+  irreversibleAccepted: z.boolean(),
+  reason: z.string().trim().optional(),
+});
+
+export class DeletePlatformAcademyBodyDto extends createZodDto(deleteAcademyBodySchema) {}
+
+export class PlatformAcademyDeletionImpactDto {
+  @ApiProperty({ type: Number })
+  students!: number;
+
+  @ApiProperty({ type: Number })
+  classGroups!: number;
+
+  @ApiProperty({ type: Number })
+  classSessions!: number;
+
+  @ApiProperty({ type: Number })
+  attendances!: number;
+
+  @ApiProperty({ type: Number })
+  monthlyFees!: number;
+
+  @ApiProperty({ type: Number })
+  paymentReceipts!: number;
+
+  @ApiProperty({ type: Number })
+  preRegistrationRequests!: number;
+
+  @ApiProperty({ type: Number })
+  files!: number;
+}
+
+export class PlatformAcademyDeletionPreviewDto {
+  @ApiProperty({ type: () => PlatformAcademyDetailDto })
+  academy!: PlatformAcademyDetailDto;
+
+  @ApiProperty({ type: () => PlatformAcademyResponsibleDto, isArray: true })
+  affectedResponsibles!: PlatformAcademyResponsibleDto[];
+
+  @ApiProperty({ type: () => PlatformAcademyDeletionImpactDto })
+  impact!: PlatformAcademyDeletionImpactDto;
+
+  @ApiProperty({ type: String })
+  irreversibleWarning!: string;
+}
+
+export class DeletePlatformAcademyResultDto {
+  @ApiProperty({ type: Boolean })
+  success!: boolean;
+
+  @ApiProperty({ type: String })
+  deletedAcademyId!: string;
+
+  @ApiProperty({ type: String })
+  deletedAcademyName!: string;
+
+  @ApiProperty({ type: String })
+  deletedAcademySlug!: string;
+
+  @ApiProperty({ type: () => PlatformAcademyDeletionImpactDto })
+  impact!: PlatformAcademyDeletionImpactDto;
+
+  @ApiProperty({ type: Number })
+  deletedFiles!: number;
+
+  @ApiProperty({ type: () => PlatformAcademyResponsibleDto, isArray: true })
+  affectedResponsibles!: PlatformAcademyResponsibleDto[];
+}
+
 export class TransferAcademyResultDto extends ProvisionAcademyResultDto {}
 
 export class ReservedFirstAccessPreviewDto {

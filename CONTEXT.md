@@ -29,20 +29,24 @@ Pessoa interna do Tatamiq com permissão global para gerir usuários e academias
 _Avoid_: dono da academia, owner da academia, instrutor, admin da academia, super user como termo de domínio
 
 **Auditoria Administrativa**:
-Registro das ações sensíveis executadas por **Administradores da Plataforma** fora do **Suporte Assistido**, incluindo autor, alvo, ação, resultado, timestamp, motivo opcional e acessos a arquivos privados sensíveis, sem persistir payload completo na V1.
+Registro das ações sensíveis executadas por **Administradores da Plataforma** fora do **Suporte Assistido**, incluindo autor, alvo, ação, resultado, timestamp, motivo opcional, acessos a arquivos privados sensíveis e resumo de impacto de exclusões destrutivas, sem persistir payload completo na V1.
 _Avoid_: log técnico bruto, payload completo, auditoria apenas de suporte, motivo obrigatório
 
 **Exclusão de Usuário**:
 Ação destrutiva executada por um **Administrador da Plataforma** sobre uma conta de autenticação, escolhendo explicitamente entre exclusão definitiva quando aceitável ou exclusão preservando histórico, que revoga sessões, remove credenciais quando possível, anonimiza nome, email e imagem da conta mantendo o ID para auditoria; quando o usuário é responsável único de uma **Academia**, exige decidir explicitamente se a academia ficará sem responsável antes de concluir.
-_Avoid_: remoção automática sem impacto, inativação de academia, apagar histórico por acidente, excluir academia junto na V1, anonimizar ficha de aluno operacional
+_Avoid_: remoção automática sem impacto, inativação de academia, apagar histórico por acidente, excluir academia junto automaticamente, anonimizar ficha de aluno operacional
+
+**Exclusão de Academia**:
+Ação destrutiva geral executada por um **Administrador da Plataforma** para remover definitivamente uma **Academia** da plataforma por hard delete real, incluindo seus dados operacionais, vínculos de acesso naquela academia e arquivos associados, sem excluir automaticamente as contas de autenticação associadas.
+_Avoid_: suspensão de academia, remoção de responsável, exclusão automática ao excluir usuário, arquivamento operacional, soft delete invisível, exclusão automática de contas, deixar arquivos órfãos
 
 **Suporte Assistido**:
 Acesso temporário de até 1 hora e auditado em que um **Administrador da Plataforma** atua na plataforma com a perspectiva e permissões de um usuário não-administrador para diagnosticar ou resolver um problema reportado, com motivo opcional, indicador visível durante a sessão e registro de auditoria da sessão e das ações assistidas, sem armazenar payload completo na V1; permite executar as mesmas ações operacionais do usuário assistido, mas não ações globais de administração da plataforma dentro da sessão assistida.
 _Avoid_: login pelo email do cliente, acesso à senha, acesso oculto, backdoor, impersonação silenciosa, permissão global disfarçada, impersonar administrador
 
 **Administração da Plataforma**:
-Área operacional separada da área da **Academia**, acessada pela rota `/platform` e usada por **Administradores da Plataforma** para gerir o Tatamiq sem serem membros das academias atendidas; na primeira versão cobre dashboard operacional simples, academias, usuários, administradores da plataforma, auditoria administrativa e auditoria de suporte assistido, permite visualizar dados operacionais completos das academias, tem edição direta limitada a dados básicos de provisionamento da academia e busca simples por nome, email ou slug.
-_Avoid_: admin da academia, painel do instrutor, member role global, billing interno, relatório avançado, operação paralela de edição de dados da academia, filtros analíticos avançados, rota /admin
+Área operacional separada da área da **Academia**, acessada pela rota `/platform` e usada por **Administradores da Plataforma** para gerir o Tatamiq sem serem membros das academias atendidas; na primeira versão cobre dashboard operacional simples, academias, usuários, administradores da plataforma, auditoria administrativa e auditoria de suporte assistido, permite visualizar dados operacionais completos das academias, tem edição direta limitada a dados básicos de provisionamento da academia e busca simples por nome, email ou slug, e expõe ações destrutivas de academia apenas no detalhe da academia.
+_Avoid_: admin da academia, painel do instrutor, member role global, billing interno, relatório avançado, operação paralela de edição de dados da academia, filtros analíticos avançados, rota /admin, exclusão direta pela listagem
 
 **Acesso do Aluno**:
 Capacidade do **Aluno**, inclusive menor de idade quando convidado pelo instrutor, consultar as próximas aulas dos próximos 7 dias das suas turmas, as próprias presenças e mensalidades dos últimos 12 meses, evolução e turmas vinculadas, e alterar contato pessoal e foto, sem administrar a academia/tatame; nasce somente a partir de um **Convite do Aluno** para uma ficha de **Aluno** já existente, pode coexistir com acesso de instrutor na mesma conta com escolha explícita de área ao entrar, pode ser revogado pelo instrutor sem inativar o aluno ou apagar a conta de autenticação, e alterações de telefone e email mantêm auditoria simples.
@@ -241,7 +245,7 @@ _Avoid_: tarefa, lembrete, prontuário, workflow, comentário do aluno, exclusã
 - Durante o **Suporte Assistido**, a navegação inicial segue as mesmas áreas disponíveis para o usuário assistido: entrada direta quando há uma única área disponível e seletor explícito quando há duas ou mais
 - A auditoria de **Suporte Assistido** registra sessão, motivo opcional, participantes, academia quando aplicável, início/fim, IP/user agent e ações realizadas, sem persistir payload completo na V1
 - **Suporte Assistido** não pode ser iniciado sobre outro **Administrador da Plataforma** nem sobre uma conta sem área operacional disponível
-- A **Auditoria Administrativa** registra ações como provisionar academia, adicionar/remover responsável de academia, bloquear/desbloquear usuário, revogar sessões, excluir usuário e adicionar/remover administrador
+- A **Auditoria Administrativa** registra ações como provisionar academia, adicionar/remover responsável de academia, bloquear/desbloquear usuário, revogar sessões, excluir usuário, excluir academia e adicionar/remover administrador
 - Um **Administrador da Plataforma** tem poder global fora do escopo de uma **Academia** e não deve ser confundido com o papel `owner` da academia
 - A **Administração da Plataforma** fica fora da área normal da **Academia**, não depende de `activeOrganizationId`, na primeira versão é acessada por **Administradores da Plataforma** e é o destino padrão após login de uma conta com papel global de administrador
 - Uma conta com uma única área disponível entra diretamente nessa área; o seletor explícito só aparece quando a conta combina duas ou mais áreas disponíveis
@@ -263,6 +267,16 @@ _Avoid_: tarefa, lembrete, prontuário, workflow, comentário do aluno, exclusã
 - Uma **Academia** pode ter um ou mais **Responsáveis da Academia**, mas pode ficar temporariamente sem responsável após **Exclusão de Usuário** decidida por um **Administrador da Plataforma**
 - A **Administração da Plataforma** deve apresentar responsáveis no plural, sem responsável principal; quando não houver nenhum, exibe **Sem responsável**
 - Bloquear o usuário de um **Responsável da Academia** impede login e revoga sessões, mas não inativa nem altera automaticamente a **Academia** ou seu histórico operacional
+- Uma **Exclusão de Academia** é independente de **Exclusão de Usuário**: excluir uma academia não exclui automaticamente as contas dos responsáveis ou alunos, apenas remove os vínculos e acessos associados à academia excluída
+- Uma **Exclusão de Academia** deve revogar sessões dos **Responsáveis da Academia** e dos usuários com **Acesso do Aluno** naquela academia para evitar operação com contexto removido, sem excluir as contas desses usuários; sessões de administradores globais não são revogadas apenas por terem usado **Suporte Assistido** naquela academia
+- Uma **Exclusão de Academia** pode ser executada mesmo quando a academia possui dados operacionais reais, incluindo alunos, presenças, mensalidades pagas e comprovantes, desde que o impacto seja explicitamente confirmado
+- Uma **Exclusão de Academia** remove definitivamente os dados operacionais da academia por hard delete real; recuperação depois da confirmação depende apenas de backup infra, não de restauração pelo produto
+- Uma **Exclusão de Academia** também remove arquivos associados à academia, públicos ou privados, como logo, fotos de alunos e **Comprovantes Pix**, evitando deixar objetos órfãos no storage
+- Se a remoção dos arquivos associados falhar, a **Exclusão de Academia** deve ser abortada antes de apagar os dados operacionais, mantendo a academia intacta para nova tentativa
+- Qualquer **Administrador da Plataforma** pode executar uma **Exclusão de Academia**; não há papel separado de superadministrador na V1
+- Uma **Exclusão de Academia** exige confirmação forte com resumo de impacto, digitação do slug exato da academia, aceite explícito de irreversibilidade e motivo opcional para auditoria
+- A **Auditoria Administrativa** de uma **Exclusão de Academia** preserva no metadata o ID, nome e slug da academia excluída, contagens principais de impacto, quantidade de arquivos apagados e responsáveis afetados, sem persistir payload completo de alunos, mensalidades ou comprovantes
+- Uma **Exclusão de Academia** não precisa bloquear ou coordenar sessões ativas de **Suporte Assistido**; a academia é excluída mesmo que exista suporte assistido em andamento
 - Uma **Exclusão de Usuário** exige escolha explícita entre exclusão definitiva e exclusão preservando histórico, com aviso de impacto antes da confirmação; a exclusão definitiva é permitida mesmo com histórico, desde que vínculos de responsável de academia sejam resolvidos antes e o impacto seja confirmado
 - Uma **Academia** sem responsável preserva histórico e acessos existentes, mas fica sem operação administrativa e pausa a geração futura automática de **Mensalidades** até receber novo responsável
 - A **Adição de Responsável da Academia** reativa a operação administrativa e a geração futura automática de **Mensalidades** quando a academia estava sem responsável

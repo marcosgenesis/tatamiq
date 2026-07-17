@@ -6,6 +6,7 @@ import { AcademyOwnershipService } from "./academy-ownership.service";
 import { AuditService } from "./audit.service";
 import { PlatformController } from "./platform.controller";
 import { PlatformAcademyService } from "./platform-academy.service";
+import { PlatformAcademyDeletionService } from "./platform-academy-deletion.service";
 import { PlatformAdminService } from "./platform-admin.service";
 import { PlatformAuditedActionService } from "./platform-audited-action.service";
 import { PlatformSensitiveFileAccessService } from "./platform-sensitive-file-access.service";
@@ -22,6 +23,7 @@ import { UserDeletionService } from "./user-deletion.service";
     PlatformAdminService,
     AcademyOwnershipService,
     PlatformAcademyService,
+    PlatformAcademyDeletionService,
     PlatformSupportService,
     PlatformUserService,
     UserDeletionService,
@@ -38,6 +40,7 @@ import { UserDeletionService } from "./user-deletion.service";
     PlatformAdminService,
     AcademyOwnershipService,
     PlatformAcademyService,
+    PlatformAcademyDeletionService,
     PlatformSupportService,
     PlatformUserService,
     UserDeletionService,
