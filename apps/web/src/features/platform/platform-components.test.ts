@@ -19,4 +19,14 @@ describe("formatAcademyResponsiblesSummary", () => {
       ]),
     ).toBe("ana@test.com · +1");
   });
+
+  it("preserves the first responsible email as the summary anchor", () => {
+    expect(
+      formatAcademyResponsiblesSummary([
+        { name: "Beto", email: "beto@test.com" },
+        { name: "Ana", email: "ana@test.com" },
+        { name: "Caio", email: "caio@test.com" },
+      ]),
+    ).toBe("beto@test.com · +2");
+  });
 });

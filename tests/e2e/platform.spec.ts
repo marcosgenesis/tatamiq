@@ -43,21 +43,24 @@ test("platform admin covers dashboard, provision, admins, users, deletion, and s
   await page.getByRole("button", { name: "Adicionar" }).click();
 
   await page.goto("/platform/academies");
-  await expect(page.getByPlaceholder("Buscar academia por nome ou slug")).toBeVisible();
+  await expect(page.getByPlaceholder("Buscar academia por nome, slug ou responsável")).toBeVisible();
   await page
-    .getByPlaceholder("Buscar academia por nome ou slug")
+    .getByPlaceholder("Buscar academia por nome, slug ou responsável")
     .fill(PLATFORM_FIXTURES.academyOwner.academyName);
   const academyRow = page
     .locator("tbody tr")
     .filter({ hasText: PLATFORM_FIXTURES.academyOwner.academyName })
     .first();
   await expect(academyRow).toBeVisible();
+  await expect(academyRow.getByText(PLATFORM_FIXTURES.academyOwner.name)).toBeVisible();
   await academyRow
     .getByRole("link", { name: new RegExp(`Abrir ${PLATFORM_FIXTURES.academyOwner.academyName}`) })
     .click();
   await expect(
     page.getByRole("heading", { name: PLATFORM_FIXTURES.academyOwner.academyName }),
   ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Responsáveis da Academia" })).toBeVisible();
+  await expect(page.getByText(PLATFORM_FIXTURES.academyOwner.email)).toBeVisible();
   await expect(page.getByText("Alunos ativos")).toBeVisible();
   await expect(page.getByText("Turmas ativas")).toBeVisible();
   await expect(page.getByText("Presenças válidas")).toBeVisible();
