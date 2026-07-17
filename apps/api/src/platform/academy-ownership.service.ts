@@ -12,6 +12,7 @@ export type AssignAcademyOwnerInput = {
 export type RemoveAcademyResponsibleInput = {
   userId: string;
   allowLeavingOwnerless?: boolean;
+  ownerlessConfirmation?: string;
 };
 
 export type AcademyOwnerAssignment = {
@@ -26,6 +27,8 @@ export type OwnedAcademyImpact = {
   slug: string;
   isOnlyOwner: boolean;
 };
+
+export const OWNERLESS_CONFIRMATION_TEXT = "SEM RESPONSÁVEL";
 
 @Injectable()
 export class AcademyOwnershipService {
@@ -57,15 +60,34 @@ export class AcademyOwnershipService {
 
   async removeResponsible(academyId: string, input: RemoveAcademyResponsibleInput) {
     await this.assertAcademyExists(academyId);
+    const [targetResponsible] = await this.db
+      .select({ id: member.id })
+      .from(member)
+      .where(
+        and(
+          eq(member.organizationId, academyId),
+          eq(member.userId, input.userId),
+          eq(member.role, "owner"),
+        ),
+      )
+      .limit(1);
+    if (!targetResponsible) throw new NotFoundException("Responsável não encontrado.");
+
     const [{ total }] = await this.db
       .select({ total: count() })
       .from(member)
       .where(and(eq(member.organizationId, academyId), eq(member.role, "owner")));
     const totalOwners = total ?? 0;
-    if (totalOwners <= 1 && !input.allowLeavingOwnerless) {
-      throw new BadRequestException(
-        "A academia precisa de confirmação para ficar sem responsável.",
-      );
+    const leavesOwnerless = totalOwners <= 1;
+    if (leavesOwnerless) {
+      const confirmed =
+        input.allowLeavingOwnerless === true &&
+        input.ownerlessConfirmation?.trim().toUpperCase() === OWNERLESS_CONFIRMATION_TEXT;
+      if (!confirmed) {
+        throw new BadRequestException(
+          `Digite ${OWNERLESS_CONFIRMATION_TEXT} para deixar a academia sem responsável.`,
+        );
+      }
     }
     await this.db
       .delete(member)
@@ -76,6 +98,7 @@ export class AcademyOwnershipService {
           eq(member.role, "owner"),
         ),
       );
+    return { leftOwnerless: leavesOwnerless };
   }
 
   async keepOwnerless(academyId: string, ownerUserId: string) {

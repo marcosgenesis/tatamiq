@@ -333,10 +333,18 @@ export async function removePlatformAcademyResponsible(input: {
   academyId: string;
   userId: string;
   allowLeavingOwnerless?: boolean;
+  ownerlessConfirmation?: string;
 }) {
   const { data, error } = await api.POST("/platform/academies/{id}/responsibles/{userId}/remove", {
     params: { path: { id: input.academyId, userId: input.userId } },
-    body: input.allowLeavingOwnerless ? { allowLeavingOwnerless: true } : {},
+    body: input.allowLeavingOwnerless
+      ? {
+          allowLeavingOwnerless: true,
+          ...(input.ownerlessConfirmation
+            ? { ownerlessConfirmation: input.ownerlessConfirmation }
+            : {}),
+        }
+      : {},
   });
   if (error) throw error;
   return data;

@@ -1,4 +1,4 @@
-import { type Browser, expect, type Page, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 import { ADMIN_STORAGE_STATE, INSTRUCTOR_STORAGE_STATE } from "./support/auth";
 import { ensurePlatformFixtures, PLATFORM_FIXTURES, resetE2eFixture } from "./support/database";
 
@@ -43,21 +43,7 @@ test("platform admin covers dashboard, provision, admins, users, deletion, and s
   await page.getByRole("button", { name: "Adicionar" }).click();
 
   await page.goto("/platform/academies");
-  await expect(page.getByPlaceholder("Buscar academia por nome ou slug")).toBeVisible();
-  await page
-    .getByPlaceholder("Buscar academia por nome ou slug")
-    .fill(PLATFORM_FIXTURES.academyOwner.academyName);
-  const academyRow = page
-    .locator("tbody tr")
-    .filter({ hasText: PLATFORM_FIXTURES.academyOwner.academyName })
-    .first();
-  await expect(academyRow).toBeVisible();
-  await academyRow
-    .getByRole("link", { name: new RegExp(`Abrir ${PLATFORM_FIXTURES.academyOwner.academyName}`) })
-    .click();
-  await expect(
-    page.getByRole("heading", { name: PLATFORM_FIXTURES.academyOwner.academyName }),
-  ).toBeVisible();
+  await openPlatformAcademy(page, PLATFORM_FIXTURES.academyOwner.academyName);
   await expect(page.getByText("Alunos ativos")).toBeVisible();
   await expect(page.getByText("Turmas ativas")).toBeVisible();
   await expect(page.getByText("Presenças válidas")).toBeVisible();
@@ -116,6 +102,36 @@ test("platform admin covers dashboard, provision, admins, users, deletion, and s
   await expect(page.getByRole("columnheader", { name: "Quando" })).toBeVisible();
 });
 
+test("platform admin can leave an academy sem responsável with strong confirmation and recover it", async ({
+  page,
+}) => {
+  const recoveredEmail = `platform-ownerless-recovered-${Date.now()}@tatamiq.local`;
+
+  await openPlatformAcademy(page, PLATFORM_FIXTURES.academyOwner.academyName);
+  await page.getByRole("button", { name: "Remover" }).click();
+  await expect(page.getByRole("heading", { name: "Remover responsável" })).toBeVisible();
+  await expect(page.getByText("Esta é a última pessoa responsável.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Remover responsável" })).toBeDisabled();
+  await page.getByLabel("Confirmação para deixar sem responsável").fill("SEM RESPONSÁVEL");
+  await page.getByRole("button", { name: "Remover responsável" }).click();
+
+  await expect(page.getByText("Sem responsável").first()).toBeVisible();
+  await expect(page.getByText("Academia sem responsável para suporte.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Iniciar como responsável" })).toBeDisabled();
+
+  await page.getByRole("button", { name: "Adicionar responsável" }).click();
+  await page.getByPlaceholder("E-mail do responsável").fill(recoveredEmail);
+  await page.getByPlaceholder("Nome do responsável (opcional)").fill("Responsável Recuperado E2E");
+  await page.getByRole("button", { name: "Adicionar", exact: true }).click();
+
+  await expect(page.getByText("Responsável Recuperado E2E")).toBeVisible();
+  await expect(page.getByText(recoveredEmail)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Iniciar como responsável" })).toBeEnabled();
+
+  await page.goto("/platform/audit");
+  await expect(page.getByText("Academia deixada sem responsável")).toBeVisible();
+});
+
 test("instructor is redirected away from /platform", async ({ browser }) => {
   const context = await browser.newContext({ storageState: INSTRUCTOR_STORAGE_STATE });
   const instructorPage = await context.newPage();
@@ -126,6 +142,15 @@ test("instructor is redirected away from /platform", async ({ browser }) => {
 
   await context.close();
 });
+
+async function openPlatformAcademy(page: Page, name: string) {
+  await page.goto("/platform/academies");
+  await page.getByPlaceholder("Buscar academia por nome, slug ou responsável").fill(name);
+  const row = page.locator("tbody tr").filter({ hasText: name }).first();
+  await expect(row).toBeVisible();
+  await row.getByRole("link", { name: new RegExp(`Abrir ${name}`) }).click();
+  await expect(page.getByRole("heading", { name })).toBeVisible();
+}
 
 async function openPlatformUser(page: Page, email: string) {
   await page.goto("/platform/users");

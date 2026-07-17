@@ -226,10 +226,10 @@ export class PlatformAcademyService {
 
   async removeResponsible(
     academyId: string,
-    input: { userId: string; allowLeavingOwnerless?: boolean },
+    input: { userId: string; allowLeavingOwnerless?: boolean; ownerlessConfirmation?: string },
   ) {
-    await this.academyOwnership.removeResponsible(academyId, input);
-    return { success: true };
+    const result = await this.academyOwnership.removeResponsible(academyId, input);
+    return { success: true, leftOwnerless: result.leftOwnerless };
   }
 
   async getAcademy(id: string): Promise<PlatformAcademyDetail> {
@@ -503,7 +503,6 @@ export class PlatformAcademyService {
 }
 
 type OrganizationRow = typeof organization.$inferSelect;
-type UserRow = typeof user.$inferSelect;
 
 function slugify(value: string): string {
   return value

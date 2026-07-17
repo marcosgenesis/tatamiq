@@ -2987,9 +2987,11 @@ export interface components {
         };
         RemoveResponsibleBodyDto: {
             allowLeavingOwnerless?: boolean;
+            ownerlessConfirmation?: string;
         };
-        PlatformActionResultDto: {
+        RemoveResponsibleResultDto: {
             success: boolean;
+            leftOwnerless: boolean;
         };
         PlatformStudentsOperationalSummaryDto: {
             total: number;
@@ -3094,6 +3096,9 @@ export interface components {
             administrator: components["schemas"]["PlatformAdministratorDto"];
             userWasCreated: boolean;
             firstAccessLink: string | null;
+        };
+        PlatformActionResultDto: {
+            success: boolean;
         };
         StartPlatformSupportBodyDto: {
             targetUserId: string;
@@ -5497,7 +5502,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PlatformActionResultDto"];
+                    "application/json": components["schemas"]["RemoveResponsibleResultDto"];
                 };
             };
         };

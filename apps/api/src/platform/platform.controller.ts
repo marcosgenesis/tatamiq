@@ -40,6 +40,7 @@ import {
   ProvisionAcademyBodyDto,
   ProvisionAcademyResultDto,
   RemoveResponsibleBodyDto,
+  RemoveResponsibleResultDto,
   ReservedFirstAccessPreviewDto,
   StartPlatformSupportBodyDto,
   TransferAcademyBodyDto,
@@ -210,7 +211,7 @@ export class PlatformController {
   @ApiParam({ name: "id", type: String })
   @ApiParam({ name: "userId", type: String })
   @ApiBody({ type: RemoveResponsibleBodyDto })
-  @ApiOkResponse({ type: PlatformActionResultDto })
+  @ApiOkResponse({ type: RemoveResponsibleResultDto })
   async removeResponsible(
     @Session() session: PlatformSession,
     @Param("id") id: string,
@@ -223,13 +224,20 @@ export class PlatformController {
         this.platformAcademyService.removeResponsible(id, {
           userId,
           allowLeavingOwnerless: body.allowLeavingOwnerless,
+          ownerlessConfirmation: body.ownerlessConfirmation,
         }),
       {
-        action: "platform.academy.responsible_removed",
+        action: body.allowLeavingOwnerless
+          ? "platform.academy.final_responsible_removed"
+          : "platform.academy.responsible_removed",
         targetType: "academy",
         targetId: id,
         academyId: id,
-        metadata: { userId, allowLeavingOwnerless: body.allowLeavingOwnerless ?? false },
+        metadata: (result) => ({
+          userId,
+          allowLeavingOwnerless: body.allowLeavingOwnerless ?? false,
+          leftOwnerless: result.leftOwnerless,
+        }),
       },
     );
   }
