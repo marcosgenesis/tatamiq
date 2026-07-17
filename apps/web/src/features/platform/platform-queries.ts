@@ -21,7 +21,7 @@ export type ProvisionPlatformAcademyInput = {
   ownerName?: string;
 };
 
-export type TransferPlatformAcademyInput = {
+export type AddPlatformAcademyResponsibleInput = {
   academyId: string;
   ownerEmail: string;
   ownerName?: string;
@@ -305,19 +305,7 @@ export async function provisionPlatformAcademy(input: ProvisionPlatformAcademyIn
   return data;
 }
 
-export async function transferPlatformAcademy(input: TransferPlatformAcademyInput) {
-  const { data, error } = await api.POST("/platform/academies/{id}/transfer", {
-    params: { path: { id: input.academyId } },
-    body: {
-      ownerEmail: input.ownerEmail,
-      ...(input.ownerName ? { ownerName: input.ownerName } : {}),
-    },
-  });
-  if (error) throw error;
-  return data;
-}
-
-export async function addPlatformAcademyResponsible(input: TransferPlatformAcademyInput) {
+export async function addPlatformAcademyResponsible(input: AddPlatformAcademyResponsibleInput) {
   const { data, error } = await api.POST("/platform/academies/{id}/responsibles", {
     params: { path: { id: input.academyId } },
     body: {

@@ -6,7 +6,6 @@ import { DATABASE } from "../database/database.module";
 export type AuditAction =
   | "platform.dashboard.viewed"
   | "platform.academy.provisioned"
-  | "platform.academy.transferred"
   | "platform.academy.responsible_added"
   | "platform.academy.responsible_removed"
   | "platform.user.banned"

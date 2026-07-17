@@ -91,13 +91,6 @@ export class ProvisionAcademyResultDto {
   firstAccessLink!: string | null;
 }
 
-const transferAcademyBodySchema = z.object({
-  ownerEmail: z.string(),
-  ownerName: z.string().optional(),
-});
-
-export class TransferAcademyBodyDto extends createZodDto(transferAcademyBodySchema) {}
-
 const addResponsibleBodySchema = z.object({
   ownerEmail: z.string(),
   ownerName: z.string().optional(),
@@ -111,7 +104,7 @@ const removeResponsibleBodySchema = z.object({
 
 export class RemoveResponsibleBodyDto extends createZodDto(removeResponsibleBodySchema) {}
 
-export class TransferAcademyResultDto extends ProvisionAcademyResultDto {}
+export class AcademyResponsibleMutationResultDto extends ProvisionAcademyResultDto {}
 
 export class ReservedFirstAccessPreviewDto {
   @ApiProperty({ type: String, enum: ["valid", "invalid", "expired"] })
@@ -561,9 +554,7 @@ export class PlatformUserDeletionImpactDto {
 
 const platformDeleteUserBodySchema = z.object({
   mode: z.enum(["definitive", "preserve_history"]),
-  ownerResolution: z.enum(["keep_ownerless", "transfer"]).optional(),
-  transferOwnerEmail: z.string().optional(),
-  transferOwnerName: z.string().optional(),
+  ownerResolution: z.enum(["keep_ownerless"]).optional(),
   confirmLeaveOwnerless: z.boolean().optional(),
 });
 

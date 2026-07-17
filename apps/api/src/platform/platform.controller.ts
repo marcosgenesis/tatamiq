@@ -16,6 +16,7 @@ type PlatformRequest = { ip?: string; headers: Record<string, string | string[] 
 
 import { AuditService } from "./audit.service";
 import {
+  AcademyResponsibleMutationResultDto,
   ActivatePlatformSupportBodyDto,
   AddPlatformAdministratorBodyDto,
   AddPlatformAdministratorResultDto,
@@ -42,8 +43,6 @@ import {
   RemoveResponsibleBodyDto,
   ReservedFirstAccessPreviewDto,
   StartPlatformSupportBodyDto,
-  TransferAcademyBodyDto,
-  TransferAcademyResultDto,
 } from "./platform.dto";
 import { PlatformAcademyService } from "./platform-academy.service";
 import {
@@ -156,35 +155,10 @@ export class PlatformController {
     );
   }
 
-  @Post("academies/:id/transfer")
-  @ApiParam({ name: "id", type: String })
-  @ApiBody({ type: TransferAcademyBodyDto })
-  @ApiOkResponse({ type: TransferAcademyResultDto })
-  async transferAcademy(
-    @Session() session: PlatformSession,
-    @Param("id") id: string,
-    @ZodBody(TransferAcademyBodyDto) body: TransferAcademyBodyDto,
-  ) {
-    return this.auditedAction.run(
-      session,
-      () => this.platformAcademyService.transferAcademy(id, parseTransferAcademyBody(body)),
-      {
-        action: "platform.academy.transferred",
-        targetType: "academy",
-        targetId: id,
-        academyId: id,
-        metadata: (result) => ({
-          ownerUserId: result.ownerUserId,
-          ownerWasCreated: result.ownerWasCreated,
-        }),
-      },
-    );
-  }
-
   @Post("academies/:id/responsibles")
   @ApiParam({ name: "id", type: String })
   @ApiBody({ type: AddResponsibleBodyDto })
-  @ApiOkResponse({ type: TransferAcademyResultDto })
+  @ApiOkResponse({ type: AcademyResponsibleMutationResultDto })
   async addResponsible(
     @Session() session: PlatformSession,
     @Param("id") id: string,
@@ -547,10 +521,6 @@ function parseProvisionAcademyBody(body: ProvisionAcademyBodyDto) {
   if (!academyName) throw new BadRequestException("Nome da academia é obrigatório.");
 
   return { academyName, ...owner };
-}
-
-function parseTransferAcademyBody(body: TransferAcademyBodyDto) {
-  return parseOwnerInput(body);
 }
 
 function parseAdministratorBody(body: AddPlatformAdministratorBodyDto) {

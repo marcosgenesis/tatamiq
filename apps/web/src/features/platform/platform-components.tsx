@@ -79,7 +79,8 @@ export function formatAcademyResponsiblesSummary(
 export const ACTION_LABELS: Record<string, string> = {
   "platform.dashboard.viewed": "Dashboard visualizado",
   "platform.academy.provisioned": "Academia provisionada",
-  "platform.academy.transferred": "Academia transferida",
+  "platform.academy.responsible_added": "Responsável adicionado",
+  "platform.academy.responsible_removed": "Responsável removido",
   "platform.user.banned": "Usuário bloqueado",
   "platform.user.unbanned": "Usuário desbloqueado",
   "platform.user.sessions_revoked": "Sessões revogadas",

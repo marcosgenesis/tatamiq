@@ -36,14 +36,9 @@ function createController() {
       ownerUserId: "owner-1",
       ownerWasCreated: true,
     }),
-    transferAcademy: vi.fn().mockResolvedValue({
-      academy: { id: "academy-1" },
-      ownerUserId: "owner-2",
-      ownerWasCreated: false,
-    }),
     addResponsible: vi.fn().mockResolvedValue({
       academy: { id: "academy-1" },
-      ownerUserId: "owner-3",
+      ownerUserId: "owner-2",
       ownerWasCreated: false,
     }),
     removeResponsible: vi.fn().mockResolvedValue({ success: true }),
@@ -124,7 +119,7 @@ function createController() {
 }
 
 describe("PlatformController audited action seams", () => {
-  it("routes academy provisioning and responsible changes through administrative audit descriptors", async () => {
+  it("routes academy provisioning and explicit responsible changes through administrative audit descriptors", async () => {
     const { controller, auditedDescriptors } = createController();
 
     await controller.provisionAcademy(
@@ -135,16 +130,12 @@ describe("PlatformController audited action seams", () => {
         ownerName: "Owner",
       } as never,
     );
-    await controller.transferAcademy(adminSession as never, "academy-1", {
-      ownerEmail: "new-owner@example.com",
-      ownerName: "New Owner",
-    } as never);
     await controller.addResponsible(adminSession as never, "academy-1", {
       ownerEmail: "extra@example.com",
       ownerName: "Extra",
     } as never);
-    await controller.removeResponsible(adminSession as never, "academy-1", "owner-3", {
-      allowLeavingOwnerless: true,
+    await controller.removeResponsible(adminSession as never, "academy-1", "owner-2", {
+      allowLeavingOwnerless: false,
     } as never);
 
     expect(auditedDescriptors[0]).toMatchObject({
@@ -161,18 +152,12 @@ describe("PlatformController audited action seams", () => {
       ownerWasCreated: true,
     });
     expect(auditedDescriptors[1]).toMatchObject({
-      action: "platform.academy.transferred",
-      targetType: "academy",
-      targetId: "academy-1",
-      academyId: "academy-1",
-    });
-    expect(auditedDescriptors[2]).toMatchObject({
       action: "platform.academy.responsible_added",
       targetType: "academy",
       targetId: "academy-1",
       academyId: "academy-1",
     });
-    expect(auditedDescriptors[3]).toMatchObject({
+    expect(auditedDescriptors[2]).toMatchObject({
       action: "platform.academy.responsible_removed",
       targetType: "academy",
       targetId: "academy-1",
@@ -188,7 +173,7 @@ describe("PlatformController audited action seams", () => {
     await controller.revokeUserSessions(adminSession as never, "user-1");
     await controller.deleteUser(adminSession as never, "user-1", {
       mode: "preserve_history",
-      ownerResolution: "transfer_academies",
+      ownerResolution: "keep_ownerless",
     } as never);
 
     expect(auditedDescriptors.map((audit) => audit.action)).toEqual([
@@ -200,7 +185,7 @@ describe("PlatformController audited action seams", () => {
     expect(auditedDescriptors.every((audit) => audit.targetType === "user")).toBe(true);
     expect(auditedDescriptors[3]?.metadata).toEqual({
       mode: "preserve_history",
-      ownerResolution: "transfer_academies",
+      ownerResolution: "keep_ownerless",
     });
   });
 

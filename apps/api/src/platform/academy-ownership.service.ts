@@ -38,21 +38,14 @@ export class AcademyOwnershipService {
     academyId: string,
     input: AssignAcademyOwnerInput,
   ): Promise<AcademyOwnerAssignment> {
-    return this.assignOwnerByEmail(academyId, input, { replaceExistingOwners: false });
-  }
-
-  async transferOwnerByEmail(
-    academyId: string,
-    input: AssignAcademyOwnerInput,
-  ): Promise<AcademyOwnerAssignment> {
-    return this.assignOwnerByEmail(academyId, input, { replaceExistingOwners: true });
+    return this.assignOwnerByEmail(academyId, input);
   }
 
   async addResponsibleByEmail(
     academyId: string,
     input: AssignAcademyOwnerInput,
   ): Promise<AcademyOwnerAssignment> {
-    return this.assignOwnerByEmail(academyId, input, { replaceExistingOwners: false });
+    return this.assignOwnerByEmail(academyId, input);
   }
 
   async removeResponsible(academyId: string, input: RemoveAcademyResponsibleInput) {
@@ -120,7 +113,6 @@ export class AcademyOwnershipService {
   private async assignOwnerByEmail(
     academyId: string,
     input: AssignAcademyOwnerInput,
-    options: { replaceExistingOwners: boolean },
   ): Promise<AcademyOwnerAssignment> {
     await this.assertAcademyExists(academyId);
 
@@ -128,12 +120,6 @@ export class AcademyOwnershipService {
     const ownerName = input.ownerName?.trim() || ownerEmail;
     const reserved = await this.reservedAccounts.createOrReuse(ownerEmail, ownerName);
     const now = new Date();
-
-    if (options.replaceExistingOwners) {
-      await this.db
-        .delete(member)
-        .where(and(eq(member.organizationId, academyId), eq(member.role, "owner")));
-    }
 
     await this.db.insert(member).values({
       id: crypto.randomUUID(),
