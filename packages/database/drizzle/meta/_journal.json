@@ -162,6 +162,13 @@
       "when": 1780849600000,
       "tag": "0022_pre_registration_cpf_belt",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1784321514000,
+      "tag": "0023_unique_academy_responsible_membership",
+      "breakpoints": true
     }
   ]
 }

@@ -1,4 +1,4 @@
-import { type Browser, expect, type Page, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 import { ADMIN_STORAGE_STATE, INSTRUCTOR_STORAGE_STATE } from "./support/auth";
 import { ensurePlatformFixtures, PLATFORM_FIXTURES, resetE2eFixture } from "./support/database";
 
@@ -12,10 +12,13 @@ test.beforeEach(async () => {
 
 test("platform admin covers dashboard, provision, admins, users, deletion, and support", async ({
   page,
+  browser,
 }) => {
   test.setTimeout(90_000);
   const provisionEmail = `platform-provision-${Date.now()}@tatamiq.local`;
   const adminEmail = `platform-admin-${Date.now()}@tatamiq.local`;
+  const secondResponsibleEmail = `platform-responsible-${Date.now()}@tatamiq.local`;
+  const secondResponsiblePassword = "tatamiq123";
 
   await page.goto("/platform");
   await expect(page.getByRole("main").getByText("Visão geral")).toBeVisible();
@@ -62,6 +65,34 @@ test("platform admin covers dashboard, provision, admins, users, deletion, and s
   await expect(page.getByText("Turmas ativas")).toBeVisible();
   await expect(page.getByText("Presenças válidas")).toBeVisible();
   await expect(page.getByText("Mensalidades pagas")).toBeVisible();
+
+  await page.getByRole("button", { name: "Adicionar responsável" }).click();
+  await page.getByPlaceholder("E-mail do responsável").fill(secondResponsibleEmail);
+  await page.getByPlaceholder("Nome do responsável (opcional)").fill("Segundo Responsável E2E");
+  await page.getByRole("button", { name: "Adicionar", exact: true }).click();
+  await expect(page.getByText("Responsável adicionado à academia.")).toBeVisible();
+  await expect(page.getByText(secondResponsibleEmail)).toBeVisible();
+  const firstAccessLink = await page.getByDisplayValue(/\/first-access\//).inputValue();
+
+  await page.getByRole("button", { name: "Adicionar responsável" }).click();
+  await page.getByPlaceholder("E-mail do responsável").fill(secondResponsibleEmail);
+  await page.getByRole("button", { name: "Adicionar", exact: true }).click();
+  await expect(
+    page.getByText("A conta já existia; nenhum link de primeiro acesso foi necessário."),
+  ).toBeVisible();
+  await expect(page.getByText(secondResponsibleEmail)).toHaveCount(1);
+
+  const responsibleContext = await browser.newContext();
+  const responsiblePage = await responsibleContext.newPage();
+  await responsiblePage.goto(firstAccessLink);
+  await responsiblePage.getByLabel("Criar senha").fill(secondResponsiblePassword);
+  await responsiblePage.getByLabel("Confirmar senha").fill(secondResponsiblePassword);
+  await responsiblePage.getByRole("button", { name: "Definir senha e acessar" }).click();
+  await responsiblePage.getByLabel("Email").fill(secondResponsibleEmail);
+  await responsiblePage.getByLabel("Senha").fill(secondResponsiblePassword);
+  await responsiblePage.getByRole("button", { name: "Entrar" }).click();
+  await expect(responsiblePage.getByRole("heading", { name: "Painel" })).toBeVisible();
+  await responsibleContext.close();
 
   await page.goto("/platform/users");
   await expect(page.getByPlaceholder("Buscar usuário por nome ou e-mail")).toBeVisible();
