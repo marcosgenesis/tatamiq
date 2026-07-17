@@ -37,6 +37,14 @@ export const PLATFORM_FIXTURES = {
     academyName: "Academia Platform Owner E2E",
     academySlug: "academia-platform-owner-e2e",
   },
+  academySecondResponsible: {
+    email: "platform.owner.extra.e2e@tatamiq.local",
+    name: "Platform Owner Extra E2E",
+  },
+  ownerlessAcademy: {
+    academyName: "Academia Sem Responsavel E2E",
+    academySlug: "academia-sem-responsavel-e2e",
+  },
 } as const;
 
 export function assertE2eDatabaseIsLocal() {
@@ -146,6 +154,11 @@ export async function ensurePlatformFixtures(password = "tatamiq123") {
     name: PLATFORM_FIXTURES.academyOwner.name,
     password,
   });
+  const academySecondResponsible = await ensurePasswordUser({
+    email: PLATFORM_FIXTURES.academySecondResponsible.email,
+    name: PLATFORM_FIXTURES.academySecondResponsible.name,
+    password,
+  });
 
   await db.insert(member).values({
     id: randomUUID(),
@@ -163,11 +176,27 @@ export async function ensurePlatformFixtures(password = "tatamiq123") {
     pixKeyType: "email",
     pixKey: "platform-owner-e2e@pix.local",
   });
-  await db.insert(member).values({
-    id: randomUUID(),
-    organizationId: ownerOrgId,
-    userId: academyOwner.id,
-    role: "owner",
+  await db.insert(member).values([
+    {
+      id: randomUUID(),
+      organizationId: ownerOrgId,
+      userId: academyOwner.id,
+      role: "owner",
+    },
+    {
+      id: randomUUID(),
+      organizationId: ownerOrgId,
+      userId: academySecondResponsible.id,
+      role: "owner",
+    },
+  ]);
+
+  const ownerlessOrgId = randomUUID();
+  await db.insert(organization).values({
+    id: ownerlessOrgId,
+    name: PLATFORM_FIXTURES.ownerlessAcademy.academyName,
+    slug: PLATFORM_FIXTURES.ownerlessAcademy.academySlug,
+    phone: "(85) 90000-0002",
   });
 
   return {
@@ -175,7 +204,9 @@ export async function ensurePlatformFixtures(password = "tatamiq123") {
     definitiveUserId: definitive.id,
     preserveUserId: preserve.id,
     ownerUserId: academyOwner.id,
+    secondResponsibleUserId: academySecondResponsible.id,
     ownerOrganizationId: ownerOrgId,
+    ownerlessOrganizationId: ownerlessOrgId,
   };
 }
 
@@ -244,7 +275,11 @@ async function cleanupPlatformFixtures() {
   await db
     .delete(organization)
     .where(eq(organization.slug, PLATFORM_FIXTURES.academyOwner.academySlug));
+  await db
+    .delete(organization)
+    .where(eq(organization.slug, PLATFORM_FIXTURES.ownerlessAcademy.academySlug));
   await deleteUserByEmail(PLATFORM_FIXTURES.academyOwner.email);
+  await deleteUserByEmail(PLATFORM_FIXTURES.academySecondResponsible.email);
   await deleteUserByEmail(PLATFORM_FIXTURES.deletePreserve.email);
   await deleteUserByEmail(PLATFORM_FIXTURES.deleteDefinitive.email);
   await deleteUserByEmail(PLATFORM_FIXTURES.bannable.email);

@@ -15,11 +15,13 @@ const adminSession = {
   session: { id: "session-1" },
 };
 
-function resolveTargetId(audit: AuditDescriptor, result: unknown) {
+function resolveTargetId(audit: AuditDescriptor | undefined, result: unknown) {
+  if (!audit) throw new Error("Missing audit descriptor.");
   return typeof audit.targetId === "function" ? audit.targetId(result) : audit.targetId;
 }
 
-function resolveMetadata(audit: AuditDescriptor, result: unknown) {
+function resolveMetadata(audit: AuditDescriptor | undefined, result: unknown) {
+  if (!audit) throw new Error("Missing audit descriptor.");
   return typeof audit.metadata === "function" ? audit.metadata(result) : audit.metadata;
 }
 
@@ -151,11 +153,11 @@ describe("PlatformController audited action seams", () => {
       action: "platform.academy.provisioned",
       targetType: "academy",
     });
-    expect(resolveTargetId(auditedDescriptors[0]!, { academy: { id: "academy-1" } })).toBe(
+    expect(resolveTargetId(auditedDescriptors[0], { academy: { id: "academy-1" } })).toBe(
       "academy-1",
     );
     expect(
-      resolveMetadata(auditedDescriptors[0]!, { ownerUserId: "owner-1", ownerWasCreated: true }),
+      resolveMetadata(auditedDescriptors[0], { ownerUserId: "owner-1", ownerWasCreated: true }),
     ).toEqual({
       ownerUserId: "owner-1",
       ownerWasCreated: true,
@@ -221,9 +223,9 @@ describe("PlatformController audited action seams", () => {
       targetType: "user",
     });
     expect(
-      resolveTargetId(auditedDescriptors[0]!, { administrator: { id: "target-admin-1" } }),
+      resolveTargetId(auditedDescriptors[0], { administrator: { id: "target-admin-1" } }),
     ).toBe("target-admin-1");
-    expect(resolveMetadata(auditedDescriptors[0]!, { userWasCreated: true })).toEqual({
+    expect(resolveMetadata(auditedDescriptors[0], { userWasCreated: true })).toEqual({
       userWasCreated: true,
     });
     expect(auditedDescriptors[1]).toMatchObject({
@@ -253,13 +255,24 @@ describe("PlatformController audited action seams", () => {
       academyId: "academy-1",
       reason: "debug customer issue",
     });
+    expect(
+      resolveMetadata(auditedDescriptors[0], {
+        id: "support-1",
+        targetUserId: "user-1",
+        academyId: "academy-1",
+      }),
+    ).toMatchObject({
+      supportSessionId: "support-1",
+      targetResponsibleUserId: "user-1",
+      academyId: "academy-1",
+    });
     expect(impersonatedDescriptors[0]?.adminUserId).toBe("admin-1");
     expect(impersonatedDescriptors[0]?.audit).toMatchObject({
       action: "platform.support.ended",
       targetType: "user",
       targetId: "user-1",
     });
-    expect(resolveMetadata(impersonatedDescriptors[0]!.audit, { id: "support-1" })).toEqual({
+    expect(resolveMetadata(impersonatedDescriptors[0]?.audit, { id: "support-1" })).toEqual({
       supportSessionId: "support-1",
       impersonationSessionId: "impersonated-session-1",
     });

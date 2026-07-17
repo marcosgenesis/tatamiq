@@ -36,24 +36,6 @@ export class PlatformSupportService {
       );
     }
 
-    const [membership] = await this.db
-      .select({ id: member.id })
-      .from(member)
-      .where(eq(member.userId, input.targetUserId))
-      .limit(1);
-    const [activeStudentAccess] = await this.db
-      .select({ id: studentAccess.id })
-      .from(studentAccess)
-      .where(
-        and(eq(studentAccess.authUserId, input.targetUserId), eq(studentAccess.status, "active")),
-      )
-      .limit(1);
-    if (!membership && !activeStudentAccess) {
-      throw new BadRequestException(
-        "Suporte Assistido exige uma conta com área operacional disponível.",
-      );
-    }
-
     if (input.academyId) {
       const [academy] = await this.db
         .select({ id: organization.id })
@@ -61,6 +43,41 @@ export class PlatformSupportService {
         .where(eq(organization.id, input.academyId))
         .limit(1);
       if (!academy) throw new NotFoundException("Academia não encontrada.");
+
+      const [academyResponsible] = await this.db
+        .select({ id: member.id })
+        .from(member)
+        .where(
+          and(
+            eq(member.organizationId, input.academyId),
+            eq(member.userId, input.targetUserId),
+            eq(member.role, "owner"),
+          ),
+        )
+        .limit(1);
+      if (!academyResponsible) {
+        throw new BadRequestException(
+          "Suporte Assistido exige selecionar um Responsável da Academia vinculado à academia.",
+        );
+      }
+    } else {
+      const [membership] = await this.db
+        .select({ id: member.id })
+        .from(member)
+        .where(eq(member.userId, input.targetUserId))
+        .limit(1);
+      const [activeStudentAccess] = await this.db
+        .select({ id: studentAccess.id })
+        .from(studentAccess)
+        .where(
+          and(eq(studentAccess.authUserId, input.targetUserId), eq(studentAccess.status, "active")),
+        )
+        .limit(1);
+      if (!membership && !activeStudentAccess) {
+        throw new BadRequestException(
+          "Suporte Assistido exige uma conta com área operacional disponível.",
+        );
+      }
     }
 
     const now = new Date();
@@ -136,11 +153,8 @@ export class PlatformSupportService {
       .where(eq(platformSupportSessions.impersonationSessionId, impersonationSessionId))
       .limit(1);
 
-    if (
-      !support ||
-      support.support.status !== "active" ||
-      support.support.expiresAt <= new Date()
-    ) {
+    if (!support) return null;
+    if (support.support.status !== "active" || support.support.expiresAt <= new Date()) {
       return null;
     }
 

@@ -337,6 +337,8 @@ export class PlatformController {
         reason: body.reason,
         metadata: (result) => ({
           supportSessionId: result.id,
+          targetResponsibleUserId: result.targetUserId,
+          academyId: result.academyId,
           ipAddress: request.ip ?? null,
           userAgent: userAgent ?? null,
         }),
