@@ -25,9 +25,7 @@ export type UserDeletionImpact = {
 
 export type DeleteUserInput = {
   mode: "definitive" | "preserve_history";
-  ownerResolution?: "keep_ownerless" | "transfer";
-  transferOwnerEmail?: string;
-  transferOwnerName?: string;
+  ownerResolution?: "keep_ownerless";
   confirmLeaveOwnerless?: boolean;
 };
 
@@ -75,9 +73,10 @@ export class UserDeletionService {
     const onlyOwnerAcademies = impact.ownedAcademies.filter((academy) => academy.isOnlyOwner);
 
     if (onlyOwnerAcademies.length > 0) {
-      await this.resolveOnlyOwnerAcademies(id, onlyOwnerAcademies, input);
+      await this.resolveOnlyResponsibleAcademies(id, onlyOwnerAcademies, input);
     }
 
+    await this.academyOwnership.removeResponsibleLinksForUser(id);
     await this.db.delete(session).where(eq(session.userId, id));
 
     if (input.mode === "definitive") {
@@ -102,28 +101,15 @@ export class UserDeletionService {
     return { success: true };
   }
 
-  private async resolveOnlyOwnerAcademies(
+  private async resolveOnlyResponsibleAcademies(
     userId: string,
     academies: Array<{ id: string }>,
     input: DeleteUserInput,
   ) {
-    if (!input.ownerResolution) {
-      throw new BadRequestException("Resolva a propriedade da academia antes de excluir.");
-    }
-
-    if (input.ownerResolution === "transfer") {
-      if (!input.transferOwnerEmail) {
-        throw new BadRequestException("Email do novo dono é obrigatório.");
-      }
-      await Promise.all(
-        academies.map((academy) =>
-          this.academyOwnership.transferOwnerByEmail(academy.id, {
-            ownerEmail: input.transferOwnerEmail as string,
-            ...(input.transferOwnerName ? { ownerName: input.transferOwnerName } : {}),
-          }),
-        ),
+    if (input.ownerResolution !== "keep_ownerless") {
+      throw new BadRequestException(
+        "Decida explicitamente se a academia ficará sem responsável antes de excluir.",
       );
-      return;
     }
 
     if (!input.confirmLeaveOwnerless) {

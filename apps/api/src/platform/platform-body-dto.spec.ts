@@ -58,4 +58,19 @@ describe("platform body DTOs accept their UI payloads through ZodValidationPipe"
       );
     });
   }
+
+  it("rejects transfer-style user deletion resolution", () => {
+    const pipe = new ZodValidationPipe(PlatformDeleteUserBodyDto);
+
+    expect(() =>
+      pipe.transform(
+        {
+          mode: "preserve_history",
+          ownerResolution: "transfer",
+          transferOwnerEmail: "new-owner@example.com",
+        },
+        { type: "body", metatype: PlatformDeleteUserBodyDto },
+      ),
+    ).toThrow();
+  });
 });

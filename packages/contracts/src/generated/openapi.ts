@@ -3199,9 +3199,7 @@ export interface components {
             /** @enum {string} */
             mode: "definitive" | "preserve_history";
             /** @enum {string} */
-            ownerResolution?: "keep_ownerless" | "transfer";
-            transferOwnerEmail?: string;
-            transferOwnerName?: string;
+            ownerResolution?: "keep_ownerless";
             confirmLeaveOwnerless?: boolean;
         };
         PlatformBanUserBodyDto: {

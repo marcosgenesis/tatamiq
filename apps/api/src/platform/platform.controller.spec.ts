@@ -188,7 +188,7 @@ describe("PlatformController audited action seams", () => {
     await controller.revokeUserSessions(adminSession as never, "user-1");
     await controller.deleteUser(adminSession as never, "user-1", {
       mode: "preserve_history",
-      ownerResolution: "transfer_academies",
+      ownerResolution: "keep_ownerless",
     } as never);
 
     expect(auditedDescriptors.map((audit) => audit.action)).toEqual([
@@ -200,7 +200,7 @@ describe("PlatformController audited action seams", () => {
     expect(auditedDescriptors.every((audit) => audit.targetType === "user")).toBe(true);
     expect(auditedDescriptors[3]?.metadata).toEqual({
       mode: "preserve_history",
-      ownerResolution: "transfer_academies",
+      ownerResolution: "keep_ownerless",
     });
   });
 

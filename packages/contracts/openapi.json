@@ -3849,12 +3849,14 @@
         "properties": {
           "name": {
             "type": "string",
-            "minLength": 1
+            "minLength": 2,
+            "maxLength": 120
           },
           "address": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 200
               },
               {
                 "type": "string",
@@ -3867,7 +3869,8 @@
           "phone": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 30
               },
               {
                 "type": "string",
@@ -3880,7 +3883,8 @@
           "instagram": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 60
               },
               {
                 "type": "string",
@@ -3904,7 +3908,8 @@
           "pixKey": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 140
               },
               {
                 "type": "string",
@@ -3917,7 +3922,8 @@
           "pixCopyPaste": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 1000
               },
               {
                 "type": "string",
@@ -4824,7 +4830,8 @@
         "properties": {
           "name": {
             "type": "string",
-            "minLength": 1
+            "minLength": 2,
+            "maxLength": 120
           },
           "birthDate": {
             "type": "string",
@@ -4832,17 +4839,20 @@
           },
           "phone": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "maxLength": 30
           },
           "email": {
             "type": "string",
+            "maxLength": 254,
             "format": "email",
             "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
           },
           "cpf": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 14
               },
               {
                 "type": "string",
@@ -4855,7 +4865,8 @@
           "guardianName": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 120
               },
               {
                 "type": "string",
@@ -4868,7 +4879,8 @@
           "guardianPhone": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 30
               },
               {
                 "type": "string",
@@ -4881,7 +4893,8 @@
           "note": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 1000
               },
               {
                 "type": "string",
@@ -4900,7 +4913,8 @@
           "declaredBeltId": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 64
               },
               {
                 "type": "string",
@@ -5777,7 +5791,8 @@
         "properties": {
           "name": {
             "type": "string",
-            "minLength": 1
+            "minLength": 2,
+            "maxLength": 120
           },
           "birthDate": {
             "type": "string",
@@ -6111,7 +6126,8 @@
         "properties": {
           "name": {
             "type": "string",
-            "minLength": 1
+            "minLength": 2,
+            "maxLength": 120
           },
           "birthDate": {
             "type": "string",
@@ -9871,15 +9887,8 @@
           "ownerResolution": {
             "type": "string",
             "enum": [
-              "keep_ownerless",
-              "transfer"
+              "keep_ownerless"
             ]
-          },
-          "transferOwnerEmail": {
-            "type": "string"
-          },
-          "transferOwnerName": {
-            "type": "string"
           },
           "confirmLeaveOwnerless": {
             "type": "boolean"

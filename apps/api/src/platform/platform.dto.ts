@@ -561,9 +561,7 @@ export class PlatformUserDeletionImpactDto {
 
 const platformDeleteUserBodySchema = z.object({
   mode: z.enum(["definitive", "preserve_history"]),
-  ownerResolution: z.enum(["keep_ownerless", "transfer"]).optional(),
-  transferOwnerEmail: z.string().optional(),
-  transferOwnerName: z.string().optional(),
+  ownerResolution: z.enum(["keep_ownerless"]).optional(),
   confirmLeaveOwnerless: z.boolean().optional(),
 });
 

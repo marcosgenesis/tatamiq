@@ -90,6 +90,10 @@ export class AcademyOwnershipService {
       );
   }
 
+  async removeResponsibleLinksForUser(userId: string) {
+    await this.db.delete(member).where(and(eq(member.userId, userId), eq(member.role, "owner")));
+  }
+
   async ownedAcademyImpactForUser(userId: string): Promise<OwnedAcademyImpact[]> {
     const ownedMemberships = await this.db
       .select({ member, organization })

@@ -1,4 +1,4 @@
-import { type Browser, expect, type Page, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 import { ADMIN_STORAGE_STATE, INSTRUCTOR_STORAGE_STATE } from "./support/auth";
 import { ensurePlatformFixtures, PLATFORM_FIXTURES, resetE2eFixture } from "./support/database";
 
@@ -43,9 +43,11 @@ test("platform admin covers dashboard, provision, admins, users, deletion, and s
   await page.getByRole("button", { name: "Adicionar" }).click();
 
   await page.goto("/platform/academies");
-  await expect(page.getByPlaceholder("Buscar academia por nome ou slug")).toBeVisible();
+  await expect(
+    page.getByPlaceholder("Buscar academia por nome, slug ou responsável"),
+  ).toBeVisible();
   await page
-    .getByPlaceholder("Buscar academia por nome ou slug")
+    .getByPlaceholder("Buscar academia por nome, slug ou responsável")
     .fill(PLATFORM_FIXTURES.academyOwner.academyName);
   const academyRow = page
     .locator("tbody tr")
@@ -96,6 +98,32 @@ test("platform admin covers dashboard, provision, admins, users, deletion, and s
     page.locator("tbody tr").filter({ hasText: PLATFORM_FIXTURES.deleteDefinitive.email }),
   ).toHaveCount(0);
 
+  await openPlatformUser(page, PLATFORM_FIXTURES.deleteMultiResponsible.email);
+  await page.getByRole("button", { name: "Excluir usuário" }).click();
+  await expect(page.getByText("Responsável de 1 academia(s).")).toBeVisible();
+  await page.getByRole("button", { name: "Confirmar exclusão" }).click();
+  await page.goto("/platform/users");
+  await expect(
+    page.locator("tbody tr").filter({ hasText: PLATFORM_FIXTURES.deleteMultiResponsible.email }),
+  ).toHaveCount(0);
+  await openPlatformAcademy(page, PLATFORM_FIXTURES.deleteMultiResponsible.academyName);
+  await expect(
+    page.getByText(PLATFORM_FIXTURES.deleteMultiResponsible.remainingEmail),
+  ).toBeVisible();
+  await expect(page.getByText(PLATFORM_FIXTURES.deleteMultiResponsible.email)).toHaveCount(0);
+
+  await openPlatformUser(page, PLATFORM_FIXTURES.deleteSoleResponsible.email);
+  await page.getByRole("button", { name: "Excluir usuário" }).click();
+  const confirmDeletion = page.getByRole("button", { name: "Confirmar exclusão" });
+  await expect(confirmDeletion).toBeDisabled();
+  await page.locator("select").nth(1).selectOption("keep_ownerless");
+  await expect(confirmDeletion).toBeDisabled();
+  await page.getByLabel("Confirmo que a academia ficará sem responsável.").check();
+  await expect(confirmDeletion).toBeEnabled();
+  await confirmDeletion.click();
+  await openPlatformAcademy(page, PLATFORM_FIXTURES.deleteSoleResponsible.academyName);
+  await expect(page.getByText("Sem responsável")).toBeVisible();
+
   await openPlatformUser(page, "marcosgenesisof@gmail.com");
   await expect(page.getByRole("button", { name: "Iniciar suporte" })).toBeDisabled();
 
@@ -134,4 +162,13 @@ async function openPlatformUser(page: Page, email: string) {
   await expect(row).toBeVisible();
   await row.getByRole("link", { name: /Abrir/ }).click();
   await expect(page.getByText(email)).toBeVisible();
+}
+
+async function openPlatformAcademy(page: Page, academyName: string) {
+  await page.goto("/platform/academies");
+  await page.getByPlaceholder("Buscar academia por nome, slug ou responsável").fill(academyName);
+  const row = page.locator("tbody tr").filter({ hasText: academyName }).first();
+  await expect(row).toBeVisible();
+  await row.getByRole("link", { name: new RegExp(`Abrir ${academyName}`) }).click();
+  await expect(page.getByRole("heading", { name: academyName })).toBeVisible();
 }
