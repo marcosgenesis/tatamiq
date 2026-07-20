@@ -30,6 +30,10 @@ import {
 } from "./platform-queries";
 import { PlatformLoading, PlatformShell } from "./platform-shell";
 
+const OWNERLESS_CONFIRMATION_TEXT = "SEM RESPONSÁVEL";
+
+type RemovalTarget = { id: string; name: string; email: string; leavesOwnerless: boolean };
+
 export function PlatformAcademyPage({ academyId }: { academyId: string }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -42,6 +46,8 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
     ownerWasCreated: boolean;
     firstAccessLink: string | null;
   } | null>(null);
+  const [removalTarget, setRemovalTarget] = useState<RemovalTarget | null>(null);
+  const [ownerlessConfirmation, setOwnerlessConfirmation] = useState("");
 
   const session = authClient.useSession();
   const sessionUserId = session.data?.user.id;
@@ -75,13 +81,24 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
   });
 
   const removeResponsible = useMutation({
-    mutationFn: async (target: { userId: string; allowLeavingOwnerless?: boolean }) =>
+    mutationFn: async (target: {
+      userId: string;
+      allowLeavingOwnerless?: boolean;
+      ownerlessConfirmation?: string;
+    }) =>
       removePlatformAcademyResponsible({
         academyId,
         userId: target.userId,
-        ...(target.allowLeavingOwnerless ? { allowLeavingOwnerless: true } : {}),
+        ...(target.allowLeavingOwnerless
+          ? {
+              allowLeavingOwnerless: true,
+              ownerlessConfirmation: target.ownerlessConfirmation,
+            }
+          : {}),
       }),
     onSuccess: async () => {
+      setRemovalTarget(null);
+      setOwnerlessConfirmation("");
       await queryClient.invalidateQueries({
         queryKey: platformKeys.academy(sessionUserId, academyId),
       });
@@ -267,6 +284,82 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
       }
     >
       <div className="space-y-6">
+        <Dialog
+          open={!!removalTarget}
+          onOpenChange={(open) => {
+            if (!open) {
+              setRemovalTarget(null);
+              setOwnerlessConfirmation("");
+              removeResponsible.reset();
+            }
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Remover responsável</DialogTitle>
+              <DialogDescription>
+                {removalTarget?.leavesOwnerless
+                  ? "Esta é a última pessoa responsável. A academia continuará visível e com histórico preservado, mas ficará sem operação administrativa e sem geração automática futura de mensalidades até receber novo responsável."
+                  : "Remova este vínculo operacional sem alterar os demais responsáveis da academia."}
+              </DialogDescription>
+            </DialogHeader>
+            {removalTarget ? (
+              <div className="grid gap-3">
+                <div className="rounded-xl bg-muted/50 px-4 py-3 text-sm">
+                  <p className="font-medium">{removalTarget.name}</p>
+                  <p className="text-muted-foreground text-xs">{removalTarget.email}</p>
+                </div>
+                {removalTarget.leavesOwnerless ? (
+                  <div className="grid gap-2">
+                    <p className="text-sm text-muted-foreground">
+                      Para confirmar, digite <strong>{OWNERLESS_CONFIRMATION_TEXT}</strong>.
+                    </p>
+                    <Input
+                      aria-label="Confirmação para deixar sem responsável"
+                      value={ownerlessConfirmation}
+                      onChange={(event) => setOwnerlessConfirmation(event.target.value)}
+                      disabled={removeResponsible.isPending}
+                    />
+                  </div>
+                ) : null}
+                {removeResponsible.isError ? (
+                  <p className="text-destructive text-sm">Não foi possível remover responsável.</p>
+                ) : null}
+              </div>
+            ) : null}
+            <DialogFooter className="pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setRemovalTarget(null);
+                  setOwnerlessConfirmation("");
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => {
+                  if (!removalTarget) return;
+                  removeResponsible.mutate({
+                    userId: removalTarget.id,
+                    allowLeavingOwnerless: removalTarget.leavesOwnerless,
+                    ...(removalTarget.leavesOwnerless ? { ownerlessConfirmation } : {}),
+                  });
+                }}
+                disabled={
+                  removeResponsible.isPending ||
+                  (removalTarget?.leavesOwnerless &&
+                    ownerlessConfirmation.trim().toUpperCase() !== OWNERLESS_CONFIRMATION_TEXT)
+                }
+              >
+                {removeResponsible.isPending ? "Removendo..." : "Remover responsável"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
         <section className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
             <AcademyAvatar name={data.name} logo={data.logo} className="size-16 rounded-2xl" />
@@ -335,11 +428,14 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      if (window.confirm("Remover responsável?"))
-                        removeResponsible.mutate({
-                          userId: r.id,
-                          allowLeavingOwnerless: responsibles.length === 1,
-                        });
+                      removeResponsible.reset();
+                      setOwnerlessConfirmation("");
+                      setRemovalTarget({
+                        id: r.id,
+                        name: r.name,
+                        email: r.email,
+                        leavesOwnerless: responsibles.length === 1,
+                      });
                     }}
                     disabled={removeResponsible.isPending}
                   >

@@ -46,7 +46,7 @@ function createController() {
       ownerUserId: "owner-3",
       ownerWasCreated: false,
     }),
-    removeResponsible: vi.fn().mockResolvedValue({ success: true }),
+    removeResponsible: vi.fn().mockResolvedValue({ success: true, leftOwnerless: true }),
   };
   const academyDeletionService = {
     preview: vi.fn().mockResolvedValue({ academy: { id: "academy-1" } }),
@@ -168,17 +168,17 @@ describe("PlatformController audited action seams", () => {
     } as never);
     await controller.removeResponsible(adminSession as never, "academy-1", "owner-3", {
       allowLeavingOwnerless: true,
+      ownerlessConfirmation: "SEM RESPONSÁVEL",
     } as never);
 
-    expect(auditedDescriptors[0]).toMatchObject({
+    const provisionAudit = auditedDescriptors[0] as AuditDescriptor;
+    expect(provisionAudit).toMatchObject({
       action: "platform.academy.provisioned",
       targetType: "academy",
     });
-    expect(resolveTargetId(auditedDescriptors[0]!, { academy: { id: "academy-1" } })).toBe(
-      "academy-1",
-    );
+    expect(resolveTargetId(provisionAudit, { academy: { id: "academy-1" } })).toBe("academy-1");
     expect(
-      resolveMetadata(auditedDescriptors[0]!, { ownerUserId: "owner-1", ownerWasCreated: true }),
+      resolveMetadata(provisionAudit, { ownerUserId: "owner-1", ownerWasCreated: true }),
     ).toEqual({
       ownerUserId: "owner-1",
       ownerWasCreated: true,
@@ -195,11 +195,17 @@ describe("PlatformController audited action seams", () => {
       targetId: "academy-1",
       academyId: "academy-1",
     });
-    expect(auditedDescriptors[3]).toMatchObject({
-      action: "platform.academy.responsible_removed",
+    const removalAudit = auditedDescriptors[3] as AuditDescriptor;
+    expect(removalAudit).toMatchObject({
+      action: "platform.academy.final_responsible_removed",
       targetType: "academy",
       targetId: "academy-1",
       academyId: "academy-1",
+    });
+    expect(resolveMetadata(removalAudit, { leftOwnerless: true })).toEqual({
+      userId: "owner-3",
+      allowLeavingOwnerless: true,
+      leftOwnerless: true,
     });
   });
 
@@ -286,10 +292,11 @@ describe("PlatformController audited action seams", () => {
       action: "platform.admin.added",
       targetType: "user",
     });
-    expect(
-      resolveTargetId(auditedDescriptors[0]!, { administrator: { id: "target-admin-1" } }),
-    ).toBe("target-admin-1");
-    expect(resolveMetadata(auditedDescriptors[0]!, { userWasCreated: true })).toEqual({
+    const addAdminAudit = auditedDescriptors[0] as AuditDescriptor;
+    expect(resolveTargetId(addAdminAudit, { administrator: { id: "target-admin-1" } })).toBe(
+      "target-admin-1",
+    );
+    expect(resolveMetadata(addAdminAudit, { userWasCreated: true })).toEqual({
       userWasCreated: true,
     });
     expect(auditedDescriptors[1]).toMatchObject({
@@ -325,7 +332,8 @@ describe("PlatformController audited action seams", () => {
       targetType: "user",
       targetId: "user-1",
     });
-    expect(resolveMetadata(impersonatedDescriptors[0]!.audit, { id: "support-1" })).toEqual({
+    const endSupportAudit = impersonatedDescriptors[0]?.audit as AuditDescriptor;
+    expect(resolveMetadata(endSupportAudit, { id: "support-1" })).toEqual({
       supportSessionId: "support-1",
       impersonationSessionId: "impersonated-session-1",
     });

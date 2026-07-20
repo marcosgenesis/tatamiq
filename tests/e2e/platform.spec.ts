@@ -50,25 +50,7 @@ test("platform admin covers dashboard, provision, admins, users, deletion, and s
   await page.getByPlaceholder("Nome (opcional)").fill("Admin Removível E2E");
   await page.getByRole("button", { name: "Adicionar" }).click();
 
-  await page.goto("/platform/academies");
-  await expect(
-    page.getByPlaceholder("Buscar academia por nome, slug ou responsável"),
-  ).toBeVisible();
-  await page
-    .getByPlaceholder("Buscar academia por nome, slug ou responsável")
-    .fill(PLATFORM_FIXTURES.academyOwner.academyName);
-  const academyRow = page
-    .locator("tbody tr")
-    .filter({ hasText: PLATFORM_FIXTURES.academyOwner.academyName })
-    .first();
-  await expect(academyRow).toBeVisible();
-  await expect(academyRow.getByText(PLATFORM_FIXTURES.academyOwner.name)).toBeVisible();
-  await academyRow
-    .getByRole("link", { name: new RegExp(`Abrir ${PLATFORM_FIXTURES.academyOwner.academyName}`) })
-    .click();
-  await expect(
-    page.getByRole("heading", { name: PLATFORM_FIXTURES.academyOwner.academyName }),
-  ).toBeVisible();
+  await openPlatformAcademy(page, PLATFORM_FIXTURES.academyOwner.academyName);
   await expect(page.getByRole("heading", { name: "Responsáveis da Academia" })).toBeVisible();
   await expect(page.getByText(PLATFORM_FIXTURES.academyOwner.email)).toBeVisible();
   await expect(page.getByText("Alunos ativos")).toBeVisible();
@@ -169,17 +151,7 @@ test("platform admin removes one academy responsible while preserving another", 
   };
   await ensureStandalonePasswordUser(remainingResponsible);
 
-  await page.goto("/platform/academies");
-  await page
-    .getByPlaceholder("Buscar academia por nome ou slug")
-    .fill(PLATFORM_FIXTURES.academyOwner.academyName);
-  const academyRow = page
-    .locator("tbody tr")
-    .filter({ hasText: PLATFORM_FIXTURES.academyOwner.academyName })
-    .first();
-  await academyRow
-    .getByRole("link", { name: new RegExp(`Abrir ${PLATFORM_FIXTURES.academyOwner.academyName}`) })
-    .click();
+  await openPlatformAcademy(page, PLATFORM_FIXTURES.academyOwner.academyName);
 
   await page.getByRole("button", { name: "Adicionar responsável" }).click();
   await page.getByPlaceholder("E-mail do responsável").fill(remainingResponsible.email);
@@ -187,12 +159,12 @@ test("platform admin removes one academy responsible while preserving another", 
   await page.getByRole("button", { name: "Adicionar", exact: true }).click();
   await expect(page.getByText(remainingResponsible.email)).toBeVisible();
 
-  page.once("dialog", (dialog) => dialog.accept());
   await page
     .getByText(PLATFORM_FIXTURES.academyOwner.email)
     .locator("../..")
     .getByRole("button", { name: "Remover" })
     .click();
+  await page.getByRole("button", { name: "Remover responsável" }).click();
   await expect(page.getByText(PLATFORM_FIXTURES.academyOwner.email)).toHaveCount(0);
   await expect(page.getByText(remainingResponsible.email)).toBeVisible();
   await expect(page.getByText("Alunos ativos")).toBeVisible();
@@ -219,6 +191,36 @@ test("platform admin removes one academy responsible while preserving another", 
   await removedContext.close();
 });
 
+test("platform admin can leave an academy sem responsável with strong confirmation and recover it", async ({
+  page,
+}) => {
+  const recoveredEmail = `platform-ownerless-recovered-${Date.now()}@tatamiq.local`;
+
+  await openPlatformAcademy(page, PLATFORM_FIXTURES.academyOwner.academyName);
+  await page.getByRole("button", { name: "Remover" }).click();
+  await expect(page.getByRole("heading", { name: "Remover responsável" })).toBeVisible();
+  await expect(page.getByText("Esta é a última pessoa responsável.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Remover responsável" })).toBeDisabled();
+  await page.getByLabel("Confirmação para deixar sem responsável").fill("SEM RESPONSÁVEL");
+  await page.getByRole("button", { name: "Remover responsável" }).click();
+
+  await expect(page.getByText("Sem responsável").first()).toBeVisible();
+  await expect(page.getByText("Academia sem responsável para suporte.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Iniciar como responsável" })).toBeDisabled();
+
+  await page.getByRole("button", { name: "Adicionar responsável" }).click();
+  await page.getByPlaceholder("E-mail do responsável").fill(recoveredEmail);
+  await page.getByPlaceholder("Nome do responsável (opcional)").fill("Responsável Recuperado E2E");
+  await page.getByRole("button", { name: "Adicionar", exact: true }).click();
+
+  await expect(page.getByText("Responsável Recuperado E2E")).toBeVisible();
+  await expect(page.getByText(recoveredEmail)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Iniciar como responsável" })).toBeEnabled();
+
+  await page.goto("/platform/audit");
+  await expect(page.getByText("Academia deixada sem responsável")).toBeVisible();
+});
+
 test("instructor is redirected away from /platform", async ({ browser }) => {
   const context = await browser.newContext({ storageState: INSTRUCTOR_STORAGE_STATE });
   const instructorPage = await context.newPage();
@@ -236,6 +238,15 @@ async function signIn(page: Page, credentials: { email: string; password: string
   await page.getByLabel("Senha").fill(credentials.password);
   await page.getByRole("button", { name: "Entrar" }).click();
   await expect(page).not.toHaveURL(/\/sign-in$/);
+}
+
+async function openPlatformAcademy(page: Page, name: string) {
+  await page.goto("/platform/academies");
+  await page.getByPlaceholder("Buscar academia por nome, slug ou responsável").fill(name);
+  const row = page.locator("tbody tr").filter({ hasText: name }).first();
+  await expect(row).toBeVisible();
+  await row.getByRole("link", { name: new RegExp(`Abrir ${name}`) }).click();
+  await expect(page.getByRole("heading", { name })).toBeVisible();
 }
 
 async function openPlatformUser(page: Page, email: string) {

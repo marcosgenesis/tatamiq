@@ -3118,7 +3118,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PlatformActionResultDto"
+                  "$ref": "#/components/schemas/RemoveResponsibleResultDto"
                 }
               }
             }
@@ -9090,18 +9090,25 @@
         "properties": {
           "allowLeavingOwnerless": {
             "type": "boolean"
+          },
+          "ownerlessConfirmation": {
+            "type": "string"
           }
         }
       },
-      "PlatformActionResultDto": {
+      "RemoveResponsibleResultDto": {
         "type": "object",
         "properties": {
           "success": {
             "type": "boolean"
+          },
+          "leftOwnerless": {
+            "type": "boolean"
           }
         },
         "required": [
-          "success"
+          "success",
+          "leftOwnerless"
         ]
       },
       "PlatformAcademyDeletionImpactDto": {
@@ -9644,6 +9651,17 @@
           "administrator",
           "userWasCreated",
           "firstAccessLink"
+        ]
+      },
+      "PlatformActionResultDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success"
         ]
       },
       "StartPlatformSupportBodyDto": {

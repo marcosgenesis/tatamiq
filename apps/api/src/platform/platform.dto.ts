@@ -107,6 +107,7 @@ export class AddResponsibleBodyDto extends createZodDto(addResponsibleBodySchema
 
 const removeResponsibleBodySchema = z.object({
   allowLeavingOwnerless: z.boolean().optional(),
+  ownerlessConfirmation: z.string().optional(),
 });
 
 export class RemoveResponsibleBodyDto extends createZodDto(removeResponsibleBodySchema) {}
@@ -594,6 +595,11 @@ export class PlatformBanUserBodyDto extends createZodDto(platformBanUserBodySche
 export class PlatformActionResultDto {
   @ApiProperty({ type: Boolean })
   success!: boolean;
+}
+
+export class RemoveResponsibleResultDto extends PlatformActionResultDto {
+  @ApiProperty({ type: Boolean })
+  leftOwnerless!: boolean;
 }
 
 export class PlatformOwnedAcademyImpactDto {

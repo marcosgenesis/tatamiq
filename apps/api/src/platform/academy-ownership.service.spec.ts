@@ -1,6 +1,6 @@
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { AcademyOwnershipService } from "./academy-ownership.service";
+import { AcademyOwnershipService, OWNERLESS_CONFIRMATION_TEXT } from "./academy-ownership.service";
 
 type MockRow = Record<string, unknown>;
 
@@ -128,7 +128,7 @@ describe("AcademyOwnershipService", () => {
 
       await expect(
         service.removeResponsible("academy-1", { userId: "owner-to-remove" }),
-      ).resolves.toBeUndefined();
+      ).resolves.toEqual({ leftOwnerless: false });
 
       expect(mock.deletedConditions).toHaveLength(1);
     });
@@ -143,14 +143,32 @@ describe("AcademyOwnershipService", () => {
       expect(mock.deletedConditions).toHaveLength(0);
     });
 
-    it("requires explicit confirmation before removing the final responsible", async () => {
+    it("blocks removing the final responsible without the strong confirmation text", async () => {
       mock.setSelectResults([[{ id: "academy-1" }], [{ id: "member-target" }], [{ total: 1 }]]);
 
       await expect(
-        service.removeResponsible("academy-1", { userId: "only-owner" }),
+        service.removeResponsible("academy-1", {
+          userId: "only-owner",
+          allowLeavingOwnerless: true,
+          ownerlessConfirmation: "sem responsavel",
+        }),
       ).rejects.toThrow(BadRequestException);
 
       expect(mock.deletedConditions).toHaveLength(0);
+    });
+
+    it("allows removing the final responsible with the strong confirmation text", async () => {
+      mock.setSelectResults([[{ id: "academy-1" }], [{ id: "member-target" }], [{ total: 1 }]]);
+
+      await expect(
+        service.removeResponsible("academy-1", {
+          userId: "only-owner",
+          allowLeavingOwnerless: true,
+          ownerlessConfirmation: OWNERLESS_CONFIRMATION_TEXT,
+        }),
+      ).resolves.toEqual({ leftOwnerless: true });
+
+      expect(mock.deletedConditions).toHaveLength(1);
     });
   });
 });
