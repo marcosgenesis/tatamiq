@@ -1,3 +1,4 @@
+import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AcademyOwnershipService } from "./academy-ownership.service";
 
@@ -12,6 +13,7 @@ function createMockDb() {
   const db = {
     select: vi.fn().mockImplementation(() => ({
       from: vi.fn().mockReturnValue({
+        innerJoin: vi.fn().mockReturnThis(),
         where: vi.fn().mockReturnValue({
           limit: vi.fn().mockImplementation(() => {
             const result = selectResults[selectCallIndex] ?? [];
@@ -67,54 +69,88 @@ describe("AcademyOwnershipService", () => {
     service = new AcademyOwnershipService(mock.db as never, reservedAccounts as never);
   });
 
-  it("adds another responsible without removing existing responsibles", async () => {
-    mock.setSelectResults([[{ id: "academy-1" }], []]);
+  describe("addResponsibleByEmail", () => {
+    it("adds another responsible without removing existing responsibles", async () => {
+      mock.setSelectResults([[{ id: "academy-1" }], []]);
 
-    const result = await service.addResponsibleByEmail("academy-1", {
-      ownerEmail: "Second@Tatamiq.Local",
-      ownerName: "Second",
+      const result = await service.addResponsibleByEmail("academy-1", {
+        ownerEmail: "Second@Tatamiq.Local",
+        ownerName: "Second",
+      });
+
+      expect(result).toMatchObject({ ownerUserId: "owner-2", ownerWasCreated: false });
+      expect(mock.deletedConditions).toHaveLength(0);
+      expect(mock.insertedRows).toHaveLength(1);
+      expect(mock.insertedRows[0]).toMatchObject({
+        organizationId: "academy-1",
+        userId: "owner-2",
+        role: "owner",
+      });
+      expect(reservedAccounts.createOrReuse).toHaveBeenCalledWith("second@tatamiq.local", "Second");
     });
 
-    expect(result).toMatchObject({ ownerUserId: "owner-2", ownerWasCreated: false });
-    expect(mock.deletedConditions).toHaveLength(0);
-    expect(mock.insertedRows).toHaveLength(1);
-    expect(mock.insertedRows[0]).toMatchObject({
-      organizationId: "academy-1",
-      userId: "owner-2",
-      role: "owner",
+    it("is idempotent when the responsible is already linked", async () => {
+      mock.setSelectResults([[{ id: "academy-1" }], [{ id: "member-1" }]]);
+
+      const result = await service.addResponsibleByEmail("academy-1", {
+        ownerEmail: "second@tatamiq.local",
+      });
+
+      expect(result.ownerUserId).toBe("owner-2");
+      expect(mock.insertedRows).toHaveLength(0);
+      expect(mock.deletedConditions).toHaveLength(0);
     });
-    expect(reservedAccounts.createOrReuse).toHaveBeenCalledWith("second@tatamiq.local", "Second");
+
+    it("returns a first access URL when adding a reserved account", async () => {
+      reservedAccounts.createOrReuse.mockResolvedValueOnce({
+        user: { id: "reserved-1", email: "reserved@tatamiq.local", name: "Reserved" },
+        isNew: true,
+        firstAccessLink: "raw-token",
+      });
+      mock.setSelectResults([[{ id: "academy-1" }], []]);
+
+      const result = await service.addResponsibleByEmail("academy-1", {
+        ownerEmail: "reserved@tatamiq.local",
+        ownerName: "Reserved",
+      });
+
+      expect(result).toMatchObject({
+        ownerUserId: "reserved-1",
+        ownerWasCreated: true,
+        firstAccessLink: "http://localhost:5173/first-access/raw-token",
+      });
+    });
   });
 
-  it("is idempotent when the responsible is already linked", async () => {
-    mock.setSelectResults([[{ id: "academy-1" }], [{ id: "member-1" }]]);
+  describe("removeResponsible", () => {
+    it("removes only the selected responsible when another responsible remains", async () => {
+      mock.setSelectResults([[{ id: "academy-1" }], [{ id: "member-target" }], [{ total: 2 }]]);
 
-    const result = await service.addResponsibleByEmail("academy-1", {
-      ownerEmail: "second@tatamiq.local",
+      await expect(
+        service.removeResponsible("academy-1", { userId: "owner-to-remove" }),
+      ).resolves.toBeUndefined();
+
+      expect(mock.deletedConditions).toHaveLength(1);
     });
 
-    expect(result.ownerUserId).toBe("owner-2");
-    expect(mock.insertedRows).toHaveLength(0);
-    expect(mock.deletedConditions).toHaveLength(0);
-  });
+    it("fails when the selected user is not a responsible of the academy", async () => {
+      mock.setSelectResults([[{ id: "academy-1" }], [], [{ total: 2 }]]);
 
-  it("returns a first access URL when adding a reserved account", async () => {
-    reservedAccounts.createOrReuse.mockResolvedValueOnce({
-      user: { id: "reserved-1", email: "reserved@tatamiq.local", name: "Reserved" },
-      isNew: true,
-      firstAccessLink: "raw-token",
-    });
-    mock.setSelectResults([[{ id: "academy-1" }], []]);
+      await expect(
+        service.removeResponsible("academy-1", { userId: "not-an-owner" }),
+      ).rejects.toThrow(NotFoundException);
 
-    const result = await service.addResponsibleByEmail("academy-1", {
-      ownerEmail: "reserved@tatamiq.local",
-      ownerName: "Reserved",
+      expect(mock.deletedConditions).toHaveLength(0);
     });
 
-    expect(result).toMatchObject({
-      ownerUserId: "reserved-1",
-      ownerWasCreated: true,
-      firstAccessLink: "http://localhost:5173/first-access/raw-token",
+    it("requires explicit confirmation before removing the final responsible", async () => {
+      mock.setSelectResults([[{ id: "academy-1" }], [{ id: "member-target" }], [{ total: 1 }]]);
+
+      await expect(
+        service.removeResponsible("academy-1", { userId: "only-owner" }),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(mock.deletedConditions).toHaveLength(0);
     });
   });
 });

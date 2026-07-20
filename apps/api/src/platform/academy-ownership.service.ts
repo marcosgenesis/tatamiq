@@ -57,10 +57,28 @@ export class AcademyOwnershipService {
 
   async removeResponsible(academyId: string, input: RemoveAcademyResponsibleInput) {
     await this.assertAcademyExists(academyId);
+
+    const [targetResponsible] = await this.db
+      .select({ id: member.id })
+      .from(member)
+      .where(
+        and(
+          eq(member.organizationId, academyId),
+          eq(member.userId, input.userId),
+          eq(member.role, "owner"),
+        ),
+      )
+      .limit(1);
+
+    if (!targetResponsible) {
+      throw new NotFoundException("Responsável da academia não encontrado.");
+    }
+
     const [{ total }] = await this.db
       .select({ total: count() })
       .from(member)
-      .where(and(eq(member.organizationId, academyId), eq(member.role, "owner")));
+      .where(and(eq(member.organizationId, academyId), eq(member.role, "owner")))
+      .limit(1);
     const totalOwners = total ?? 0;
     if (totalOwners <= 1 && !input.allowLeavingOwnerless) {
       throw new BadRequestException(

@@ -1,6 +1,11 @@
 import { expect, type Page, test } from "@playwright/test";
 import { ADMIN_STORAGE_STATE, INSTRUCTOR_STORAGE_STATE } from "./support/auth";
-import { ensurePlatformFixtures, PLATFORM_FIXTURES, resetE2eFixture } from "./support/database";
+import {
+  ensurePlatformFixtures,
+  ensureStandalonePasswordUser,
+  PLATFORM_FIXTURES,
+  resetE2eFixture,
+} from "./support/database";
 
 test.describe.configure({ mode: "serial" });
 test.use({ storageState: ADMIN_STORAGE_STATE });
@@ -46,7 +51,9 @@ test("platform admin covers dashboard, provision, admins, users, deletion, and s
   await page.getByRole("button", { name: "Adicionar" }).click();
 
   await page.goto("/platform/academies");
-  await expect(page.getByPlaceholder("Buscar academia por nome, slug ou responsável")).toBeVisible();
+  await expect(
+    page.getByPlaceholder("Buscar academia por nome, slug ou responsável"),
+  ).toBeVisible();
   await page
     .getByPlaceholder("Buscar academia por nome, slug ou responsável")
     .fill(PLATFORM_FIXTURES.academyOwner.academyName);
@@ -150,6 +157,68 @@ test("platform admin covers dashboard, provision, admins, users, deletion, and s
   await expect(page.getByRole("columnheader", { name: "Quando" })).toBeVisible();
 });
 
+test("platform admin removes one academy responsible while preserving another", async ({
+  browser,
+  page,
+}) => {
+  test.setTimeout(90_000);
+  const remainingResponsible = {
+    email: `platform-remaining-${Date.now()}@tatamiq.local`,
+    name: "Platform Remaining Responsible E2E",
+    password: "tatamiq123",
+  };
+  await ensureStandalonePasswordUser(remainingResponsible);
+
+  await page.goto("/platform/academies");
+  await page
+    .getByPlaceholder("Buscar academia por nome ou slug")
+    .fill(PLATFORM_FIXTURES.academyOwner.academyName);
+  const academyRow = page
+    .locator("tbody tr")
+    .filter({ hasText: PLATFORM_FIXTURES.academyOwner.academyName })
+    .first();
+  await academyRow
+    .getByRole("link", { name: new RegExp(`Abrir ${PLATFORM_FIXTURES.academyOwner.academyName}`) })
+    .click();
+
+  await page.getByRole("button", { name: "Adicionar responsável" }).click();
+  await page.getByPlaceholder("E-mail do responsável").fill(remainingResponsible.email);
+  await page.getByPlaceholder("Nome do responsável (opcional)").fill(remainingResponsible.name);
+  await page.getByRole("button", { name: "Adicionar", exact: true }).click();
+  await expect(page.getByText(remainingResponsible.email)).toBeVisible();
+
+  page.once("dialog", (dialog) => dialog.accept());
+  await page
+    .getByText(PLATFORM_FIXTURES.academyOwner.email)
+    .locator("../..")
+    .getByRole("button", { name: "Remover" })
+    .click();
+  await expect(page.getByText(PLATFORM_FIXTURES.academyOwner.email)).toHaveCount(0);
+  await expect(page.getByText(remainingResponsible.email)).toBeVisible();
+  await expect(page.getByText("Alunos ativos")).toBeVisible();
+
+  const remainingContext = await browser.newContext();
+  const remainingPage = await remainingContext.newPage();
+  await signIn(remainingPage, remainingResponsible);
+  const instructorAreaButton = remainingPage.getByRole("button", { name: "Área do instrutor" });
+  if (await instructorAreaButton.isVisible().catch(() => false)) {
+    await instructorAreaButton.click();
+  }
+  await expect(remainingPage.getByRole("heading", { name: "Painel" })).toBeVisible();
+  await remainingContext.close();
+
+  const removedContext = await browser.newContext();
+  const removedPage = await removedContext.newPage();
+  await signIn(removedPage, {
+    email: PLATFORM_FIXTURES.academyOwner.email,
+    password: "tatamiq123",
+  });
+  await expect(
+    removedPage.getByRole("heading", { name: "Como se chama sua academia?" }),
+  ).toBeVisible();
+  await removedContext.close();
+});
+
 test("instructor is redirected away from /platform", async ({ browser }) => {
   const context = await browser.newContext({ storageState: INSTRUCTOR_STORAGE_STATE });
   const instructorPage = await context.newPage();
@@ -160,6 +229,14 @@ test("instructor is redirected away from /platform", async ({ browser }) => {
 
   await context.close();
 });
+
+async function signIn(page: Page, credentials: { email: string; password: string }) {
+  await page.goto("/sign-in");
+  await page.getByLabel("Email").fill(credentials.email);
+  await page.getByLabel("Senha").fill(credentials.password);
+  await page.getByRole("button", { name: "Entrar" }).click();
+  await expect(page).not.toHaveURL(/\/sign-in$/);
+}
 
 async function openPlatformUser(page: Page, email: string) {
   await page.goto("/platform/users");
