@@ -36,6 +36,22 @@ export interface paths {
         patch: operations["AcademyController_update"];
         trace?: never;
     };
+    "/academy/onboarding-checklist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AcademyController_getOnboardingChecklist"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/academy/logo/upload-url": {
         parameters: {
             query?: never;
@@ -62,6 +78,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["AcademyController_confirmLogo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/academy/onboarding-checklist/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AcademyController_dismissOnboardingChecklist"];
         delete?: never;
         options?: never;
         head?: never;
@@ -414,6 +446,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["PreRegistrationController_regenerateLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/students/pre-registration-link/copied": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PreRegistrationController_markLinkCopied"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1856,6 +1904,17 @@ export interface components {
         AcademyConfirmLogoDto: {
             fileKey: string;
             fileKeySignature: string;
+        };
+        AcademyOnboardingChecklistDto: {
+            steps: {
+                turmaCreated: boolean;
+                preRegistrationLinkShared: boolean;
+                firstPreRegistrationApproved: boolean;
+                firstAccessLinkSent: boolean;
+            };
+            pendingPreRegistrationCount: number;
+            firstAccessStudentId: string | null;
+            dismissed: boolean;
         };
         ListMonthlyFeesResponseDto: {
             fees: {
@@ -3319,6 +3378,44 @@ export interface operations {
             };
         };
     };
+    AcademyController_getOnboardingChecklist: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcademyOnboardingChecklistDto"];
+                };
+            };
+        };
+    };
+    AcademyController_dismissOnboardingChecklist: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcademyOnboardingChecklistDto"];
+                };
+            };
+        };
+    };
     MonthlyFeesController_list: {
         parameters: {
             query?: {
@@ -3831,6 +3928,25 @@ export interface operations {
         };
     };
     PreRegistrationController_regenerateLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreRegistrationLinkDto"];
+                };
+            };
+        };
+    };
+    PreRegistrationController_markLinkCopied: {
         parameters: {
             query?: never;
             header?: never;

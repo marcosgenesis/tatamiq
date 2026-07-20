@@ -4,7 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { api } from "../../api";
 import { useAppShell } from "../../components/app-shell";
-import { academyQueryKey } from "../../lib/academy-query-keys";
+import { academyQueryKey, onboardingChecklistQueryKey } from "../../lib/academy-query-keys";
 
 export type DuplicateDecision = "link_to_existing" | "create_new" | "reject_as_duplicate";
 
@@ -76,6 +76,23 @@ export function usePreRegistrationsWorkflow() {
       await queryClient.invalidateQueries({
         queryKey: preRegistrationLinkQueryKey(activeAcademyId),
       });
+      await queryClient.invalidateQueries({
+        queryKey: onboardingChecklistQueryKey(activeAcademyId),
+      });
+    },
+  });
+
+  const markCopiedMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await api.POST("/students/pre-registration-link/copied", {});
+      if (error || !data) throw new Error("Não foi possível registrar a cópia do link.");
+      return data;
+    },
+    onSuccess: async (link) => {
+      writePreRegistrationLinkCache(queryClient, activeAcademyId, link);
+      await queryClient.invalidateQueries({
+        queryKey: onboardingChecklistQueryKey(activeAcademyId),
+      });
     },
   });
 
@@ -90,6 +107,9 @@ export function usePreRegistrationsWorkflow() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: academyQueryKey(activeAcademyId, "students", "pre-registrations"),
+      });
+      await queryClient.invalidateQueries({
+        queryKey: onboardingChecklistQueryKey(activeAcademyId),
       });
       setRejectingId(null);
       setRejectReason("");
@@ -127,6 +147,9 @@ export function usePreRegistrationsWorkflow() {
       await queryClient.invalidateQueries({
         queryKey: academyQueryKey(activeAcademyId, "students", "pre-registrations"),
       });
+      await queryClient.invalidateQueries({
+        queryKey: onboardingChecklistQueryKey(activeAcademyId),
+      });
       setApprovingId(null);
       toast.success("Solicitação aprovada.");
     },
@@ -149,6 +172,9 @@ export function usePreRegistrationsWorkflow() {
     onSuccess: (data) => {
       setApprovalResult(data);
       copyFirstAccessLink(data.firstAccessLink);
+      void queryClient.invalidateQueries({
+        queryKey: onboardingChecklistQueryKey(activeAcademyId),
+      });
     },
     onError: () => {
       toast.error("Falha ao gerar link de primeiro acesso");
@@ -164,6 +190,9 @@ export function usePreRegistrationsWorkflow() {
     },
     onSuccess: () => {
       toast("Email enviado com sucesso");
+      void queryClient.invalidateQueries({
+        queryKey: onboardingChecklistQueryKey(activeAcademyId),
+      });
     },
     onError: () => {
       toast.error("Falha ao enviar email");
@@ -176,6 +205,7 @@ export function usePreRegistrationsWorkflow() {
   function copyLink() {
     if (!link) return;
     navigator.clipboard.writeText(link.url);
+    markCopiedMutation.mutate();
     toast("Link de pré-cadastro copiado", { description: link.url });
   }
 
