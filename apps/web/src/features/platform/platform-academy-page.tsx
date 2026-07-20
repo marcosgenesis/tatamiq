@@ -37,6 +37,11 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
   const [isSupportOpen, setIsSupportOpen] = useState(false);
   const [isAddResponsibleOpen, setIsAddResponsibleOpen] = useState(false);
   const [responsibleForm, setResponsibleForm] = useState({ ownerEmail: "", ownerName: "" });
+  const [lastResponsibleAddition, setLastResponsibleAddition] = useState<{
+    ownerUserId: string;
+    ownerWasCreated: boolean;
+    firstAccessLink: string | null;
+  } | null>(null);
 
   const session = authClient.useSession();
   const sessionUserId = session.data?.user.id;
@@ -54,7 +59,12 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
         ownerEmail: responsibleForm.ownerEmail,
         ...(responsibleForm.ownerName ? { ownerName: responsibleForm.ownerName } : {}),
       }),
-    onSuccess: async () => {
+    onSuccess: async (result) => {
+      setLastResponsibleAddition({
+        ownerUserId: result?.ownerUserId ?? "",
+        ownerWasCreated: result?.ownerWasCreated ?? false,
+        firstAccessLink: result?.firstAccessLink ?? null,
+      });
       setResponsibleForm({ ownerEmail: "", ownerName: "" });
       setIsAddResponsibleOpen(false);
       await queryClient.invalidateQueries({
@@ -146,7 +156,13 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
         <>
           <Dialog open={isAddResponsibleOpen} onOpenChange={setIsAddResponsibleOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" onClick={() => addResponsible.reset()}>
+              <Button
+                size="sm"
+                onClick={() => {
+                  addResponsible.reset();
+                  setLastResponsibleAddition(null);
+                }}
+              >
                 <PlusSignIcon className="size-4" />
                 Adicionar responsável
               </Button>
@@ -181,6 +197,11 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
                     setResponsibleForm((c) => ({ ...c, ownerName: event.target.value }))
                   }
                 />
+                {addResponsible.isError ? (
+                  <p className="text-destructive text-sm">
+                    Não foi possível adicionar o responsável. Verifique o e-mail e tente novamente.
+                  </p>
+                ) : null}
                 <DialogFooter className="pt-2">
                   <Button
                     type="button"
@@ -269,6 +290,36 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
               {!hasResponsibles ? <Badge variant="muted">Sem responsável</Badge> : null}
             </div>
           </div>
+          {lastResponsibleAddition ? (
+            <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm">
+              <p className="font-medium text-foreground">Responsável adicionado à academia.</p>
+              {lastResponsibleAddition.firstAccessLink ? (
+                <div className="mt-2 grid gap-2">
+                  <p className="text-muted-foreground">
+                    Copie o link de primeiro acesso e envie por fora para a pessoa definir a senha.
+                  </p>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <Input readOnly value={lastResponsibleAddition.firstAccessLink} />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() =>
+                        navigator.clipboard?.writeText(
+                          lastResponsibleAddition.firstAccessLink ?? "",
+                        )
+                      }
+                    >
+                      Copiar link
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <p className="mt-1 text-muted-foreground">
+                  A conta já existia; nenhum link de primeiro acesso foi necessário.
+                </p>
+              )}
+            </div>
+          ) : null}
           {responsibles.length > 0 ? (
             <div className="space-y-2">
               {responsibles.map((r) => (

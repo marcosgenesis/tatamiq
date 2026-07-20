@@ -135,13 +135,27 @@ export class AcademyOwnershipService {
         .where(and(eq(member.organizationId, academyId), eq(member.role, "owner")));
     }
 
-    await this.db.insert(member).values({
-      id: crypto.randomUUID(),
-      organizationId: academyId,
-      userId: reserved.user.id,
-      role: "owner",
-      createdAt: now,
-    });
+    const [existingMembership] = await this.db
+      .select({ id: member.id })
+      .from(member)
+      .where(
+        and(
+          eq(member.organizationId, academyId),
+          eq(member.userId, reserved.user.id),
+          eq(member.role, "owner"),
+        ),
+      )
+      .limit(1);
+
+    if (!existingMembership) {
+      await this.db.insert(member).values({
+        id: crypto.randomUUID(),
+        organizationId: academyId,
+        userId: reserved.user.id,
+        role: "owner",
+        createdAt: now,
+      });
+    }
 
     return {
       ownerUserId: reserved.user.id,
