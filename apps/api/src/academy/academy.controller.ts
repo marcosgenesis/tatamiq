@@ -35,16 +35,7 @@ export class AcademyController {
   @Get("onboarding-checklist")
   @ApiOkResponse({ type: AcademyOnboardingChecklistDto })
   onboardingChecklist(@AcademyId() academyId: string): Promise<AcademyOnboardingChecklistDto> {
-    return this.academyService.onboardingChecklist(academyId);
-  }
-
-  @Post("onboarding-checklist/dismiss")
-  @HttpCode(200)
-  @ApiOkResponse({ type: AcademyOnboardingChecklistDto })
-  dismissOnboardingChecklist(
-    @AcademyId() academyId: string,
-  ): Promise<AcademyOnboardingChecklistDto> {
-    return this.academyService.dismissOnboardingChecklist(academyId);
+    return this.academyService.getOnboardingChecklist(academyId);
   }
 
   @Patch()

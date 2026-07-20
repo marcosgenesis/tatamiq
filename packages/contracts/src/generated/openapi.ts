@@ -52,22 +52,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/academy/onboarding-checklist/dismiss": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["AcademyController_dismissOnboardingChecklist"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/academy/logo/upload-url": {
         parameters: {
             query?: never;
@@ -452,22 +436,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/students/pre-registration-link/copy": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["PreRegistrationController_copyLink"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/students/pre-registrations": {
         parameters: {
             query?: never;
@@ -558,6 +526,22 @@ export interface paths {
         get: operations["StudentsController_list"];
         put?: never;
         post: operations["StudentsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/students/{id}/first-access-link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["StudentsController_generateFirstAccessLink"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2171,8 +2155,6 @@ export interface components {
             /** Format: date-time */
             regeneratedAt: string | null;
             /** Format: date-time */
-            copiedAt: string | null;
-            /** Format: date-time */
             updatedAt: string;
         };
         ListPreRegistrationRequestsResponseDto: {
@@ -3357,25 +3339,6 @@ export interface operations {
             };
         };
     };
-    AcademyController_dismissOnboardingChecklist: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AcademyOnboardingChecklistDto"];
-                };
-            };
-        };
-    };
     AcademyController_logoUploadUrl: {
         parameters: {
             query?: never;
@@ -3948,25 +3911,6 @@ export interface operations {
             };
         };
     };
-    PreRegistrationController_copyLink: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PreRegistrationLinkDto"];
-                };
-            };
-        };
-    };
     PreRegistrationController_listRequests: {
         parameters: {
             query?: never;
@@ -4120,6 +4064,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StudentDto"];
+                };
+            };
+        };
+    };
+    StudentsController_generateFirstAccessLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerateFirstAccessLinkResponseDto"];
                 };
             };
         };

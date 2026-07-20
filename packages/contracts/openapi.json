@@ -93,27 +93,6 @@
         ]
       }
     },
-    "/academy/onboarding-checklist/dismiss": {
-      "post": {
-        "operationId": "AcademyController_dismissOnboardingChecklist",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AcademyOnboardingChecklistDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "academy"
-        ]
-      }
-    },
     "/academy/logo/upload-url": {
       "post": {
         "operationId": "AcademyController_logoUploadUrl",
@@ -913,27 +892,6 @@
         ]
       }
     },
-    "/students/pre-registration-link/copy": {
-      "post": {
-        "operationId": "PreRegistrationController_copyLink",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PreRegistrationLinkDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "pre-registration"
-        ]
-      }
-    },
     "/students/pre-registrations": {
       "get": {
         "operationId": "PreRegistrationController_listRequests",
@@ -1157,6 +1115,34 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/StudentDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "students"
+        ]
+      }
+    },
+    "/students/{id}/first-access-link": {
+      "post": {
+        "operationId": "StudentsController_generateFirstAccessLink",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerateFirstAccessLinkResponseDto"
                 }
               }
             }
@@ -5257,12 +5243,6 @@
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
             "nullable": true
           },
-          "copiedAt": {
-            "type": "string",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
-            "nullable": true
-          },
           "updatedAt": {
             "type": "string",
             "format": "date-time",
@@ -5274,7 +5254,6 @@
           "status",
           "url",
           "regeneratedAt",
-          "copiedAt",
           "updatedAt"
         ]
       },

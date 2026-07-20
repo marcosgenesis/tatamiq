@@ -1,3 +1,4 @@
+import { AcademyOnboardingChecklist } from "@/components/academy-onboarding-checklist";
 import { BillingHealth } from "@/components/billing-health";
 import { WeeklyClassesChart } from "@/components/channel-sales-chart";
 import { DashboardActivity } from "@/components/dashboard-activity";
@@ -11,6 +12,7 @@ export function Dashboard() {
     <div className="space-y-6">
       <AcademyOnboardingChecklistWidget />
       <div className="grid grid-cols-1 gap-px bg-border md:grid-cols-2 lg:grid-cols-4">
+        <AcademyOnboardingChecklist />
         <DashboardStats />
         <WeeklyAttendanceChart />
         <WeeklyClassesChart />

@@ -1,6 +1,6 @@
 import { BadRequestException } from "@nestjs/common";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { AcademyService } from "./academy.service";
+import { AcademyService, buildAcademyOnboardingChecklist } from "./academy.service";
 
 const academyRow = {
   id: "org-1",
@@ -13,7 +13,6 @@ const academyRow = {
   pixKeyType: null,
   pixKey: null,
   pixCopyPaste: null,
-  onboardingChecklistDismissedAt: null,
 };
 
 function createDbMock() {
@@ -36,74 +35,34 @@ function createDbMock() {
   };
 }
 
-function createChecklistDbMock(results: unknown[][]) {
-  let selectIndex = 0;
-  const updates: unknown[] = [];
-  const nextResult = () => Promise.resolve(results[selectIndex++] ?? []);
-  return {
-    updates,
-    db: {
-      select: vi.fn(() => ({
-        from: vi.fn(() => ({
-          where: vi.fn(() => {
-            const promise = nextResult() as Promise<unknown[]> & {
-              limit: ReturnType<typeof vi.fn>;
-            };
-            promise.limit = vi.fn(() => promise);
-            return promise;
-          }),
-        })),
-      })),
-      update: vi.fn(() => ({
-        set: vi.fn((value: unknown) => {
-          updates.push(value);
-          return { where: vi.fn().mockResolvedValue(undefined) };
-        }),
-      })),
-    },
-  };
-}
-
-describe("AcademyService onboarding checklist", () => {
-  it("reports preRegistrationLinkShared when copiedAt exists", async () => {
-    const mock = createChecklistDbMock([
-      [academyRow],
-      [{ total: 1 }],
-      [{ total: 1 }],
-      [{ total: 0 }],
-      [{ total: 0 }],
-      [{ total: 0 }],
-      [],
-    ]);
-    const service = new AcademyService(mock.db as never, {} as never);
-
-    await expect(service.onboardingChecklist("org-1")).resolves.toMatchObject({
-      steps: {
-        turmaCreated: true,
-        preRegistrationLinkShared: true,
-        firstPreRegistrationApproved: false,
-        firstAccessLinkSent: false,
-      },
-      dismissed: false,
+describe("buildAcademyOnboardingChecklist", () => {
+  it("marks first access link as sent when any pre-registration has a token hash", () => {
+    expect(
+      buildAcademyOnboardingChecklist({
+        classGroupCount: 1,
+        sharedLinkCount: 1,
+        approvedPreRegistrationCount: 1,
+        firstAccessLinkSentCount: 1,
+        pendingPreRegistrationCount: 0,
+        firstAccessStudentId: "student-1",
+      }),
+    ).toMatchObject({
+      steps: { firstAccessLinkSent: true, firstPreRegistrationApproved: true },
+      firstAccessStudentId: "student-1",
     });
   });
 
-  it("dismisses the checklist for the academy", async () => {
-    const mock = createChecklistDbMock([
-      [{ ...academyRow, onboardingChecklistDismissedAt: new Date("2026-01-01") }],
-      [{ total: 0 }],
-      [{ total: 0 }],
-      [{ total: 0 }],
-      [{ total: 0 }],
-      [{ total: 0 }],
-      [],
-    ]);
-    const service = new AcademyService(mock.db as never, {} as never);
-
-    await expect(service.dismissOnboardingChecklist("org-1")).resolves.toMatchObject({
-      dismissed: true,
-    });
-    expect(mock.updates[0]).toMatchObject({ onboardingChecklistDismissedAt: expect.any(Date) });
+  it("keeps first access link unsent without a token hash", () => {
+    expect(
+      buildAcademyOnboardingChecklist({
+        classGroupCount: 1,
+        sharedLinkCount: 1,
+        approvedPreRegistrationCount: 1,
+        firstAccessLinkSentCount: 0,
+        pendingPreRegistrationCount: 0,
+        firstAccessStudentId: "student-1",
+      }).steps.firstAccessLinkSent,
+    ).toBe(false);
   });
 });
 

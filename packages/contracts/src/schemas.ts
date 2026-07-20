@@ -25,20 +25,6 @@ export const birthDateSchema = z
     "A data de nascimento não pode estar no futuro.",
   );
 
-/**
- * Generic ISO `YYYY-MM-DD` calendar date: must be a real date and not in the
- * future. Use for enrollment/promotion dates so an impossible string like
- * `2020-13-45` is rejected with a 400 instead of reaching the DB as a 500.
- */
-export const calendarDateSchema = z
-  .string()
-  .regex(ISO_DATE_PATTERN, "Data inválida.")
-  .refine(isRealCalendarDate, "Data inválida.")
-  .refine(
-    (value) => value <= new Date().toISOString().slice(0, 10),
-    "A data não pode estar no futuro.",
-  );
-
 export const healthResponseSchema = z.object({
   status: z.literal("ok"),
   timestamp: z.string().datetime(),
@@ -146,7 +132,7 @@ export const guardianInputSchema = z
 export const createStudentSchema = z.object({
   name: z.string().trim().min(2).max(120),
   birthDate: birthDateSchema,
-  enrollmentDate: calendarDateSchema,
+  enrollmentDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   phone: z.string().trim().optional().or(z.literal("")),
   email: z.string().trim().email().optional().or(z.literal("")),
   monthlyAmountInCents: z
@@ -319,7 +305,6 @@ export const preRegistrationLinkSchema = z.object({
   status: preRegistrationLinkStatusSchema,
   url: z.string().url(),
   regeneratedAt: z.string().datetime().nullable(),
-  copiedAt: z.string().datetime().nullable(),
   updatedAt: z.string().datetime(),
 });
 
@@ -360,7 +345,7 @@ export const firstAccessPreviewSchema = z.object({
 });
 
 export const completeFirstAccessSchema = z.object({
-  password: z.string().min(8).max(128).optional(),
+  password: z.string().min(8).optional(),
   termsAccepted: z.literal(true),
   termsVersion: z.literal("student-access-v1"),
 });
@@ -788,12 +773,12 @@ export const studentNoteSchema = z.object({
 });
 
 export const createStudentNoteSchema = z.object({
-  content: z.string().trim().min(1).max(2000),
+  content: z.string().trim().min(1),
   isVisible: z.boolean().optional().default(true),
 });
 
 export const updateStudentNoteSchema = z.object({
-  content: z.string().trim().min(1).max(2000).optional(),
+  content: z.string().trim().min(1).optional(),
   isVisible: z.boolean().optional(),
 });
 
@@ -843,15 +828,13 @@ export const academyConfirmLogoSchema = z.object({
   fileKeySignature: z.string().min(1),
 });
 
-export const academyOnboardingChecklistStepsSchema = z.object({
-  turmaCreated: z.boolean(),
-  preRegistrationLinkShared: z.boolean(),
-  firstPreRegistrationApproved: z.boolean(),
-  firstAccessLinkSent: z.boolean(),
-});
-
 export const academyOnboardingChecklistSchema = z.object({
-  steps: academyOnboardingChecklistStepsSchema,
+  steps: z.object({
+    turmaCreated: z.boolean(),
+    preRegistrationLinkShared: z.boolean(),
+    firstPreRegistrationApproved: z.boolean(),
+    firstAccessLinkSent: z.boolean(),
+  }),
   pendingPreRegistrationCount: z.number().int().nonnegative(),
   firstAccessStudentId: z.string().nullable(),
   dismissed: z.boolean(),
@@ -861,7 +844,6 @@ export type AcademyProfile = z.infer<typeof academyProfileSchema>;
 export type UpdateAcademyInput = z.infer<typeof updateAcademySchema>;
 export type AcademyLogoUploadResponse = z.infer<typeof academyLogoUploadResponseSchema>;
 export type AcademyConfirmLogoInput = z.infer<typeof academyConfirmLogoSchema>;
-export type AcademyOnboardingChecklistSteps = z.infer<typeof academyOnboardingChecklistStepsSchema>;
 export type AcademyOnboardingChecklist = z.infer<typeof academyOnboardingChecklistSchema>;
 
 // --- Belt Editing ---
@@ -896,8 +878,8 @@ export const promotionSchema = z.object({
 export const createPromotionSchema = z.object({
   newBeltId: z.string().min(1),
   newDegree: z.number().int().min(0).max(9),
-  promotedAt: calendarDateSchema,
-  note: z.string().trim().max(1000).optional().or(z.literal("")),
+  promotedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  note: z.string().trim().optional().or(z.literal("")),
 });
 
 export const listPromotionsResponseSchema = z.object({
