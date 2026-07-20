@@ -36,6 +36,38 @@ export interface paths {
         patch: operations["AcademyController_update"];
         trace?: never;
     };
+    "/academy/onboarding-checklist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AcademyController_onboardingChecklist"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/academy/onboarding-checklist/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AcademyController_dismissOnboardingChecklist"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/academy/logo/upload-url": {
         parameters: {
             query?: never;
@@ -414,6 +446,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["PreRegistrationController_regenerateLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/students/pre-registration-link/copy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PreRegistrationController_copyLink"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1835,6 +1883,17 @@ export interface components {
             pixKey: string | null;
             pixCopyPaste: string | null;
         };
+        AcademyOnboardingChecklistDto: {
+            steps: {
+                turmaCreated: boolean;
+                preRegistrationLinkShared: boolean;
+                firstPreRegistrationApproved: boolean;
+                firstAccessLinkSent: boolean;
+            };
+            pendingPreRegistrationCount: number;
+            firstAccessStudentId: string | null;
+            dismissed: boolean;
+        };
         UpdateAcademyDto: {
             name?: string;
             address?: string | "";
@@ -2111,6 +2170,8 @@ export interface components {
             url: string;
             /** Format: date-time */
             regeneratedAt: string | null;
+            /** Format: date-time */
+            copiedAt: string | null;
             /** Format: date-time */
             updatedAt: string;
         };
@@ -3277,6 +3338,44 @@ export interface operations {
             };
         };
     };
+    AcademyController_onboardingChecklist: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcademyOnboardingChecklistDto"];
+                };
+            };
+        };
+    };
+    AcademyController_dismissOnboardingChecklist: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcademyOnboardingChecklistDto"];
+                };
+            };
+        };
+    };
     AcademyController_logoUploadUrl: {
         parameters: {
             query?: never;
@@ -3831,6 +3930,25 @@ export interface operations {
         };
     };
     PreRegistrationController_regenerateLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreRegistrationLinkDto"];
+                };
+            };
+        };
+    };
+    PreRegistrationController_copyLink: {
         parameters: {
             query?: never;
             header?: never;

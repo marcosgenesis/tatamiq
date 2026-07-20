@@ -98,6 +98,11 @@ export class PreRegistrationService {
     return this.fetchLinkDto(organizationId);
   }
 
+  async copyLink(organizationId: string): Promise<PreRegistrationLink> {
+    await this.linkLifecycle.markCopied(organizationId);
+    return this.fetchLinkDto(organizationId);
+  }
+
   // --- Public form (link resolution delegated to lifecycle) ---
 
   async publicProfile(token: string): Promise<PreRegistrationPublicProfile> {
@@ -752,6 +757,7 @@ export class PreRegistrationService {
       status: parseLinkStatus(row.status),
       url: `${webAppUrl()}/pre-register/${row.token}`,
       regeneratedAt: row.regeneratedAt?.toISOString() ?? null,
+      copiedAt: row.copiedAt?.toISOString() ?? null,
       updatedAt: row.updatedAt.toISOString(),
     };
   }

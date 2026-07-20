@@ -111,6 +111,14 @@ export class PreRegistrationController {
     return this.preRegistrationService.regenerateLink(academyId);
   }
 
+  @Post("students/pre-registration-link/copy")
+  @OrgRoles(["owner"])
+  @HttpCode(200)
+  @ApiOkResponse({ type: PreRegistrationLinkDto })
+  copyLink(@AcademyId() academyId: string): Promise<PreRegistrationLinkDto> {
+    return this.preRegistrationService.copyLink(academyId);
+  }
+
   // --- Instructor: request queue ---
 
   @Get("students/pre-registrations")
