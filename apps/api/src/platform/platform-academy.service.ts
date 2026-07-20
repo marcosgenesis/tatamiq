@@ -148,11 +148,16 @@ export class PlatformAcademyService {
     const page = Math.max(0, options.page ?? 0);
     const pageSize = Math.min(50, Math.max(1, options.pageSize ?? 10));
     const query = options.query?.trim();
+    const matchingResponsibleOrganizationIds = query
+      ? await this.findMatchingResponsibleOrganizationIds(query)
+      : [];
     const where = query
       ? or(
           ilike(organization.name, `%${query}%`),
           ilike(organization.slug, `%${query}%`),
-          ilike(user.email, `%${query}%`),
+          ...(matchingResponsibleOrganizationIds.length > 0
+            ? [inArray(organization.id, matchingResponsibleOrganizationIds)]
+            : []),
         )
       : undefined;
 
@@ -481,6 +486,21 @@ export class PlatformAcademyService {
       map.set(row.organizationId, list);
     }
     return map;
+  }
+
+  private async findMatchingResponsibleOrganizationIds(query: string): Promise<string[]> {
+    const rows = await this.db
+      .selectDistinct({ organizationId: member.organizationId })
+      .from(member)
+      .innerJoin(user, eq(user.id, member.userId))
+      .where(
+        and(
+          eq(member.role, "owner"),
+          or(ilike(user.name, `%${query}%`), ilike(user.email, `%${query}%`)),
+        ),
+      );
+
+    return rows.map((row) => row.organizationId);
   }
 
   private countPromotions(organizationId: string) {

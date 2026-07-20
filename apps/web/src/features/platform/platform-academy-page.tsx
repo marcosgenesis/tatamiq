@@ -262,10 +262,15 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
                 <span>Cliente desde {formatDate(data.createdAt)}</span>
               </div>
             </div>
-            {!hasResponsibles ? <Badge variant="muted">Sem responsável</Badge> : null}
+          </div>
+          <div className="mt-4 space-y-2">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-sm font-semibold text-foreground">Responsáveis da Academia</h2>
+              {!hasResponsibles ? <Badge variant="muted">Sem responsável</Badge> : null}
+            </div>
           </div>
           {responsibles.length > 0 ? (
-            <div className="mt-4 space-y-2">
+            <div className="space-y-2">
               {responsibles.map((r) => (
                 <div
                   key={r.id}

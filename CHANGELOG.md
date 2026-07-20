@@ -1,3 +1,24 @@
+## [0.4.1](https://github.com/marcosgenesis/tatamiq/compare/v0.4.0...v0.4.1) (2026-07-03)
+
+
+### Bug Fixes
+
+* **pre-registration:** harden public form against malformed and cross-tenant input ([0d91919](https://github.com/marcosgenesis/tatamiq/commit/0d91919f4ac92ddb8325a10be41c75e3ac39e13d))
+* **pre-registration:** validate declared degree and future birthdate on the student form ([e1a81a4](https://github.com/marcosgenesis/tatamiq/commit/e1a81a4739530caa96de4be0ba65b3a92073b051))
+
+# [0.4.0](https://github.com/marcosgenesis/tatamiq/compare/v0.3.0...v0.4.0) (2026-07-02)
+
+
+### Bug Fixes
+
+* responsibles ([a136895](https://github.com/marcosgenesis/tatamiq/commit/a1368955bb2eaed8e93d8bbf6c087877711b49be))
+
+
+### Features
+
+* **auth:** validate and normalize user, academy and profile names ([5059f65](https://github.com/marcosgenesis/tatamiq/commit/5059f654a7d9f429d8a2f7da1a3d55b29cb7a66c))
+* **platform:** support multiple academy responsibles ([f00783f](https://github.com/marcosgenesis/tatamiq/commit/f00783f7559658c176afa76445c83359c719a4e8))
+
 # [0.3.0](https://github.com/marcosgenesis/tatamiq/compare/v0.2.1...v0.3.0) (2026-06-19)
 
 
