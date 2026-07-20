@@ -828,10 +828,23 @@ export const academyConfirmLogoSchema = z.object({
   fileKeySignature: z.string().min(1),
 });
 
+export const academyOnboardingChecklistSchema = z.object({
+  steps: z.object({
+    turmaCreated: z.boolean(),
+    preRegistrationLinkShared: z.boolean(),
+    firstPreRegistrationApproved: z.boolean(),
+    firstAccessLinkSent: z.boolean(),
+  }),
+  pendingPreRegistrationCount: z.number().int().nonnegative(),
+  firstAccessStudentId: z.string().nullable(),
+  dismissed: z.boolean(),
+});
+
 export type AcademyProfile = z.infer<typeof academyProfileSchema>;
 export type UpdateAcademyInput = z.infer<typeof updateAcademySchema>;
 export type AcademyLogoUploadResponse = z.infer<typeof academyLogoUploadResponseSchema>;
 export type AcademyConfirmLogoInput = z.infer<typeof academyConfirmLogoSchema>;
+export type AcademyOnboardingChecklist = z.infer<typeof academyOnboardingChecklistSchema>;
 
 // --- Belt Editing ---
 

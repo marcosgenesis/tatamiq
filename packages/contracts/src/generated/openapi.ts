@@ -36,6 +36,22 @@ export interface paths {
         patch: operations["AcademyController_update"];
         trace?: never;
     };
+    "/academy/onboarding-checklist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AcademyController_onboardingChecklist"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/academy/logo/upload-url": {
         parameters: {
             query?: never;
@@ -510,6 +526,22 @@ export interface paths {
         get: operations["StudentsController_list"];
         put?: never;
         post: operations["StudentsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/students/{id}/first-access-link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["StudentsController_generateFirstAccessLink"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1834,6 +1866,17 @@ export interface components {
             pixKeyType: "cpf" | "email" | "phone" | "random" | null;
             pixKey: string | null;
             pixCopyPaste: string | null;
+        };
+        AcademyOnboardingChecklistDto: {
+            steps: {
+                turmaCreated: boolean;
+                preRegistrationLinkShared: boolean;
+                firstPreRegistrationApproved: boolean;
+                firstAccessLinkSent: boolean;
+            };
+            pendingPreRegistrationCount: number;
+            firstAccessStudentId: string | null;
+            dismissed: boolean;
         };
         UpdateAcademyDto: {
             name?: string;
@@ -3277,6 +3320,25 @@ export interface operations {
             };
         };
     };
+    AcademyController_onboardingChecklist: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcademyOnboardingChecklistDto"];
+                };
+            };
+        };
+    };
     AcademyController_logoUploadUrl: {
         parameters: {
             query?: never;
@@ -4002,6 +4064,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StudentDto"];
+                };
+            };
+        };
+    };
+    StudentsController_generateFirstAccessLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerateFirstAccessLinkResponseDto"];
                 };
             };
         };

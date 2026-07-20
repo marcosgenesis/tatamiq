@@ -1,11 +1,18 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type {
   AcademyLogoUploadResponse,
+  AcademyOnboardingChecklist,
   AcademyProfile,
   UpdateAcademyInput,
 } from "@tatamiq/contracts";
-import { type Database, organization } from "@tatamiq/database";
-import { eq } from "drizzle-orm";
+import {
+  academyPreRegistrationLinks,
+  classGroups,
+  type Database,
+  organization,
+  preRegistrationRequests,
+} from "@tatamiq/database";
+import { and, count, desc, eq, isNotNull } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
 import { R2StorageService } from "../monthly-fees/r2-storage.service";
 import {
@@ -55,6 +62,67 @@ export class AcademyService {
     }
 
     return this.get(organizationId);
+  }
+
+  async getOnboardingChecklist(organizationId: string): Promise<AcademyOnboardingChecklist> {
+    await this.get(organizationId);
+
+    const [classGroupCount] = await this.db
+      .select({ total: count() })
+      .from(classGroups)
+      .where(eq(classGroups.organizationId, organizationId));
+    const [pendingPreRegistrationCount] = await this.db
+      .select({ total: count() })
+      .from(preRegistrationRequests)
+      .where(
+        and(
+          eq(preRegistrationRequests.organizationId, organizationId),
+          eq(preRegistrationRequests.status, "pending_review"),
+        ),
+      );
+    const [approvedPreRegistrationCount] = await this.db
+      .select({ total: count() })
+      .from(preRegistrationRequests)
+      .where(
+        and(
+          eq(preRegistrationRequests.organizationId, organizationId),
+          eq(preRegistrationRequests.status, "approved"),
+        ),
+      );
+    const [firstAccessLinkSentCount] = await this.db
+      .select({ total: count() })
+      .from(preRegistrationRequests)
+      .where(
+        and(
+          eq(preRegistrationRequests.organizationId, organizationId),
+          isNotNull(preRegistrationRequests.firstAccessTokenHash),
+        ),
+      );
+    const [firstAccessStudent] = await this.db
+      .select({ studentId: preRegistrationRequests.approvedStudentId })
+      .from(preRegistrationRequests)
+      .where(
+        and(
+          eq(preRegistrationRequests.organizationId, organizationId),
+          eq(preRegistrationRequests.status, "approved"),
+          isNotNull(preRegistrationRequests.approvedStudentId),
+        ),
+      )
+      .orderBy(desc(preRegistrationRequests.reviewedAt), desc(preRegistrationRequests.createdAt))
+      .limit(1);
+    const [sharedLinkCount] = await this.db
+      .select({ total: count() })
+      .from(academyPreRegistrationLinks)
+      .where(eq(academyPreRegistrationLinks.organizationId, organizationId));
+
+    return buildAcademyOnboardingChecklist({
+      classGroupCount: Number(classGroupCount?.total ?? 0),
+      sharedLinkCount: Number(sharedLinkCount?.total ?? 0),
+      approvedPreRegistrationCount: Number(approvedPreRegistrationCount?.total ?? 0),
+      firstAccessLinkSentCount: Number(firstAccessLinkSentCount?.total ?? 0),
+      pendingPreRegistrationCount: Number(pendingPreRegistrationCount?.total ?? 0),
+      firstAccessStudentId: firstAccessStudent?.studentId ?? null,
+    });
   }
 
   async generateLogoUploadUrl(organizationId: string): Promise<AcademyLogoUploadResponse> {
@@ -116,6 +184,27 @@ function toProfile(row: OrganizationRow): AcademyProfile {
     pixKeyType: parsePixKeyType(row.pixKeyType),
     pixKey: row.pixKey,
     pixCopyPaste: row.pixCopyPaste,
+  };
+}
+
+export function buildAcademyOnboardingChecklist(input: {
+  classGroupCount: number;
+  sharedLinkCount: number;
+  approvedPreRegistrationCount: number;
+  firstAccessLinkSentCount: number;
+  pendingPreRegistrationCount: number;
+  firstAccessStudentId: string | null;
+}): AcademyOnboardingChecklist {
+  return {
+    steps: {
+      turmaCreated: input.classGroupCount > 0,
+      preRegistrationLinkShared: input.sharedLinkCount > 0,
+      firstPreRegistrationApproved: input.approvedPreRegistrationCount > 0,
+      firstAccessLinkSent: input.firstAccessLinkSentCount > 0,
+    },
+    pendingPreRegistrationCount: input.pendingPreRegistrationCount,
+    firstAccessStudentId: input.firstAccessStudentId,
+    dismissed: false,
   };
 }
 

@@ -72,6 +72,27 @@
         ]
       }
     },
+    "/academy/onboarding-checklist": {
+      "get": {
+        "operationId": "AcademyController_onboardingChecklist",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcademyOnboardingChecklistDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "academy"
+        ]
+      }
+    },
     "/academy/logo/upload-url": {
       "post": {
         "operationId": "AcademyController_logoUploadUrl",
@@ -1094,6 +1115,34 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/StudentDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "students"
+        ]
+      }
+    },
+    "/students/{id}/first-access-link": {
+      "post": {
+        "operationId": "StudentsController_generateFirstAccessLink",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerateFirstAccessLinkResponseDto"
                 }
               }
             }
@@ -3844,17 +3893,65 @@
           "pixCopyPaste"
         ]
       },
+      "AcademyOnboardingChecklistDto": {
+        "type": "object",
+        "properties": {
+          "steps": {
+            "type": "object",
+            "properties": {
+              "turmaCreated": {
+                "type": "boolean"
+              },
+              "preRegistrationLinkShared": {
+                "type": "boolean"
+              },
+              "firstPreRegistrationApproved": {
+                "type": "boolean"
+              },
+              "firstAccessLinkSent": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "turmaCreated",
+              "preRegistrationLinkShared",
+              "firstPreRegistrationApproved",
+              "firstAccessLinkSent"
+            ]
+          },
+          "pendingPreRegistrationCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "firstAccessStudentId": {
+            "type": "string",
+            "nullable": true
+          },
+          "dismissed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "steps",
+          "pendingPreRegistrationCount",
+          "firstAccessStudentId",
+          "dismissed"
+        ]
+      },
       "UpdateAcademyDto": {
         "type": "object",
         "properties": {
           "name": {
             "type": "string",
-            "minLength": 1
+            "minLength": 2,
+            "maxLength": 120
           },
           "address": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 200
               },
               {
                 "type": "string",
@@ -3867,7 +3964,8 @@
           "phone": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 30
               },
               {
                 "type": "string",
@@ -3880,7 +3978,8 @@
           "instagram": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 60
               },
               {
                 "type": "string",
@@ -3904,7 +4003,8 @@
           "pixKey": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 140
               },
               {
                 "type": "string",
@@ -3917,7 +4017,8 @@
           "pixCopyPaste": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 1000
               },
               {
                 "type": "string",
@@ -4824,7 +4925,8 @@
         "properties": {
           "name": {
             "type": "string",
-            "minLength": 1
+            "minLength": 2,
+            "maxLength": 120
           },
           "birthDate": {
             "type": "string",
@@ -4832,17 +4934,20 @@
           },
           "phone": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "maxLength": 30
           },
           "email": {
             "type": "string",
+            "maxLength": 254,
             "format": "email",
             "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
           },
           "cpf": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 14
               },
               {
                 "type": "string",
@@ -4855,7 +4960,8 @@
           "guardianName": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 120
               },
               {
                 "type": "string",
@@ -4868,7 +4974,8 @@
           "guardianPhone": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 30
               },
               {
                 "type": "string",
@@ -4881,7 +4988,8 @@
           "note": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 1000
               },
               {
                 "type": "string",
@@ -4900,7 +5008,8 @@
           "declaredBeltId": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 64
               },
               {
                 "type": "string",
@@ -5777,7 +5886,8 @@
         "properties": {
           "name": {
             "type": "string",
-            "minLength": 1
+            "minLength": 2,
+            "maxLength": 120
           },
           "birthDate": {
             "type": "string",
@@ -6111,7 +6221,8 @@
         "properties": {
           "name": {
             "type": "string",
-            "minLength": 1
+            "minLength": 2,
+            "maxLength": 120
           },
           "birthDate": {
             "type": "string",

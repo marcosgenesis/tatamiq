@@ -36,7 +36,7 @@ import {
   students,
   user,
 } from "@tatamiq/database";
-import { and, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
 import { StudentAccessActivationService } from "../student-access/student-access-activation.service";
 import { hashToken, STUDENT_ACCESS_TERMS_VERSION } from "../student-access/student-access-rules";
@@ -460,6 +460,30 @@ export class PreRegistrationService {
       "Link de primeiro acesso só pode ser gerado para solicitações aprovadas.",
     );
     return { firstAccessLink };
+  }
+
+  async generateFirstAccessLinkForStudent(
+    organizationId: string,
+    studentId: string,
+  ): Promise<GenerateFirstAccessLinkResponse> {
+    const [request] = await this.db
+      .select()
+      .from(preRegistrationRequests)
+      .where(
+        and(
+          eq(preRegistrationRequests.organizationId, organizationId),
+          eq(preRegistrationRequests.approvedStudentId, studentId),
+          eq(preRegistrationRequests.status, "approved"),
+        ),
+      )
+      .orderBy(desc(preRegistrationRequests.reviewedAt), desc(preRegistrationRequests.createdAt))
+      .limit(1);
+
+    if (!request) {
+      throw new NotFoundException("Solicitação aprovada do aluno não encontrada.");
+    }
+
+    return this.generateFirstAccessLink(organizationId, request.id);
   }
 
   async sendFirstAccessEmail(

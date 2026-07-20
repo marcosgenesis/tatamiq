@@ -3,8 +3,10 @@ import { ApiBody, ApiOkResponse, ApiParam, ApiQuery, ApiTags } from "@nestjs/swa
 import { OrgRoles } from "@thallesp/nestjs-better-auth";
 import { AcademyId } from "../academy-request";
 import { ZodBody } from "../zod-body.decorator";
+import { PreRegistrationService } from "./pre-registration.service";
 import {
   CreateStudentDto,
+  GenerateFirstAccessLinkResponseDto,
   ListStudentsResponseDto,
   StudentDto,
   UpdateStudentDto,
@@ -15,7 +17,10 @@ import { StudentsService } from "./students.service";
 @OrgRoles(["owner"])
 @Controller("students")
 export class StudentsController {
-  constructor(@Inject(StudentsService) private readonly studentsService: StudentsService) {}
+  constructor(
+    @Inject(StudentsService) private readonly studentsService: StudentsService,
+    @Inject(PreRegistrationService) private readonly preRegistrationService: PreRegistrationService,
+  ) {}
 
   @Get()
   @ApiQuery({ name: "status", required: false, enum: ["active", "inactive", "all"] })
@@ -44,6 +49,17 @@ export class StudentsController {
     @ZodBody(CreateStudentDto) body: CreateStudentDto,
   ): Promise<StudentDto> {
     return this.studentsService.create(academyId, body);
+  }
+
+  @Post(":id/first-access-link")
+  @HttpCode(200)
+  @ApiParam({ name: "id" })
+  @ApiOkResponse({ type: GenerateFirstAccessLinkResponseDto })
+  generateFirstAccessLink(
+    @AcademyId() academyId: string,
+    @Param("id") id: string,
+  ): Promise<GenerateFirstAccessLinkResponseDto> {
+    return this.preRegistrationService.generateFirstAccessLinkForStudent(academyId, id);
   }
 
   @Get(":id")
