@@ -1,17 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import type { AcademyOnboardingChecklist } from "@tatamiq/contracts";
-import { Check, X } from "lucide-react";
+import { Check, Clock3, LockKeyhole, UsersRound, X } from "lucide-react";
 import { api } from "@/api";
 import { useAppShell } from "@/components/app-shell";
 import { DashboardCard } from "@/components/dashboard-card";
-import { OnboardingChecklistAction } from "@/components/onboarding-checklist-actions";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { onboardingChecklistQueryKey } from "@/lib/academy-query-keys";
+import { cn } from "@/lib/utils";
 
 type ChecklistStepKey = keyof AcademyOnboardingChecklist["steps"];
 type DerivedStepState = "completed" | "active" | "awaiting" | "blocked";
-
-type ChecklistStepActionKey = "turmaCreated";
 
 const checklistStepOrder: ChecklistStepKey[] = [
   "turmaCreated",
@@ -46,17 +46,6 @@ const stateCopy: Record<DerivedStepState, string> = {
   blocked: "Bloqueado",
 };
 
-const checklistStepActions: Partial<Record<ChecklistStepKey, ChecklistStepActionKey>> = {
-  turmaCreated: "turmaCreated",
-};
-
-const stepIndicatorClass: Record<DerivedStepState, string> = {
-  completed: "bg-emerald-500 text-white",
-  active: "bg-primary text-primary-foreground",
-  awaiting: "bg-amber-500/15 text-amber-700",
-  blocked: "bg-muted text-muted-foreground",
-};
-
 export function deriveOnboardingChecklistStepState(
   checklist: AcademyOnboardingChecklist,
   step: ChecklistStepKey,
@@ -70,9 +59,8 @@ export function deriveOnboardingChecklistStepState(
   }
 
   if (step === "firstPreRegistrationApproved") {
-    if (!checklist.steps.preRegistrationLinkShared) return "blocked";
-    if (checklist.pendingPreRegistrationCount > 0) return "awaiting";
-    return "active";
+    if (!checklist.steps.turmaCreated) return "blocked";
+    return "awaiting";
   }
 
   if (!checklist.steps.firstPreRegistrationApproved) return "blocked";
@@ -91,6 +79,7 @@ export function shouldHideOnboardingChecklist(checklist: AcademyOnboardingCheckl
 
 export function OnboardingChecklistWidget() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { activeAcademy } = useAppShell();
   const activeAcademyId = activeAcademy.id;
 
@@ -166,27 +155,38 @@ export function OnboardingChecklistWidget() {
         {checklistStepOrder.map((step, index) => {
           const copy = checklistStepCopy[step];
           const state = deriveOnboardingChecklistStepState(checklist, step);
-          const action = checklistStepActions[step];
+          const isPreRegistrationApprovalStep = step === "firstPreRegistrationApproved";
+          const hasPendingPreRegistrations = checklist.pendingPreRegistrationCount > 0;
 
           return (
             <div
               key={step}
-              className={`rounded-2xl border border-border/70 bg-muted/30 px-4 py-4 transition-opacity ${
-                state === "blocked" ? "opacity-55" : "opacity-100"
-              }`}
+              className={cn(
+                "rounded-2xl border border-border/70 bg-muted/30 px-4 py-4 transition-opacity",
+                state === "blocked" && "opacity-55",
+              )}
               data-step-state={state}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
                   <div
-                    className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${stepIndicatorClass[state]}`}
-                    role="img"
-                    aria-label={
-                      state === "completed" ? `Passo ${index + 1} concluído` : `Passo ${index + 1}`
-                    }
+                    className={cn(
+                      "mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
+                      state === "completed"
+                        ? "bg-green-500/15 text-green-700 dark:text-green-400"
+                        : state === "active"
+                          ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                          : state === "awaiting"
+                            ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                            : "bg-muted text-muted-foreground",
+                    )}
                   >
                     {state === "completed" ? (
                       <Check className="size-4" aria-hidden="true" />
+                    ) : state === "awaiting" && isPreRegistrationApprovalStep ? (
+                      <Clock3 className="size-4" aria-hidden="true" />
+                    ) : state === "blocked" ? (
+                      <LockKeyhole className="size-3.5" aria-hidden="true" />
                     ) : (
                       index + 1
                     )}
@@ -194,15 +194,43 @@ export function OnboardingChecklistWidget() {
                   <div className="space-y-1">
                     <p className="font-medium text-foreground">{copy.title}</p>
                     <p className="text-sm leading-6 text-muted-foreground">{copy.description}</p>
+                    {isPreRegistrationApprovalStep && state === "awaiting" ? (
+                      <div className="flex flex-wrap items-center gap-2 pt-2">
+                        {hasPendingPreRegistrations ? (
+                          <>
+                            <Badge variant="warning" className="gap-1.5">
+                              <UsersRound className="size-3.5" aria-hidden="true" />
+                              {checklist.pendingPreRegistrationCount} em análise
+                            </Badge>
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() =>
+                                void navigate({
+                                  to: "/students",
+                                  search: { tab: "pre-registrations" },
+                                })
+                              }
+                            >
+                              Revisar solicitações
+                            </Button>
+                          </>
+                        ) : (
+                          <Badge variant="warning" className="gap-1.5">
+                            <Clock3 className="size-3.5" aria-hidden="true" />
+                            Aguardando solicitação
+                          </Badge>
+                        )}
+                      </div>
+                    ) : null}
                   </div>
                 </div>
-                <span className="rounded-full border border-border bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground">
-                  {stateCopy[state]}
-                </span>
+                {!isPreRegistrationApprovalStep || state !== "awaiting" ? (
+                  <span className="rounded-full border border-border bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                    {stateCopy[state]}
+                  </span>
+                ) : null}
               </div>
-              {action ? (
-                <OnboardingChecklistAction step={action} isActive={state === "active"} />
-              ) : null}
             </div>
           );
         })}

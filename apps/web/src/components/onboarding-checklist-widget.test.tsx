@@ -51,24 +51,19 @@ function buildChecklist(
   };
 }
 
-function createTestQueryClient() {
-  return new QueryClient({
+function renderWidget() {
+  const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
       mutations: { retry: false },
     },
   });
-}
 
-function renderWidget() {
-  const queryClient = createTestQueryClient();
-  const result = render(
+  return render(
     <QueryClientProvider client={queryClient}>
       <OnboardingChecklistWidget />
     </QueryClientProvider>,
   );
-
-  return { ...result, queryClient };
 }
 
 describe("onboarding checklist helpers", () => {
@@ -89,7 +84,7 @@ describe("onboarding checklist helpers", () => {
     const awaitingChecklist = buildChecklist({
       steps: {
         turmaCreated: true,
-        preRegistrationLinkShared: true,
+        preRegistrationLinkShared: false,
         firstPreRegistrationApproved: false,
         firstAccessLinkSent: false,
       },
@@ -159,28 +154,12 @@ describe("OnboardingChecklistWidget", () => {
     expect(screen.getByText("2 de 4 concluídos")).toBeTruthy();
     expect(screen.getByText("50%")).toBeTruthy();
     expect(screen.getAllByText("Concluído")).toHaveLength(2);
-    expect(screen.getByText("Aguardando")).toBeTruthy();
+    expect(screen.getByText("3 em análise")).toBeTruthy();
     expect(screen.getByText("Bloqueado")).toBeTruthy();
-    expect(screen.getByLabelText("Passo 1 concluído")).toBeTruthy();
   });
 
-  it("shows the active Step 1 CTA and blocks the later steps while no Turma exists", async () => {
-    getMock.mockResolvedValue({ data: buildChecklist(), error: null });
-
-    renderWidget();
-
-    const cta = await screen.findByRole("button", { name: "Criar primeira turma" });
-    expect(cta.textContent).toContain("Criar Turma");
-    expect(screen.getByText("0 de 4 concluídos")).toBeTruthy();
-    expect(screen.getAllByText("Bloqueado")).toHaveLength(3);
-
-    fireEvent.click(cta);
-
-    expect(navigateMock).toHaveBeenCalledWith({ to: "/class-groups", search: { create: "turma" } });
-  });
-
-  it("transitions Step 1 to completed after the class-group creation flow invalidates the checklist", async () => {
-    getMock.mockResolvedValueOnce({ data: buildChecklist(), error: null }).mockResolvedValueOnce({
+  it("renders the step 3 waiting state without a review button when no request is pending", async () => {
+    getMock.mockResolvedValue({
       data: buildChecklist({
         steps: {
           turmaCreated: true,
@@ -188,22 +167,76 @@ describe("OnboardingChecklistWidget", () => {
           firstPreRegistrationApproved: false,
           firstAccessLinkSent: false,
         },
+        pendingPreRegistrationCount: 0,
       }),
       error: null,
     });
 
-    const { queryClient } = renderWidget();
+    renderWidget();
 
-    expect(await screen.findByRole("button", { name: "Criar primeira turma" })).toBeTruthy();
+    expect(await screen.findByText("Aguardando solicitação")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Revisar solicitações" })).toBeNull();
+  });
 
-    await queryClient.invalidateQueries({
-      queryKey: ["academy", "academy-1", "onboarding-checklist"],
+  it("renders the step 3 pending count and navigates to the pre-registration queue", async () => {
+    getMock.mockResolvedValue({
+      data: buildChecklist({
+        steps: {
+          turmaCreated: true,
+          preRegistrationLinkShared: false,
+          firstPreRegistrationApproved: false,
+          firstAccessLinkSent: false,
+        },
+        pendingPreRegistrationCount: 3,
+      }),
+      error: null,
     });
 
-    await waitFor(() => {
-      expect(screen.getByLabelText("Passo 1 concluído")).toBeTruthy();
-      expect(screen.queryByRole("button", { name: "Criar primeira turma" })).toBeNull();
+    renderWidget();
+
+    expect(await screen.findByText("3 em análise")).toBeTruthy();
+    const reviewButton = screen.getByRole("button", { name: "Revisar solicitações" });
+    fireEvent.click(reviewButton);
+    expect(navigateMock).toHaveBeenCalledWith({
+      to: "/students",
+      search: { tab: "pre-registrations" },
     });
+  });
+
+  it("renders the step 3 completed state when the first request is approved", async () => {
+    getMock.mockResolvedValue({
+      data: buildChecklist({
+        steps: {
+          turmaCreated: true,
+          preRegistrationLinkShared: false,
+          firstPreRegistrationApproved: true,
+          firstAccessLinkSent: false,
+        },
+      }),
+      error: null,
+    });
+
+    renderWidget();
+
+    expect(await screen.findByText("2 de 4 concluídos")).toBeTruthy();
+    expect(screen.getAllByText("Concluído")).toHaveLength(2);
+    expect(screen.queryByRole("button", { name: "Revisar solicitações" })).toBeNull();
+  });
+
+  it("keeps step 3 blocked while step 1 is incomplete", () => {
+    const checklist = buildChecklist({
+      steps: {
+        turmaCreated: false,
+        preRegistrationLinkShared: true,
+        firstPreRegistrationApproved: false,
+        firstAccessLinkSent: false,
+      },
+      pendingPreRegistrationCount: 2,
+    });
+
+    expect(deriveOnboardingChecklistStepState(checklist, "firstPreRegistrationApproved")).toBe(
+      "blocked",
+    );
   });
 
   it("dismisses the widget immediately after clicking the X button", async () => {
@@ -241,6 +274,6 @@ describe("OnboardingChecklistWidget", () => {
     await waitFor(() => {
       expect(screen.queryByText("Configuração Inicial da Academia")).toBeNull();
     });
-    expect(postMock).toHaveBeenCalledWith("/academy/onboarding-checklist/dismiss", {});
+    expect(postMock).toHaveBeenCalledWith("/academy/onboarding-checklist/dismiss");
   });
 });
