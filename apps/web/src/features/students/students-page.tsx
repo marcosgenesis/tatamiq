@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-table";
 import type { Student } from "@tatamiq/contracts";
 import { AlertCircle, MoreHorizontal, PlusCircle, UploadCloud } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DataGrid, DataGridContainer } from "@/components/reui/data-grid/data-grid";
 import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination";
@@ -40,7 +40,12 @@ export function StudentsPage() {
   const queryClient = useQueryClient();
   const { activeAcademy } = useAppShell();
   const activeAcademyId = activeAcademy.id;
-  const [activeTab, setActiveTab] = useState<StudentsTab>("students");
+  const [activeTab, setActiveTab] = useState<StudentsTab>(() =>
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("tab") === "pre-registrations"
+      ? "pre-registrations"
+      : "students",
+  );
   const [search, setSearch] = useState("");
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -86,6 +91,15 @@ export function StudentsPage() {
     onSuccess: async () =>
       queryClient.invalidateQueries({ queryKey: academyQueryKey(activeAcademyId, "students") }),
   });
+
+  useEffect(() => {
+    if (
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("tab") === "pre-registrations"
+    ) {
+      setActiveTab("pre-registrations");
+    }
+  }, []);
 
   const revokeAccessMutation = useMutation({
     mutationFn: async (studentId: string) => {

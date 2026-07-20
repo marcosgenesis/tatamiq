@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { AcademyOnboardingChecklist } from "@tatamiq/contracts";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
@@ -11,12 +13,17 @@ import {
 
 const getMock = vi.fn();
 const postMock = vi.fn();
+const navigateMock = vi.fn();
 
 vi.mock("@/api", () => ({
   api: {
     GET: (...args: unknown[]) => getMock(...args),
     POST: (...args: unknown[]) => postMock(...args),
   },
+}));
+
+vi.mock("@tanstack/react-router", () => ({
+  useNavigate: () => navigateMock,
 }));
 
 vi.mock("@/components/app-shell", () => ({
@@ -77,7 +84,7 @@ describe("onboarding checklist helpers", () => {
     const awaitingChecklist = buildChecklist({
       steps: {
         turmaCreated: true,
-        preRegistrationLinkShared: true,
+        preRegistrationLinkShared: false,
         firstPreRegistrationApproved: false,
         firstAccessLinkSent: false,
       },
@@ -124,6 +131,7 @@ describe("OnboardingChecklistWidget", () => {
   beforeEach(() => {
     getMock.mockReset();
     postMock.mockReset();
+    navigateMock.mockReset();
   });
 
   it("renders progress and derived states from the mocked checklist API", async () => {
@@ -146,8 +154,89 @@ describe("OnboardingChecklistWidget", () => {
     expect(screen.getByText("2 de 4 concluídos")).toBeTruthy();
     expect(screen.getByText("50%")).toBeTruthy();
     expect(screen.getAllByText("Concluído")).toHaveLength(2);
-    expect(screen.getByText("Aguardando")).toBeTruthy();
+    expect(screen.getByText("3 em análise")).toBeTruthy();
     expect(screen.getByText("Bloqueado")).toBeTruthy();
+  });
+
+  it("renders the step 3 waiting state without a review button when no request is pending", async () => {
+    getMock.mockResolvedValue({
+      data: buildChecklist({
+        steps: {
+          turmaCreated: true,
+          preRegistrationLinkShared: false,
+          firstPreRegistrationApproved: false,
+          firstAccessLinkSent: false,
+        },
+        pendingPreRegistrationCount: 0,
+      }),
+      error: null,
+    });
+
+    renderWidget();
+
+    expect(await screen.findByText("Aguardando solicitação")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Revisar solicitações" })).toBeNull();
+  });
+
+  it("renders the step 3 pending count and navigates to the pre-registration queue", async () => {
+    getMock.mockResolvedValue({
+      data: buildChecklist({
+        steps: {
+          turmaCreated: true,
+          preRegistrationLinkShared: false,
+          firstPreRegistrationApproved: false,
+          firstAccessLinkSent: false,
+        },
+        pendingPreRegistrationCount: 3,
+      }),
+      error: null,
+    });
+
+    renderWidget();
+
+    expect(await screen.findByText("3 em análise")).toBeTruthy();
+    const reviewButton = screen.getByRole("button", { name: "Revisar solicitações" });
+    fireEvent.click(reviewButton);
+    expect(navigateMock).toHaveBeenCalledWith({
+      to: "/students",
+      search: { tab: "pre-registrations" },
+    });
+  });
+
+  it("renders the step 3 completed state when the first request is approved", async () => {
+    getMock.mockResolvedValue({
+      data: buildChecklist({
+        steps: {
+          turmaCreated: true,
+          preRegistrationLinkShared: false,
+          firstPreRegistrationApproved: true,
+          firstAccessLinkSent: false,
+        },
+      }),
+      error: null,
+    });
+
+    renderWidget();
+
+    expect(await screen.findByText("2 de 4 concluídos")).toBeTruthy();
+    expect(screen.getAllByText("Concluído")).toHaveLength(2);
+    expect(screen.queryByRole("button", { name: "Revisar solicitações" })).toBeNull();
+  });
+
+  it("keeps step 3 blocked while step 1 is incomplete", () => {
+    const checklist = buildChecklist({
+      steps: {
+        turmaCreated: false,
+        preRegistrationLinkShared: true,
+        firstPreRegistrationApproved: false,
+        firstAccessLinkSent: false,
+      },
+      pendingPreRegistrationCount: 2,
+    });
+
+    expect(deriveOnboardingChecklistStepState(checklist, "firstPreRegistrationApproved")).toBe(
+      "blocked",
+    );
   });
 
   it("dismisses the widget immediately after clicking the X button", async () => {
