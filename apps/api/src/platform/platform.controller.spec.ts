@@ -15,11 +15,13 @@ const adminSession = {
   session: { id: "session-1" },
 };
 
-function resolveTargetId(audit: AuditDescriptor, result: unknown) {
+function resolveTargetId(audit: AuditDescriptor | undefined, result: unknown) {
+  if (!audit) throw new Error("Missing audit descriptor.");
   return typeof audit.targetId === "function" ? audit.targetId(result) : audit.targetId;
 }
 
-function resolveMetadata(audit: AuditDescriptor, result: unknown) {
+function resolveMetadata(audit: AuditDescriptor | undefined, result: unknown) {
+  if (!audit) throw new Error("Missing audit descriptor.");
   return typeof audit.metadata === "function" ? audit.metadata(result) : audit.metadata;
 }
 
@@ -310,6 +312,17 @@ describe("PlatformController audited action seams", () => {
       targetId: "user-1",
       academyId: "academy-1",
       reason: "debug customer issue",
+    });
+    expect(
+      resolveMetadata(auditedDescriptors[0], {
+        id: "support-1",
+        targetUserId: "user-1",
+        academyId: "academy-1",
+      }),
+    ).toMatchObject({
+      supportSessionId: "support-1",
+      targetResponsibleUserId: "user-1",
+      academyId: "academy-1",
     });
     expect(impersonatedDescriptors[0]?.adminUserId).toBe("admin-1");
     expect(impersonatedDescriptors[0]?.audit).toMatchObject({

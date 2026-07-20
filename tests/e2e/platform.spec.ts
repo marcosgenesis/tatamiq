@@ -163,9 +163,39 @@ test("platform admin covers dashboard, provision, admins, users, deletion, and s
   await openPlatformUser(page, "marcosgenesisof@gmail.com");
   await expect(page.getByRole("button", { name: "Iniciar suporte" })).toBeDisabled();
 
-  await openPlatformUser(page, PLATFORM_FIXTURES.academyOwner.email);
-  await page.getByPlaceholder("Motivo do suporte (opcional)").fill("Diagnóstico E2E");
+  await page.goto("/platform/academies");
+  await page
+    .getByPlaceholder("Buscar academia por nome ou slug")
+    .fill(PLATFORM_FIXTURES.ownerlessAcademy.academyName);
+  const ownerlessAcademyRow = page
+    .locator("tbody tr")
+    .filter({ hasText: PLATFORM_FIXTURES.ownerlessAcademy.academyName })
+    .first();
+  await expect(ownerlessAcademyRow).toBeVisible();
+  await ownerlessAcademyRow.getByRole("link", { name: /Abrir/ }).click();
   await page.getByRole("button", { name: "Iniciar suporte" }).click();
+  await expect(page.getByText("Academia sem responsável para suporte.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Iniciar como responsável" })).toBeDisabled();
+  await page.getByRole("button", { name: "Cancelar" }).click();
+
+  await page.goto("/platform/academies");
+  await page
+    .getByPlaceholder("Buscar academia por nome ou slug")
+    .fill(PLATFORM_FIXTURES.academyOwner.academyName);
+  const supportAcademyRow = page
+    .locator("tbody tr")
+    .filter({ hasText: PLATFORM_FIXTURES.academyOwner.academyName })
+    .first();
+  await expect(supportAcademyRow).toBeVisible();
+  await supportAcademyRow.getByRole("link", { name: /Abrir/ }).click();
+  await page.getByRole("button", { name: "Iniciar suporte" }).click();
+  await expect(page.getByText("múltiplos responsáveis", { exact: false })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Iniciar como responsável" })).toBeDisabled();
+  await page.locator("#support-responsible").selectOption({
+    label: `${PLATFORM_FIXTURES.academyOwner.name} · ${PLATFORM_FIXTURES.academyOwner.email}`,
+  });
+  await page.getByPlaceholder("Motivo do suporte (opcional)").fill("Diagnóstico E2E");
+  await page.getByRole("button", { name: "Iniciar como responsável" }).click();
   await expect(page.getByText("Suporte Assistido ativo")).toBeVisible();
   await expect(page.getByText("Você está operando como cliente", { exact: false })).toBeVisible();
   await page.getByRole("button", { name: "Encerrar suporte" }).click();

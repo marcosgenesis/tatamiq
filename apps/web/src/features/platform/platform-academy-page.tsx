@@ -38,6 +38,7 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [supportReason, setSupportReason] = useState("");
+  const [selectedSupportResponsibleId, setSelectedSupportResponsibleId] = useState("");
   const [isSupportOpen, setIsSupportOpen] = useState(false);
   const [isAddResponsibleOpen, setIsAddResponsibleOpen] = useState(false);
   const [responsibleForm, setResponsibleForm] = useState({ ownerEmail: "", ownerName: "" });
@@ -108,8 +109,10 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
 
   const support = useMutation({
     mutationFn: async () => {
-      const targetResponsible = academy.data?.responsibles?.[0];
-      if (!targetResponsible) throw new Error("Academia sem responsável.");
+      const targetResponsible = academy.data?.responsibles?.find(
+        (responsible) => responsible.id === selectedSupportResponsibleId,
+      );
+      if (!targetResponsible) throw new Error("Selecione um responsável para o suporte.");
       const prepared = await startPlatformSupport({
         targetUserId: targetResponsible.id,
         academyId,
@@ -158,6 +161,10 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
   const data = academy.data;
   const responsibles = data.responsibles ?? [];
   const hasResponsibles = responsibles.length > 0;
+  const selectedSupportResponsible = responsibles.find(
+    (responsible) => responsible.id === selectedSupportResponsibleId,
+  );
+  const canStartSupport = hasResponsibles && !!selectedSupportResponsible;
 
   return (
     <PlatformShell
@@ -235,9 +242,20 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
             </DialogContent>
           </Dialog>
 
-          <Dialog open={isSupportOpen} onOpenChange={setIsSupportOpen}>
+          <Dialog
+            open={isSupportOpen}
+            onOpenChange={(open) => {
+              setIsSupportOpen(open);
+              if (open) {
+                support.reset();
+                setSelectedSupportResponsibleId(
+                  responsibles.length === 1 ? (responsibles[0]?.id ?? "") : "",
+                );
+              }
+            }}
+          >
             <DialogTrigger asChild>
-              <Button variant="outline" size="sm" onClick={() => support.reset()}>
+              <Button variant="outline" size="sm">
                 <HeadphonesIcon className="size-4" />
                 Iniciar suporte
               </Button>
@@ -251,6 +269,33 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-3">
+                <div className="grid gap-2">
+                  <label className="text-sm font-medium" htmlFor="support-responsible">
+                    Responsável da Academia
+                  </label>
+                  <select
+                    id="support-responsible"
+                    className="h-10 rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
+                    value={selectedSupportResponsibleId}
+                    onChange={(event) => setSelectedSupportResponsibleId(event.target.value)}
+                    disabled={!hasResponsibles || support.isPending}
+                  >
+                    <option value="">
+                      {hasResponsibles ? "Selecione o responsável" : "Sem responsável"}
+                    </option>
+                    {responsibles.map((responsible) => (
+                      <option key={responsible.id} value={responsible.id}>
+                        {responsible.name} · {responsible.email}
+                      </option>
+                    ))}
+                  </select>
+                  {responsibles.length > 1 ? (
+                    <p className="text-muted-foreground text-xs">
+                      Esta academia tem múltiplos responsáveis; escolha explicitamente quem será
+                      assistido.
+                    </p>
+                  ) : null}
+                </div>
                 <Input
                   placeholder="Motivo do suporte (opcional)"
                   value={supportReason}
@@ -272,7 +317,7 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
                   <Button
                     type="button"
                     onClick={() => support.mutate()}
-                    disabled={!hasResponsibles || support.isPending}
+                    disabled={!canStartSupport || support.isPending}
                   >
                     {support.isPending ? "Iniciando..." : "Iniciar como responsável"}
                   </Button>
