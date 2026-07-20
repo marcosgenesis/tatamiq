@@ -1,3 +1,6 @@
+// @vitest-environment jsdom
+import type { AcademyOnboardingChecklist } from "@tatamiq/contracts";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { AcademyOnboardingChecklistCard } from "./academy-onboarding-checklist";
@@ -12,7 +15,17 @@ const baseChecklist = {
   pendingPreRegistrationCount: 0,
   firstAccessStudentId: null,
   dismissed: false,
-};
+} satisfies AcademyOnboardingChecklist;
+
+const completedChecklist = {
+  ...baseChecklist,
+  steps: {
+    turmaCreated: true,
+    preRegistrationLinkShared: true,
+    firstPreRegistrationApproved: true,
+    firstAccessLinkSent: true,
+  },
+} satisfies AcademyOnboardingChecklist;
 
 describe("AcademyOnboardingChecklistCard", () => {
   it("renders step 2 active with copy CTA when first Turma exists", () => {
@@ -56,5 +69,48 @@ describe("AcademyOnboardingChecklistCard", () => {
 
     expect(html).toContain("disabled");
     expect(html).toContain("0 de 4 concluídos");
+  });
+
+  it("shows the celebration banner when all onboarding steps are complete", () => {
+    const html = renderToStaticMarkup(
+      <AcademyOnboardingChecklistCard
+        checklist={completedChecklist}
+        onCopyLink={vi.fn()}
+        onDismiss={vi.fn()}
+      />,
+    );
+
+    expect(html).toContain("4 de 4 concluídos");
+    expect(html).toContain("Academia pronta para operar");
+    expect(html).toContain("Fechar guia");
+  });
+
+  it("calls dismiss when the celebration close button is clicked", () => {
+    const onDismiss = vi.fn();
+
+    render(
+      <AcademyOnboardingChecklistCard
+        checklist={completedChecklist}
+        onCopyLink={vi.fn()}
+        onDismiss={onDismiss}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Fechar guia" }));
+
+    expect(onDismiss).toHaveBeenCalledOnce();
+  });
+
+  it("does not show the celebration banner before all steps are complete", () => {
+    const html = renderToStaticMarkup(
+      <AcademyOnboardingChecklistCard
+        checklist={baseChecklist}
+        onCopyLink={vi.fn()}
+        onDismiss={vi.fn()}
+      />,
+    );
+
+    expect(html).not.toContain("Academia pronta para operar");
+    expect(html).not.toContain("Fechar guia");
   });
 });

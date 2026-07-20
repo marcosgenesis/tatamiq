@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { AcademyOnboardingChecklist } from "@tatamiq/contracts";
 import { Copy01Icon, Tick01Icon } from "hugeicons-react";
-import { X } from "lucide-react";
+import { PartyPopper, X } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "../../api";
 import { useAppShell } from "../../components/app-shell";
@@ -57,7 +57,7 @@ export function AcademyOnboardingChecklistWidget() {
   });
 
   const checklist = query.data;
-  if (!checklist || checklist.dismissed || allStepsDone(checklist)) return null;
+  if (!checklist || checklist.dismissed) return null;
 
   return (
     <AcademyOnboardingChecklistCard
@@ -90,6 +90,7 @@ export function AcademyOnboardingChecklistCard({
     { key: "firstAccessLinkSent", label: "Enviar Link de Primeiro Acesso" },
   ] as const;
   const completed = steps.filter((step) => checklist.steps[step.key]).length;
+  const complete = allStepsDone(checklist);
   const step1Done = checklist.steps.turmaCreated;
   const step2Done = checklist.steps.preRegistrationLinkShared;
   const step2Blocked = !step1Done;
@@ -165,10 +166,32 @@ export function AcademyOnboardingChecklistCard({
           );
         })}
       </ol>
+
+      {complete ? (
+        <div className="mt-4 flex flex-col gap-3 rounded-[16px] border border-primary/30 bg-primary/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow-sm">
+              <PartyPopper className="size-5" aria-hidden="true" />
+            </span>
+            <div>
+              <h3 className="text-base font-semibold text-foreground">
+                Academia pronta para operar
+              </h3>
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
+                Os primeiros passos foram concluídos. Sua academia já pode receber interessados,
+                aprovar alunos e entregar o primeiro acesso sem depender deste guia.
+              </p>
+            </div>
+          </div>
+          <Button type="button" className="shrink-0" onClick={onDismiss} disabled={dismissing}>
+            {dismissing ? "Fechando..." : "Fechar guia"}
+          </Button>
+        </div>
+      ) : null}
     </section>
   );
 }
 
-function allStepsDone(checklist: AcademyOnboardingChecklist): boolean {
+export function allStepsDone(checklist: AcademyOnboardingChecklist): boolean {
   return Object.values(checklist.steps).every(Boolean);
 }
