@@ -1,14 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { AcademyOnboardingChecklist } from "@tatamiq/contracts";
-import { X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { api } from "@/api";
 import { useAppShell } from "@/components/app-shell";
 import { DashboardCard } from "@/components/dashboard-card";
+import { OnboardingChecklistAction } from "@/components/onboarding-checklist-actions";
 import { Button } from "@/components/ui/button";
 import { onboardingChecklistQueryKey } from "@/lib/academy-query-keys";
 
 type ChecklistStepKey = keyof AcademyOnboardingChecklist["steps"];
 type DerivedStepState = "completed" | "active" | "awaiting" | "blocked";
+
+type ChecklistStepActionKey = "turmaCreated";
 
 const checklistStepOrder: ChecklistStepKey[] = [
   "turmaCreated",
@@ -41,6 +44,17 @@ const stateCopy: Record<DerivedStepState, string> = {
   active: "Ativo",
   awaiting: "Aguardando",
   blocked: "Bloqueado",
+};
+
+const checklistStepActions: Partial<Record<ChecklistStepKey, ChecklistStepActionKey>> = {
+  turmaCreated: "turmaCreated",
+};
+
+const stepIndicatorClass: Record<DerivedStepState, string> = {
+  completed: "bg-emerald-500 text-white",
+  active: "bg-primary text-primary-foreground",
+  awaiting: "bg-amber-500/15 text-amber-700",
+  blocked: "bg-muted text-muted-foreground",
 };
 
 export function deriveOnboardingChecklistStepState(
@@ -152,27 +166,30 @@ export function OnboardingChecklistWidget() {
         {checklistStepOrder.map((step, index) => {
           const copy = checklistStepCopy[step];
           const state = deriveOnboardingChecklistStepState(checklist, step);
+          const action = checklistStepActions[step];
 
           return (
             <div
               key={step}
-              className="rounded-2xl border border-border/70 bg-muted/30 px-4 py-4"
+              className={`rounded-2xl border border-border/70 bg-muted/30 px-4 py-4 transition-opacity ${
+                state === "blocked" ? "opacity-55" : "opacity-100"
+              }`}
               data-step-state={state}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
                   <div
-                    className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
-                      state === "completed"
-                        ? "bg-foreground text-background"
-                        : state === "active"
-                          ? "bg-emerald-500/15 text-emerald-700"
-                          : state === "awaiting"
-                            ? "bg-amber-500/15 text-amber-700"
-                            : "bg-muted text-muted-foreground"
-                    }`}
+                    className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${stepIndicatorClass[state]}`}
+                    role="img"
+                    aria-label={
+                      state === "completed" ? `Passo ${index + 1} concluído` : `Passo ${index + 1}`
+                    }
                   >
-                    {index + 1}
+                    {state === "completed" ? (
+                      <Check className="size-4" aria-hidden="true" />
+                    ) : (
+                      index + 1
+                    )}
                   </div>
                   <div className="space-y-1">
                     <p className="font-medium text-foreground">{copy.title}</p>
@@ -183,6 +200,9 @@ export function OnboardingChecklistWidget() {
                   {stateCopy[state]}
                 </span>
               </div>
+              {action ? (
+                <OnboardingChecklistAction step={action} isActive={state === "active"} />
+              ) : null}
             </div>
           );
         })}

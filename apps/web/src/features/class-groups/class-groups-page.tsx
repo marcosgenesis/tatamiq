@@ -10,7 +10,7 @@ import {
   Search01Icon,
   Time04Icon,
 } from "hugeicons-react";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "../../api";
 import { useAppShell } from "../../components/app-shell";
 import { Tabs, TabsList, TabsTrigger } from "../../components/reui/tabs";
@@ -160,11 +160,21 @@ export function ClassGroupsPage() {
     );
   }, [classGroups, search]);
 
-  function openCreateForm() {
+  const openCreateForm = useCallback(() => {
     setEditingClassGroup(null);
     setError(null);
     setIsFormOpen(true);
-  }
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("create") !== "turma") return;
+
+    openCreateForm();
+    params.delete("create");
+    const query = params.toString();
+    window.history.replaceState(null, "", query ? `/class-groups?${query}` : "/class-groups");
+  }, [openCreateForm]);
 
   function openEditForm(classGroup: ClassGroup) {
     setEditingClassGroup(classGroup);
