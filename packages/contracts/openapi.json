@@ -240,6 +240,27 @@
         ]
       }
     },
+    "/academy/onboarding-checklist": {
+      "get": {
+        "operationId": "AcademyController_getOnboardingChecklist",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcademyOnboardingChecklistDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "academy"
+        ]
+      }
+    },
     "/academy/logo/upload-url": {
       "post": {
         "operationId": "AcademyController_logoUploadUrl",
@@ -282,6 +303,27 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AcademyProfileDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "academy"
+        ]
+      }
+    },
+    "/academy/onboarding-checklist/dismiss": {
+      "post": {
+        "operationId": "AcademyController_dismissOnboardingChecklist",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcademyOnboardingChecklistDto"
                 }
               }
             }
@@ -1021,6 +1063,27 @@
     "/students/pre-registration-link/regenerate": {
       "post": {
         "operationId": "PreRegistrationController_regenerateLink",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreRegistrationLinkDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "pre-registration"
+        ]
+      }
+    },
+    "/students/pre-registration-link/copied": {
+      "post": {
+        "operationId": "PreRegistrationController_markLinkCopied",
         "parameters": [],
         "responses": {
           "200": {

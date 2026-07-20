@@ -1,11 +1,18 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type {
   AcademyLogoUploadResponse,
+  AcademyOnboardingChecklist,
   AcademyProfile,
   UpdateAcademyInput,
 } from "@tatamiq/contracts";
-import { type Database, organization } from "@tatamiq/database";
-import { eq } from "drizzle-orm";
+import {
+  academyPreRegistrationLinks,
+  classGroups,
+  type Database,
+  organization,
+  preRegistrationRequests,
+} from "@tatamiq/database";
+import { eq, isNotNull, sql } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
 import { R2StorageService } from "../monthly-fees/r2-storage.service";
 import {
@@ -32,6 +39,70 @@ export class AcademyService {
     }
 
     return toProfile(row);
+  }
+
+  async getOnboardingChecklist(organizationId: string): Promise<AcademyOnboardingChecklist> {
+    const academy = await this.findOrganizationOrThrow(organizationId);
+
+    const [
+      classGroupSummary,
+      preRegistrationLinkSummary,
+      approvedRequestSummary,
+      firstAccessRequest,
+      pendingRequestSummary,
+    ] = await Promise.all([
+      this.db
+        .select({ count: sql<number>`count(*)` })
+        .from(classGroups)
+        .where(eq(classGroups.organizationId, organizationId))
+        .limit(1),
+      this.db
+        .select({ copiedAt: academyPreRegistrationLinks.copiedAt })
+        .from(academyPreRegistrationLinks)
+        .where(eq(academyPreRegistrationLinks.organizationId, organizationId))
+        .limit(1),
+      this.db
+        .select({ count: sql<number>`count(*)` })
+        .from(preRegistrationRequests)
+        .where(
+          sql`${preRegistrationRequests.organizationId} = ${organizationId} and ${preRegistrationRequests.status} = 'approved'`,
+        )
+        .limit(1),
+      this.db
+        .select({
+          approvedStudentId: preRegistrationRequests.approvedStudentId,
+          firstAccessTokenHash: preRegistrationRequests.firstAccessTokenHash,
+        })
+        .from(preRegistrationRequests)
+        .where(
+          sql`${preRegistrationRequests.organizationId} = ${organizationId} and ${preRegistrationRequests.approvedStudentId} is not null`,
+        )
+        .limit(1),
+      this.db
+        .select({ count: sql<number>`count(*)` })
+        .from(preRegistrationRequests)
+        .where(
+          sql`${preRegistrationRequests.organizationId} = ${organizationId} and ${preRegistrationRequests.status} = 'pending_review'`,
+        )
+        .limit(1),
+    ]);
+
+    const turmaCreated = Number(classGroupSummary[0]?.count ?? 0) > 0;
+    const preRegistrationLinkShared = preRegistrationLinkSummary[0]?.copiedAt !== null;
+    const firstPreRegistrationApproved = Number(approvedRequestSummary[0]?.count ?? 0) > 0;
+    const firstAccessLinkSent = firstAccessRequest[0]?.firstAccessTokenHash !== null;
+
+    return {
+      steps: {
+        turmaCreated,
+        preRegistrationLinkShared,
+        firstPreRegistrationApproved,
+        firstAccessLinkSent,
+      },
+      pendingPreRegistrationCount: Number(pendingRequestSummary[0]?.count ?? 0),
+      firstAccessStudentId: firstAccessRequest[0]?.approvedStudentId ?? null,
+      dismissed: academy.onboardingChecklistDismissedAt !== null,
+    };
   }
 
   async update(organizationId: string, input: UpdateAcademyInput): Promise<AcademyProfile> {
@@ -99,6 +170,31 @@ export class AcademyService {
       .where(eq(organization.id, organizationId));
 
     return this.get(organizationId);
+  }
+
+  async dismissOnboardingChecklist(organizationId: string): Promise<AcademyOnboardingChecklist> {
+    await this.findOrganizationOrThrow(organizationId);
+
+    await this.db
+      .update(organization)
+      .set({ onboardingChecklistDismissedAt: new Date() })
+      .where(eq(organization.id, organizationId));
+
+    return this.getOnboardingChecklist(organizationId);
+  }
+
+  private async findOrganizationOrThrow(organizationId: string): Promise<OrganizationRow> {
+    const [row] = await this.db
+      .select()
+      .from(organization)
+      .where(eq(organization.id, organizationId))
+      .limit(1);
+
+    if (!row) {
+      throw new NotFoundException("Academia não encontrada.");
+    }
+
+    return row;
   }
 }
 
