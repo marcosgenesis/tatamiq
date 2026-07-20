@@ -98,6 +98,11 @@ export class PreRegistrationService {
     return this.fetchLinkDto(organizationId);
   }
 
+  async markLinkCopied(organizationId: string): Promise<PreRegistrationLink> {
+    await this.linkLifecycle.markLinkCopied(organizationId);
+    return this.fetchLinkDto(organizationId);
+  }
+
   // --- Public form (link resolution delegated to lifecycle) ---
 
   async publicProfile(token: string): Promise<PreRegistrationPublicProfile> {

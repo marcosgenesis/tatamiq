@@ -67,6 +67,15 @@ export class PreRegistrationLinkLifecycle {
       .where(eq(academyPreRegistrationLinks.organizationId, organizationId));
   }
 
+  async markLinkCopied(organizationId: string): Promise<void> {
+    await this.getOrCreateLink(organizationId);
+    const now = new Date();
+    await this.db
+      .update(academyPreRegistrationLinks)
+      .set({ copiedAt: now, updatedAt: now })
+      .where(eq(academyPreRegistrationLinks.organizationId, organizationId));
+  }
+
   async resolvePublicProfile(token: string): Promise<PreRegistrationPublicProfile> {
     const found = await this.findPublicLink(token);
     if (!found) throw new NotFoundException("Link de pré-cadastro não encontrado.");
