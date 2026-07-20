@@ -3001,46 +3001,6 @@
         ]
       }
     },
-    "/platform/academies/{id}/transfer": {
-      "post": {
-        "operationId": "PlatformController_transferAcademy",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TransferAcademyBodyDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TransferAcademyResultDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "platform"
-        ]
-      }
-    },
     "/platform/academies/{id}/responsibles": {
       "post": {
         "operationId": "PlatformController_addResponsible",
@@ -3070,7 +3030,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TransferAcademyResultDto"
+                  "$ref": "#/components/schemas/AcademyResponsibleMutationResultDto"
                 }
               }
             }
@@ -9033,7 +8993,7 @@
           "firstAccessLink"
         ]
       },
-      "TransferAcademyBodyDto": {
+      "AddResponsibleBodyDto": {
         "type": "object",
         "properties": {
           "ownerEmail": {
@@ -9047,7 +9007,7 @@
           "ownerEmail"
         ]
       },
-      "TransferAcademyResultDto": {
+      "AcademyResponsibleMutationResultDto": {
         "type": "object",
         "properties": {
           "academy": {
@@ -9069,20 +9029,6 @@
           "ownerUserId",
           "ownerWasCreated",
           "firstAccessLink"
-        ]
-      },
-      "AddResponsibleBodyDto": {
-        "type": "object",
-        "properties": {
-          "ownerEmail": {
-            "type": "string"
-          },
-          "ownerName": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "ownerEmail"
         ]
       },
       "RemoveResponsibleBodyDto": {
@@ -10098,15 +10044,8 @@
           "ownerResolution": {
             "type": "string",
             "enum": [
-              "keep_ownerless",
-              "transfer"
+              "keep_ownerless"
             ]
-          },
-          "transferOwnerEmail": {
-            "type": "string"
-          },
-          "transferOwnerName": {
-            "type": "string"
           },
           "confirmLeaveOwnerless": {
             "type": "boolean"

@@ -54,9 +54,7 @@ export type ProvisionAcademyResult = {
   firstAccessLink: string | null;
 };
 
-export type TransferAcademyInput = AssignAcademyOwnerInput;
-
-export type TransferAcademyResult = {
+export type AcademyResponsibleMutationResult = {
   academy: PlatformAcademyDetail;
   ownerUserId: string;
   ownerWasCreated: boolean;
@@ -209,20 +207,10 @@ export class PlatformAcademyService {
     return { academy, ...owner };
   }
 
-  async transferAcademy(
-    academyId: string,
-    input: TransferAcademyInput,
-  ): Promise<TransferAcademyResult> {
-    const owner = await this.academyOwnership.transferOwnerByEmail(academyId, input);
-    const academy = await this.getAcademy(academyId);
-
-    return { academy, ...owner };
-  }
-
   async addResponsible(
     academyId: string,
     input: AssignAcademyOwnerInput,
-  ): Promise<TransferAcademyResult> {
+  ): Promise<AcademyResponsibleMutationResult> {
     const owner = await this.academyOwnership.addResponsibleByEmail(academyId, input);
     const academy = await this.getAcademy(academyId);
 

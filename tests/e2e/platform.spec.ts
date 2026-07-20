@@ -57,6 +57,21 @@ test("platform admin covers dashboard, provision, admins, users, deletion, and s
   await expect(page.getByText("Turmas ativas")).toBeVisible();
   await expect(page.getByText("Presenças válidas")).toBeVisible();
   await expect(page.getByText("Mensalidades pagas")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Transferir academia" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Adicionar responsável" }).click();
+  await page
+    .getByPlaceholder("E-mail do responsável")
+    .fill(`responsavel-extra-${Date.now()}@tatamiq.local`);
+  await page.getByPlaceholder("Nome do responsável (opcional)").fill("Responsável Extra E2E");
+  await page.getByRole("button", { name: "Adicionar", exact: true }).click();
+  await expect(page.getByText("Responsável Extra E2E")).toBeVisible();
+  page.once("dialog", (dialog) => dialog.accept());
+  await page
+    .getByText("Responsável Extra E2E")
+    .locator("xpath=ancestor::div[contains(@class, 'rounded-xl')][1]")
+    .getByRole("button", { name: "Remover" })
+    .click();
+  await expect(page.getByText("Responsável Extra E2E")).toHaveCount(0);
 
   await page.getByRole("button", { name: "Adicionar responsável" }).click();
   await page.getByPlaceholder("E-mail do responsável").fill(secondResponsibleEmail);

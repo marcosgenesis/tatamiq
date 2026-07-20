@@ -2,11 +2,11 @@ import { ZodValidationPipe } from "nestjs-zod";
 import { describe, expect, it } from "vitest";
 import {
   AddPlatformAdministratorBodyDto,
+  AddResponsibleBodyDto,
   CompleteReservedFirstAccessBodyDto,
   PlatformBanUserBodyDto,
   PlatformDeleteUserBodyDto,
   ProvisionAcademyBodyDto,
-  TransferAcademyBodyDto,
 } from "./platform.dto";
 
 // Regression: these body DTOs were plain classes (only @ApiProperty), so ZodBody's
@@ -24,8 +24,8 @@ describe("platform body DTOs accept their UI payloads through ZodValidationPipe"
       },
     },
     {
-      name: "TransferAcademyBodyDto",
-      dto: TransferAcademyBodyDto,
+      name: "AddResponsibleBodyDto",
+      dto: AddResponsibleBodyDto,
       payload: { ownerEmail: "owner@example.com", ownerName: "Dono" },
     },
     {

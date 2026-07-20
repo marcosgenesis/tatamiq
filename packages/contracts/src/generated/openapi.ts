@@ -1492,22 +1492,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/platform/academies/{id}/transfer": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["PlatformController_transferAcademy"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/platform/academies/{id}/responsibles": {
         parameters: {
             query?: never;
@@ -2987,19 +2971,15 @@ export interface components {
             ownerWasCreated: boolean;
             firstAccessLink: string | null;
         };
-        TransferAcademyBodyDto: {
+        AddResponsibleBodyDto: {
             ownerEmail: string;
             ownerName?: string;
         };
-        TransferAcademyResultDto: {
+        AcademyResponsibleMutationResultDto: {
             academy: components["schemas"]["PlatformAcademyDetailDto"];
             ownerUserId: string;
             ownerWasCreated: boolean;
             firstAccessLink: string | null;
-        };
-        AddResponsibleBodyDto: {
-            ownerEmail: string;
-            ownerName?: string;
         };
         RemoveResponsibleBodyDto: {
             allowLeavingOwnerless?: boolean;
@@ -3250,9 +3230,7 @@ export interface components {
             /** @enum {string} */
             mode: "definitive" | "preserve_history";
             /** @enum {string} */
-            ownerResolution?: "keep_ownerless" | "transfer";
-            transferOwnerEmail?: string;
-            transferOwnerName?: string;
+            ownerResolution?: "keep_ownerless";
             confirmLeaveOwnerless?: boolean;
         };
         PlatformBanUserBodyDto: {
@@ -5477,31 +5455,6 @@ export interface operations {
             };
         };
     };
-    PlatformController_transferAcademy: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TransferAcademyBodyDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TransferAcademyResultDto"];
-                };
-            };
-        };
-    };
     PlatformController_addResponsible: {
         parameters: {
             query?: never;
@@ -5522,7 +5475,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TransferAcademyResultDto"];
+                    "application/json": components["schemas"]["AcademyResponsibleMutationResultDto"];
                 };
             };
         };
