@@ -134,6 +134,32 @@ test("platform admin covers dashboard, provision, admins, users, deletion, and s
     page.locator("tbody tr").filter({ hasText: PLATFORM_FIXTURES.deleteDefinitive.email }),
   ).toHaveCount(0);
 
+  await openPlatformUser(page, PLATFORM_FIXTURES.deleteMultiResponsible.email);
+  await page.getByRole("button", { name: "Excluir usuário" }).click();
+  await expect(page.getByText("Responsável de 1 academia(s).")).toBeVisible();
+  await page.getByRole("button", { name: "Confirmar exclusão" }).click();
+  await page.goto("/platform/users");
+  await expect(
+    page.locator("tbody tr").filter({ hasText: PLATFORM_FIXTURES.deleteMultiResponsible.email }),
+  ).toHaveCount(0);
+  await openPlatformAcademy(page, PLATFORM_FIXTURES.deleteMultiResponsible.academyName);
+  await expect(
+    page.getByText(PLATFORM_FIXTURES.deleteMultiResponsible.remainingEmail),
+  ).toBeVisible();
+  await expect(page.getByText(PLATFORM_FIXTURES.deleteMultiResponsible.email)).toHaveCount(0);
+
+  await openPlatformUser(page, PLATFORM_FIXTURES.deleteSoleResponsible.email);
+  await page.getByRole("button", { name: "Excluir usuário" }).click();
+  const confirmDeletion = page.getByRole("button", { name: "Confirmar exclusão" });
+  await expect(confirmDeletion).toBeDisabled();
+  await page.locator("select").nth(1).selectOption("keep_ownerless");
+  await expect(confirmDeletion).toBeDisabled();
+  await page.getByLabel("Confirmo que a academia ficará sem responsável.").check();
+  await expect(confirmDeletion).toBeEnabled();
+  await confirmDeletion.click();
+  await openPlatformAcademy(page, PLATFORM_FIXTURES.deleteSoleResponsible.academyName);
+  await expect(page.getByText("Sem responsável")).toBeVisible();
+
   await openPlatformUser(page, "marcosgenesisof@gmail.com");
   await expect(page.getByRole("button", { name: "Iniciar suporte" })).toBeDisabled();
 

@@ -37,6 +37,20 @@ export const PLATFORM_FIXTURES = {
     academyName: "Academia Platform Owner E2E",
     academySlug: "academia-platform-owner-e2e",
   },
+  deleteMultiResponsible: {
+    email: "platform.delete.multi-responsible.e2e@tatamiq.local",
+    name: "Platform Delete Multi Responsible E2E",
+    remainingEmail: "platform.delete.remaining-responsible.e2e@tatamiq.local",
+    remainingName: "Platform Remaining Responsible E2E",
+    academyName: "Academia Multi Responsible Delete E2E",
+    academySlug: "academia-multi-responsible-delete-e2e",
+  },
+  deleteSoleResponsible: {
+    email: "platform.delete.sole-responsible.e2e@tatamiq.local",
+    name: "Platform Delete Sole Responsible E2E",
+    academyName: "Academia Sole Responsible Delete E2E",
+    academySlug: "academia-sole-responsible-delete-e2e",
+  },
 } as const;
 
 export function assertE2eDatabaseIsLocal() {
@@ -146,6 +160,21 @@ export async function ensurePlatformFixtures(password = "tatamiq123") {
     name: PLATFORM_FIXTURES.academyOwner.name,
     password,
   });
+  const multiResponsibleDelete = await ensurePasswordUser({
+    email: PLATFORM_FIXTURES.deleteMultiResponsible.email,
+    name: PLATFORM_FIXTURES.deleteMultiResponsible.name,
+    password,
+  });
+  const remainingResponsible = await ensurePasswordUser({
+    email: PLATFORM_FIXTURES.deleteMultiResponsible.remainingEmail,
+    name: PLATFORM_FIXTURES.deleteMultiResponsible.remainingName,
+    password,
+  });
+  const soleResponsibleDelete = await ensurePasswordUser({
+    email: PLATFORM_FIXTURES.deleteSoleResponsible.email,
+    name: PLATFORM_FIXTURES.deleteSoleResponsible.name,
+    password,
+  });
 
   await db.insert(member).values({
     id: randomUUID(),
@@ -170,12 +199,51 @@ export async function ensurePlatformFixtures(password = "tatamiq123") {
     role: "owner",
   });
 
+  const multiResponsibleOrgId = randomUUID();
+  await db.insert(organization).values({
+    id: multiResponsibleOrgId,
+    name: PLATFORM_FIXTURES.deleteMultiResponsible.academyName,
+    slug: PLATFORM_FIXTURES.deleteMultiResponsible.academySlug,
+  });
+  await db.insert(member).values([
+    {
+      id: randomUUID(),
+      organizationId: multiResponsibleOrgId,
+      userId: multiResponsibleDelete.id,
+      role: "owner",
+    },
+    {
+      id: randomUUID(),
+      organizationId: multiResponsibleOrgId,
+      userId: remainingResponsible.id,
+      role: "owner",
+    },
+  ]);
+
+  const soleResponsibleOrgId = randomUUID();
+  await db.insert(organization).values({
+    id: soleResponsibleOrgId,
+    name: PLATFORM_FIXTURES.deleteSoleResponsible.academyName,
+    slug: PLATFORM_FIXTURES.deleteSoleResponsible.academySlug,
+  });
+  await db.insert(member).values({
+    id: randomUUID(),
+    organizationId: soleResponsibleOrgId,
+    userId: soleResponsibleDelete.id,
+    role: "owner",
+  });
+
   return {
     bannableUserId: bannable.id,
     definitiveUserId: definitive.id,
     preserveUserId: preserve.id,
     ownerUserId: academyOwner.id,
     ownerOrganizationId: ownerOrgId,
+    multiResponsibleDeleteUserId: multiResponsibleDelete.id,
+    remainingResponsibleUserId: remainingResponsible.id,
+    multiResponsibleOrganizationId: multiResponsibleOrgId,
+    soleResponsibleDeleteUserId: soleResponsibleDelete.id,
+    soleResponsibleOrganizationId: soleResponsibleOrgId,
   };
 }
 
@@ -244,7 +312,16 @@ async function cleanupPlatformFixtures() {
   await db
     .delete(organization)
     .where(eq(organization.slug, PLATFORM_FIXTURES.academyOwner.academySlug));
+  await db
+    .delete(organization)
+    .where(eq(organization.slug, PLATFORM_FIXTURES.deleteMultiResponsible.academySlug));
+  await db
+    .delete(organization)
+    .where(eq(organization.slug, PLATFORM_FIXTURES.deleteSoleResponsible.academySlug));
   await deleteUserByEmail(PLATFORM_FIXTURES.academyOwner.email);
+  await deleteUserByEmail(PLATFORM_FIXTURES.deleteMultiResponsible.email);
+  await deleteUserByEmail(PLATFORM_FIXTURES.deleteMultiResponsible.remainingEmail);
+  await deleteUserByEmail(PLATFORM_FIXTURES.deleteSoleResponsible.email);
   await deleteUserByEmail(PLATFORM_FIXTURES.deletePreserve.email);
   await deleteUserByEmail(PLATFORM_FIXTURES.deleteDefinitive.email);
   await deleteUserByEmail(PLATFORM_FIXTURES.bannable.email);
