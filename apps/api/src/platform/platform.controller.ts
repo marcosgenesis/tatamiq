@@ -17,6 +17,7 @@ type PlatformRequest = { ip?: string; headers: Record<string, string | string[] 
 
 import { AuditService } from "./audit.service";
 import {
+  AcademyResponsibleMutationResultDto,
   ActivatePlatformSupportBodyDto,
   AddPlatformAdministratorBodyDto,
   AddPlatformAdministratorResultDto,
@@ -44,10 +45,9 @@ import {
   ProvisionAcademyBodyDto,
   ProvisionAcademyResultDto,
   RemoveResponsibleBodyDto,
+  RemoveResponsibleResultDto,
   ReservedFirstAccessPreviewDto,
   StartPlatformSupportBodyDto,
-  TransferAcademyBodyDto,
-  TransferAcademyResultDto,
 } from "./platform.dto";
 import { PlatformAcademyService } from "./platform-academy.service";
 import { PlatformAcademyDeletionService } from "./platform-academy-deletion.service";
@@ -163,35 +163,10 @@ export class PlatformController {
     );
   }
 
-  @Post("academies/:id/transfer")
-  @ApiParam({ name: "id", type: String })
-  @ApiBody({ type: TransferAcademyBodyDto })
-  @ApiOkResponse({ type: TransferAcademyResultDto })
-  async transferAcademy(
-    @Session() session: PlatformSession,
-    @Param("id") id: string,
-    @ZodBody(TransferAcademyBodyDto) body: TransferAcademyBodyDto,
-  ) {
-    return this.auditedAction.run(
-      session,
-      () => this.platformAcademyService.transferAcademy(id, parseTransferAcademyBody(body)),
-      {
-        action: "platform.academy.transferred",
-        targetType: "academy",
-        targetId: id,
-        academyId: id,
-        metadata: (result) => ({
-          ownerUserId: result.ownerUserId,
-          ownerWasCreated: result.ownerWasCreated,
-        }),
-      },
-    );
-  }
-
   @Post("academies/:id/responsibles")
   @ApiParam({ name: "id", type: String })
   @ApiBody({ type: AddResponsibleBodyDto })
-  @ApiOkResponse({ type: TransferAcademyResultDto })
+  @ApiOkResponse({ type: AcademyResponsibleMutationResultDto })
   async addResponsible(
     @Session() session: PlatformSession,
     @Param("id") id: string,
@@ -217,7 +192,7 @@ export class PlatformController {
   @ApiParam({ name: "id", type: String })
   @ApiParam({ name: "userId", type: String })
   @ApiBody({ type: RemoveResponsibleBodyDto })
-  @ApiOkResponse({ type: PlatformActionResultDto })
+  @ApiOkResponse({ type: RemoveResponsibleResultDto })
   async removeResponsible(
     @Session() session: PlatformSession,
     @Param("id") id: string,
@@ -230,13 +205,20 @@ export class PlatformController {
         this.platformAcademyService.removeResponsible(id, {
           userId,
           allowLeavingOwnerless: body.allowLeavingOwnerless,
+          ownerlessConfirmation: body.ownerlessConfirmation,
         }),
       {
-        action: "platform.academy.responsible_removed",
+        action: body.allowLeavingOwnerless
+          ? "platform.academy.final_responsible_removed"
+          : "platform.academy.responsible_removed",
         targetType: "academy",
         targetId: id,
         academyId: id,
-        metadata: { userId, allowLeavingOwnerless: body.allowLeavingOwnerless ?? false },
+        metadata: (result) => ({
+          userId,
+          allowLeavingOwnerless: body.allowLeavingOwnerless ?? false,
+          leftOwnerless: result.leftOwnerless,
+        }),
       },
     );
   }
@@ -382,6 +364,8 @@ export class PlatformController {
         reason: body.reason,
         metadata: (result) => ({
           supportSessionId: result.id,
+          targetResponsibleUserId: result.targetUserId,
+          academyId: result.academyId,
           ipAddress: request.ip ?? null,
           userAgent: userAgent ?? null,
         }),
@@ -592,10 +576,6 @@ function parseProvisionAcademyBody(body: ProvisionAcademyBodyDto) {
   if (!academyName) throw new BadRequestException("Nome da academia é obrigatório.");
 
   return { academyName, ...owner };
-}
-
-function parseTransferAcademyBody(body: TransferAcademyBodyDto) {
-  return parseOwnerInput(body);
 }
 
 function parseDeleteAcademyBody(body: DeletePlatformAcademyBodyDto) {

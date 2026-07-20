@@ -348,6 +348,8 @@ const indexRoute = createRoute({
 const studentsRoute = createRoute({
   getParentRoute: () => instructorLayout,
   path: "/students",
+  validateSearch: (search: Record<string, unknown>): { tab?: "pre-registrations" } =>
+    search.tab === "pre-registrations" ? { tab: "pre-registrations" } : {},
   component: StudentsPage,
 });
 

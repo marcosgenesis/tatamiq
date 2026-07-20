@@ -12,6 +12,7 @@ export type AssignAcademyOwnerInput = {
 export type RemoveAcademyResponsibleInput = {
   userId: string;
   allowLeavingOwnerless?: boolean;
+  ownerlessConfirmation?: string;
 };
 
 export type AcademyOwnerAssignment = {
@@ -27,6 +28,8 @@ export type OwnedAcademyImpact = {
   isOnlyOwner: boolean;
 };
 
+export const OWNERLESS_CONFIRMATION_TEXT = "SEM RESPONSÁVEL";
+
 @Injectable()
 export class AcademyOwnershipService {
   constructor(
@@ -38,34 +41,51 @@ export class AcademyOwnershipService {
     academyId: string,
     input: AssignAcademyOwnerInput,
   ): Promise<AcademyOwnerAssignment> {
-    return this.assignOwnerByEmail(academyId, input, { replaceExistingOwners: false });
-  }
-
-  async transferOwnerByEmail(
-    academyId: string,
-    input: AssignAcademyOwnerInput,
-  ): Promise<AcademyOwnerAssignment> {
-    return this.assignOwnerByEmail(academyId, input, { replaceExistingOwners: true });
+    return this.assignOwnerByEmail(academyId, input);
   }
 
   async addResponsibleByEmail(
     academyId: string,
     input: AssignAcademyOwnerInput,
   ): Promise<AcademyOwnerAssignment> {
-    return this.assignOwnerByEmail(academyId, input, { replaceExistingOwners: false });
+    return this.assignOwnerByEmail(academyId, input);
   }
 
   async removeResponsible(academyId: string, input: RemoveAcademyResponsibleInput) {
     await this.assertAcademyExists(academyId);
+
+    const [targetResponsible] = await this.db
+      .select({ id: member.id })
+      .from(member)
+      .where(
+        and(
+          eq(member.organizationId, academyId),
+          eq(member.userId, input.userId),
+          eq(member.role, "owner"),
+        ),
+      )
+      .limit(1);
+
+    if (!targetResponsible) {
+      throw new NotFoundException("Responsável da academia não encontrado.");
+    }
+
     const [{ total }] = await this.db
       .select({ total: count() })
       .from(member)
-      .where(and(eq(member.organizationId, academyId), eq(member.role, "owner")));
+      .where(and(eq(member.organizationId, academyId), eq(member.role, "owner")))
+      .limit(1);
     const totalOwners = total ?? 0;
-    if (totalOwners <= 1 && !input.allowLeavingOwnerless) {
-      throw new BadRequestException(
-        "A academia precisa de confirmação para ficar sem responsável.",
-      );
+    const leavesOwnerless = totalOwners <= 1;
+    if (leavesOwnerless) {
+      const confirmed =
+        input.allowLeavingOwnerless === true &&
+        input.ownerlessConfirmation?.trim().toUpperCase() === OWNERLESS_CONFIRMATION_TEXT;
+      if (!confirmed) {
+        throw new BadRequestException(
+          `Digite ${OWNERLESS_CONFIRMATION_TEXT} para deixar a academia sem responsável.`,
+        );
+      }
     }
     await this.db
       .delete(member)
@@ -76,6 +96,7 @@ export class AcademyOwnershipService {
           eq(member.role, "owner"),
         ),
       );
+    return { leftOwnerless: leavesOwnerless };
   }
 
   async keepOwnerless(academyId: string, ownerUserId: string) {
@@ -88,6 +109,10 @@ export class AcademyOwnershipService {
           eq(member.role, "owner"),
         ),
       );
+  }
+
+  async removeResponsibleLinksForUser(userId: string) {
+    await this.db.delete(member).where(and(eq(member.userId, userId), eq(member.role, "owner")));
   }
 
   async ownedAcademyImpactForUser(userId: string): Promise<OwnedAcademyImpact[]> {
@@ -120,7 +145,6 @@ export class AcademyOwnershipService {
   private async assignOwnerByEmail(
     academyId: string,
     input: AssignAcademyOwnerInput,
-    options: { replaceExistingOwners: boolean },
   ): Promise<AcademyOwnerAssignment> {
     await this.assertAcademyExists(academyId);
 
@@ -129,19 +153,27 @@ export class AcademyOwnershipService {
     const reserved = await this.reservedAccounts.createOrReuse(ownerEmail, ownerName);
     const now = new Date();
 
-    if (options.replaceExistingOwners) {
-      await this.db
-        .delete(member)
-        .where(and(eq(member.organizationId, academyId), eq(member.role, "owner")));
-    }
+    const [existingMembership] = await this.db
+      .select({ id: member.id })
+      .from(member)
+      .where(
+        and(
+          eq(member.organizationId, academyId),
+          eq(member.userId, reserved.user.id),
+          eq(member.role, "owner"),
+        ),
+      )
+      .limit(1);
 
-    await this.db.insert(member).values({
-      id: crypto.randomUUID(),
-      organizationId: academyId,
-      userId: reserved.user.id,
-      role: "owner",
-      createdAt: now,
-    });
+    if (!existingMembership) {
+      await this.db.insert(member).values({
+        id: crypto.randomUUID(),
+        organizationId: academyId,
+        userId: reserved.user.id,
+        role: "owner",
+        createdAt: now,
+      });
+    }
 
     return {
       ownerUserId: reserved.user.id,

@@ -117,11 +117,11 @@ describe("PlatformAuditedActionService", () => {
 
   it("writes impersonated-admin failures with the real admin id", async () => {
     const { auditedAction, entries } = service();
-    const error = new Error("Transferência inválida.");
+    const error = new Error("Remoção de responsável inválida.");
 
     await expect(
       auditedAction.runForImpersonatedAdmin("real-admin-1", () => Promise.reject(error), {
-        action: "platform.academy.transferred",
+        action: "platform.academy.responsible_removed",
         targetType: "academy",
         academyId: "academy-1",
       }),
@@ -130,7 +130,7 @@ describe("PlatformAuditedActionService", () => {
     expect(entries).toEqual([
       expect.objectContaining({
         adminUserId: "real-admin-1",
-        action: "platform.academy.transferred",
+        action: "platform.academy.responsible_removed",
         targetType: "academy",
         academyId: "academy-1",
         result: "failure",

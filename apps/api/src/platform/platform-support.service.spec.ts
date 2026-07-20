@@ -72,4 +72,44 @@ describe("PlatformSupportService", () => {
 
     expect(insertValues).toHaveBeenCalledOnce();
   });
+
+  it("allows academy support for the selected academy responsible", async () => {
+    const { db, insertValues } = createSupportDb([
+      [{ id: "target-owner", role: null, name: "Owner", email: "owner@test.com" }],
+      [{ id: "academy-1" }],
+      [{ id: "member-owner" }],
+    ]);
+    const service = new PlatformSupportService(db as never);
+
+    await expect(
+      service.prepareSupport({
+        adminUserId: "admin-1",
+        targetUserId: "target-owner",
+        academyId: "academy-1",
+      }),
+    ).resolves.toMatchObject({ targetUserId: "target-owner", academyId: "academy-1" });
+
+    expect(insertValues).toHaveBeenCalledOnce();
+  });
+
+  it("rejects academy support when the selected target is not an academy responsible", async () => {
+    const { db, insertValues } = createSupportDb([
+      [{ id: "target-user", role: null, name: "Target", email: "target@test.com" }],
+      [{ id: "academy-1" }],
+      [],
+    ]);
+    const service = new PlatformSupportService(db as never);
+
+    await expect(
+      service.prepareSupport({
+        adminUserId: "admin-1",
+        targetUserId: "target-user",
+        academyId: "academy-1",
+      }),
+    ).rejects.toThrow(
+      "Suporte Assistido exige selecionar um Responsável da Academia vinculado à academia.",
+    );
+
+    expect(insertValues).not.toHaveBeenCalled();
+  });
 });

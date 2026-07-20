@@ -24,7 +24,7 @@ export type ProvisionPlatformAcademyInput = {
   ownerName?: string;
 };
 
-export type TransferPlatformAcademyInput = {
+export type AddPlatformAcademyResponsibleInput = {
   academyId: string;
   ownerEmail: string;
   ownerName?: string;
@@ -398,19 +398,7 @@ export async function provisionPlatformAcademy(input: ProvisionPlatformAcademyIn
   return data;
 }
 
-export async function transferPlatformAcademy(input: TransferPlatformAcademyInput) {
-  const { data, error } = await api.POST("/platform/academies/{id}/transfer", {
-    params: { path: { id: input.academyId } },
-    body: {
-      ownerEmail: input.ownerEmail,
-      ...(input.ownerName ? { ownerName: input.ownerName } : {}),
-    },
-  });
-  if (error) throw error;
-  return data;
-}
-
-export async function addPlatformAcademyResponsible(input: TransferPlatformAcademyInput) {
+export async function addPlatformAcademyResponsible(input: AddPlatformAcademyResponsibleInput) {
   const { data, error } = await api.POST("/platform/academies/{id}/responsibles", {
     params: { path: { id: input.academyId } },
     body: {
@@ -426,10 +414,18 @@ export async function removePlatformAcademyResponsible(input: {
   academyId: string;
   userId: string;
   allowLeavingOwnerless?: boolean;
+  ownerlessConfirmation?: string;
 }) {
   const { data, error } = await api.POST("/platform/academies/{id}/responsibles/{userId}/remove", {
     params: { path: { id: input.academyId, userId: input.userId } },
-    body: input.allowLeavingOwnerless ? { allowLeavingOwnerless: true } : {},
+    body: input.allowLeavingOwnerless
+      ? {
+          allowLeavingOwnerless: true,
+          ...(input.ownerlessConfirmation
+            ? { ownerlessConfirmation: input.ownerlessConfirmation }
+            : {}),
+        }
+      : {},
   });
   if (error) throw error;
   return data;

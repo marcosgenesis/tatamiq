@@ -29,6 +29,7 @@
     "@semantic-release/github": "^12.0.8",
     "@semantic-release/release-notes-generator": "^14.1.1",
     "husky": "latest",
+    "jsdom": "24.1.3",
     "lint-staged": "latest",
     "semantic-release": "^25.0.5",
     "turbo": "latest",

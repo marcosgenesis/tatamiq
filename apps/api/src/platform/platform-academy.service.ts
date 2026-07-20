@@ -54,9 +54,7 @@ export type ProvisionAcademyResult = {
   firstAccessLink: string | null;
 };
 
-export type TransferAcademyInput = AssignAcademyOwnerInput;
-
-export type TransferAcademyResult = {
+export type AcademyResponsibleMutationResult = {
   academy: PlatformAcademyDetail;
   ownerUserId: string;
   ownerWasCreated: boolean;
@@ -148,11 +146,16 @@ export class PlatformAcademyService {
     const page = Math.max(0, options.page ?? 0);
     const pageSize = Math.min(50, Math.max(1, options.pageSize ?? 10));
     const query = options.query?.trim();
+    const matchingResponsibleOrganizationIds = query
+      ? await this.findMatchingResponsibleOrganizationIds(query)
+      : [];
     const where = query
       ? or(
           ilike(organization.name, `%${query}%`),
           ilike(organization.slug, `%${query}%`),
-          ilike(user.email, `%${query}%`),
+          ...(matchingResponsibleOrganizationIds.length > 0
+            ? [inArray(organization.id, matchingResponsibleOrganizationIds)]
+            : []),
         )
       : undefined;
 
@@ -204,20 +207,10 @@ export class PlatformAcademyService {
     return { academy, ...owner };
   }
 
-  async transferAcademy(
-    academyId: string,
-    input: TransferAcademyInput,
-  ): Promise<TransferAcademyResult> {
-    const owner = await this.academyOwnership.transferOwnerByEmail(academyId, input);
-    const academy = await this.getAcademy(academyId);
-
-    return { academy, ...owner };
-  }
-
   async addResponsible(
     academyId: string,
     input: AssignAcademyOwnerInput,
-  ): Promise<TransferAcademyResult> {
+  ): Promise<AcademyResponsibleMutationResult> {
     const owner = await this.academyOwnership.addResponsibleByEmail(academyId, input);
     const academy = await this.getAcademy(academyId);
 
@@ -226,10 +219,10 @@ export class PlatformAcademyService {
 
   async removeResponsible(
     academyId: string,
-    input: { userId: string; allowLeavingOwnerless?: boolean },
+    input: { userId: string; allowLeavingOwnerless?: boolean; ownerlessConfirmation?: string },
   ) {
-    await this.academyOwnership.removeResponsible(academyId, input);
-    return { success: true };
+    const result = await this.academyOwnership.removeResponsible(academyId, input);
+    return { success: true, leftOwnerless: result.leftOwnerless };
   }
 
   async getAcademy(id: string): Promise<PlatformAcademyDetail> {
@@ -481,6 +474,21 @@ export class PlatformAcademyService {
       map.set(row.organizationId, list);
     }
     return map;
+  }
+
+  private async findMatchingResponsibleOrganizationIds(query: string): Promise<string[]> {
+    const rows = await this.db
+      .selectDistinct({ organizationId: member.organizationId })
+      .from(member)
+      .innerJoin(user, eq(user.id, member.userId))
+      .where(
+        and(
+          eq(member.role, "owner"),
+          or(ilike(user.name, `%${query}%`), ilike(user.email, `%${query}%`)),
+        ),
+      );
+
+    return rows.map((row) => row.organizationId);
   }
 
   private countPromotions(organizationId: string) {

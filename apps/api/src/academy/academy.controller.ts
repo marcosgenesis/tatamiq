@@ -14,6 +14,7 @@ import { ZodBody } from "../zod-body.decorator";
 import {
   AcademyConfirmLogoDto,
   AcademyLogoUploadResponseDto,
+  AcademyOnboardingChecklistDto,
   AcademyProfileDto,
   UpdateAcademyDto,
 } from "./academy.dto";
@@ -29,6 +30,21 @@ export class AcademyController {
   @ApiOkResponse({ type: AcademyProfileDto })
   get(@AcademyId() academyId: string): Promise<AcademyProfileDto> {
     return this.academyService.get(academyId);
+  }
+
+  @Get("onboarding-checklist")
+  @ApiOkResponse({ type: AcademyOnboardingChecklistDto })
+  onboardingChecklist(@AcademyId() academyId: string): Promise<AcademyOnboardingChecklistDto> {
+    return this.academyService.getOnboardingChecklist(academyId);
+  }
+
+  @Post("onboarding-checklist/dismiss")
+  @HttpCode(200)
+  @ApiOkResponse({ type: AcademyOnboardingChecklistDto })
+  dismissOnboardingChecklist(
+    @AcademyId() academyId: string,
+  ): Promise<AcademyOnboardingChecklistDto> {
+    return this.academyService.dismissOnboardingChecklist(academyId);
   }
 
   @Patch()

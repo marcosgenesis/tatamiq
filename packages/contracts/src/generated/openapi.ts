@@ -132,6 +132,38 @@ export interface paths {
         patch: operations["AcademyController_update"];
         trace?: never;
     };
+    "/academy/onboarding-checklist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AcademyController_onboardingChecklist"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/academy/onboarding-checklist/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AcademyController_dismissOnboardingChecklist"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/academy/logo/upload-url": {
         parameters: {
             query?: never;
@@ -516,6 +548,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/students/pre-registration-link/copy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PreRegistrationController_copyLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/students/pre-registrations": {
         parameters: {
             query?: never;
@@ -606,6 +654,22 @@ export interface paths {
         get: operations["StudentsController_list"];
         put?: never;
         post: operations["StudentsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/students/{id}/first-access-link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["StudentsController_generateFirstAccessLink"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1492,22 +1556,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/platform/academies/{id}/transfer": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["PlatformController_transferAcademy"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/platform/academies/{id}/responsibles": {
         parameters: {
             query?: never;
@@ -1873,6 +1921,17 @@ export interface components {
             pixKey: string | null;
             pixCopyPaste: string | null;
         };
+        AcademyOnboardingChecklistDto: {
+            steps: {
+                turmaCreated: boolean;
+                preRegistrationLinkShared: boolean;
+                firstPreRegistrationApproved: boolean;
+                firstAccessLinkSent: boolean;
+            };
+            pendingPreRegistrationCount: number;
+            firstAccessStudentId: string | null;
+            dismissed: boolean;
+        };
         UpdateAcademyDto: {
             name?: string;
             address?: string | "";
@@ -2149,6 +2208,8 @@ export interface components {
             url: string;
             /** Format: date-time */
             regeneratedAt: string | null;
+            /** Format: date-time */
+            copiedAt: string | null;
             /** Format: date-time */
             updatedAt: string;
         };
@@ -2987,25 +3048,23 @@ export interface components {
             ownerWasCreated: boolean;
             firstAccessLink: string | null;
         };
-        TransferAcademyBodyDto: {
+        AddResponsibleBodyDto: {
             ownerEmail: string;
             ownerName?: string;
         };
-        TransferAcademyResultDto: {
+        AcademyResponsibleMutationResultDto: {
             academy: components["schemas"]["PlatformAcademyDetailDto"];
             ownerUserId: string;
             ownerWasCreated: boolean;
             firstAccessLink: string | null;
         };
-        AddResponsibleBodyDto: {
-            ownerEmail: string;
-            ownerName?: string;
-        };
         RemoveResponsibleBodyDto: {
             allowLeavingOwnerless?: boolean;
+            ownerlessConfirmation?: string;
         };
-        PlatformActionResultDto: {
+        RemoveResponsibleResultDto: {
             success: boolean;
+            leftOwnerless: boolean;
         };
         PlatformAcademyDeletionImpactDto: {
             students: number;
@@ -3141,6 +3200,9 @@ export interface components {
             userWasCreated: boolean;
             firstAccessLink: string | null;
         };
+        PlatformActionResultDto: {
+            success: boolean;
+        };
         StartPlatformSupportBodyDto: {
             targetUserId: string;
             academyId?: string;
@@ -3245,9 +3307,7 @@ export interface components {
             /** @enum {string} */
             mode: "definitive" | "preserve_history";
             /** @enum {string} */
-            ownerResolution?: "keep_ownerless" | "transfer";
-            transferOwnerEmail?: string;
-            transferOwnerName?: string;
+            ownerResolution?: "keep_ownerless";
             confirmLeaveOwnerless?: boolean;
         };
         PlatformBanUserBodyDto: {
@@ -3443,6 +3503,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AcademyProfileDto"];
+                };
+            };
+        };
+    };
+    AcademyController_onboardingChecklist: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcademyOnboardingChecklistDto"];
+                };
+            };
+        };
+    };
+    AcademyController_dismissOnboardingChecklist: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcademyOnboardingChecklistDto"];
                 };
             };
         };
@@ -4019,6 +4117,25 @@ export interface operations {
             };
         };
     };
+    PreRegistrationController_copyLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreRegistrationLinkDto"];
+                };
+            };
+        };
+    };
     PreRegistrationController_listRequests: {
         parameters: {
             query?: never;
@@ -4172,6 +4289,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StudentDto"];
+                };
+            };
+        };
+    };
+    StudentsController_generateFirstAccessLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerateFirstAccessLinkResponseDto"];
                 };
             };
         };
@@ -5472,31 +5610,6 @@ export interface operations {
             };
         };
     };
-    PlatformController_transferAcademy: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TransferAcademyBodyDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TransferAcademyResultDto"];
-                };
-            };
-        };
-    };
     PlatformController_addResponsible: {
         parameters: {
             query?: never;
@@ -5517,7 +5630,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TransferAcademyResultDto"];
+                    "application/json": components["schemas"]["AcademyResponsibleMutationResultDto"];
                 };
             };
         };
@@ -5543,7 +5656,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PlatformActionResultDto"];
+                    "application/json": components["schemas"]["RemoveResponsibleResultDto"];
                 };
             };
         };

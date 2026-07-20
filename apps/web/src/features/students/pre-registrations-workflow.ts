@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { api } from "../../api";
 import { useAppShell } from "../../components/app-shell";
 import { academyQueryKey } from "../../lib/academy-query-keys";
+import { academyOnboardingChecklistQueryKey } from "../dashboard/academy-onboarding-checklist";
 
 export type DuplicateDecision = "link_to_existing" | "create_new" | "reject_as_duplicate";
 
@@ -56,6 +57,25 @@ export function usePreRegistrationsWorkflow() {
       return data;
     },
     enabled: !!activeAcademyId,
+  });
+
+  const copyLinkMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await api.POST("/students/pre-registration-link/copy");
+      if (error || !data?.url) throw new Error("Não foi possível copiar o link.");
+      await navigator.clipboard.writeText(data.url);
+      return data as PreRegistrationLink;
+    },
+    onSuccess: async (copiedLink) => {
+      writePreRegistrationLinkCache(queryClient, activeAcademyId, copiedLink);
+      toast("Link de pré-cadastro copiado", { description: copiedLink.url });
+      await queryClient.invalidateQueries({
+        queryKey: academyOnboardingChecklistQueryKey(activeAcademyId),
+      });
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Não foi possível copiar o link.");
+    },
   });
 
   const linkActionMutation = useMutation({
@@ -174,9 +194,7 @@ export function usePreRegistrationsWorkflow() {
   const requests = requestsQuery.data?.requests ?? [];
 
   function copyLink() {
-    if (!link) return;
-    navigator.clipboard.writeText(link.url);
-    toast("Link de pré-cadastro copiado", { description: link.url });
+    copyLinkMutation.mutate();
   }
 
   function copyFirstAccessLink(url: string) {

@@ -10,7 +10,7 @@ import {
   Search01Icon,
   Time04Icon,
 } from "hugeicons-react";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "../../api";
 import { useAppShell } from "../../components/app-shell";
 import { Tabs, TabsList, TabsTrigger } from "../../components/reui/tabs";
@@ -35,7 +35,7 @@ import {
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu";
 import { Input } from "../../components/ui/input";
-import { academyQueryKey } from "../../lib/academy-query-keys";
+import { academyQueryKey, onboardingChecklistQueryKey } from "../../lib/academy-query-keys";
 import { ClassGroupForm, type ClassGroupPayload } from "./class-group-form";
 
 type ClassGroupStatusFilter = "active" | "archived" | "all";
@@ -108,6 +108,9 @@ export function ClassGroupsPage() {
       await queryClient.invalidateQueries({
         queryKey: academyQueryKey(activeAcademyId, "schedule"),
       });
+      await queryClient.invalidateQueries({
+        queryKey: onboardingChecklistQueryKey(activeAcademyId),
+      });
       closeForm();
     },
     onError: (mutationError) => {
@@ -134,6 +137,9 @@ export function ClassGroupsPage() {
       await queryClient.invalidateQueries({
         queryKey: academyQueryKey(activeAcademyId, "schedule"),
       });
+      await queryClient.invalidateQueries({
+        queryKey: onboardingChecklistQueryKey(activeAcademyId),
+      });
     },
   });
 
@@ -154,11 +160,21 @@ export function ClassGroupsPage() {
     );
   }, [classGroups, search]);
 
-  function openCreateForm() {
+  const openCreateForm = useCallback(() => {
     setEditingClassGroup(null);
     setError(null);
     setIsFormOpen(true);
-  }
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("create") !== "turma") return;
+
+    openCreateForm();
+    params.delete("create");
+    const query = params.toString();
+    window.history.replaceState(null, "", query ? `/class-groups?${query}` : "/class-groups");
+  }, [openCreateForm]);
 
   function openEditForm(classGroup: ClassGroup) {
     setEditingClassGroup(classGroup);
