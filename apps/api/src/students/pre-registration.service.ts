@@ -98,8 +98,8 @@ export class PreRegistrationService {
     return this.fetchLinkDto(organizationId);
   }
 
-  async markLinkCopied(organizationId: string): Promise<PreRegistrationLink> {
-    await this.linkLifecycle.markLinkCopied(organizationId);
+  async copyLink(organizationId: string): Promise<PreRegistrationLink> {
+    await this.linkLifecycle.markCopied(organizationId);
     return this.fetchLinkDto(organizationId);
   }
 
@@ -140,10 +140,6 @@ export class PreRegistrationService {
     const declaredBeltId = emptyToNull(input.declaredBeltId);
     if (declaredBeltId) {
       await this.assertBeltBelongsToOrg(organizationId, declaredBeltId, input.declaredDegree ?? 0);
-    } else if (input.declaredDegree) {
-      // A degree with no belt is meaningless — reject rather than store a
-      // dangling value the instructor can't interpret at review.
-      throw new BadRequestException("Informe a faixa para declarar o grau.");
     }
 
     const now = new Date();
@@ -761,6 +757,7 @@ export class PreRegistrationService {
       status: parseLinkStatus(row.status),
       url: `${webAppUrl()}/pre-register/${row.token}`,
       regeneratedAt: row.regeneratedAt?.toISOString() ?? null,
+      copiedAt: row.copiedAt?.toISOString() ?? null,
       updatedAt: row.updatedAt.toISOString(),
     };
   }

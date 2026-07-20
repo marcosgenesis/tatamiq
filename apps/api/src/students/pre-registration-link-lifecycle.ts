@@ -67,13 +67,16 @@ export class PreRegistrationLinkLifecycle {
       .where(eq(academyPreRegistrationLinks.organizationId, organizationId));
   }
 
-  async markLinkCopied(organizationId: string): Promise<void> {
-    await this.getOrCreateLink(organizationId);
+  async markCopied(organizationId: string): Promise<void> {
+    const { linkId } = await this.getOrCreateLink(organizationId);
+    const existing = await this.findByOrganization(organizationId);
+    if (existing?.copiedAt) return;
+
     const now = new Date();
     await this.db
       .update(academyPreRegistrationLinks)
       .set({ copiedAt: now, updatedAt: now })
-      .where(eq(academyPreRegistrationLinks.organizationId, organizationId));
+      .where(eq(academyPreRegistrationLinks.id, linkId));
   }
 
   async resolvePublicProfile(token: string): Promise<PreRegistrationPublicProfile> {

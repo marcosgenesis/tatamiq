@@ -20,102 +20,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/students/import-csv/template.csv": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["CsvController_importTemplate"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/students/import-csv": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["CsvController_importPreview"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/students/import-csv/confirm": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["CsvController_importConfirm"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/students/export.csv": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["CsvController_exportStudents"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attendances/export.csv": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["CsvController_exportAttendances"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/monthly-fees/export.csv": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["CsvController_exportMonthlyFees"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/academy": {
         parameters: {
             query?: never;
@@ -139,9 +43,25 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["AcademyController_getOnboardingChecklist"];
+        get: operations["AcademyController_onboardingChecklist"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/academy/onboarding-checklist/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AcademyController_dismissOnboardingChecklist"];
         delete?: never;
         options?: never;
         head?: never;
@@ -174,22 +94,6 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["AcademyController_confirmLogo"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/academy/onboarding-checklist/dismiss": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["AcademyController_dismissOnboardingChecklist"];
         delete?: never;
         options?: never;
         head?: never;
@@ -548,7 +452,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/students/pre-registration-link/copied": {
+    "/students/pre-registration-link/copy": {
         parameters: {
             query?: never;
             header?: never;
@@ -557,7 +461,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["PreRegistrationController_markLinkCopied"];
+        post: operations["PreRegistrationController_copyLink"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1444,6 +1348,102 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/students/import-csv/template.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CsvController_importTemplate"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/students/import-csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["CsvController_importPreview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/students/import-csv/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["CsvController_importConfirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/students/export.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CsvController_exportStudents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attendances/export.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CsvController_exportAttendances"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/monthly-fees/export.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CsvController_exportMonthlyFees"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/platform/first-access/{token}": {
         parameters: {
             query?: never;
@@ -1540,6 +1540,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/platform/academies/{id}/transfer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PlatformController_transferAcademy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/platform/academies/{id}/responsibles": {
         parameters: {
             query?: never;
@@ -1572,22 +1588,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/platform/academies/{id}/deletion-preview": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["PlatformController_academyDeletionPreview"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/platform/academies/{id}": {
         parameters: {
             query?: never;
@@ -1598,7 +1598,7 @@ export interface paths {
         get: operations["PlatformController_academy"];
         put?: never;
         post?: never;
-        delete: operations["PlatformController_deleteAcademy"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1870,28 +1870,6 @@ export interface components {
             /** Format: date-time */
             timestamp: string;
         };
-        CsvImportPreviewDto: {
-            csv: string;
-        };
-        CsvImportPreviewResponseDto: {
-            totalLines: number;
-            validLines: number;
-            errorLines: number;
-            previewToken: string;
-            lines: {
-                line: number;
-                name: string;
-                errors: string[];
-                warnings: string[];
-            }[];
-        };
-        CsvImportConfirmDto: {
-            previewToken: string;
-        };
-        CsvImportConfirmResponseDto: {
-            imported: number;
-            skipped: number;
-        };
         AcademyProfileDto: {
             id: string;
             name: string;
@@ -1904,6 +1882,17 @@ export interface components {
             pixKeyType: "cpf" | "email" | "phone" | "random" | null;
             pixKey: string | null;
             pixCopyPaste: string | null;
+        };
+        AcademyOnboardingChecklistDto: {
+            steps: {
+                turmaCreated: boolean;
+                preRegistrationLinkShared: boolean;
+                firstPreRegistrationApproved: boolean;
+                firstAccessLinkSent: boolean;
+            };
+            pendingPreRegistrationCount: number;
+            firstAccessStudentId: string | null;
+            dismissed: boolean;
         };
         UpdateAcademyDto: {
             name?: string;
@@ -1926,17 +1915,6 @@ export interface components {
         AcademyConfirmLogoDto: {
             fileKey: string;
             fileKeySignature: string;
-        };
-        AcademyOnboardingChecklistDto: {
-            steps: {
-                turmaCreated: boolean;
-                preRegistrationLinkShared: boolean;
-                firstPreRegistrationApproved: boolean;
-                firstAccessLinkSent: boolean;
-            };
-            pendingPreRegistrationCount: number;
-            firstAccessStudentId: string | null;
-            dismissed: boolean;
         };
         ListMonthlyFeesResponseDto: {
             fees: {
@@ -2192,6 +2170,8 @@ export interface components {
             url: string;
             /** Format: date-time */
             regeneratedAt: string | null;
+            /** Format: date-time */
+            copiedAt: string | null;
             /** Format: date-time */
             updatedAt: string;
         };
@@ -2951,6 +2931,28 @@ export interface components {
         InvalidateAttendanceDto: {
             reason: string;
         };
+        CsvImportPreviewDto: {
+            csv: string;
+        };
+        CsvImportPreviewResponseDto: {
+            totalLines: number;
+            validLines: number;
+            errorLines: number;
+            previewToken: string;
+            lines: {
+                line: number;
+                name: string;
+                errors: string[];
+                warnings: string[];
+            }[];
+        };
+        CsvImportConfirmDto: {
+            previewToken: string;
+        };
+        CsvImportConfirmResponseDto: {
+            imported: number;
+            skipped: number;
+        };
         ReservedFirstAccessPreviewDto: {
             /** @enum {string} */
             status: "valid" | "invalid" | "expired";
@@ -3030,53 +3032,25 @@ export interface components {
             ownerWasCreated: boolean;
             firstAccessLink: string | null;
         };
-        AddResponsibleBodyDto: {
+        TransferAcademyBodyDto: {
             ownerEmail: string;
             ownerName?: string;
         };
-        AcademyResponsibleMutationResultDto: {
+        TransferAcademyResultDto: {
             academy: components["schemas"]["PlatformAcademyDetailDto"];
             ownerUserId: string;
             ownerWasCreated: boolean;
             firstAccessLink: string | null;
         };
+        AddResponsibleBodyDto: {
+            ownerEmail: string;
+            ownerName?: string;
+        };
         RemoveResponsibleBodyDto: {
             allowLeavingOwnerless?: boolean;
-            ownerlessConfirmation?: string;
         };
-        RemoveResponsibleResultDto: {
+        PlatformActionResultDto: {
             success: boolean;
-            leftOwnerless: boolean;
-        };
-        PlatformAcademyDeletionImpactDto: {
-            students: number;
-            classGroups: number;
-            classSessions: number;
-            attendances: number;
-            monthlyFees: number;
-            paymentReceipts: number;
-            preRegistrationRequests: number;
-            files: number;
-        };
-        PlatformAcademyDeletionPreviewDto: {
-            academy: components["schemas"]["PlatformAcademyDetailDto"];
-            affectedResponsibles: components["schemas"]["PlatformAcademyResponsibleDto"][];
-            impact: components["schemas"]["PlatformAcademyDeletionImpactDto"];
-            irreversibleWarning: string;
-        };
-        DeletePlatformAcademyBodyDto: {
-            confirmationSlug: string;
-            irreversibleAccepted: boolean;
-            reason?: string;
-        };
-        DeletePlatformAcademyResultDto: {
-            success: boolean;
-            deletedAcademyId: string;
-            deletedAcademyName: string;
-            deletedAcademySlug: string;
-            impact: components["schemas"]["PlatformAcademyDeletionImpactDto"];
-            deletedFiles: number;
-            affectedResponsibles: components["schemas"]["PlatformAcademyResponsibleDto"][];
         };
         PlatformStudentsOperationalSummaryDto: {
             total: number;
@@ -3182,9 +3156,6 @@ export interface components {
             userWasCreated: boolean;
             firstAccessLink: string | null;
         };
-        PlatformActionResultDto: {
-            success: boolean;
-        };
         StartPlatformSupportBodyDto: {
             targetUserId: string;
             academyId?: string;
@@ -3289,7 +3260,9 @@ export interface components {
             /** @enum {string} */
             mode: "definitive" | "preserve_history";
             /** @enum {string} */
-            ownerResolution?: "keep_ownerless";
+            ownerResolution?: "keep_ownerless" | "transfer";
+            transferOwnerEmail?: string;
+            transferOwnerName?: string;
             confirmLeaveOwnerless?: boolean;
         };
         PlatformBanUserBodyDto: {
@@ -3320,130 +3293,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HealthResponseDto"];
                 };
-            };
-        };
-    };
-    CsvController_importTemplate: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    CsvController_importPreview: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CsvImportPreviewDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CsvImportPreviewResponseDto"];
-                };
-            };
-        };
-    };
-    CsvController_importConfirm: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CsvImportConfirmDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CsvImportConfirmResponseDto"];
-                };
-            };
-        };
-    };
-    CsvController_exportStudents: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    CsvController_exportAttendances: {
-        parameters: {
-            query?: {
-                studentId?: unknown;
-                classGroupId?: unknown;
-                dateTo?: unknown;
-                dateFrom?: unknown;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    CsvController_exportMonthlyFees: {
-        parameters: {
-            query?: {
-                studentId?: unknown;
-                referenceMonth?: unknown;
-                referenceYear?: unknown;
-                status?: unknown;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };
@@ -3489,6 +3338,44 @@ export interface operations {
             };
         };
     };
+    AcademyController_onboardingChecklist: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcademyOnboardingChecklistDto"];
+                };
+            };
+        };
+    };
+    AcademyController_dismissOnboardingChecklist: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcademyOnboardingChecklistDto"];
+                };
+            };
+        };
+    };
     AcademyController_logoUploadUrl: {
         parameters: {
             query?: never;
@@ -3527,44 +3414,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AcademyProfileDto"];
-                };
-            };
-        };
-    };
-    AcademyController_getOnboardingChecklist: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AcademyOnboardingChecklistDto"];
-                };
-            };
-        };
-    };
-    AcademyController_dismissOnboardingChecklist: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AcademyOnboardingChecklistDto"];
                 };
             };
         };
@@ -4099,7 +3948,7 @@ export interface operations {
             };
         };
     };
-    PreRegistrationController_markLinkCopied: {
+    PreRegistrationController_copyLink: {
         parameters: {
             query?: never;
             header?: never;
@@ -5441,6 +5290,130 @@ export interface operations {
             };
         };
     };
+    CsvController_importTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CsvController_importPreview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CsvImportPreviewDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CsvImportPreviewResponseDto"];
+                };
+            };
+        };
+    };
+    CsvController_importConfirm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CsvImportConfirmDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CsvImportConfirmResponseDto"];
+                };
+            };
+        };
+    };
+    CsvController_exportStudents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CsvController_exportAttendances: {
+        parameters: {
+            query?: {
+                studentId?: unknown;
+                classGroupId?: unknown;
+                dateTo?: unknown;
+                dateFrom?: unknown;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CsvController_exportMonthlyFees: {
+        parameters: {
+            query?: {
+                studentId?: unknown;
+                referenceMonth?: unknown;
+                referenceYear?: unknown;
+                status?: unknown;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     PlatformController_previewFirstAccess: {
         parameters: {
             query?: never;
@@ -5571,6 +5544,31 @@ export interface operations {
             };
         };
     };
+    PlatformController_transferAcademy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransferAcademyBodyDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferAcademyResultDto"];
+                };
+            };
+        };
+    };
     PlatformController_addResponsible: {
         parameters: {
             query?: never;
@@ -5591,7 +5589,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AcademyResponsibleMutationResultDto"];
+                    "application/json": components["schemas"]["TransferAcademyResultDto"];
                 };
             };
         };
@@ -5617,28 +5615,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RemoveResponsibleResultDto"];
-                };
-            };
-        };
-    };
-    PlatformController_academyDeletionPreview: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PlatformAcademyDeletionPreviewDto"];
+                    "application/json": components["schemas"]["PlatformActionResultDto"];
                 };
             };
         };
@@ -5660,31 +5637,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PlatformAcademyDetailDto"];
-                };
-            };
-        };
-    };
-    PlatformController_deleteAcademy: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DeletePlatformAcademyBodyDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DeletePlatformAcademyResultDto"];
                 };
             };
         };

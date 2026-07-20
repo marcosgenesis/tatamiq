@@ -319,6 +319,7 @@ export const preRegistrationLinkSchema = z.object({
   status: preRegistrationLinkStatusSchema,
   url: z.string().url(),
   regeneratedAt: z.string().datetime().nullable(),
+  copiedAt: z.string().datetime().nullable(),
   updatedAt: z.string().datetime(),
 });
 

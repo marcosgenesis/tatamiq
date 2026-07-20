@@ -34,8 +34,17 @@ export class AcademyController {
 
   @Get("onboarding-checklist")
   @ApiOkResponse({ type: AcademyOnboardingChecklistDto })
-  getOnboardingChecklist(@AcademyId() academyId: string): Promise<AcademyOnboardingChecklistDto> {
-    return this.academyService.getOnboardingChecklist(academyId);
+  onboardingChecklist(@AcademyId() academyId: string): Promise<AcademyOnboardingChecklistDto> {
+    return this.academyService.onboardingChecklist(academyId);
+  }
+
+  @Post("onboarding-checklist/dismiss")
+  @HttpCode(200)
+  @ApiOkResponse({ type: AcademyOnboardingChecklistDto })
+  dismissOnboardingChecklist(
+    @AcademyId() academyId: string,
+  ): Promise<AcademyOnboardingChecklistDto> {
+    return this.academyService.dismissOnboardingChecklist(academyId);
   }
 
   @Patch()
@@ -67,14 +76,5 @@ export class AcademyController {
       throw new BadRequestException("fileKey é obrigatório.");
     }
     return this.academyService.confirmLogo(academyId, body.fileKey, body.fileKeySignature);
-  }
-
-  @Post("onboarding-checklist/dismiss")
-  @HttpCode(200)
-  @ApiOkResponse({ type: AcademyOnboardingChecklistDto })
-  dismissOnboardingChecklist(
-    @AcademyId() academyId: string,
-  ): Promise<AcademyOnboardingChecklistDto> {
-    return this.academyService.dismissOnboardingChecklist(academyId);
   }
 }
