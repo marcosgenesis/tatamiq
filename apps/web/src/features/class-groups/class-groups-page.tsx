@@ -35,7 +35,7 @@ import {
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu";
 import { Input } from "../../components/ui/input";
-import { academyQueryKey } from "../../lib/academy-query-keys";
+import { academyQueryKey, onboardingChecklistQueryKey } from "../../lib/academy-query-keys";
 import { ClassGroupForm, type ClassGroupPayload } from "./class-group-form";
 
 type ClassGroupStatusFilter = "active" | "archived" | "all";
@@ -108,6 +108,9 @@ export function ClassGroupsPage() {
       await queryClient.invalidateQueries({
         queryKey: academyQueryKey(activeAcademyId, "schedule"),
       });
+      await queryClient.invalidateQueries({
+        queryKey: onboardingChecklistQueryKey(activeAcademyId),
+      });
       closeForm();
     },
     onError: (mutationError) => {
@@ -133,6 +136,9 @@ export function ClassGroupsPage() {
       await queryClient.invalidateQueries({ queryKey: classGroupsKeys.all(activeAcademyId) });
       await queryClient.invalidateQueries({
         queryKey: academyQueryKey(activeAcademyId, "schedule"),
+      });
+      await queryClient.invalidateQueries({
+        queryKey: onboardingChecklistQueryKey(activeAcademyId),
       });
     },
   });
