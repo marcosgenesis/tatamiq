@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { AcademyOnboardingChecklist } from "@tatamiq/contracts";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
@@ -11,12 +13,17 @@ import {
 
 const getMock = vi.fn();
 const postMock = vi.fn();
+const navigateMock = vi.fn();
 
 vi.mock("@/api", () => ({
   api: {
     GET: (...args: unknown[]) => getMock(...args),
     POST: (...args: unknown[]) => postMock(...args),
   },
+}));
+
+vi.mock("@tanstack/react-router", () => ({
+  useNavigate: () => navigateMock,
 }));
 
 vi.mock("@/components/app-shell", () => ({
@@ -44,19 +51,24 @@ function buildChecklist(
   };
 }
 
-function renderWidget() {
-  const queryClient = new QueryClient({
+function createTestQueryClient() {
+  return new QueryClient({
     defaultOptions: {
       queries: { retry: false },
       mutations: { retry: false },
     },
   });
+}
 
-  return render(
+function renderWidget() {
+  const queryClient = createTestQueryClient();
+  const result = render(
     <QueryClientProvider client={queryClient}>
       <OnboardingChecklistWidget />
     </QueryClientProvider>,
   );
+
+  return { ...result, queryClient };
 }
 
 describe("onboarding checklist helpers", () => {
@@ -124,6 +136,7 @@ describe("OnboardingChecklistWidget", () => {
   beforeEach(() => {
     getMock.mockReset();
     postMock.mockReset();
+    navigateMock.mockReset();
   });
 
   it("renders progress and derived states from the mocked checklist API", async () => {
@@ -148,6 +161,49 @@ describe("OnboardingChecklistWidget", () => {
     expect(screen.getAllByText("Concluído")).toHaveLength(2);
     expect(screen.getByText("Aguardando")).toBeTruthy();
     expect(screen.getByText("Bloqueado")).toBeTruthy();
+    expect(screen.getByLabelText("Passo 1 concluído")).toBeTruthy();
+  });
+
+  it("shows the active Step 1 CTA and blocks the later steps while no Turma exists", async () => {
+    getMock.mockResolvedValue({ data: buildChecklist(), error: null });
+
+    renderWidget();
+
+    const cta = await screen.findByRole("button", { name: "Criar primeira turma" });
+    expect(cta.textContent).toContain("Criar Turma");
+    expect(screen.getByText("0 de 4 concluídos")).toBeTruthy();
+    expect(screen.getAllByText("Bloqueado")).toHaveLength(3);
+
+    fireEvent.click(cta);
+
+    expect(navigateMock).toHaveBeenCalledWith({ to: "/class-groups", search: { create: "turma" } });
+  });
+
+  it("transitions Step 1 to completed after the class-group creation flow invalidates the checklist", async () => {
+    getMock.mockResolvedValueOnce({ data: buildChecklist(), error: null }).mockResolvedValueOnce({
+      data: buildChecklist({
+        steps: {
+          turmaCreated: true,
+          preRegistrationLinkShared: false,
+          firstPreRegistrationApproved: false,
+          firstAccessLinkSent: false,
+        },
+      }),
+      error: null,
+    });
+
+    const { queryClient } = renderWidget();
+
+    expect(await screen.findByRole("button", { name: "Criar primeira turma" })).toBeTruthy();
+
+    await queryClient.invalidateQueries({
+      queryKey: ["academy", "academy-1", "onboarding-checklist"],
+    });
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Passo 1 concluído")).toBeTruthy();
+      expect(screen.queryByRole("button", { name: "Criar primeira turma" })).toBeNull();
+    });
   });
 
   it("dismisses the widget immediately after clicking the X button", async () => {
@@ -185,6 +241,6 @@ describe("OnboardingChecklistWidget", () => {
     await waitFor(() => {
       expect(screen.queryByText("Configuração Inicial da Academia")).toBeNull();
     });
-    expect(postMock).toHaveBeenCalledWith("/academy/onboarding-checklist/dismiss");
+    expect(postMock).toHaveBeenCalledWith("/academy/onboarding-checklist/dismiss", {});
   });
 });
