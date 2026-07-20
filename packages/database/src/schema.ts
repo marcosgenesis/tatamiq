@@ -38,6 +38,9 @@ export const organization = pgTable("organization", {
   pixKeyType: text("pix_key_type"),
   pixKey: text("pix_key"),
   pixCopyPaste: text("pix_copy_paste"),
+  onboardingChecklistDismissedAt: timestamp("onboarding_checklist_dismissed_at", {
+    withTimezone: true,
+  }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -461,6 +464,7 @@ export const academyPreRegistrationLinks = pgTable(
     token: text("token").notNull().unique(),
     status: text("status").notNull().default("active"),
     regeneratedAt: timestamp("regenerated_at", { withTimezone: true }),
+    copiedAt: timestamp("copied_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

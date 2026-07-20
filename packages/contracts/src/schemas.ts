@@ -305,7 +305,20 @@ export const preRegistrationLinkSchema = z.object({
   status: preRegistrationLinkStatusSchema,
   url: z.string().url(),
   regeneratedAt: z.string().datetime().nullable(),
+  copiedAt: z.string().datetime().nullable(),
   updatedAt: z.string().datetime(),
+});
+
+export const academyOnboardingChecklistSchema = z.object({
+  steps: z.object({
+    turmaCreated: z.boolean(),
+    preRegistrationLinkShared: z.boolean(),
+    firstPreRegistrationApproved: z.boolean(),
+    firstAccessLinkSent: z.boolean(),
+  }),
+  pendingPreRegistrationCount: z.number().int().nonnegative(),
+  firstAccessStudentId: z.string().nullable(),
+  dismissed: z.boolean(),
 });
 
 export const listPreRegistrationRequestsResponseSchema = z.object({
@@ -366,6 +379,7 @@ export type PreRegistrationPublicProfile = z.infer<typeof preRegistrationPublicP
 export type CreatePreRegistrationRequestInput = z.infer<typeof createPreRegistrationRequestSchema>;
 export type PreRegistrationRequest = z.infer<typeof preRegistrationRequestSchema>;
 export type PreRegistrationLink = z.infer<typeof preRegistrationLinkSchema>;
+export type AcademyOnboardingChecklist = z.infer<typeof academyOnboardingChecklistSchema>;
 export type ListPreRegistrationRequestsResponse = z.infer<
   typeof listPreRegistrationRequestsResponseSchema
 >;

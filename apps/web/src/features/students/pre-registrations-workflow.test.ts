@@ -25,6 +25,7 @@ describe("pre-registration link cache", () => {
       status: "active",
       url: "https://app.tatamiq.com.br/pre-register/new-token",
       regeneratedAt: "2026-06-18T00:01:00.000Z",
+      copiedAt: null,
       updatedAt: "2026-06-18T00:00:00.000Z",
     } satisfies PreRegistrationLink;
 

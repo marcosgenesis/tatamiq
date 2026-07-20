@@ -1,11 +1,18 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type {
   AcademyLogoUploadResponse,
+  AcademyOnboardingChecklist,
   AcademyProfile,
   UpdateAcademyInput,
 } from "@tatamiq/contracts";
-import { type Database, organization } from "@tatamiq/database";
-import { eq } from "drizzle-orm";
+import {
+  academyPreRegistrationLinks,
+  classGroups,
+  type Database,
+  organization,
+  preRegistrationRequests,
+} from "@tatamiq/database";
+import { and, count, eq, isNotNull } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
 import { R2StorageService } from "../monthly-fees/r2-storage.service";
 import {
@@ -21,17 +28,82 @@ export class AcademyService {
   ) {}
 
   async get(organizationId: string): Promise<AcademyProfile> {
-    const [row] = await this.db
-      .select()
-      .from(organization)
-      .where(eq(organization.id, organizationId))
+    const row = await this.getOrganization(organizationId);
+    return toProfile(row);
+  }
+
+  async onboardingChecklist(organizationId: string): Promise<AcademyOnboardingChecklist> {
+    const academy = await this.getOrganization(organizationId);
+    const [turmas] = await this.db
+      .select({ total: count() })
+      .from(classGroups)
+      .where(eq(classGroups.organizationId, organizationId));
+    const [sharedLinks] = await this.db
+      .select({ total: count() })
+      .from(academyPreRegistrationLinks)
+      .where(
+        and(
+          eq(academyPreRegistrationLinks.organizationId, organizationId),
+          isNotNull(academyPreRegistrationLinks.copiedAt),
+        ),
+      );
+    const [approvedRequests] = await this.db
+      .select({ total: count() })
+      .from(preRegistrationRequests)
+      .where(
+        and(
+          eq(preRegistrationRequests.organizationId, organizationId),
+          eq(preRegistrationRequests.status, "approved"),
+        ),
+      );
+    const [firstAccessLinks] = await this.db
+      .select({ total: count() })
+      .from(preRegistrationRequests)
+      .where(
+        and(
+          eq(preRegistrationRequests.organizationId, organizationId),
+          isNotNull(preRegistrationRequests.firstAccessTokenHash),
+        ),
+      );
+    const [pendingRequests] = await this.db
+      .select({ total: count() })
+      .from(preRegistrationRequests)
+      .where(
+        and(
+          eq(preRegistrationRequests.organizationId, organizationId),
+          eq(preRegistrationRequests.status, "pending_review"),
+        ),
+      );
+    const [firstAccessStudent] = await this.db
+      .select({ studentId: preRegistrationRequests.approvedStudentId })
+      .from(preRegistrationRequests)
+      .where(
+        and(
+          eq(preRegistrationRequests.organizationId, organizationId),
+          isNotNull(preRegistrationRequests.firstAccessTokenHash),
+        ),
+      )
       .limit(1);
 
-    if (!row) {
-      throw new NotFoundException("Academia não encontrada.");
-    }
+    return {
+      steps: {
+        turmaCreated: (turmas?.total ?? 0) > 0,
+        preRegistrationLinkShared: (sharedLinks?.total ?? 0) > 0,
+        firstPreRegistrationApproved: (approvedRequests?.total ?? 0) > 0,
+        firstAccessLinkSent: (firstAccessLinks?.total ?? 0) > 0,
+      },
+      pendingPreRegistrationCount: pendingRequests?.total ?? 0,
+      firstAccessStudentId: firstAccessStudent?.studentId ?? null,
+      dismissed: academy.onboardingChecklistDismissedAt !== null,
+    };
+  }
 
-    return toProfile(row);
+  async dismissOnboardingChecklist(organizationId: string): Promise<AcademyOnboardingChecklist> {
+    await this.db
+      .update(organization)
+      .set({ onboardingChecklistDismissedAt: new Date() })
+      .where(eq(organization.id, organizationId));
+    return this.onboardingChecklist(organizationId);
   }
 
   async update(organizationId: string, input: UpdateAcademyInput): Promise<AcademyProfile> {
@@ -69,6 +141,20 @@ export class AcademyService {
       fileKey,
     });
     return { uploadUrl, fileKey, ...signature };
+  }
+
+  private async getOrganization(organizationId: string): Promise<OrganizationRow> {
+    const [row] = await this.db
+      .select()
+      .from(organization)
+      .where(eq(organization.id, organizationId))
+      .limit(1);
+
+    if (!row) {
+      throw new NotFoundException("Academia não encontrada.");
+    }
+
+    return row;
   }
 
   async confirmLogo(

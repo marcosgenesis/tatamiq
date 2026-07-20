@@ -59,6 +59,7 @@ function linkRow(overrides: MockRow = {}): MockRow {
     token: "existing-token",
     status: "active",
     regeneratedAt: null,
+    copiedAt: null,
     createdAt: new Date("2026-01-01"),
     updatedAt: new Date("2026-01-01"),
     ...overrides,
@@ -156,6 +157,28 @@ describe("PreRegistrationLinkLifecycle", () => {
       expect(mock.updates[0].token).toBeTruthy();
       expect(mock.updates[0].token).not.toBe("existing-token");
       expect(mock.updates[0].regeneratedAt).toBeInstanceOf(Date);
+    });
+  });
+
+  describe("markCopied", () => {
+    it("sets copiedAt the first time the link is copied", async () => {
+      const mock = createMockDb([[linkRow()], [linkRow()]]);
+      service = new PreRegistrationLinkLifecycle(mock.db as never);
+
+      await service.markCopied("org-1");
+
+      expect(mock.updates).toHaveLength(1);
+      expect(mock.updates[0].copiedAt).toBeInstanceOf(Date);
+    });
+
+    it("does not overwrite copiedAt after it was already set", async () => {
+      const copiedAt = new Date("2026-01-01T10:00:00.000Z");
+      const mock = createMockDb([[linkRow({ copiedAt })], [linkRow({ copiedAt })]]);
+      service = new PreRegistrationLinkLifecycle(mock.db as never);
+
+      await service.markCopied("org-1");
+
+      expect(mock.updates).toHaveLength(0);
     });
   });
 

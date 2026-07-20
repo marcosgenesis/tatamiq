@@ -13,6 +13,7 @@ const academyRow = {
   pixKeyType: null,
   pixKey: null,
   pixCopyPaste: null,
+  onboardingChecklistDismissedAt: null,
 };
 
 function createDbMock() {
@@ -34,6 +35,77 @@ function createDbMock() {
     },
   };
 }
+
+function createChecklistDbMock(results: unknown[][]) {
+  let selectIndex = 0;
+  const updates: unknown[] = [];
+  const nextResult = () => Promise.resolve(results[selectIndex++] ?? []);
+  return {
+    updates,
+    db: {
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => {
+            const promise = nextResult() as Promise<unknown[]> & {
+              limit: ReturnType<typeof vi.fn>;
+            };
+            promise.limit = vi.fn(() => promise);
+            return promise;
+          }),
+        })),
+      })),
+      update: vi.fn(() => ({
+        set: vi.fn((value: unknown) => {
+          updates.push(value);
+          return { where: vi.fn().mockResolvedValue(undefined) };
+        }),
+      })),
+    },
+  };
+}
+
+describe("AcademyService onboarding checklist", () => {
+  it("reports preRegistrationLinkShared when copiedAt exists", async () => {
+    const mock = createChecklistDbMock([
+      [academyRow],
+      [{ total: 1 }],
+      [{ total: 1 }],
+      [{ total: 0 }],
+      [{ total: 0 }],
+      [{ total: 0 }],
+      [],
+    ]);
+    const service = new AcademyService(mock.db as never, {} as never);
+
+    await expect(service.onboardingChecklist("org-1")).resolves.toMatchObject({
+      steps: {
+        turmaCreated: true,
+        preRegistrationLinkShared: true,
+        firstPreRegistrationApproved: false,
+        firstAccessLinkSent: false,
+      },
+      dismissed: false,
+    });
+  });
+
+  it("dismisses the checklist for the academy", async () => {
+    const mock = createChecklistDbMock([
+      [{ ...academyRow, onboardingChecklistDismissedAt: new Date("2026-01-01") }],
+      [{ total: 0 }],
+      [{ total: 0 }],
+      [{ total: 0 }],
+      [{ total: 0 }],
+      [{ total: 0 }],
+      [],
+    ]);
+    const service = new AcademyService(mock.db as never, {} as never);
+
+    await expect(service.dismissOnboardingChecklist("org-1")).resolves.toMatchObject({
+      dismissed: true,
+    });
+    expect(mock.updates[0]).toMatchObject({ onboardingChecklistDismissedAt: expect.any(Date) });
+  });
+});
 
 describe("AcademyService logo uploads", () => {
   const r2 = {
