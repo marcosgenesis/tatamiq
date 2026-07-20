@@ -16,14 +16,16 @@ function isRealCalendarDate(value: string): boolean {
  * ISO `YYYY-MM-DD` date that must be a real calendar date and not in the future.
  * String comparison is safe because ISO dates sort chronologically.
  */
-export const birthDateSchema = z
+export const calendarDateSchema = z
   .string()
-  .regex(ISO_DATE_PATTERN, "Data de nascimento inválida.")
-  .refine(isRealCalendarDate, "Data de nascimento inválida.")
+  .regex(ISO_DATE_PATTERN, "Data inválida.")
+  .refine(isRealCalendarDate, "Data inválida.")
   .refine(
     (value) => value <= new Date().toISOString().slice(0, 10),
-    "A data de nascimento não pode estar no futuro.",
+    "A data não pode estar no futuro.",
   );
+
+export const birthDateSchema = calendarDateSchema;
 
 export const healthResponseSchema = z.object({
   status: z.literal("ok"),

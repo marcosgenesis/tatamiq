@@ -29,7 +29,7 @@ export function AcademyOnboardingChecklistWidget() {
 
   const dismissMutation = useMutation({
     mutationFn: async () => {
-      const { data, error } = await api.POST("/academy/onboarding-checklist/dismiss");
+      const { data, error } = await api.POST("/academy/onboarding-checklist/dismiss", {});
       if (error || !data) throw new Error("Não foi possível ocultar a configuração inicial.");
       return data as AcademyOnboardingChecklist;
     },

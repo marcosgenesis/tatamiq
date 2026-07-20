@@ -38,6 +38,15 @@ export class AcademyController {
     return this.academyService.getOnboardingChecklist(academyId);
   }
 
+  @Post("onboarding-checklist/dismiss")
+  @HttpCode(200)
+  @ApiOkResponse({ type: AcademyOnboardingChecklistDto })
+  dismissOnboardingChecklist(
+    @AcademyId() academyId: string,
+  ): Promise<AcademyOnboardingChecklistDto> {
+    return this.academyService.dismissOnboardingChecklist(academyId);
+  }
+
   @Patch()
   @ApiBody({ type: UpdateAcademyDto })
   @ApiOkResponse({ type: AcademyProfileDto })

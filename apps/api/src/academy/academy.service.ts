@@ -65,7 +65,15 @@ export class AcademyService {
   }
 
   async getOnboardingChecklist(organizationId: string): Promise<AcademyOnboardingChecklist> {
-    await this.get(organizationId);
+    const [academy] = await this.db
+      .select({ onboardingChecklistDismissedAt: organization.onboardingChecklistDismissedAt })
+      .from(organization)
+      .where(eq(organization.id, organizationId))
+      .limit(1);
+
+    if (!academy) {
+      throw new NotFoundException("Academia não encontrada.");
+    }
 
     const [classGroupCount] = await this.db
       .select({ total: count() })
@@ -122,7 +130,17 @@ export class AcademyService {
       firstAccessLinkSentCount: Number(firstAccessLinkSentCount?.total ?? 0),
       pendingPreRegistrationCount: Number(pendingPreRegistrationCount?.total ?? 0),
       firstAccessStudentId: firstAccessStudent?.studentId ?? null,
+      dismissed: academy.onboardingChecklistDismissedAt !== null,
     });
+  }
+
+  async dismissOnboardingChecklist(organizationId: string): Promise<AcademyOnboardingChecklist> {
+    await this.get(organizationId);
+    await this.db
+      .update(organization)
+      .set({ onboardingChecklistDismissedAt: new Date() })
+      .where(eq(organization.id, organizationId));
+    return this.getOnboardingChecklist(organizationId);
   }
 
   async generateLogoUploadUrl(organizationId: string): Promise<AcademyLogoUploadResponse> {
@@ -194,6 +212,7 @@ export function buildAcademyOnboardingChecklist(input: {
   firstAccessLinkSentCount: number;
   pendingPreRegistrationCount: number;
   firstAccessStudentId: string | null;
+  dismissed?: boolean;
 }): AcademyOnboardingChecklist {
   return {
     steps: {
@@ -204,7 +223,7 @@ export function buildAcademyOnboardingChecklist(input: {
     },
     pendingPreRegistrationCount: input.pendingPreRegistrationCount,
     firstAccessStudentId: input.firstAccessStudentId,
-    dismissed: false,
+    dismissed: input.dismissed ?? false,
   };
 }
 

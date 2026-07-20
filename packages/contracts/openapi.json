@@ -22,6 +22,174 @@
         ]
       }
     },
+    "/students/import-csv/template.csv": {
+      "get": {
+        "operationId": "CsvController_importTemplate",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "csv"
+        ]
+      }
+    },
+    "/students/import-csv": {
+      "post": {
+        "operationId": "CsvController_importPreview",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CsvImportPreviewDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CsvImportPreviewResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "csv"
+        ]
+      }
+    },
+    "/students/import-csv/confirm": {
+      "post": {
+        "operationId": "CsvController_importConfirm",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CsvImportConfirmDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CsvImportConfirmResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "csv"
+        ]
+      }
+    },
+    "/students/export.csv": {
+      "get": {
+        "operationId": "CsvController_exportStudents",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "csv"
+        ]
+      }
+    },
+    "/attendances/export.csv": {
+      "get": {
+        "operationId": "CsvController_exportAttendances",
+        "parameters": [
+          {
+            "name": "studentId",
+            "required": false,
+            "in": "query",
+            "schema": {}
+          },
+          {
+            "name": "classGroupId",
+            "required": false,
+            "in": "query",
+            "schema": {}
+          },
+          {
+            "name": "dateTo",
+            "required": false,
+            "in": "query",
+            "schema": {}
+          },
+          {
+            "name": "dateFrom",
+            "required": false,
+            "in": "query",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "csv"
+        ]
+      }
+    },
+    "/monthly-fees/export.csv": {
+      "get": {
+        "operationId": "CsvController_exportMonthlyFees",
+        "parameters": [
+          {
+            "name": "studentId",
+            "required": false,
+            "in": "query",
+            "schema": {}
+          },
+          {
+            "name": "referenceMonth",
+            "required": false,
+            "in": "query",
+            "schema": {}
+          },
+          {
+            "name": "referenceYear",
+            "required": false,
+            "in": "query",
+            "schema": {}
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "csv"
+        ]
+      }
+    },
     "/academy": {
       "get": {
         "operationId": "AcademyController_get",
@@ -75,6 +243,27 @@
     "/academy/onboarding-checklist": {
       "get": {
         "operationId": "AcademyController_onboardingChecklist",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcademyOnboardingChecklistDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "academy"
+        ]
+      }
+    },
+    "/academy/onboarding-checklist/dismiss": {
+      "post": {
+        "operationId": "AcademyController_dismissOnboardingChecklist",
         "parameters": [],
         "responses": {
           "200": {
@@ -874,6 +1063,27 @@
     "/students/pre-registration-link/regenerate": {
       "post": {
         "operationId": "PreRegistrationController_regenerateLink",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreRegistrationLinkDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "pre-registration"
+        ]
+      }
+    },
+    "/students/pre-registration-link/copy": {
+      "post": {
+        "operationId": "PreRegistrationController_copyLink",
         "parameters": [],
         "responses": {
           "200": {
@@ -2693,174 +2903,6 @@
         ]
       }
     },
-    "/students/import-csv/template.csv": {
-      "get": {
-        "operationId": "CsvController_importTemplate",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "csv"
-        ]
-      }
-    },
-    "/students/import-csv": {
-      "post": {
-        "operationId": "CsvController_importPreview",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CsvImportPreviewDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CsvImportPreviewResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "csv"
-        ]
-      }
-    },
-    "/students/import-csv/confirm": {
-      "post": {
-        "operationId": "CsvController_importConfirm",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CsvImportConfirmDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CsvImportConfirmResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "csv"
-        ]
-      }
-    },
-    "/students/export.csv": {
-      "get": {
-        "operationId": "CsvController_exportStudents",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "csv"
-        ]
-      }
-    },
-    "/attendances/export.csv": {
-      "get": {
-        "operationId": "CsvController_exportAttendances",
-        "parameters": [
-          {
-            "name": "studentId",
-            "required": false,
-            "in": "query",
-            "schema": {}
-          },
-          {
-            "name": "classGroupId",
-            "required": false,
-            "in": "query",
-            "schema": {}
-          },
-          {
-            "name": "dateTo",
-            "required": false,
-            "in": "query",
-            "schema": {}
-          },
-          {
-            "name": "dateFrom",
-            "required": false,
-            "in": "query",
-            "schema": {}
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "csv"
-        ]
-      }
-    },
-    "/monthly-fees/export.csv": {
-      "get": {
-        "operationId": "CsvController_exportMonthlyFees",
-        "parameters": [
-          {
-            "name": "studentId",
-            "required": false,
-            "in": "query",
-            "schema": {}
-          },
-          {
-            "name": "referenceMonth",
-            "required": false,
-            "in": "query",
-            "schema": {}
-          },
-          {
-            "name": "referenceYear",
-            "required": false,
-            "in": "query",
-            "schema": {}
-          },
-          {
-            "name": "status",
-            "required": false,
-            "in": "query",
-            "schema": {}
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "csv"
-        ]
-      }
-    },
     "/platform/first-access/{token}": {
       "get": {
         "operationId": "PlatformController_previewFirstAccess",
@@ -3050,46 +3092,6 @@
         ]
       }
     },
-    "/platform/academies/{id}/transfer": {
-      "post": {
-        "operationId": "PlatformController_transferAcademy",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TransferAcademyBodyDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TransferAcademyResultDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "platform"
-        ]
-      }
-    },
     "/platform/academies/{id}/responsibles": {
       "post": {
         "operationId": "PlatformController_addResponsible",
@@ -3119,7 +3121,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TransferAcademyResultDto"
+                  "$ref": "#/components/schemas/AcademyResponsibleMutationResultDto"
                 }
               }
             }
@@ -3167,7 +3169,37 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PlatformActionResultDto"
+                  "$ref": "#/components/schemas/RemoveResponsibleResultDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/platform/academies/{id}/deletion-preview": {
+      "get": {
+        "operationId": "PlatformController_academyDeletionPreview",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformAcademyDeletionPreviewDto"
                 }
               }
             }
@@ -3179,6 +3211,44 @@
       }
     },
     "/platform/academies/{id}": {
+      "delete": {
+        "operationId": "PlatformController_deleteAcademy",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeletePlatformAcademyBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletePlatformAcademyResultDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "platform"
+        ]
+      },
       "get": {
         "operationId": "PlatformController_academy",
         "parameters": [
@@ -3830,6 +3900,112 @@
         "required": [
           "status",
           "timestamp"
+        ]
+      },
+      "CsvImportPreviewDto": {
+        "type": "object",
+        "properties": {
+          "csv": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "csv"
+        ]
+      },
+      "CsvImportPreviewResponseDto": {
+        "type": "object",
+        "properties": {
+          "totalLines": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "validLines": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "errorLines": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "previewToken": {
+            "type": "string"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "line": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "name": {
+                  "type": "string"
+                },
+                "errors": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "warnings": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "line",
+                "name",
+                "errors",
+                "warnings"
+              ]
+            }
+          }
+        },
+        "required": [
+          "totalLines",
+          "validLines",
+          "errorLines",
+          "previewToken",
+          "lines"
+        ]
+      },
+      "CsvImportConfirmDto": {
+        "type": "object",
+        "properties": {
+          "previewToken": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "previewToken"
+        ]
+      },
+      "CsvImportConfirmResponseDto": {
+        "type": "object",
+        "properties": {
+          "imported": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "skipped": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "imported",
+          "skipped"
         ]
       },
       "AcademyProfileDto": {
@@ -5243,6 +5419,12 @@
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
             "nullable": true
           },
+          "copiedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "nullable": true
+          },
           "updatedAt": {
             "type": "string",
             "format": "date-time",
@@ -5254,6 +5436,7 @@
           "status",
           "url",
           "regeneratedAt",
+          "copiedAt",
           "updatedAt"
         ]
       },
@@ -8628,112 +8811,6 @@
           "reason"
         ]
       },
-      "CsvImportPreviewDto": {
-        "type": "object",
-        "properties": {
-          "csv": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "csv"
-        ]
-      },
-      "CsvImportPreviewResponseDto": {
-        "type": "object",
-        "properties": {
-          "totalLines": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "validLines": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "errorLines": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "previewToken": {
-            "type": "string"
-          },
-          "lines": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "line": {
-                  "type": "integer",
-                  "minimum": -9007199254740991,
-                  "maximum": 9007199254740991
-                },
-                "name": {
-                  "type": "string"
-                },
-                "errors": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                "warnings": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                }
-              },
-              "required": [
-                "line",
-                "name",
-                "errors",
-                "warnings"
-              ]
-            }
-          }
-        },
-        "required": [
-          "totalLines",
-          "validLines",
-          "errorLines",
-          "previewToken",
-          "lines"
-        ]
-      },
-      "CsvImportConfirmDto": {
-        "type": "object",
-        "properties": {
-          "previewToken": {
-            "type": "string",
-            "minLength": 1
-          }
-        },
-        "required": [
-          "previewToken"
-        ]
-      },
-      "CsvImportConfirmResponseDto": {
-        "type": "object",
-        "properties": {
-          "imported": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "skipped": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          }
-        },
-        "required": [
-          "imported",
-          "skipped"
-        ]
-      },
       "ReservedFirstAccessPreviewDto": {
         "type": "object",
         "properties": {
@@ -9057,7 +9134,7 @@
           "firstAccessLink"
         ]
       },
-      "TransferAcademyBodyDto": {
+      "AddResponsibleBodyDto": {
         "type": "object",
         "properties": {
           "ownerEmail": {
@@ -9071,7 +9148,7 @@
           "ownerEmail"
         ]
       },
-      "TransferAcademyResultDto": {
+      "AcademyResponsibleMutationResultDto": {
         "type": "object",
         "properties": {
           "academy": {
@@ -9095,37 +9172,152 @@
           "firstAccessLink"
         ]
       },
-      "AddResponsibleBodyDto": {
-        "type": "object",
-        "properties": {
-          "ownerEmail": {
-            "type": "string"
-          },
-          "ownerName": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "ownerEmail"
-        ]
-      },
       "RemoveResponsibleBodyDto": {
         "type": "object",
         "properties": {
           "allowLeavingOwnerless": {
             "type": "boolean"
+          },
+          "ownerlessConfirmation": {
+            "type": "string"
           }
         }
       },
-      "PlatformActionResultDto": {
+      "RemoveResponsibleResultDto": {
         "type": "object",
         "properties": {
           "success": {
             "type": "boolean"
+          },
+          "leftOwnerless": {
+            "type": "boolean"
           }
         },
         "required": [
-          "success"
+          "success",
+          "leftOwnerless"
+        ]
+      },
+      "PlatformAcademyDeletionImpactDto": {
+        "type": "object",
+        "properties": {
+          "students": {
+            "type": "number"
+          },
+          "classGroups": {
+            "type": "number"
+          },
+          "classSessions": {
+            "type": "number"
+          },
+          "attendances": {
+            "type": "number"
+          },
+          "monthlyFees": {
+            "type": "number"
+          },
+          "paymentReceipts": {
+            "type": "number"
+          },
+          "preRegistrationRequests": {
+            "type": "number"
+          },
+          "files": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "students",
+          "classGroups",
+          "classSessions",
+          "attendances",
+          "monthlyFees",
+          "paymentReceipts",
+          "preRegistrationRequests",
+          "files"
+        ]
+      },
+      "PlatformAcademyDeletionPreviewDto": {
+        "type": "object",
+        "properties": {
+          "academy": {
+            "$ref": "#/components/schemas/PlatformAcademyDetailDto"
+          },
+          "affectedResponsibles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlatformAcademyResponsibleDto"
+            }
+          },
+          "impact": {
+            "$ref": "#/components/schemas/PlatformAcademyDeletionImpactDto"
+          },
+          "irreversibleWarning": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "academy",
+          "affectedResponsibles",
+          "impact",
+          "irreversibleWarning"
+        ]
+      },
+      "DeletePlatformAcademyBodyDto": {
+        "type": "object",
+        "properties": {
+          "confirmationSlug": {
+            "type": "string",
+            "minLength": 1
+          },
+          "irreversibleAccepted": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "confirmationSlug",
+          "irreversibleAccepted"
+        ]
+      },
+      "DeletePlatformAcademyResultDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "deletedAcademyId": {
+            "type": "string"
+          },
+          "deletedAcademyName": {
+            "type": "string"
+          },
+          "deletedAcademySlug": {
+            "type": "string"
+          },
+          "impact": {
+            "$ref": "#/components/schemas/PlatformAcademyDeletionImpactDto"
+          },
+          "deletedFiles": {
+            "type": "number"
+          },
+          "affectedResponsibles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlatformAcademyResponsibleDto"
+            }
+          }
+        },
+        "required": [
+          "success",
+          "deletedAcademyId",
+          "deletedAcademyName",
+          "deletedAcademySlug",
+          "impact",
+          "deletedFiles",
+          "affectedResponsibles"
         ]
       },
       "PlatformStudentsOperationalSummaryDto": {
@@ -9546,6 +9738,17 @@
           "administrator",
           "userWasCreated",
           "firstAccessLink"
+        ]
+      },
+      "PlatformActionResultDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success"
         ]
       },
       "StartPlatformSupportBodyDto": {
@@ -9982,15 +10185,8 @@
           "ownerResolution": {
             "type": "string",
             "enum": [
-              "keep_ownerless",
-              "transfer"
+              "keep_ownerless"
             ]
-          },
-          "transferOwnerEmail": {
-            "type": "string"
-          },
-          "transferOwnerName": {
-            "type": "string"
           },
           "confirmLeaveOwnerless": {
             "type": "boolean"
