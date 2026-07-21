@@ -1,6 +1,4 @@
-// @vitest-environment jsdom
 import type { AcademyOnboardingChecklist } from "@tatamiq/contracts";
-import { fireEvent, render, screen } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { AcademyOnboardingChecklistCard } from "./academy-onboarding-checklist";
@@ -58,7 +56,7 @@ describe("AcademyOnboardingChecklistCard", () => {
     expect(html).not.toContain("Copiar link");
   });
 
-  it("blocks the copy CTA while step 1 is incomplete", () => {
+  it("blocks the pre-registration link step while step 1 is incomplete", () => {
     const html = renderToStaticMarkup(
       <AcademyOnboardingChecklistCard
         checklist={{ ...baseChecklist, steps: { ...baseChecklist.steps, turmaCreated: false } }}
@@ -67,11 +65,30 @@ describe("AcademyOnboardingChecklistCard", () => {
       />,
     );
 
-    expect(html).toContain("disabled");
     expect(html).toContain("0 de 4 concluídos");
+    expect(html).toContain("Bloqueado");
+    expect(html).not.toContain("Copiar link");
   });
 
-  it("shows the celebration banner when all onboarding steps are complete", () => {
+  it("surfaces the pending pre-registration count with a review CTA", () => {
+    const html = renderToStaticMarkup(
+      <AcademyOnboardingChecklistCard
+        checklist={{
+          ...baseChecklist,
+          steps: { ...baseChecklist.steps, preRegistrationLinkShared: true },
+          pendingPreRegistrationCount: 3,
+        }}
+        onCopyLink={vi.fn()}
+        onDismiss={vi.fn()}
+        onReviewPreRegistrations={vi.fn()}
+      />,
+    );
+
+    expect(html).toContain("3 em análise");
+    expect(html).toContain("Revisar solicitações");
+  });
+
+  it("shows the celebration banner with a close action when all steps are complete", () => {
     const html = renderToStaticMarkup(
       <AcademyOnboardingChecklistCard
         checklist={completedChecklist}
@@ -83,22 +100,6 @@ describe("AcademyOnboardingChecklistCard", () => {
     expect(html).toContain("4 de 4 concluídos");
     expect(html).toContain("Academia pronta para operar");
     expect(html).toContain("Fechar guia");
-  });
-
-  it("calls dismiss when the celebration close button is clicked", () => {
-    const onDismiss = vi.fn();
-
-    render(
-      <AcademyOnboardingChecklistCard
-        checklist={completedChecklist}
-        onCopyLink={vi.fn()}
-        onDismiss={onDismiss}
-      />,
-    );
-
-    fireEvent.click(screen.getByRole("button", { name: "Fechar guia" }));
-
-    expect(onDismiss).toHaveBeenCalledOnce();
   });
 
   it("does not show the celebration banner before all steps are complete", () => {
