@@ -54,6 +54,20 @@ export function describeCreateAcademyError(error: unknown): string {
   }
 }
 
+export function shouldRedirectAwayFromOnboarding(params: {
+  started: boolean;
+  isSubmitting: boolean;
+  organizationsPending: boolean;
+  organizationCount: number;
+}): boolean {
+  return (
+    !params.started &&
+    !params.isSubmitting &&
+    !params.organizationsPending &&
+    params.organizationCount > 0
+  );
+}
+
 export function AcademyOnboardingPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
@@ -70,7 +84,14 @@ export function AcademyOnboardingPage() {
   });
 
   const organizations = authClient.useListOrganizations();
-  if (!started && !organizations.isPending && (organizations.data?.length ?? 0) > 0) {
+  if (
+    shouldRedirectAwayFromOnboarding({
+      started,
+      isSubmitting,
+      organizationsPending: organizations.isPending,
+      organizationCount: organizations.data?.length ?? 0,
+    })
+  ) {
     return <Navigate to="/" />;
   }
 
@@ -181,7 +202,7 @@ export function AcademyOnboardingPage() {
     step === 0 ? data.academyName.trim().length > 0 : step === 1 ? !!data.logoFile : true;
 
   return (
-    <main className="relative flex min-h-screen w-full items-center justify-center overflow-hidden px-6 md:px-8">
+    <main className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-background px-6 text-foreground md:px-8">
       <div className="relative flex w-full max-w-md flex-col p-6 md:p-8">
         <div className="absolute -inset-y-6 -left-px w-px bg-border" />
         <div className="absolute -inset-y-6 -right-px w-px bg-border" />
