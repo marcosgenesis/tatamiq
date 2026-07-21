@@ -29,8 +29,8 @@ export function useMarkIndicatorSeen() {
     mutationFn: async (type: IndicatorType) => {
       await api.POST("/student/indicators/mark-seen", { body: { type } });
     },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
         queryKey: studentQueryKey(sessionUserId, "indicators"),
       });
     },

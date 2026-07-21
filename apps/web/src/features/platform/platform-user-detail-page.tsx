@@ -13,6 +13,7 @@ import {
   banPlatformUser,
   deletePlatformUser,
   impersonateWithPendingPlatformSupportActivation,
+  platformKeys,
   platformMeQuery,
   platformUserDeletionImpactQuery,
   platformUserQuery,
@@ -58,24 +59,24 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
   const banMutation = useMutation({
     mutationFn: async () =>
       banPlatformUser({ userId, ...(banReason ? { reason: banReason } : {}) }),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["platform", "users"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: platformKeys.usersRoot() });
       setShowBanForm(false);
       setBanReason("");
     },
   });
   const unbanMutation = useMutation({
     mutationFn: async () => unbanPlatformUser(userId),
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["platform", "users"] }),
+    onSuccess: async () => queryClient.invalidateQueries({ queryKey: platformKeys.usersRoot() }),
   });
   const revokeMutation = useMutation({
     mutationFn: async () => revokePlatformUserSessions(userId),
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["platform", "users"] }),
+    onSuccess: async () => queryClient.invalidateQueries({ queryKey: platformKeys.usersRoot() }),
   });
   const deleteMutation = useMutation({
     mutationFn: async () => deletePlatformUser({ userId, ...deleteForm }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["platform", "users"] });
+      await queryClient.invalidateQueries({ queryKey: platformKeys.usersRoot() });
       await navigate({ to: "/platform/users" });
     },
   });

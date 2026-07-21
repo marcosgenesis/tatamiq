@@ -313,11 +313,11 @@ export function StudentsPage() {
             <StudentCsvImport
               open={isImportOpen}
               onOpenChange={setIsImportOpen}
-              onImportComplete={() => {
-                void queryClient.invalidateQueries({
+              onImportComplete={() =>
+                queryClient.invalidateQueries({
                   queryKey: academyQueryKey(activeAcademyId, "students"),
-                });
-              }}
+                })
+              }
             />
           )}
           <Button onClick={openCreateForm}>
@@ -351,21 +351,21 @@ export function StudentsPage() {
           <StudentCsvImport
             open={isImportOpen}
             onOpenChange={setIsImportOpen}
-            onImportComplete={() => {
-              void queryClient.invalidateQueries({
+            onImportComplete={() =>
+              queryClient.invalidateQueries({
                 queryKey: academyQueryKey(activeAcademyId, "students"),
-              });
-            }}
+              })
+            }
           />
           <StudentForm
             {...(editingStudent ? { student: editingStudent } : {})}
             belts={beltsQuery.data?.belts ?? []}
             open={isFormOpen}
-            onSubmit={() => {
-              void queryClient.invalidateQueries({
+            onSubmit={() =>
+              queryClient.invalidateQueries({
                 queryKey: academyQueryKey(activeAcademyId, "students"),
-              });
-            }}
+              })
+            }
             onClose={closeForm}
           />
 

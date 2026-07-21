@@ -65,10 +65,10 @@ export function StudentProfileSection() {
       const { error: err } = await api.PATCH("/student/profile", { body });
       if (err) throw new Error("Não foi possível salvar.");
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: studentQueryKey(sessionUserId, "me") });
       setSuccess("Perfil atualizado com sucesso.");
       setError(null);
-      void queryClient.invalidateQueries({ queryKey: studentQueryKey(sessionUserId, "me") });
     },
     onError: (err: Error) => {
       setError(err.message);

@@ -77,7 +77,7 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
       await queryClient.invalidateQueries({
         queryKey: platformKeys.academy(sessionUserId, academyId),
       });
-      await queryClient.invalidateQueries({ queryKey: ["platform", "academies"] });
+      await queryClient.invalidateQueries({ queryKey: platformKeys.academiesRoot() });
     },
   });
 
@@ -103,7 +103,7 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
       await queryClient.invalidateQueries({
         queryKey: platformKeys.academy(sessionUserId, academyId),
       });
-      await queryClient.invalidateQueries({ queryKey: ["platform", "academies"] });
+      await queryClient.invalidateQueries({ queryKey: platformKeys.academiesRoot() });
     },
   });
 

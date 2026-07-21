@@ -21,7 +21,11 @@ import {
 } from "../../components/ui/dialog";
 import { Input } from "../../components/ui/input";
 import { cn } from "../../lib/utils";
-import { type ProvisionPlatformAcademyInput, provisionPlatformAcademy } from "./platform-queries";
+import {
+  type ProvisionPlatformAcademyInput,
+  platformKeys,
+  provisionPlatformAcademy,
+} from "./platform-queries";
 
 type IconType = ComponentType<{ className?: string }>;
 
@@ -247,8 +251,8 @@ export function ProvisionAcademyDialog({ trigger }: { trigger?: ReactNode }) {
     onSuccess: async () => {
       setForm({ academyName: "", ownerEmail: "", ownerName: "" });
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["platform", "dashboard"] }),
-        queryClient.invalidateQueries({ queryKey: ["platform", "academies"] }),
+        queryClient.invalidateQueries({ queryKey: platformKeys.dashboardRoot() }),
+        queryClient.invalidateQueries({ queryKey: platformKeys.academiesRoot() }),
       ]);
     },
   });

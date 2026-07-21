@@ -21,7 +21,7 @@ import {
 export function StudentCsvImport(props: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onImportComplete: () => void;
+  onImportComplete: () => Promise<void> | void;
 }) {
   const [importPreview, setImportPreview] = useState<CsvImportPreviewResponse | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
@@ -51,8 +51,8 @@ export function StudentCsvImport(props: {
       });
       if (error) throw new Error("Falha ao confirmar importação.");
     },
-    onSuccess: () => {
-      props.onImportComplete();
+    onSuccess: async () => {
+      await props.onImportComplete();
       props.onOpenChange(false);
       setImportPreview(null);
       setImportError(null);

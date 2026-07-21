@@ -37,21 +37,11 @@ import {
 import { Input } from "../../components/ui/input";
 import { academyQueryKey, onboardingChecklistQueryKey } from "../../lib/academy-query-keys";
 import { ClassGroupForm, type ClassGroupPayload } from "./class-group-form";
-
-type ClassGroupStatusFilter = "active" | "archived" | "all";
+import { type ClassGroupStatusFilter, classGroupsKeys } from "./class-groups-queries";
 
 const weekdays = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 const weekdaysShort = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const weekdayInitials = ["D", "S", "T", "Q", "Q", "S", "S"];
-
-export const classGroupsKeys = {
-  all: (academyId: string | null | undefined) =>
-    ["class-groups", academyId ?? "no-academy"] as const,
-  list: (academyId: string | null | undefined, status: ClassGroupStatusFilter) =>
-    [...classGroupsKeys.all(academyId), status] as const,
-  students: (academyId: string | null | undefined) =>
-    ["students", academyId ?? "no-academy", "active", "for-class-groups"] as const,
-};
 
 export function ClassGroupsPage() {
   const queryClient = useQueryClient();
