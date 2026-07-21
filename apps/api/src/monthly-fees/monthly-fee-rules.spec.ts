@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clampDueDay, formatDueDate, isOverdue, validateCanCreateFee } from "./monthly-fee-rules";
+import { clampDueDay, formatDueDate, isOverdue } from "./monthly-fee-rules";
 
 describe("clampDueDay", () => {
   it("returns the requested day when it exists in the month", () => {
@@ -60,37 +60,5 @@ describe("isOverdue", () => {
 
   it("returns false for waived fees", () => {
     expect(isOverdue("waived", "2026-01-10", new Date("2026-01-15T15:00:00.000Z"))).toBe(false);
-  });
-});
-
-describe("validateCanCreateFee", () => {
-  it("passes for a student with amount and due day", () => {
-    expect(() =>
-      validateCanCreateFee({
-        status: "active",
-        monthlyAmountInCents: 15000,
-        monthlyDueDay: 10,
-      }),
-    ).not.toThrow();
-  });
-
-  it("throws when monthlyAmountInCents is null", () => {
-    expect(() =>
-      validateCanCreateFee({
-        status: "active",
-        monthlyAmountInCents: null,
-        monthlyDueDay: 10,
-      }),
-    ).toThrow("Aluno precisa ter valor mensal e dia de vencimento configurados.");
-  });
-
-  it("throws when monthlyDueDay is null", () => {
-    expect(() =>
-      validateCanCreateFee({
-        status: "active",
-        monthlyAmountInCents: 15000,
-        monthlyDueDay: null,
-      }),
-    ).toThrow("Aluno precisa ter valor mensal e dia de vencimento configurados.");
   });
 });
