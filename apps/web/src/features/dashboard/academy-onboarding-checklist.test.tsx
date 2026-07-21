@@ -1,7 +1,10 @@
 import type { AcademyOnboardingChecklist } from "@tatamiq/contracts";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
-import { AcademyOnboardingChecklistCard } from "./academy-onboarding-checklist";
+import {
+  AcademyOnboardingChecklistCard,
+  shouldFocusDashboardOnboarding,
+} from "./academy-onboarding-checklist";
 
 const baseChecklist = {
   steps: {
@@ -24,6 +27,17 @@ const completedChecklist = {
     firstAccessLinkSent: true,
   },
 } satisfies AcademyOnboardingChecklist;
+
+describe("shouldFocusDashboardOnboarding", () => {
+  it("focuses the dashboard on onboarding while the checklist is visible", () => {
+    expect(shouldFocusDashboardOnboarding(baseChecklist)).toBe(true);
+  });
+
+  it("allows the regular dashboard after onboarding is dismissed or absent", () => {
+    expect(shouldFocusDashboardOnboarding({ ...baseChecklist, dismissed: true })).toBe(false);
+    expect(shouldFocusDashboardOnboarding(null)).toBe(false);
+  });
+});
 
 describe("AcademyOnboardingChecklistCard", () => {
   it("renders step 2 active with copy CTA when first Turma exists", () => {
