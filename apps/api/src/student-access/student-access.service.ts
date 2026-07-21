@@ -26,6 +26,7 @@ import {
   studentAccessInvites,
   studentClassGroups,
   students,
+  user,
 } from "@tatamiq/database";
 import { and, eq, gte, inArray, isNull, lt } from "drizzle-orm";
 import { parseClassStatus } from "../class-status";
@@ -255,6 +256,24 @@ export class StudentAccessService {
       now: new Date(),
     });
     if (status !== "valid") throw new BadRequestException("Convite indisponível.");
+
+    // The invite is a bearer link. If the student has an email on file, bind
+    // acceptance to that identity: the logged-in user's email must match.
+    // Otherwise any authenticated user who obtains a forwarded/leaked link
+    // could take over the invited student's account.
+    if (found.student.email) {
+      const [acceptingUser] = await this.db
+        .select({ email: user.email })
+        .from(user)
+        .where(eq(user.id, userId))
+        .limit(1);
+      const matches =
+        acceptingUser?.email &&
+        acceptingUser.email.trim().toLowerCase() === found.student.email.trim().toLowerCase();
+      if (!matches) {
+        throw new ForbiddenException("Este convite pertence a outro aluno.");
+      }
+    }
 
     const studentId = found.student.id;
     const organizationId = found.student.organizationId;

@@ -15,6 +15,7 @@ import {
 } from "../../components/ui/dialog";
 import { Input } from "../../components/ui/input";
 import { authClient } from "../../lib/auth-client";
+import { PlatformAcademyDangerZone } from "./platform-academy-danger-zone";
 import { AcademyAvatar, formatDate } from "./platform-components";
 import {
   addPlatformAcademyResponsible,
@@ -29,13 +30,25 @@ import {
 } from "./platform-queries";
 import { PlatformLoading, PlatformShell } from "./platform-shell";
 
+const OWNERLESS_CONFIRMATION_TEXT = "SEM RESPONSÁVEL";
+
+type RemovalTarget = { id: string; name: string; email: string; leavesOwnerless: boolean };
+
 export function PlatformAcademyPage({ academyId }: { academyId: string }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [supportReason, setSupportReason] = useState("");
+  const [selectedSupportResponsibleId, setSelectedSupportResponsibleId] = useState("");
   const [isSupportOpen, setIsSupportOpen] = useState(false);
   const [isAddResponsibleOpen, setIsAddResponsibleOpen] = useState(false);
   const [responsibleForm, setResponsibleForm] = useState({ ownerEmail: "", ownerName: "" });
+  const [lastResponsibleAddition, setLastResponsibleAddition] = useState<{
+    ownerUserId: string;
+    ownerWasCreated: boolean;
+    firstAccessLink: string | null;
+  } | null>(null);
+  const [removalTarget, setRemovalTarget] = useState<RemovalTarget | null>(null);
+  const [ownerlessConfirmation, setOwnerlessConfirmation] = useState("");
 
   const session = authClient.useSession();
   const sessionUserId = session.data?.user.id;
@@ -53,7 +66,12 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
         ownerEmail: responsibleForm.ownerEmail,
         ...(responsibleForm.ownerName ? { ownerName: responsibleForm.ownerName } : {}),
       }),
-    onSuccess: async () => {
+    onSuccess: async (result) => {
+      setLastResponsibleAddition({
+        ownerUserId: result?.ownerUserId ?? "",
+        ownerWasCreated: result?.ownerWasCreated ?? false,
+        firstAccessLink: result?.firstAccessLink ?? null,
+      });
       setResponsibleForm({ ownerEmail: "", ownerName: "" });
       setIsAddResponsibleOpen(false);
       await queryClient.invalidateQueries({
@@ -64,13 +82,24 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
   });
 
   const removeResponsible = useMutation({
-    mutationFn: async (target: { userId: string; allowLeavingOwnerless?: boolean }) =>
+    mutationFn: async (target: {
+      userId: string;
+      allowLeavingOwnerless?: boolean;
+      ownerlessConfirmation?: string;
+    }) =>
       removePlatformAcademyResponsible({
         academyId,
         userId: target.userId,
-        ...(target.allowLeavingOwnerless ? { allowLeavingOwnerless: true } : {}),
+        ...(target.allowLeavingOwnerless
+          ? {
+              allowLeavingOwnerless: true,
+              ownerlessConfirmation: target.ownerlessConfirmation,
+            }
+          : {}),
       }),
     onSuccess: async () => {
+      setRemovalTarget(null);
+      setOwnerlessConfirmation("");
       await queryClient.invalidateQueries({
         queryKey: platformKeys.academy(sessionUserId, academyId),
       });
@@ -80,8 +109,10 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
 
   const support = useMutation({
     mutationFn: async () => {
-      const targetResponsible = academy.data?.responsibles?.[0];
-      if (!targetResponsible) throw new Error("Academia sem responsável.");
+      const targetResponsible = academy.data?.responsibles?.find(
+        (responsible) => responsible.id === selectedSupportResponsibleId,
+      );
+      if (!targetResponsible) throw new Error("Selecione um responsável para o suporte.");
       const prepared = await startPlatformSupport({
         targetUserId: targetResponsible.id,
         academyId,
@@ -130,6 +161,10 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
   const data = academy.data;
   const responsibles = data.responsibles ?? [];
   const hasResponsibles = responsibles.length > 0;
+  const selectedSupportResponsible = responsibles.find(
+    (responsible) => responsible.id === selectedSupportResponsibleId,
+  );
+  const canStartSupport = hasResponsibles && !!selectedSupportResponsible;
 
   return (
     <PlatformShell
@@ -145,7 +180,13 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
         <>
           <Dialog open={isAddResponsibleOpen} onOpenChange={setIsAddResponsibleOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" onClick={() => addResponsible.reset()}>
+              <Button
+                size="sm"
+                onClick={() => {
+                  addResponsible.reset();
+                  setLastResponsibleAddition(null);
+                }}
+              >
                 <PlusSignIcon className="size-4" />
                 Adicionar responsável
               </Button>
@@ -180,6 +221,11 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
                     setResponsibleForm((c) => ({ ...c, ownerName: event.target.value }))
                   }
                 />
+                {addResponsible.isError ? (
+                  <p className="text-destructive text-sm">
+                    Não foi possível adicionar o responsável. Verifique o e-mail e tente novamente.
+                  </p>
+                ) : null}
                 <DialogFooter className="pt-2">
                   <Button
                     type="button"
@@ -196,9 +242,20 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
             </DialogContent>
           </Dialog>
 
-          <Dialog open={isSupportOpen} onOpenChange={setIsSupportOpen}>
+          <Dialog
+            open={isSupportOpen}
+            onOpenChange={(open) => {
+              setIsSupportOpen(open);
+              if (open) {
+                support.reset();
+                setSelectedSupportResponsibleId(
+                  responsibles.length === 1 ? (responsibles[0]?.id ?? "") : "",
+                );
+              }
+            }}
+          >
             <DialogTrigger asChild>
-              <Button variant="outline" size="sm" onClick={() => support.reset()}>
+              <Button variant="outline" size="sm">
                 <HeadphonesIcon className="size-4" />
                 Iniciar suporte
               </Button>
@@ -212,6 +269,33 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-3">
+                <div className="grid gap-2">
+                  <label className="text-sm font-medium" htmlFor="support-responsible">
+                    Responsável da Academia
+                  </label>
+                  <select
+                    id="support-responsible"
+                    className="h-10 rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
+                    value={selectedSupportResponsibleId}
+                    onChange={(event) => setSelectedSupportResponsibleId(event.target.value)}
+                    disabled={!hasResponsibles || support.isPending}
+                  >
+                    <option value="">
+                      {hasResponsibles ? "Selecione o responsável" : "Sem responsável"}
+                    </option>
+                    {responsibles.map((responsible) => (
+                      <option key={responsible.id} value={responsible.id}>
+                        {responsible.name} · {responsible.email}
+                      </option>
+                    ))}
+                  </select>
+                  {responsibles.length > 1 ? (
+                    <p className="text-muted-foreground text-xs">
+                      Esta academia tem múltiplos responsáveis; escolha explicitamente quem será
+                      assistido.
+                    </p>
+                  ) : null}
+                </div>
                 <Input
                   placeholder="Motivo do suporte (opcional)"
                   value={supportReason}
@@ -233,7 +317,7 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
                   <Button
                     type="button"
                     onClick={() => support.mutate()}
-                    disabled={!hasResponsibles || support.isPending}
+                    disabled={!canStartSupport || support.isPending}
                   >
                     {support.isPending ? "Iniciando..." : "Iniciar como responsável"}
                   </Button>
@@ -245,6 +329,82 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
       }
     >
       <div className="space-y-6">
+        <Dialog
+          open={!!removalTarget}
+          onOpenChange={(open) => {
+            if (!open) {
+              setRemovalTarget(null);
+              setOwnerlessConfirmation("");
+              removeResponsible.reset();
+            }
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Remover responsável</DialogTitle>
+              <DialogDescription>
+                {removalTarget?.leavesOwnerless
+                  ? "Esta é a última pessoa responsável. A academia continuará visível e com histórico preservado, mas ficará sem operação administrativa e sem geração automática futura de mensalidades até receber novo responsável."
+                  : "Remova este vínculo operacional sem alterar os demais responsáveis da academia."}
+              </DialogDescription>
+            </DialogHeader>
+            {removalTarget ? (
+              <div className="grid gap-3">
+                <div className="rounded-xl bg-muted/50 px-4 py-3 text-sm">
+                  <p className="font-medium">{removalTarget.name}</p>
+                  <p className="text-muted-foreground text-xs">{removalTarget.email}</p>
+                </div>
+                {removalTarget.leavesOwnerless ? (
+                  <div className="grid gap-2">
+                    <p className="text-sm text-muted-foreground">
+                      Para confirmar, digite <strong>{OWNERLESS_CONFIRMATION_TEXT}</strong>.
+                    </p>
+                    <Input
+                      aria-label="Confirmação para deixar sem responsável"
+                      value={ownerlessConfirmation}
+                      onChange={(event) => setOwnerlessConfirmation(event.target.value)}
+                      disabled={removeResponsible.isPending}
+                    />
+                  </div>
+                ) : null}
+                {removeResponsible.isError ? (
+                  <p className="text-destructive text-sm">Não foi possível remover responsável.</p>
+                ) : null}
+              </div>
+            ) : null}
+            <DialogFooter className="pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setRemovalTarget(null);
+                  setOwnerlessConfirmation("");
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => {
+                  if (!removalTarget) return;
+                  removeResponsible.mutate({
+                    userId: removalTarget.id,
+                    allowLeavingOwnerless: removalTarget.leavesOwnerless,
+                    ...(removalTarget.leavesOwnerless ? { ownerlessConfirmation } : {}),
+                  });
+                }}
+                disabled={
+                  removeResponsible.isPending ||
+                  (removalTarget?.leavesOwnerless &&
+                    ownerlessConfirmation.trim().toUpperCase() !== OWNERLESS_CONFIRMATION_TEXT)
+                }
+              >
+                {removeResponsible.isPending ? "Removendo..." : "Remover responsável"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
         <section className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
             <AcademyAvatar name={data.name} logo={data.logo} className="size-16 rounded-2xl" />
@@ -261,10 +421,45 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
                 <span>Cliente desde {formatDate(data.createdAt)}</span>
               </div>
             </div>
-            {!hasResponsibles ? <Badge variant="muted">Sem responsável</Badge> : null}
           </div>
+          <div className="mt-4 space-y-2">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-sm font-semibold text-foreground">Responsáveis da Academia</h2>
+              {!hasResponsibles ? <Badge variant="muted">Sem responsável</Badge> : null}
+            </div>
+          </div>
+          {lastResponsibleAddition ? (
+            <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm">
+              <p className="font-medium text-foreground">Responsável adicionado à academia.</p>
+              {lastResponsibleAddition.firstAccessLink ? (
+                <div className="mt-2 grid gap-2">
+                  <p className="text-muted-foreground">
+                    Copie o link de primeiro acesso e envie por fora para a pessoa definir a senha.
+                  </p>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <Input readOnly value={lastResponsibleAddition.firstAccessLink} />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() =>
+                        navigator.clipboard?.writeText(
+                          lastResponsibleAddition.firstAccessLink ?? "",
+                        )
+                      }
+                    >
+                      Copiar link
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <p className="mt-1 text-muted-foreground">
+                  A conta já existia; nenhum link de primeiro acesso foi necessário.
+                </p>
+              )}
+            </div>
+          ) : null}
           {responsibles.length > 0 ? (
-            <div className="mt-4 space-y-2">
+            <div className="space-y-2">
               {responsibles.map((r) => (
                 <div
                   key={r.id}
@@ -278,11 +473,14 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      if (window.confirm("Remover responsável?"))
-                        removeResponsible.mutate({
-                          userId: r.id,
-                          allowLeavingOwnerless: responsibles.length === 1,
-                        });
+                      removeResponsible.reset();
+                      setOwnerlessConfirmation("");
+                      setRemovalTarget({
+                        id: r.id,
+                        name: r.name,
+                        email: r.email,
+                        leavesOwnerless: responsibles.length === 1,
+                      });
                     }}
                     disabled={removeResponsible.isPending}
                   >
@@ -302,6 +500,8 @@ export function PlatformAcademyPage({ academyId }: { academyId: string }) {
         ) : operational.data ? (
           <OperationalOverview overview={operational.data} />
         ) : null}
+
+        <PlatformAcademyDangerZone academy={data} sessionUserId={sessionUserId} />
       </div>
     </PlatformShell>
   );

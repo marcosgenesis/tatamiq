@@ -4,8 +4,11 @@ import { api } from "../../api";
 
 export type PlatformMe = components["schemas"]["PlatformMeDto"];
 export type PlatformAcademySummary = components["schemas"]["PlatformAcademySummaryDto"];
+export type PlatformAcademiesResponse = components["schemas"]["PlatformAcademiesResponseDto"];
 export type PlatformAcademyOperationalOverview =
   components["schemas"]["PlatformAcademyOperationalOverviewDto"];
+export type PlatformAcademyDeletionPreview =
+  components["schemas"]["PlatformAcademyDeletionPreviewDto"];
 export type PlatformUserDetail = components["schemas"]["PlatformUserDetailDto"];
 export type PlatformUserDeletionImpact = components["schemas"]["PlatformUserDeletionImpactDto"];
 export type PlatformAdministrator = components["schemas"]["PlatformAdministratorDto"];
@@ -21,7 +24,7 @@ export type ProvisionPlatformAcademyInput = {
   ownerName?: string;
 };
 
-export type TransferPlatformAcademyInput = {
+export type AddPlatformAcademyResponsibleInput = {
   academyId: string;
   ownerEmail: string;
   ownerName?: string;
@@ -37,6 +40,13 @@ export type DeletePlatformUserInput = {
   mode: "definitive" | "preserve_history";
   ownerResolution?: "keep_ownerless";
   confirmLeaveOwnerless?: boolean;
+};
+
+export type DeletePlatformAcademyInput = {
+  academyId: string;
+  confirmationSlug: string;
+  irreversibleAccepted: boolean;
+  reason?: string;
 };
 
 export type StartPlatformSupportInput = {
@@ -65,6 +75,8 @@ export const platformKeys = {
       academyId,
       "operational-overview",
     ] as const,
+  academyDeletionPreview: (sessionUserId: string | null | undefined, academyId: string) =>
+    ["platform", "academies", sessionUserId ?? "anonymous", academyId, "deletion-preview"] as const,
   users: (
     sessionUserId: string | null | undefined,
     query: string,
@@ -87,6 +99,55 @@ export const platformKeys = {
     ["platform", "support", "current", sessionUserId ?? "anonymous"] as const,
   firstAccess: (token: string) => ["platform", "first-access", token] as const,
 };
+
+/**
+ * Decides platform-console access from the session + `/platform/me` query state.
+ *
+ * Two guards prevent a NON-admin (e.g. a freshly created account) from being
+ * routed to `/platform`:
+ * - An in-flight or not-yet-fetched query counts as "loading", so a redirect
+ *   never fires off a previous identity's result during a session transition
+ *   (the admin→new-account switch right after creating an account).
+ * - Success is only trusted when `/platform/me` was resolved FOR THE CURRENT
+ *   session user (`data.user.id === sessionUserId`), never a stale admin result.
+ */
+export function resolvePlatformAccess(input: {
+  sessionPending: boolean;
+  sessionUserId: string | null | undefined;
+  platform: {
+    isPending: boolean;
+    isFetching: boolean;
+    isSuccess: boolean;
+    data?: { user?: { id?: string | null } | null } | null | undefined;
+  };
+}): "loading" | "allowed" | "denied" {
+  const { sessionPending, sessionUserId, platform } = input;
+  if (sessionPending || !sessionUserId) return "loading";
+  if (platform.isPending || platform.isFetching) return "loading";
+  if (platform.isSuccess && platform.data?.user?.id === sessionUserId) return "allowed";
+  return "denied";
+}
+
+export function removeAcademyFromAcademiesResponse(
+  response: PlatformAcademiesResponse | undefined,
+  academyId: string,
+): PlatformAcademiesResponse | undefined {
+  if (!response) return response;
+  const items = response.items.filter((academy) => academy.id !== academyId);
+  if (items.length === response.items.length) return response;
+  return {
+    ...response,
+    items,
+    pagination: {
+      ...response.pagination,
+      total: Math.max(0, response.pagination.total - 1),
+      totalPages: Math.max(
+        0,
+        Math.ceil(Math.max(0, response.pagination.total - 1) / response.pagination.pageSize),
+      ),
+    },
+  };
+}
 
 export function platformMeQuery(userId?: string | null) {
   return queryOptions({
@@ -152,6 +213,38 @@ export function platformAcademyQuery(sessionUserId: string | null | undefined, a
     retry: false,
     enabled: !!sessionUserId,
   });
+}
+
+export function platformAcademyDeletionPreviewQuery(
+  sessionUserId: string | null | undefined,
+  academyId: string,
+  enabled: boolean,
+) {
+  return queryOptions({
+    queryKey: platformKeys.academyDeletionPreview(sessionUserId, academyId),
+    queryFn: async () => {
+      const { data, error } = await api.GET("/platform/academies/{id}/deletion-preview", {
+        params: { path: { id: academyId } },
+      });
+      if (error) throw error;
+      return data;
+    },
+    retry: false,
+    enabled: !!sessionUserId && enabled,
+  });
+}
+
+export async function deletePlatformAcademy(input: DeletePlatformAcademyInput) {
+  const { data, error } = await api.DELETE("/platform/academies/{id}", {
+    params: { path: { id: input.academyId } },
+    body: {
+      confirmationSlug: input.confirmationSlug,
+      irreversibleAccepted: input.irreversibleAccepted,
+      ...(input.reason ? { reason: input.reason } : {}),
+    },
+  });
+  if (error) throw error;
+  return data;
 }
 
 export function platformAcademyOperationalOverviewQuery(
@@ -305,19 +398,7 @@ export async function provisionPlatformAcademy(input: ProvisionPlatformAcademyIn
   return data;
 }
 
-export async function transferPlatformAcademy(input: TransferPlatformAcademyInput) {
-  const { data, error } = await api.POST("/platform/academies/{id}/transfer", {
-    params: { path: { id: input.academyId } },
-    body: {
-      ownerEmail: input.ownerEmail,
-      ...(input.ownerName ? { ownerName: input.ownerName } : {}),
-    },
-  });
-  if (error) throw error;
-  return data;
-}
-
-export async function addPlatformAcademyResponsible(input: TransferPlatformAcademyInput) {
+export async function addPlatformAcademyResponsible(input: AddPlatformAcademyResponsibleInput) {
   const { data, error } = await api.POST("/platform/academies/{id}/responsibles", {
     params: { path: { id: input.academyId } },
     body: {
@@ -333,10 +414,18 @@ export async function removePlatformAcademyResponsible(input: {
   academyId: string;
   userId: string;
   allowLeavingOwnerless?: boolean;
+  ownerlessConfirmation?: string;
 }) {
   const { data, error } = await api.POST("/platform/academies/{id}/responsibles/{userId}/remove", {
     params: { path: { id: input.academyId, userId: input.userId } },
-    body: input.allowLeavingOwnerless ? { allowLeavingOwnerless: true } : {},
+    body: input.allowLeavingOwnerless
+      ? {
+          allowLeavingOwnerless: true,
+          ...(input.ownerlessConfirmation
+            ? { ownerlessConfirmation: input.ownerlessConfirmation }
+            : {}),
+        }
+      : {},
   });
   if (error) throw error;
   return data;

@@ -1,6 +1,6 @@
 import { BadRequestException } from "@nestjs/common";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { AcademyService } from "./academy.service";
+import { AcademyService, buildAcademyOnboardingChecklist } from "./academy.service";
 
 const academyRow = {
   id: "org-1",
@@ -34,6 +34,37 @@ function createDbMock() {
     },
   };
 }
+
+describe("buildAcademyOnboardingChecklist", () => {
+  it("marks first access link as sent when any pre-registration has a token hash", () => {
+    expect(
+      buildAcademyOnboardingChecklist({
+        classGroupCount: 1,
+        sharedLinkCount: 1,
+        approvedPreRegistrationCount: 1,
+        firstAccessLinkSentCount: 1,
+        pendingPreRegistrationCount: 0,
+        firstAccessStudentId: "student-1",
+      }),
+    ).toMatchObject({
+      steps: { firstAccessLinkSent: true, firstPreRegistrationApproved: true },
+      firstAccessStudentId: "student-1",
+    });
+  });
+
+  it("keeps first access link unsent without a token hash", () => {
+    expect(
+      buildAcademyOnboardingChecklist({
+        classGroupCount: 1,
+        sharedLinkCount: 1,
+        approvedPreRegistrationCount: 1,
+        firstAccessLinkSentCount: 0,
+        pendingPreRegistrationCount: 0,
+        firstAccessStudentId: "student-1",
+      }).steps.firstAccessLinkSent,
+    ).toBe(false);
+  });
+});
 
 describe("AcademyService logo uploads", () => {
   const r2 = {

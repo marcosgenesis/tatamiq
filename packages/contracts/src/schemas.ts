@@ -16,14 +16,16 @@ function isRealCalendarDate(value: string): boolean {
  * ISO `YYYY-MM-DD` date that must be a real calendar date and not in the future.
  * String comparison is safe because ISO dates sort chronologically.
  */
-export const birthDateSchema = z
+export const calendarDateSchema = z
   .string()
-  .regex(ISO_DATE_PATTERN, "Data de nascimento inválida.")
-  .refine(isRealCalendarDate, "Data de nascimento inválida.")
+  .regex(ISO_DATE_PATTERN, "Data inválida.")
+  .refine(isRealCalendarDate, "Data inválida.")
   .refine(
     (value) => value <= new Date().toISOString().slice(0, 10),
-    "A data de nascimento não pode estar no futuro.",
+    "A data não pode estar no futuro.",
   );
+
+export const birthDateSchema = calendarDateSchema;
 
 export const healthResponseSchema = z.object({
   status: z.literal("ok"),
@@ -305,7 +307,20 @@ export const preRegistrationLinkSchema = z.object({
   status: preRegistrationLinkStatusSchema,
   url: z.string().url(),
   regeneratedAt: z.string().datetime().nullable(),
+  copiedAt: z.string().datetime().nullable(),
   updatedAt: z.string().datetime(),
+});
+
+export const academyOnboardingChecklistSchema = z.object({
+  steps: z.object({
+    turmaCreated: z.boolean(),
+    preRegistrationLinkShared: z.boolean(),
+    firstPreRegistrationApproved: z.boolean(),
+    firstAccessLinkSent: z.boolean(),
+  }),
+  pendingPreRegistrationCount: z.number().int().nonnegative(),
+  firstAccessStudentId: z.string().nullable(),
+  dismissed: z.boolean(),
 });
 
 export const listPreRegistrationRequestsResponseSchema = z.object({
@@ -366,6 +381,7 @@ export type PreRegistrationPublicProfile = z.infer<typeof preRegistrationPublicP
 export type CreatePreRegistrationRequestInput = z.infer<typeof createPreRegistrationRequestSchema>;
 export type PreRegistrationRequest = z.infer<typeof preRegistrationRequestSchema>;
 export type PreRegistrationLink = z.infer<typeof preRegistrationLinkSchema>;
+export type AcademyOnboardingChecklist = z.infer<typeof academyOnboardingChecklistSchema>;
 export type ListPreRegistrationRequestsResponse = z.infer<
   typeof listPreRegistrationRequestsResponseSchema
 >;

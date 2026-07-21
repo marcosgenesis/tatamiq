@@ -1,5 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { birthDateSchema, createPreRegistrationRequestSchema } from "./schemas";
+import { birthDateSchema, calendarDateSchema, createPreRegistrationRequestSchema } from "./schemas";
+
+describe("calendarDateSchema", () => {
+  it("accepts a real past date", () => {
+    expect(calendarDateSchema.safeParse("2020-01-15").success).toBe(true);
+  });
+
+  it("rejects impossible dates that pass the format regex", () => {
+    expect(calendarDateSchema.safeParse("2020-13-45").success).toBe(false);
+    expect(calendarDateSchema.safeParse("2020-02-30").success).toBe(false);
+  });
+
+  it("rejects future dates", () => {
+    expect(calendarDateSchema.safeParse("2999-12-31").success).toBe(false);
+  });
+});
 
 describe("birthDateSchema", () => {
   it("accepts a real past date", () => {

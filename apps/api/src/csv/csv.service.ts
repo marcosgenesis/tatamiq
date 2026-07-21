@@ -370,10 +370,20 @@ export class CsvService {
 }
 
 function escapeCsv(value: string): string {
-  if (value.includes(",") || value.includes('"') || value.includes("\n")) {
-    return `"${value.replace(/"/g, '""')}"`;
+  // Neutralize spreadsheet formula injection: a leading = + - @ (or tab/CR)
+  // makes Excel/Sheets evaluate the cell as a formula. Prefix with a single
+  // quote so the value is rendered as literal text.
+  const needsFormulaGuard = /^[=+\-@\t\r]/.test(value);
+  const guarded = needsFormulaGuard ? `'${value}` : value;
+  if (
+    guarded.includes(",") ||
+    guarded.includes('"') ||
+    guarded.includes("\n") ||
+    needsFormulaGuard
+  ) {
+    return `"${guarded.replace(/"/g, '""')}"`;
   }
-  return value;
+  return guarded;
 }
 
 function normalizeHeader(value: string): string {

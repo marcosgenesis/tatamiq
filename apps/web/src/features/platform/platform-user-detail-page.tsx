@@ -125,9 +125,16 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
   const detail = userDetail.data as PlatformUserDetail;
   const isPlatformAdmin = isSupportBlockedForPlatformUser(detail);
   const impact = deletionImpact.data as PlatformUserDeletionImpact | undefined;
-  const ownsAcademy = detail.memberships.some((m) => m.role === "owner");
-  const hasOnlyOwnerAcademies = impact?.ownedAcademies.some((a) => a.isOnlyOwner) ?? false;
+  const isAcademyResponsible = detail.memberships.some((m) => m.role === "owner");
+  const hasOnlyOwnerAcademies = platformDeletionRequiresOwnerlessDecision(impact);
   const blocksUserDestructiveActions = isPlatformAdmin || impact?.isPlatformAdmin === true;
+  const canSubmitDeletion = canSubmitPlatformUserDeletion({
+    blocksUserDestructiveActions,
+    isPending: deleteMutation.isPending || deletionImpact.isLoading,
+    requiresOwnerlessDecision: hasOnlyOwnerAcademies,
+    ownerResolution: deleteForm.ownerResolution,
+    confirmLeaveOwnerless: deleteForm.confirmLeaveOwnerless,
+  });
 
   return (
     <PlatformShell
@@ -204,7 +211,7 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
                         </p>
                       </div>
                       <Badge variant={m.role === "owner" ? "warning" : "muted"}>
-                        {m.role === "owner" ? "Dono" : m.role}
+                        {m.role === "owner" ? "Responsável da Academia" : m.role}
                       </Badge>
                     </div>
                   ))}
@@ -281,9 +288,9 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
                         Administradores da Plataforma não podem ser bloqueados por esta tela.
                       </p>
                     ) : null}
-                    {ownsAcademy ? (
+                    {isAcademyResponsible ? (
                       <p className="rounded-xl bg-primary/5 px-3 py-2 text-xs text-muted-foreground">
-                        Este usuário é dono de academia. Bloquear impede o acesso à academia dele.
+                        Este usuário é Responsável da Academia. Bloquear impede o acesso à academia.
                       </p>
                     ) : null}
                     {showBanForm ? (
@@ -399,8 +406,8 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
                             });
                           }}
                         >
-                          <option value="">O que fazer com a academia?</option>
-                          <option value="keep_ownerless">Deixar sem responsável</option>
+                          <option value="">O que fazer com a Academia?</option>
+                          <option value="keep_ownerless">Deixar Academia sem responsável</option>
                         </select>
                         {hasOnlyOwnerAcademies ? (
                           <label className="flex items-start gap-3 rounded-xl bg-warning/10 p-3 text-sm">
@@ -424,11 +431,7 @@ export function PlatformUserDetailPage({ userId }: { userId: string }) {
                       <Button
                         variant="destructive"
                         onClick={() => deleteMutation.mutate()}
-                        disabled={
-                          blocksUserDestructiveActions ||
-                          deleteMutation.isPending ||
-                          (hasOnlyOwnerAcademies && !deleteForm.confirmLeaveOwnerless)
-                        }
+                        disabled={!canSubmitDeletion}
                       >
                         {deleteMutation.isPending ? "Excluindo..." : "Confirmar exclusão"}
                       </Button>
@@ -485,4 +488,22 @@ export function isSupportBlockedForPlatformUser(user: {
   isPlatformAdmin?: boolean;
 }) {
   return user.isPlatformAdmin === true || user.role === "admin";
+}
+
+export function platformDeletionRequiresOwnerlessDecision(
+  impact: Pick<PlatformUserDeletionImpact, "ownedAcademies"> | undefined,
+) {
+  return impact?.ownedAcademies.some((academy) => academy.isOnlyOwner) ?? false;
+}
+
+export function canSubmitPlatformUserDeletion(input: {
+  blocksUserDestructiveActions: boolean;
+  isPending: boolean;
+  requiresOwnerlessDecision: boolean;
+  ownerResolution?: DeletePlatformUserInput["ownerResolution"] | undefined;
+  confirmLeaveOwnerless?: boolean | undefined;
+}) {
+  if (input.blocksUserDestructiveActions || input.isPending) return false;
+  if (!input.requiresOwnerlessDecision) return true;
+  return input.ownerResolution === "keep_ownerless" && input.confirmLeaveOwnerless === true;
 }

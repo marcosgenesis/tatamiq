@@ -15,11 +15,13 @@ const adminSession = {
   session: { id: "session-1" },
 };
 
-function resolveTargetId(audit: AuditDescriptor, result: unknown) {
+function resolveTargetId(audit: AuditDescriptor | undefined, result: unknown) {
+  if (!audit) throw new Error("Missing audit descriptor.");
   return typeof audit.targetId === "function" ? audit.targetId(result) : audit.targetId;
 }
 
-function resolveMetadata(audit: AuditDescriptor, result: unknown) {
+function resolveMetadata(audit: AuditDescriptor | undefined, result: unknown) {
+  if (!audit) throw new Error("Missing audit descriptor.");
   return typeof audit.metadata === "function" ? audit.metadata(result) : audit.metadata;
 }
 
@@ -36,17 +38,33 @@ function createController() {
       ownerUserId: "owner-1",
       ownerWasCreated: true,
     }),
-    transferAcademy: vi.fn().mockResolvedValue({
+    addResponsible: vi.fn().mockResolvedValue({
       academy: { id: "academy-1" },
       ownerUserId: "owner-2",
       ownerWasCreated: false,
     }),
-    addResponsible: vi.fn().mockResolvedValue({
-      academy: { id: "academy-1" },
-      ownerUserId: "owner-3",
-      ownerWasCreated: false,
+    removeResponsible: vi.fn().mockResolvedValue({ success: true, leftOwnerless: true }),
+  };
+  const academyDeletionService = {
+    preview: vi.fn().mockResolvedValue({ academy: { id: "academy-1" } }),
+    delete: vi.fn().mockResolvedValue({
+      success: true,
+      deletedAcademyId: "academy-1",
+      deletedAcademyName: "Tatame Centro",
+      deletedAcademySlug: "tatame-centro",
+      impact: {
+        students: 0,
+        classGroups: 0,
+        classSessions: 0,
+        attendances: 0,
+        monthlyFees: 0,
+        paymentReceipts: 0,
+        preRegistrationRequests: 0,
+        files: 0,
+      },
+      deletedFiles: 0,
+      affectedResponsibles: [],
     }),
-    removeResponsible: vi.fn().mockResolvedValue({ success: true }),
   };
   const platformAdminService = {
     assertPlatformAdmin: vi.fn().mockReturnValue({
@@ -105,6 +123,7 @@ function createController() {
     auditedDescriptors,
     impersonatedDescriptors,
     platformAcademyService,
+    academyDeletionService,
     platformAdminService,
     platformUserService,
     userDeletionService,
@@ -112,6 +131,7 @@ function createController() {
     controller: new PlatformController(
       platformAdminService as never,
       platformAcademyService as never,
+      academyDeletionService as never,
       platformSupportService as never,
       platformUserService as never,
       userDeletionService as never,
@@ -124,7 +144,7 @@ function createController() {
 }
 
 describe("PlatformController audited action seams", () => {
-  it("routes academy provisioning and responsible changes through administrative audit descriptors", async () => {
+  it("routes academy provisioning and explicit responsible changes through administrative audit descriptors", async () => {
     const { controller, auditedDescriptors } = createController();
 
     await controller.provisionAcademy(
@@ -135,48 +155,87 @@ describe("PlatformController audited action seams", () => {
         ownerName: "Owner",
       } as never,
     );
-    await controller.transferAcademy(adminSession as never, "academy-1", {
-      ownerEmail: "new-owner@example.com",
-      ownerName: "New Owner",
-    } as never);
     await controller.addResponsible(adminSession as never, "academy-1", {
       ownerEmail: "extra@example.com",
       ownerName: "Extra",
     } as never);
     await controller.removeResponsible(adminSession as never, "academy-1", "owner-3", {
       allowLeavingOwnerless: true,
+      ownerlessConfirmation: "SEM RESPONSÁVEL",
     } as never);
 
-    expect(auditedDescriptors[0]).toMatchObject({
+    const provisionAudit = auditedDescriptors[0] as AuditDescriptor;
+    expect(provisionAudit).toMatchObject({
       action: "platform.academy.provisioned",
       targetType: "academy",
     });
-    expect(resolveTargetId(auditedDescriptors[0]!, { academy: { id: "academy-1" } })).toBe(
-      "academy-1",
-    );
+    expect(resolveTargetId(provisionAudit, { academy: { id: "academy-1" } })).toBe("academy-1");
     expect(
-      resolveMetadata(auditedDescriptors[0]!, { ownerUserId: "owner-1", ownerWasCreated: true }),
+      resolveMetadata(provisionAudit, { ownerUserId: "owner-1", ownerWasCreated: true }),
     ).toEqual({
       ownerUserId: "owner-1",
       ownerWasCreated: true,
     });
     expect(auditedDescriptors[1]).toMatchObject({
-      action: "platform.academy.transferred",
-      targetType: "academy",
-      targetId: "academy-1",
-      academyId: "academy-1",
-    });
-    expect(auditedDescriptors[2]).toMatchObject({
       action: "platform.academy.responsible_added",
       targetType: "academy",
       targetId: "academy-1",
       academyId: "academy-1",
     });
-    expect(auditedDescriptors[3]).toMatchObject({
-      action: "platform.academy.responsible_removed",
+    const removalAudit = auditedDescriptors[2] as AuditDescriptor;
+    expect(removalAudit).toMatchObject({
+      action: "platform.academy.final_responsible_removed",
       targetType: "academy",
       targetId: "academy-1",
       academyId: "academy-1",
+    });
+    expect(resolveMetadata(removalAudit, { leftOwnerless: true })).toEqual({
+      userId: "owner-3",
+      allowLeavingOwnerless: true,
+      leftOwnerless: true,
+    });
+  });
+
+  it("routes academy deletion through administrative audit with deleted academy metadata", async () => {
+    const { controller, auditedDescriptors, academyDeletionService } = createController();
+
+    await controller.deleteAcademy(adminSession as never, "academy-1", {
+      confirmationSlug: "tatame-centro",
+      irreversibleAccepted: true,
+      reason: "cleanup test academy",
+    } as never);
+
+    expect(academyDeletionService.delete).toHaveBeenCalledWith(
+      "academy-1",
+      {
+        confirmationSlug: "tatame-centro",
+        irreversibleAccepted: true,
+        reason: "cleanup test academy",
+      },
+      "admin-1",
+    );
+    expect(auditedDescriptors[0]).toMatchObject({
+      action: "platform.academy.deleted",
+      targetType: "academy",
+      targetId: "academy-1",
+    });
+    expect(auditedDescriptors[0]?.academyId).toBeUndefined();
+    expect(
+      resolveMetadata(auditedDescriptors[0]!, {
+        deletedAcademyId: "academy-1",
+        deletedAcademyName: "Tatame Centro",
+        deletedAcademySlug: "tatame-centro",
+        impact: { students: 0 },
+        deletedFiles: 0,
+        affectedResponsibles: [],
+      }),
+    ).toEqual({
+      deletedAcademyId: "academy-1",
+      deletedAcademyName: "Tatame Centro",
+      deletedAcademySlug: "tatame-centro",
+      impact: { students: 0 },
+      deletedFiles: 0,
+      affectedResponsibles: [],
     });
   });
 
@@ -188,7 +247,7 @@ describe("PlatformController audited action seams", () => {
     await controller.revokeUserSessions(adminSession as never, "user-1");
     await controller.deleteUser(adminSession as never, "user-1", {
       mode: "preserve_history",
-      ownerResolution: "transfer_academies",
+      ownerResolution: "keep_ownerless",
     } as never);
 
     expect(auditedDescriptors.map((audit) => audit.action)).toEqual([
@@ -200,7 +259,7 @@ describe("PlatformController audited action seams", () => {
     expect(auditedDescriptors.every((audit) => audit.targetType === "user")).toBe(true);
     expect(auditedDescriptors[3]?.metadata).toEqual({
       mode: "preserve_history",
-      ownerResolution: "transfer_academies",
+      ownerResolution: "keep_ownerless",
     });
   });
 
@@ -220,10 +279,11 @@ describe("PlatformController audited action seams", () => {
       action: "platform.admin.added",
       targetType: "user",
     });
-    expect(
-      resolveTargetId(auditedDescriptors[0]!, { administrator: { id: "target-admin-1" } }),
-    ).toBe("target-admin-1");
-    expect(resolveMetadata(auditedDescriptors[0]!, { userWasCreated: true })).toEqual({
+    const addAdminAudit = auditedDescriptors[0] as AuditDescriptor;
+    expect(resolveTargetId(addAdminAudit, { administrator: { id: "target-admin-1" } })).toBe(
+      "target-admin-1",
+    );
+    expect(resolveMetadata(addAdminAudit, { userWasCreated: true })).toEqual({
       userWasCreated: true,
     });
     expect(auditedDescriptors[1]).toMatchObject({
@@ -253,13 +313,25 @@ describe("PlatformController audited action seams", () => {
       academyId: "academy-1",
       reason: "debug customer issue",
     });
+    expect(
+      resolveMetadata(auditedDescriptors[0], {
+        id: "support-1",
+        targetUserId: "user-1",
+        academyId: "academy-1",
+      }),
+    ).toMatchObject({
+      supportSessionId: "support-1",
+      targetResponsibleUserId: "user-1",
+      academyId: "academy-1",
+    });
     expect(impersonatedDescriptors[0]?.adminUserId).toBe("admin-1");
     expect(impersonatedDescriptors[0]?.audit).toMatchObject({
       action: "platform.support.ended",
       targetType: "user",
       targetId: "user-1",
     });
-    expect(resolveMetadata(impersonatedDescriptors[0]!.audit, { id: "support-1" })).toEqual({
+    const endSupportAudit = impersonatedDescriptors[0]?.audit as AuditDescriptor;
+    expect(resolveMetadata(endSupportAudit, { id: "support-1" })).toEqual({
       supportSessionId: "support-1",
       impersonationSessionId: "impersonated-session-1",
     });

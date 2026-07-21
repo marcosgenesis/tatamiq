@@ -36,7 +36,7 @@ import {
   students,
   user,
 } from "@tatamiq/database";
-import { and, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
 import { StudentAccessActivationService } from "../student-access/student-access-activation.service";
 import { hashToken, STUDENT_ACCESS_TERMS_VERSION } from "../student-access/student-access-rules";
@@ -95,6 +95,11 @@ export class PreRegistrationService {
 
   async regenerateLink(organizationId: string): Promise<PreRegistrationLink> {
     await this.linkLifecycle.regenerateLink(organizationId);
+    return this.fetchLinkDto(organizationId);
+  }
+
+  async copyLink(organizationId: string): Promise<PreRegistrationLink> {
+    await this.linkLifecycle.markCopied(organizationId);
     return this.fetchLinkDto(organizationId);
   }
 
@@ -462,6 +467,30 @@ export class PreRegistrationService {
     return { firstAccessLink };
   }
 
+  async generateFirstAccessLinkForStudent(
+    organizationId: string,
+    studentId: string,
+  ): Promise<GenerateFirstAccessLinkResponse> {
+    const [request] = await this.db
+      .select()
+      .from(preRegistrationRequests)
+      .where(
+        and(
+          eq(preRegistrationRequests.organizationId, organizationId),
+          eq(preRegistrationRequests.approvedStudentId, studentId),
+          eq(preRegistrationRequests.status, "approved"),
+        ),
+      )
+      .orderBy(desc(preRegistrationRequests.reviewedAt), desc(preRegistrationRequests.createdAt))
+      .limit(1);
+
+    if (!request) {
+      throw new NotFoundException("Solicitação aprovada do aluno não encontrada.");
+    }
+
+    return this.generateFirstAccessLink(organizationId, request.id);
+  }
+
   async sendFirstAccessEmail(
     organizationId: string,
     requestId: string,
@@ -752,6 +781,7 @@ export class PreRegistrationService {
       status: parseLinkStatus(row.status),
       url: `${webAppUrl()}/pre-register/${row.token}`,
       regeneratedAt: row.regeneratedAt?.toISOString() ?? null,
+      copiedAt: row.copiedAt?.toISOString() ?? null,
       updatedAt: row.updatedAt.toISOString(),
     };
   }

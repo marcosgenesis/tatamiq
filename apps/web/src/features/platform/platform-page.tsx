@@ -35,10 +35,13 @@ export function PlatformPage() {
   const dashboard = useQuery(platformDashboardQuery(sessionUserId));
   const activity = useQuery(platformAuditQuery(sessionUserId, "", 0, 7));
 
-  if (session.isPending || platform.isLoading) {
+  if (session.isPending || platform.isLoading || platform.isFetching) {
     return <PlatformLoading label="Carregando console do operador..." />;
   }
-  if (platform.isError || !platform.data?.user) {
+  // Only admit when /platform/me resolved for the *current* session user —
+  // guards against a stale admin result lingering after a session switch.
+  const platformUser = platform.data?.user;
+  if (platform.isError || !platformUser || platformUser.id !== sessionUserId) {
     return <Navigate to="/choose-area" />;
   }
 
@@ -48,7 +51,7 @@ export function PlatformPage() {
 
   return (
     <PlatformShell
-      user={platform.data.user}
+      user={platformUser}
       onSignOut={() =>
         authClient.signOut().then(() => {
           queryClient.clear();

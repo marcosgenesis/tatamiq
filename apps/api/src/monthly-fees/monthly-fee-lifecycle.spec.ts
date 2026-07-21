@@ -123,21 +123,27 @@ describe("MonthlyFeeLifecycle", () => {
     });
   });
 
-  it("rejects Mensalidade creation when the Aluno has no configured monthly amount", async () => {
-    const mock = createMockDb([[student({ monthlyAmountInCents: null })]]);
+  it("creates a manual Mensalidade with explicit amount and due day even without a saved student plan", async () => {
+    const mock = createMockDb([[student({ monthlyAmountInCents: null, monthlyDueDay: null })]]);
     service = new MonthlyFeeLifecycle(mock.db as never, new AcademiaScope(mock.db as never));
 
-    await expect(
-      service.create("org-1", {
-        studentId: "student-1",
-        referenceYear: 2026,
-        referenceMonth: 2,
-        amountInCents: 15000,
-        dueDay: 10,
-      }),
-    ).rejects.toBeInstanceOf(BadRequestException);
+    const result = await service.create("org-1", {
+      studentId: "student-1",
+      referenceYear: 2026,
+      referenceMonth: 8,
+      amountInCents: 12000,
+      dueDay: 15,
+    });
 
-    expect(mock.inserted).toHaveLength(0);
+    expect(result.feeId).toBeTruthy();
+    expect(mock.inserted[0]).toMatchObject({
+      studentId: "student-1",
+      referenceYear: 2026,
+      referenceMonth: 8,
+      amountInCents: 12000,
+      dueDate: "2026-08-15",
+      status: "open",
+    });
   });
 
   it("adjusts an open Mensalidade, preserving the original amount and writing an Evento de Mensalidade", async () => {

@@ -28,6 +28,10 @@ Pessoa matriculada na academia. Pode ter acesso ao app por convite para consulta
 
 Pessoa associada a um aluno menor de idade como contato e eventual pagador. Na V0, não tem acesso próprio ao app.
 
+### Administrador da Plataforma
+
+Pessoa interna do Tatamiq com permissão global para gerir usuários e academias fora da área operacional da academia.
+
 ## Plataforma e arquitetura de produto
 
 - PWA instalável.
@@ -56,6 +60,10 @@ A academia possui:
 - Pix da Academia: chave Pix simples ou payload Pix copia-e-cola.
 
 Esses dados aparecem apenas para alunos com acesso, não em página pública.
+
+#### Exclusão de Academia pela plataforma
+
+Um Administrador da Plataforma pode excluir uma academia pelo detalhe da academia na Administração da Plataforma. A exclusão é um hard delete real: remove dados operacionais, vínculos/acessos daquela academia e arquivos pertencentes à academia, preservando as contas de autenticação associadas. A ação exige prévia de impacto, confirmação pelo slug exato, aceite explícito de irreversibilidade e registra auditoria administrativa resumida com identidade da academia excluída, contagens de impacto, arquivos removidos e responsáveis afetados, sem payload operacional completo.
 
 ### Alunos
 

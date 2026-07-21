@@ -38,6 +38,9 @@ export const organization = pgTable("organization", {
   pixKeyType: text("pix_key_type"),
   pixKey: text("pix_key"),
   pixCopyPaste: text("pix_copy_paste"),
+  onboardingChecklistDismissedAt: timestamp("onboarding_checklist_dismissed_at", {
+    withTimezone: true,
+  }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -85,17 +88,23 @@ export const verification = pgTable("verification", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const member = pgTable("member", {
-  id: text("id").primaryKey(),
-  organizationId: text("organization_id")
-    .notNull()
-    .references(() => organization.id, { onDelete: "cascade" }),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  role: text("role").notNull().default("member"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+export const member = pgTable(
+  "member",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    role: text("role").notNull().default("member"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("member_org_user_role_uniq").on(table.organizationId, table.userId, table.role),
+  ],
+);
 
 export const invitation = pgTable("invitation", {
   id: text("id").primaryKey(),
@@ -461,6 +470,7 @@ export const academyPreRegistrationLinks = pgTable(
     token: text("token").notNull().unique(),
     status: text("status").notNull().default("active"),
     regeneratedAt: timestamp("regenerated_at", { withTimezone: true }),
+    copiedAt: timestamp("copied_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

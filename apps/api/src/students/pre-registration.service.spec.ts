@@ -235,6 +235,22 @@ describe("PreRegistrationService", () => {
     expect(mock.insertedRows).toHaveLength(0);
   });
 
+  it("rejects a declaredDegree submitted without a declaredBeltId", async () => {
+    mock.setSelectResults([[], [], []]);
+
+    await expect(
+      service.createRequest("public-token", {
+        name: "Aluno Teste",
+        birthDate: "2000-01-01",
+        phone: "11999999999",
+        email: "nobelt@example.com",
+        consentAccepted: true,
+        declaredDegree: 4,
+      }),
+    ).rejects.toThrow("Informe a faixa para declarar o grau.");
+    expect(mock.insertedRows).toHaveLength(0);
+  });
+
   it("blocks repeated public submissions for the same email within the throttle window", async () => {
     mock.setSelectResults(Array.from({ length: 6 }, () => []));
 

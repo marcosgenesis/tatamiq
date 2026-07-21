@@ -17,7 +17,7 @@ import {
 import { and, desc, eq } from "drizzle-orm";
 import { AcademiaScope } from "../academy-scope/academia-scope.service";
 import { DATABASE } from "../database/database.module";
-import { clampDueDay, formatDueDate, validateCanCreateFee } from "./monthly-fee-rules";
+import { clampDueDay, formatDueDate } from "./monthly-fee-rules";
 
 type FeeRow = typeof monthlyFees.$inferSelect;
 type ReceiptRow = typeof paymentReceipts.$inferSelect;
@@ -36,8 +36,7 @@ export class MonthlyFeeLifecycle {
 
     try {
       await this.db.transaction(async (tx) => {
-        const student = await this.findStudent(tx, organizationId, input.studentId);
-        validateCanCreateFee(student);
+        await this.findStudent(tx, organizationId, input.studentId);
 
         const dueDate = clampDueDay(input.dueDay, input.referenceYear, input.referenceMonth);
         const now = new Date();
