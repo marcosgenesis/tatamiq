@@ -1,3 +1,37 @@
+# [0.5.0](https://github.com/marcosgenesis/tatamiq/compare/v0.4.1...v0.5.0) (2026-07-21)
+
+
+### Bug Fixes
+
+* allow manual monthly fee creation without saved plan ([fccba30](https://github.com/marcosgenesis/tatamiq/commit/fccba30a0803d31504eb1df240988d151b43fe37))
+* **platform:** keep admin session after academy deletion ([895fea1](https://github.com/marcosgenesis/tatamiq/commit/895fea10d0b48a1c75517ac2a9e180dfdd100160))
+* **platform:** prevent duplicate academy deletion submit ([26dd36f](https://github.com/marcosgenesis/tatamiq/commit/26dd36f12697caa7043ff6b2d3fd7cd5e3fc9749))
+* **platform:** remove academy transfer flow ([5639626](https://github.com/marcosgenesis/tatamiq/commit/563962678c4668260040cf101181cd409321625e))
+* **platform:** remove selected academy responsible ([1ebfc2e](https://github.com/marcosgenesis/tatamiq/commit/1ebfc2ef58602ced868445a530d75248596c105a))
+* **platform:** stop new accounts from being redirected to /platform ([9bdeeb6](https://github.com/marcosgenesis/tatamiq/commit/9bdeeb6d8837f5f582f890fd143de60bd705a6ec))
+* **platform:** update user deletion responsible links ([2c6f8d2](https://github.com/marcosgenesis/tatamiq/commit/2c6f8d225f84a68f45c9a0d00441cc5238b0d52c))
+* reconcile onboarding checklist merge ([3bdb19c](https://github.com/marcosgenesis/tatamiq/commit/3bdb19c7df1c031a6f6715bb39aa97380b40cf6f))
+* **security:** close cross-tenant IDOR, invite takeover, broken CSV export and validation gaps ([d06325d](https://github.com/marcosgenesis/tatamiq/commit/d06325d7a22734350ac9c4f0ffe578f637f87b4b))
+* **web:** keep academy onboarding focused ([01937e1](https://github.com/marcosgenesis/tatamiq/commit/01937e19ddbbb6e7b0ac9a9e2f1cd5edc6d09a99))
+* **web:** surface pending pre-registrations in onboarding ([4933c95](https://github.com/marcosgenesis/tatamiq/commit/4933c95f4c6d2cceef507c209f8f4d3996a5aacb))
+
+
+### Features
+
+* add academy onboarding checklist ([70ca1c6](https://github.com/marcosgenesis/tatamiq/commit/70ca1c64f94d76b55afd33a49544bbf4ef562fdd))
+* add academy onboarding checklist ([4a3c8bf](https://github.com/marcosgenesis/tatamiq/commit/4a3c8bf5de014c94fb3fe4c6869dbec640de60fa))
+* add academy onboarding checklist foundation ([055698d](https://github.com/marcosgenesis/tatamiq/commit/055698d5711bfb03b1e2a09cc10df49c4e6db3da))
+* add academy onboarding checklist foundation ([b2614bc](https://github.com/marcosgenesis/tatamiq/commit/b2614bce2f3b3377e4eec809886f127c045b5b05))
+* add academy onboarding checklist foundation ([8895906](https://github.com/marcosgenesis/tatamiq/commit/88959062cc3e3ba007b8ea6fc814758cfdc4e20e))
+* add first access onboarding step ([d90ce62](https://github.com/marcosgenesis/tatamiq/commit/d90ce620576ef0fb0f73d0138192e047c598f74a))
+* **platform:** add academy hard deletion ([86df607](https://github.com/marcosgenesis/tatamiq/commit/86df6078445e896adf60162d1bec84c96fc1f587))
+* **platform:** add academy responsible flow ([575243e](https://github.com/marcosgenesis/tatamiq/commit/575243ef89afbe02d0129b858029e975c0ce41fe))
+* **platform:** allow ownerless academies with strong confirmation ([66a8738](https://github.com/marcosgenesis/tatamiq/commit/66a87387a2f0ceef91fcce543ef0c22866d37483))
+* **platform:** select responsible for assisted support ([4ef58db](https://github.com/marcosgenesis/tatamiq/commit/4ef58dbc56c106287f6ffdf60e8456a707aebc11))
+* **web:** add onboarding completion celebration ([2e8cfed](https://github.com/marcosgenesis/tatamiq/commit/2e8cfed0caaeef30ebd9d22fb7774728c5a3dddd))
+* **web:** add onboarding create turma CTA ([64d2186](https://github.com/marcosgenesis/tatamiq/commit/64d2186fda74febfc08a49d653911808332d1869))
+* **web:** redesign academy onboarding checklist widget ([cdfde2d](https://github.com/marcosgenesis/tatamiq/commit/cdfde2dacdbcf3ff80b0a5db3fa101cd7c44cd05))
+
 ## [0.4.1](https://github.com/marcosgenesis/tatamiq/compare/v0.4.0...v0.4.1) (2026-07-03)
 
 
