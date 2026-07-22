@@ -4,6 +4,7 @@ import * as schema from "@tatamiq/database/schema";
 import { betterAuth } from "better-auth";
 import { APIError } from "better-auth/api";
 import { admin, organization } from "better-auth/plugins";
+import { resolveAuthCookieOptions } from "./auth-cookies";
 import { seedIbjjfBelts } from "./belts/seed-belts";
 import { resolveWebOrigins } from "./web-origins";
 
@@ -96,6 +97,7 @@ export const auth = betterAuth({
   basePath: "/auth",
   secret: resolveBetterAuthSecret(),
   trustedOrigins: webOrigins,
+  advanced: resolveAuthCookieOptions(),
   database: drizzleAdapter(db, {
     provider: "pg",
     schema,
