@@ -15,6 +15,10 @@ createRoot(rootElement).render(
   </StrictMode>,
 );
 
+window.addEventListener("vite:preloadError", () => {
+  window.location.reload();
+});
+
 if (import.meta.env.PROD) {
   registerAppUpdateChecks();
 
