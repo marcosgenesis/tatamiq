@@ -1,19 +1,27 @@
 import { useMutation } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft01Icon, Cancel01Icon, QrCodeIcon, Tick02Icon } from "hugeicons-react";
-import { type ReactNode, useEffect } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { api } from "../../api";
 import { Button } from "../../components/ui/button";
 import { authClient } from "../../lib/auth-client";
 import { cn } from "../../lib/utils";
+import { QrCheckInScanner } from "./qr-check-in-scanner";
 
-type Variant = "loading" | "success" | "error" | "info";
+type Variant = "loading" | "success" | "error" | "info" | "scanner";
 
 export function StudentCheckInPage() {
   const navigate = useNavigate();
   const session = authClient.useSession();
-  const token = new URLSearchParams(window.location.search).get("token") ?? "";
-  const redirect = `/student/check-in?token=${encodeURIComponent(token)}`;
+  // Arrival via the instructor's QR opened by the OS camera already carries the
+  // token in the URL. In-app scanning starts tokenless and lifts the decoded
+  // token into state, which drives the confirmation flow on the same route.
+  const [token, setToken] = useState(
+    () => new URLSearchParams(window.location.search).get("token") ?? "",
+  );
+  const redirect = token
+    ? `/student/check-in?token=${encodeURIComponent(token)}`
+    : "/student/check-in";
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -30,16 +38,6 @@ export function StudentCheckInPage() {
     mutation.mutate();
   }, [session.data, token, mutation]);
 
-  if (!token) {
-    return (
-      <CheckInShell
-        variant="error"
-        title="QR Code inválido"
-        description="Abra novamente o QR Code exibido pelo instrutor."
-      />
-    );
-  }
-
   if (!session.data) {
     return (
       <CheckInShell
@@ -53,6 +51,14 @@ export function StudentCheckInPage() {
         >
           Entrar
         </Button>
+      </CheckInShell>
+    );
+  }
+
+  if (!token) {
+    return (
+      <CheckInShell variant="scanner">
+        <QrCheckInScanner onToken={setToken} />
       </CheckInShell>
     );
   }
@@ -112,30 +118,39 @@ function CheckInShell({
   children,
 }: {
   variant: Variant;
-  title: string;
-  description: string;
+  title?: string;
+  description?: string;
   children?: ReactNode;
 }) {
   const navigate = useNavigate();
   return (
-    <main className="flex min-h-screen flex-col bg-neutral-950 px-6 pb-10 pt-[max(env(safe-area-inset-top),1rem)] text-white">
-      <div className="pt-2">
+    <main
+      className={cn(
+        "relative flex min-h-screen flex-col bg-neutral-950 pb-10 pt-[max(env(safe-area-inset-top),1rem)] text-white",
+        variant !== "scanner" && "px-6",
+      )}
+    >
+      <div className={cn("pt-2", variant === "scanner" && "px-6")}>
         <button
           type="button"
           aria-label="Voltar"
           onClick={() => void navigate({ to: "/student" })}
-          className="grid size-10 place-items-center rounded-full bg-white/10 transition-colors hover:bg-white/15"
+          className="relative z-10 grid size-10 place-items-center rounded-full bg-white/10 transition-colors hover:bg-white/15"
         >
           <ArrowLeft01Icon className="size-5" aria-hidden="true" />
         </button>
       </div>
 
-      <div className="flex flex-1 flex-col items-center justify-center text-center">
-        <StatusMedallion variant={variant} />
-        <h1 className="mt-7 text-[1.55rem] font-bold tracking-tight text-balance">{title}</h1>
-        <p className="mt-2 max-w-[20rem] text-sm font-medium text-white/60">{description}</p>
-        <div className="mt-6 flex w-full max-w-sm flex-col items-center gap-3">{children}</div>
-      </div>
+      {variant === "scanner" ? (
+        children
+      ) : (
+        <div className="flex flex-1 flex-col items-center justify-center text-center">
+          <StatusMedallion variant={variant} />
+          <h1 className="mt-7 text-[1.55rem] font-bold tracking-tight text-balance">{title}</h1>
+          <p className="mt-2 max-w-[20rem] text-sm font-medium text-white/60">{description}</p>
+          <div className="mt-6 flex w-full max-w-sm flex-col items-center gap-3">{children}</div>
+        </div>
+      )}
 
       {variant === "success" ? (
         <div className="mx-auto flex w-full max-w-sm flex-col gap-1.5">
@@ -159,7 +174,7 @@ function CheckInShell({
   );
 }
 
-function StatusMedallion({ variant }: { variant: Variant }) {
+function StatusMedallion({ variant }: { variant: Exclude<Variant, "scanner"> }) {
   if (variant === "loading") {
     return (
       <span className="grid size-[7.25rem] place-items-center rounded-full bg-primary/15">
