@@ -77,6 +77,28 @@ export function QrCheckInScanner({ onToken }: { onToken: (token: string) => void
     }
   }, [onToken, stop]);
 
+  // Se a câmera já foi autorizada antes, o navegador não pede de novo — então
+  // pulamos o priming e iniciamos direto. A Permissions API não cobre a câmera
+  // em todos os navegadores (ex.: Safari/iOS), onde mantemos o priming manual.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const result = await navigator.permissions?.query({
+          name: "camera" as PermissionName,
+        });
+        if (!cancelled && result?.state === "granted") {
+          void start();
+        }
+      } catch {
+        // Permissions API indisponível — segue com o priming manual.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [start]);
+
   if (status === "denied" || status === "unavailable" || status === "error") {
     return <ScannerFallback status={status} onRetry={() => setStatus("priming")} />;
   }
