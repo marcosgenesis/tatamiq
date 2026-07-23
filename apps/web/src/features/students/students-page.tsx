@@ -30,7 +30,7 @@ import { academyQueryKey } from "../../lib/academy-query-keys";
 import { ageLabel, billingLabel, formatDate } from "../../lib/formatting";
 import { BeltVisual } from "../student-portal/components/belt-visual";
 import { beltKeyFromName } from "../student-portal/lib/belt-progress";
-import { StudentCsvImport } from "./components/student-csv-import";
+import { exportStudentsCsv, StudentCsvImport } from "./components/student-csv-import";
 import { StudentForm } from "./components/student-form";
 import { PreRegistrationsTab } from "./pre-registrations-tab";
 
@@ -308,17 +308,23 @@ export function StudentsPage() {
             Cadastre alunos, responsáveis, dados de mensalidade e graduação.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2 sm:justify-end">
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
           {activeTab === "students" && (
-            <StudentCsvImport
-              open={isImportOpen}
-              onOpenChange={setIsImportOpen}
-              onImportComplete={() =>
-                queryClient.invalidateQueries({
-                  queryKey: academyQueryKey(activeAcademyId, "students"),
-                })
-              }
-            />
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button type="button" variant="outline" size="icon" aria-label="Mais ações">
+                    <MoreHorizontal className="size-4" />
+                  </Button>
+                }
+              />
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={exportStudentsCsv}>Exportar CSV</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setIsImportOpen(true)}>
+                  Importar CSV
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
           <Button onClick={openCreateForm}>
             <PlusCircle className="size-4" /> Novo aluno
