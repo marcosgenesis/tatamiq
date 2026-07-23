@@ -651,13 +651,12 @@ export class PreRegistrationService {
     return !!row?.password;
   }
 
-  private async isInstructorAccount(email: string): Promise<boolean> {
-    const authUser = await this.findAuthUserByEmail(email);
-    if (!authUser) return false;
+  private async isInstructorAccount(userId: string | null): Promise<boolean> {
+    if (!userId) return false;
     const [row] = await this.db
       .select({ id: member.id })
       .from(member)
-      .where(eq(member.userId, authUser.id))
+      .where(eq(member.userId, userId))
       .limit(1);
     return !!row;
   }
@@ -768,6 +767,9 @@ export class PreRegistrationService {
     if (!input.consentAccepted) {
       throw new BadRequestException("Consentimento de pré-cadastro é obrigatório.");
     }
+    if (input.declaredDegree !== undefined && !emptyToNull(input.declaredBeltId)) {
+      throw new BadRequestException("Informe a faixa para declarar o grau.");
+    }
     if (isMinor(input.birthDate)) {
       if (!input.guardianName?.trim() || !input.guardianPhone?.trim()) {
         throw new BadRequestException("Menor de idade precisa de responsável com nome e telefone.");
@@ -790,7 +792,16 @@ export class PreRegistrationService {
     row: RequestRow,
     duplicateStudent: DuplicateStudent,
   ): Promise<PreRegistrationRequest> {
-    const isInstructor = await this.isInstructorAccount(row.email);
+    const authUser = await this.findAuthUserByEmail(row.email);
+    const isInstructor = await this.isInstructorAccount(authUser?.id ?? null);
+    const firstAccessStatus =
+      row.status !== "approved"
+        ? "not_applicable"
+        : !authUser
+          ? "unavailable"
+          : (await this.userHasPassword(authUser.id))
+            ? "password_registered"
+            : "awaiting_password";
     const hasActiveAccess = row.duplicateStudentId
       ? !!(await this.findActiveAccessForStudent(row.duplicateStudentId))
       : false;
@@ -808,6 +819,7 @@ export class PreRegistrationService {
       duplicateStudent,
       rejectionReason: row.rejectionReason,
       approvedStudentId: row.approvedStudentId,
+      firstAccessStatus,
       isInstructorAccount: isInstructor,
       duplicateStudentHasActiveAccess: hasActiveAccess,
       cpf: row.cpf ?? null,

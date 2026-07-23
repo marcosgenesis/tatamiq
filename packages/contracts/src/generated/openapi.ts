@@ -2172,6 +2172,8 @@ export interface components {
             } | null;
             rejectionReason: string | null;
             approvedStudentId: string | null;
+            /** @enum {string} */
+            firstAccessStatus: "not_applicable" | "awaiting_password" | "password_registered" | "unavailable";
             isInstructorAccount: boolean;
             duplicateStudentHasActiveAccess: boolean;
             cpf: string | null;
@@ -2231,6 +2233,8 @@ export interface components {
                 } | null;
                 rejectionReason: string | null;
                 approvedStudentId: string | null;
+                /** @enum {string} */
+                firstAccessStatus: "not_applicable" | "awaiting_password" | "password_registered" | "unavailable";
                 isInstructorAccount: boolean;
                 duplicateStudentHasActiveAccess: boolean;
                 cpf: string | null;
@@ -2272,6 +2276,8 @@ export interface components {
                 } | null;
                 rejectionReason: string | null;
                 approvedStudentId: string | null;
+                /** @enum {string} */
+                firstAccessStatus: "not_applicable" | "awaiting_password" | "password_registered" | "unavailable";
                 isInstructorAccount: boolean;
                 duplicateStudentHasActiveAccess: boolean;
                 cpf: string | null;

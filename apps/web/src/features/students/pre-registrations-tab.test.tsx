@@ -15,6 +15,7 @@ const baseRequest = {
   duplicateStudent: null,
   rejectionReason: null,
   approvedStudentId: null,
+  firstAccessStatus: "not_applicable" as const,
   isInstructorAccount: false,
   duplicateStudentHasActiveAccess: false,
   cpf: null,
@@ -55,7 +56,12 @@ describe("RequestCard", () => {
   it("keeps approved requests read-only when no fresh approval result is available", () => {
     const html = renderToStaticMarkup(
       <RequestCard
-        request={{ ...baseRequest, status: "approved", reviewedAt: "2026-05-27T01:00:00.000Z" }}
+        request={{
+          ...baseRequest,
+          status: "approved",
+          firstAccessStatus: "awaiting_password",
+          reviewedAt: "2026-05-27T01:00:00.000Z",
+        }}
         rejecting={false}
         rejectReason=""
         approving={false}
@@ -75,7 +81,7 @@ describe("RequestCard", () => {
       />,
     );
 
-    expect(html).toContain("Aprovada");
+    expect(html).toContain("Aguardando cadastro da senha");
     expect(html).toContain("Gerar novo link de primeiro acesso");
     expect(html).toContain("Enviar por email");
   });
@@ -83,7 +89,12 @@ describe("RequestCard", () => {
   it("renders copy and email actions after approval result", () => {
     const html = renderToStaticMarkup(
       <RequestCard
-        request={{ ...baseRequest, status: "approved", reviewedAt: "2026-05-27T01:00:00.000Z" }}
+        request={{
+          ...baseRequest,
+          status: "approved",
+          firstAccessStatus: "awaiting_password",
+          reviewedAt: "2026-05-27T01:00:00.000Z",
+        }}
         rejecting={false}
         rejectReason=""
         approving={false}
@@ -105,6 +116,72 @@ describe("RequestCard", () => {
 
     expect(html).toContain("Copiar link de primeiro acesso");
     expect(html).toContain("Enviar por email");
+  });
+
+  it("shows password confirmation and hides first-access actions after password setup", () => {
+    const html = renderToStaticMarkup(
+      <RequestCard
+        request={{
+          ...baseRequest,
+          status: "approved",
+          firstAccessStatus: "password_registered",
+          reviewedAt: "2026-05-27T01:00:00.000Z",
+        }}
+        rejecting={false}
+        rejectReason=""
+        approving={false}
+        approvalResult={null}
+        approvePending={false}
+        generateFirstAccessLinkPending={false}
+        sendEmailPending={false}
+        onStartReject={vi.fn()}
+        onCancelReject={vi.fn()}
+        onRejectReasonChange={vi.fn()}
+        onReject={vi.fn()}
+        onApprove={vi.fn()}
+        onCancelApprove={vi.fn()}
+        onCopyFirstAccess={vi.fn()}
+        onGenerateFirstAccessLink={vi.fn()}
+        onSendEmail={vi.fn()}
+      />,
+    );
+
+    expect(html).toContain("Senha já cadastrada");
+    expect(html).not.toContain("Gerar novo link de primeiro acesso");
+    expect(html).not.toContain("Enviar por email");
+  });
+
+  it("does not offer first-access actions when the account status is unavailable", () => {
+    const html = renderToStaticMarkup(
+      <RequestCard
+        request={{
+          ...baseRequest,
+          status: "approved",
+          firstAccessStatus: "unavailable",
+          reviewedAt: "2026-05-27T01:00:00.000Z",
+        }}
+        rejecting={false}
+        rejectReason=""
+        approving={false}
+        approvalResult={null}
+        approvePending={false}
+        generateFirstAccessLinkPending={false}
+        sendEmailPending={false}
+        onStartReject={vi.fn()}
+        onCancelReject={vi.fn()}
+        onRejectReasonChange={vi.fn()}
+        onReject={vi.fn()}
+        onApprove={vi.fn()}
+        onCancelApprove={vi.fn()}
+        onCopyFirstAccess={vi.fn()}
+        onGenerateFirstAccessLink={vi.fn()}
+        onSendEmail={vi.fn()}
+      />,
+    );
+
+    expect(html).toContain("Não foi possível consultar a conta de acesso");
+    expect(html).not.toContain("Gerar novo link de primeiro acesso");
+    expect(html).not.toContain("Enviar por email");
   });
 
   it("surfaces duplicate and instructor-account warnings", () => {

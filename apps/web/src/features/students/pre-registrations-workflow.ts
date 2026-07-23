@@ -138,7 +138,7 @@ export function usePreRegistrationsWorkflow() {
       return data;
     },
     onSuccess: async (data, variables) => {
-      if (data?.firstAccessLink) {
+      if (data?.firstAccessLink && data.request.firstAccessStatus === "awaiting_password") {
         setApprovalResult({
           requestId: variables.id,
           firstAccessLink: data.firstAccessLink,

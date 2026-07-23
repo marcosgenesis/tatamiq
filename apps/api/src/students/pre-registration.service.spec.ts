@@ -382,9 +382,47 @@ describe("PreRegistrationService", () => {
     expect(result.summary).toEqual({ pendingReview: 1, approved: 0, rejected: 0 });
     expect(result.requests[0]).toMatchObject({
       duplicateStudent: { id: "student-1", name: "Aluno Teste" },
+      firstAccessStatus: "not_applicable",
       isInstructorAccount: true,
       duplicateStudentHasActiveAccess: false,
     });
+  });
+
+  it("reports whether an approved pre-registration still needs a password", async () => {
+    const approvedRequest = {
+      ...requestRow,
+      status: "approved",
+      approvedStudentId: "student-1",
+    };
+    mock.setSelectResults([
+      [{ request: approvedRequest, duplicateName: null }],
+      [{ id: "user-1", email: approvedRequest.email, name: approvedRequest.name }],
+      [],
+      [{ password: null }],
+    ]);
+
+    const result = await service.listRequests("academy-1");
+
+    expect(result.requests[0]?.firstAccessStatus).toBe("awaiting_password");
+  });
+
+  it("reports a registered password without exposing its value", async () => {
+    const approvedRequest = {
+      ...requestRow,
+      status: "approved",
+      approvedStudentId: "student-1",
+    };
+    mock.setSelectResults([
+      [{ request: approvedRequest, duplicateName: null }],
+      [{ id: "user-1", email: approvedRequest.email, name: approvedRequest.name }],
+      [],
+      [{ password: "hashed-secret" }],
+    ]);
+
+    const result = await service.listRequests("academy-1");
+
+    expect(result.requests[0]?.firstAccessStatus).toBe("password_registered");
+    expect(result.requests[0]).not.toHaveProperty("password");
   });
 
   it("rejects a pending request with an optional internal reason", async () => {
