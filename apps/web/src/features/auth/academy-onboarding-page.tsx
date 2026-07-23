@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { Navigate, useNavigate } from "@tanstack/react-router";
 import type { AcademyConfirmLogoInput } from "@tatamiq/contracts";
 import type { components } from "@tatamiq/contracts/generated";
@@ -70,6 +71,8 @@ export function shouldRedirectAwayFromOnboarding(params: {
 
 export function AcademyOnboardingPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const session = authClient.useSession();
   const [step, setStep] = useState(0);
   const [started, setStarted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -198,6 +201,12 @@ export function AcademyOnboardingPage() {
     }
   }
 
+  async function handleSignOut() {
+    await authClient.signOut();
+    queryClient.clear();
+    await navigate({ to: "/sign-in" });
+  }
+
   const canAdvance =
     step === 0 ? data.academyName.trim().length > 0 : step === 1 ? !!data.logoFile : true;
 
@@ -233,6 +242,23 @@ export function AcademyOnboardingPage() {
             onSkip={handleSkip}
             canAdvance={canAdvance}
           />
+
+          {step === 0 && (
+            <div className="border-t pt-5 text-center">
+              {session.data?.user.email && (
+                <p className="text-xs text-muted-foreground">
+                  Conectado como {session.data.user.email}
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={() => void handleSignOut()}
+                className="mt-1 text-sm font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
+              >
+                Sair da conta
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </main>
