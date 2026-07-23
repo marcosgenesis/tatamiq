@@ -2,10 +2,20 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import type { ScheduleOccurrence } from "@tatamiq/contracts";
 import type { components } from "@tatamiq/contracts/generated";
+import { ptBR } from "date-fns/locale";
 import { Calendar03Icon, Clock01Icon, PlusSignIcon, UserMultiple02Icon } from "hugeicons-react";
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { type FormEvent, useMemo, useState } from "react";
 import { api } from "../../api";
 import { useAppShell } from "../../components/app-shell";
+import { EventCalendar } from "../../components/reui/event-calendar/event-calendar";
+import { EventCalendarContent } from "../../components/reui/event-calendar/event-calendar-content";
+import { EventCalendarNav } from "../../components/reui/event-calendar/event-calendar-nav";
+import type {
+  CalendarEvent,
+  EventCalendarOccurrence,
+  EventCalendarRangeInfo,
+  EventCalendarSlotDraft,
+} from "../../components/reui/event-calendar/event-calendar-types";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
@@ -21,26 +31,38 @@ import {
 import { academyQueryKey } from "../../lib/academy-query-keys";
 import { formatAttendanceSummary } from "../classes/attendance-summary";
 import { AdHocClassForm, type AdHocFormState } from "./ad-hoc-class-form";
-import {
-  eventColorClasses,
-  FIRST_HOUR,
-  fmtMinutes,
-  GRID_HEIGHT,
-  getEventPosition,
-  HOUR_PX,
-  HOURS,
-  LAST_HOUR,
-  layoutDayEvents,
-  localStartMinutes,
-  pointerYToMinutes,
-  WEEKDAYS_SHORT,
-} from "./schedule-calendar-layout";
-import "./schedule-calendar.css";
+import { fmtMinutes, localStartMinutes } from "./schedule-calendar-layout";
 
 /* ── types ── */
 
 type CreateAdHocPayload = components["schemas"]["CreateAdHocClassDto"];
 type ScheduleDay = { date: string; weekday: number; occurrences: ScheduleOccurrence[] };
+type ScheduleEvent = CalendarEvent<ScheduleOccurrence>;
+
+/** Calendar visible window (local hours). Mirrors the previous grid gutter. */
+const DAY_START_HOUR = 6;
+const DAY_END_HOUR = 23;
+
+/** Maps an occurrence status to a CSS color fed to the reui `--ec-event-color` var. */
+function eventColor(occ: ScheduleOccurrence): string {
+  switch (occ.status) {
+    case "active":
+      return "var(--color-emerald-500)";
+    case "cancelled":
+      return "var(--color-rose-500)";
+    case "ended":
+      return "var(--color-slate-400)";
+    default:
+      return occ.source === "ad_hoc" ? "var(--color-amber-500)" : "var(--color-primary)";
+  }
+}
+
+/** Builds the event start instant from the occurrence's local date + time. */
+function occurrenceStart(occ: ScheduleOccurrence): Date {
+  const [h = 0, m = 0] = occ.startTime.split(":").map(Number);
+  const [y = 0, mo = 1, d = 1] = occ.scheduledDate.split("-").map(Number);
+  return new Date(y, mo - 1, d, h, m, 0, 0);
+}
 
 /* ═══════════════ PAGE ═══════════════ */
 
@@ -48,7 +70,6 @@ export function SchedulePage() {
   const queryClient = useQueryClient();
   const { activeAcademy } = useAppShell();
   const activeAcademyId = activeAcademy.id;
-  const gridRef = useRef<HTMLDivElement>(null);
   const [weekStart, setWeekStart] = useState(getMondayWeekStart(new Date()));
   const [selectedOccurrence, setSelectedOccurrence] = useState<ScheduleOccurrence | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -58,24 +79,6 @@ export function SchedulePage() {
     durationMinutes: "60",
   });
   const [error, setError] = useState<string | null>(null);
-  const [dragState, setDragState] = useState<{
-    date: string;
-    startMin: number;
-    currentMin: number;
-  } | null>(null);
-
-  const selection = dragState
-    ? {
-        date: dragState.date,
-        startMin: Math.min(dragState.startMin, dragState.currentMin),
-        endMin: Math.max(dragState.startMin, dragState.currentMin) + 15,
-      }
-    : null;
-
-  const nowMinutes = useNowMinutes();
-  const todayStr = getLocalDateStr(new Date());
-  const nowTop = ((nowMinutes - FIRST_HOUR * 60) / 60) * HOUR_PX;
-  const isNowVisible = nowMinutes >= FIRST_HOUR * 60 && nowMinutes < LAST_HOUR * 60;
 
   const scheduleQuery = useQuery({
     queryKey: academyQueryKey(activeAcademyId, "schedule", "week", weekStart),
@@ -120,15 +123,24 @@ export function SchedulePage() {
 
   const days: ScheduleDay[] = scheduleQuery.data?.days ?? [];
 
-  useEffect(() => {
-    if (!gridRef.current || !isNowVisible) return;
-    const scrollTo = Math.max(0, nowTop - 180);
-    gridRef.current.scrollTo({ top: scrollTo, behavior: "smooth" });
-  }, [isNowVisible, nowTop]);
-
-  function moveWeek(delta: number) {
-    setWeekStart(addDays(weekStart, delta * 7));
-  }
+  const events: ScheduleEvent[] = useMemo(() => {
+    const all: ScheduleEvent[] = [];
+    for (const day of days) {
+      for (const occ of day.occurrences) {
+        const start = occurrenceStart(occ);
+        all.push({
+          id: occ.id,
+          title: occ.classGroupName,
+          start,
+          end: new Date(start.getTime() + occ.durationMinutes * 60_000),
+          color: eventColor(occ),
+          readOnly: true,
+          data: occ,
+        });
+      }
+    }
+    return all;
+  }, [days]);
 
   function openAdHocForm() {
     const first = classGroupsQuery.data?.[0];
@@ -141,17 +153,23 @@ export function SchedulePage() {
     setIsFormOpen(true);
   }
 
-  function openAdHocFromSelection(sel: { date: string; startMin: number; endMin: number }) {
+  function openAdHocFromSlot(slot: EventCalendarSlotDraft) {
     const first = classGroupsQuery.data?.[0];
-    const h = String(Math.floor(sel.startMin / 60)).padStart(2, "0");
-    const m = String(sel.startMin % 60).padStart(2, "0");
+    const durationMinutes = Math.max(
+      15,
+      Math.round((slot.end.getTime() - slot.start.getTime()) / 60_000),
+    );
     setForm({
       classGroupId: first?.id ?? "",
-      scheduledStartAt: `${sel.date}T${h}:${m}`,
-      durationMinutes: String(sel.endMin - sel.startMin),
+      scheduledStartAt: toDatetimeLocal(slot.start),
+      durationMinutes: String(durationMinutes),
     });
     setError(null);
     setIsFormOpen(true);
+  }
+
+  function handleRangeChange(info: EventCalendarRangeInfo) {
+    setWeekStart(getLocalDateStr(info.activeRange.start));
   }
 
   function submitAdHoc(e: FormEvent<HTMLFormElement>) {
@@ -169,19 +187,7 @@ export function SchedulePage() {
     <div className="space-y-4 p-6">
       {/* ── header ── */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={() => setWeekStart(getMondayWeekStart(new Date()))}>
-            Hoje
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => moveWeek(-1)}>
-            ‹
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => moveWeek(1)}>
-            ›
-          </Button>
-          <h1 className="font-heading text-xl font-semibold">{weekMonthLabel(weekStart)}</h1>
-        </div>
-
+        <h1 className="font-heading text-xl font-semibold">Agenda</h1>
         <Button onClick={openAdHocForm}>
           <PlusSignIcon className="size-4" />
           Aula avulsa
@@ -189,172 +195,31 @@ export function SchedulePage() {
       </div>
 
       {/* ── calendar ── */}
-      <div className="overflow-hidden rounded-xl border border-border">
-        {scheduleQuery.isLoading ? (
-          <div className="flex items-center justify-center py-32 text-sm text-muted-foreground">
-            <div className="mr-3 size-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
-            Carregando agenda...
-          </div>
-        ) : scheduleQuery.isError ? (
-          <div className="flex items-center justify-center py-32 text-sm text-destructive">
-            Não foi possível carregar a agenda.
-          </div>
-        ) : (
-          <>
-            {/* day headers */}
-            <div className="flex border-b border-border">
-              <div className="w-16 shrink-0" />
-              {days.map((day) => {
-                const isToday = day.date === todayStr;
-                return (
-                  <div
-                    key={day.date}
-                    className="flex flex-1 items-center justify-center border-l border-border py-3"
-                  >
-                    <span
-                      className={`text-sm ${isToday ? "font-bold text-foreground" : "text-muted-foreground"}`}
-                    >
-                      {WEEKDAYS_SHORT[day.weekday]} {day.date.slice(-2)}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* scrollable grid body */}
-            <div
-              ref={gridRef}
-              className="schedule-grid-scroll overflow-y-auto"
-              style={{ maxHeight: "calc(100vh - 14rem)" }}
-            >
-              <div className="relative flex" style={{ height: `${GRID_HEIGHT}px` }}>
-                {/* time gutter */}
-                <div className="relative w-16 shrink-0">
-                  {HOURS.slice(1).map((h) => (
-                    <span
-                      key={h}
-                      className="absolute right-4 -translate-y-1/2 select-none text-xs tabular-nums text-muted-foreground"
-                      style={{ top: `${(h - FIRST_HOUR) * HOUR_PX}px` }}
-                    >
-                      {String(h).padStart(2, "0")}:00
-                    </span>
-                  ))}
-                </div>
-
-                {/* day columns */}
-                <div className="relative flex flex-1">
-                  {days.map((day) => {
-                    const laid = layoutDayEvents(day.occurrences);
-                    return (
-                      <div
-                        key={day.date}
-                        className="relative flex-1 cursor-crosshair border-l border-border select-none"
-                        onPointerDown={(e) => {
-                          if (
-                            e.button !== 0 ||
-                            (e.target as HTMLElement).closest(".schedule-event")
-                          )
-                            return;
-                          const el = e.currentTarget as HTMLElement;
-                          el.setPointerCapture(e.pointerId);
-                          const min = pointerYToMinutes(e.clientY, el);
-                          setDragState({ date: day.date, startMin: min, currentMin: min });
-                          e.preventDefault();
-                        }}
-                        onPointerMove={(e) => {
-                          if (!dragState || dragState.date !== day.date) return;
-                          const min = pointerYToMinutes(e.clientY, e.currentTarget as HTMLElement);
-                          setDragState((prev) => (prev ? { ...prev, currentMin: min } : null));
-                        }}
-                        onPointerUp={(e) => {
-                          if (!dragState || dragState.date !== day.date) return;
-                          (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-                          const s = Math.min(dragState.startMin, dragState.currentMin);
-                          const end = Math.max(dragState.startMin, dragState.currentMin) + 15;
-                          if (end - s >= 15)
-                            openAdHocFromSelection({ date: day.date, startMin: s, endMin: end });
-                          setDragState(null);
-                        }}
-                      >
-                        {/* hour lines */}
-                        {HOURS.map((h) => (
-                          <div
-                            key={h}
-                            className="absolute inset-x-0 border-t border-border"
-                            style={{ top: `${(h - FIRST_HOUR) * HOUR_PX}px` }}
-                          />
-                        ))}
-
-                        {/* drag selection overlay */}
-                        {selection && selection.date === day.date ? (
-                          <div
-                            className="pointer-events-none absolute inset-x-1 z-[5] rounded-md border-2 border-dashed border-primary bg-primary/10"
-                            style={{
-                              top: `${((selection.startMin - FIRST_HOUR * 60) / 60) * HOUR_PX}px`,
-                              height: `${((selection.endMin - selection.startMin) / 60) * HOUR_PX}px`,
-                            }}
-                          >
-                            <div className="flex h-full flex-col items-center justify-center gap-0.5 text-[10px] font-semibold text-primary">
-                              <span>
-                                {fmtMinutes(selection.startMin)} — {fmtMinutes(selection.endMin)}
-                              </span>
-                              <span className="font-medium opacity-70">
-                                {selection.endMin - selection.startMin}min
-                              </span>
-                            </div>
-                          </div>
-                        ) : null}
-
-                        {/* events */}
-                        {laid.map(({ occurrence: occ, col, totalCols }) => {
-                          const pos = getEventPosition(occ);
-                          const w = 100 / totalCols;
-                          const l = col * w;
-                          return (
-                            <button
-                              key={occ.id}
-                              type="button"
-                              data-testid="schedule-occurrence-card"
-                              className={`schedule-event absolute z-[2] flex flex-col overflow-hidden rounded-md text-left ${eventColorClasses(occ)}`}
-                              style={{
-                                top: `${pos.top + 1}px`,
-                                height: `${pos.height - 2}px`,
-                                left: `calc(${l}% + 2px)`,
-                                width: `calc(${w}% - 4px)`,
-                              }}
-                              onClick={() => setSelectedOccurrence(occ)}
-                            >
-                              <span
-                                className={`truncate px-2 pt-1.5 text-[11px] font-semibold leading-tight ${occ.status === "cancelled" ? "line-through opacity-60" : ""}`}
-                              >
-                                {occ.classGroupName}
-                              </span>
-                              <span className="truncate px-2 text-[10px] leading-tight opacity-70">
-                                {fmtMinutes(localStartMinutes(occ))} - {fmtEndTime(occ)}
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    );
-                  })}
-
-                  {/* now indicator */}
-                  {isNowVisible ? (
-                    <div
-                      className="pointer-events-none absolute inset-x-0 z-10 flex items-center"
-                      style={{ top: `${nowTop}px` }}
-                    >
-                      <div className="size-2 shrink-0 rounded-full bg-red-500" />
-                      <div className="h-px flex-1 bg-red-500" />
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-      </div>
+      {scheduleQuery.isError ? (
+        <div className="flex items-center justify-center rounded-xl border border-border py-32 text-sm text-destructive">
+          Não foi possível carregar a agenda.
+        </div>
+      ) : (
+        <EventCalendar<ScheduleOccurrence>
+          events={events}
+          defaultView="week"
+          weekStartsOn={1}
+          locale={ptBR}
+          dayStartHour={DAY_START_HOUR}
+          dayEndHour={DAY_END_HOUR}
+          loading={scheduleQuery.isLoading}
+          interactions={{ drag: false, resize: false, selectSlot: true }}
+          onEventClick={(occurrence: EventCalendarOccurrence<ScheduleOccurrence>) => {
+            if (occurrence.event.data) setSelectedOccurrence(occurrence.event.data);
+          }}
+          onSelectSlot={openAdHocFromSlot}
+          onRangeChange={handleRangeChange}
+          className="h-[calc(100vh-11rem)] overflow-hidden rounded-xl border border-border"
+        >
+          <EventCalendarNav />
+          <EventCalendarContent />
+        </EventCalendar>
+      )}
 
       {/* ── ad-hoc drawer ── */}
       <Drawer
@@ -772,21 +637,6 @@ export function TodayRoutineCard() {
 
 /* ── helpers ── */
 
-function useNowMinutes() {
-  const [m, setM] = useState(() => {
-    const n = new Date();
-    return n.getHours() * 60 + n.getMinutes();
-  });
-  useEffect(() => {
-    const id = setInterval(() => {
-      const n = new Date();
-      setM(n.getHours() * 60 + n.getMinutes());
-    }, 60_000);
-    return () => clearInterval(id);
-  }, []);
-  return m;
-}
-
 function getLocalDateStr(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
@@ -810,29 +660,6 @@ function getMondayWeekStart(date: Date): string {
   const day = v.getUTCDay();
   v.setUTCDate(v.getUTCDate() + (day === 0 ? -6 : 1 - day));
   return v.toISOString().slice(0, 10);
-}
-
-function addDays(date: string, days: number): string {
-  const v = new Date(`${date}T00:00:00.000Z`);
-  v.setUTCDate(v.getUTCDate() + days);
-  return v.toISOString().slice(0, 10);
-}
-
-function weekMonthLabel(ws: string): string {
-  const start = new Date(`${ws}T00:00:00.000Z`);
-  const end = new Date(`${addDays(ws, 6)}T00:00:00.000Z`);
-  const fmt = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric", timeZone: "UTC" });
-  if (start.getUTCMonth() === end.getUTCMonth()) {
-    const s = fmt.format(start);
-    return s.charAt(0).toUpperCase() + s.slice(1);
-  }
-  const fmtShort = new Intl.DateTimeFormat("pt-BR", { month: "short", timeZone: "UTC" });
-  return `${fmtShort.format(start)} - ${fmt.format(end)}`;
-}
-
-function fmtEndTime(occ: ScheduleOccurrence): string {
-  const startMin = localStartMinutes(occ);
-  return fmtMinutes(startMin + occ.durationMinutes);
 }
 
 function formatDayLong(date: string): string {
