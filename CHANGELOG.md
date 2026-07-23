@@ -1,3 +1,22 @@
+# [0.6.0](https://github.com/marcosgenesis/tatamiq/compare/v0.5.0...v0.6.0) (2026-07-23)
+
+
+### Bug Fixes
+
+* allow multiple web origins for api auth ([f507a6d](https://github.com/marcosgenesis/tatamiq/commit/f507a6d77628da32632c10fcfc4ca7db48481b11))
+* apply declared belt and degree when approving pre-registration ([0f3e87e](https://github.com/marcosgenesis/tatamiq/commit/0f3e87e0b1d63f66cfb6fdd77f424b48537013e1))
+* configure auth cookies for cross-site staging ([5287a30](https://github.com/marcosgenesis/tatamiq/commit/5287a30b085ab70642faba030680aa7d9129cdcd))
+* focus dashboard on onboarding checklist ([aff0144](https://github.com/marcosgenesis/tatamiq/commit/aff014489bb257eba708c6a4f93b25c2384fc58e))
+* refresh app when deployed bundle changes ([e029b57](https://github.com/marcosgenesis/tatamiq/commit/e029b57a12f6edd1f7e1aaaee6b2f2a0cb89e4aa))
+* reload app on chunk preload error after deploy ([08a9add](https://github.com/marcosgenesis/tatamiq/commit/08a9add394c890d98cedd51fa5b02af73667cfff))
+* skip camera priming when permission already granted ([6168b4d](https://github.com/marcosgenesis/tatamiq/commit/6168b4d9f70aa2d7c98277ea51b7c128859dbb69))
+* standardize query cache invalidation ([08b3b7e](https://github.com/marcosgenesis/tatamiq/commit/08b3b7e9f1bb1888520efcc58b797a998372cc12))
+
+
+### Features
+
+* add in-app camera QR scanner for student check-in ([c9ac3fb](https://github.com/marcosgenesis/tatamiq/commit/c9ac3fb3f4e2f78cae50b0545bb51b69bf73e167))
+
 # [0.5.0](https://github.com/marcosgenesis/tatamiq/compare/v0.4.1...v0.5.0) (2026-07-21)
 
 
