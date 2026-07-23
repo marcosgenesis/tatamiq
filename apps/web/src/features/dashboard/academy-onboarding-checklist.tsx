@@ -77,9 +77,7 @@ export function allStepsDone(checklist: AcademyOnboardingChecklist): boolean {
   return STEP_ORDER.every((step) => checklist.steps[step]);
 }
 
-export function AcademyOnboardingChecklistWidget() {
-  const queryClient = useQueryClient();
-  const navigate = useNavigate();
+export function useAcademyOnboardingChecklistQuery() {
   const { activeAcademy } = useAppShell();
   const activeAcademyId = activeAcademy.id;
   const queryKey = academyOnboardingChecklistQueryKey(activeAcademyId);
@@ -93,6 +91,20 @@ export function AcademyOnboardingChecklistWidget() {
     },
     enabled: !!activeAcademyId,
   });
+
+  return { activeAcademyId, query, queryKey };
+}
+
+export function shouldFocusDashboardOnboarding(
+  checklist: AcademyOnboardingChecklist | null | undefined,
+): boolean {
+  return Boolean(checklist && !checklist.dismissed);
+}
+
+export function AcademyOnboardingChecklistWidget({ centered = false }: { centered?: boolean }) {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { query, queryKey } = useAcademyOnboardingChecklistQuery();
 
   const dismissMutation = useMutation({
     mutationFn: async () => {
@@ -144,7 +156,7 @@ export function AcademyOnboardingChecklistWidget() {
   const checklist = query.data;
   if (!checklist || checklist.dismissed) return null;
 
-  return (
+  const card = (
     <AcademyOnboardingChecklistCard
       checklist={checklist}
       copying={copyLinkMutation.isPending}
@@ -159,6 +171,10 @@ export function AcademyOnboardingChecklistWidget() {
       onDismiss={() => dismissMutation.mutate()}
     />
   );
+
+  if (!centered) return card;
+
+  return <div className="w-full max-w-5xl">{card}</div>;
 }
 
 type ChecklistCardProps = {

@@ -56,15 +56,20 @@ export type StartPlatformSupportInput = {
 };
 
 export const platformKeys = {
+  dashboardRoot: () => ["platform", "dashboard"] as const,
+  academiesRoot: () => ["platform", "academies"] as const,
+  usersRoot: () => ["platform", "users"] as const,
+  administratorsRoot: () => ["platform", "administrators"] as const,
   me: (userId: string | null | undefined) => ["platform", "me", userId ?? "anonymous"] as const,
   dashboard: (sessionUserId: string | null | undefined) =>
-    ["platform", "dashboard", sessionUserId ?? "anonymous"] as const,
+    [...platformKeys.dashboardRoot(), sessionUserId ?? "anonymous"] as const,
   academies: (
     sessionUserId: string | null | undefined,
     query: string,
     page: number,
     pageSize: number,
-  ) => ["platform", "academies", sessionUserId ?? "anonymous", query, page, pageSize] as const,
+  ) =>
+    [...platformKeys.academiesRoot(), sessionUserId ?? "anonymous", query, page, pageSize] as const,
   academy: (sessionUserId: string | null | undefined, academyId: string) =>
     ["platform", "academies", sessionUserId ?? "anonymous", academyId] as const,
   academyOperationalOverview: (sessionUserId: string | null | undefined, academyId: string) =>
@@ -82,13 +87,13 @@ export const platformKeys = {
     query: string,
     page: number,
     pageSize: number,
-  ) => ["platform", "users", sessionUserId ?? "anonymous", query, page, pageSize] as const,
+  ) => [...platformKeys.usersRoot(), sessionUserId ?? "anonymous", query, page, pageSize] as const,
   user: (sessionUserId: string | null | undefined, userId: string) =>
     ["platform", "users", sessionUserId ?? "anonymous", userId] as const,
   userDeletionImpact: (sessionUserId: string | null | undefined, userId: string) =>
     ["platform", "users", sessionUserId ?? "anonymous", userId, "deletion-impact"] as const,
   administrators: (sessionUserId: string | null | undefined, page: number, pageSize: number) =>
-    ["platform", "administrators", sessionUserId ?? "anonymous", page, pageSize] as const,
+    [...platformKeys.administratorsRoot(), sessionUserId ?? "anonymous", page, pageSize] as const,
   audit: (
     sessionUserId: string | null | undefined,
     action: string,

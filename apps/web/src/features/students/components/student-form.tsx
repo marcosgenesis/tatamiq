@@ -217,7 +217,7 @@ export function StudentForm(props: {
   student?: Student;
   belts: BeltDto[];
   open: boolean;
-  onSubmit: () => void;
+  onSubmit: () => Promise<void> | void;
   onClose: () => void;
 }) {
   const formId = useId();
@@ -296,8 +296,8 @@ export function StudentForm(props: {
       if (error) throw new Error(apiErrorMessage(error, "Não foi possível criar o aluno."));
       return data;
     },
-    onSuccess: (data) => {
-      props.onSubmit();
+    onSuccess: async (data) => {
+      await props.onSubmit();
       props.onClose();
       const name = data && "name" in data ? (data as { name: string }).name : undefined;
       toast.success(props.student ? "Aluno atualizado" : "Aluno cadastrado", {

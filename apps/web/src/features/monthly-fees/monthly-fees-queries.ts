@@ -1,16 +1,16 @@
 import type { CreateMonthlyFeeInput } from "@tatamiq/contracts";
 import { api } from "../../api";
+import { academyQueryKey } from "../../lib/academy-query-keys";
 import type { FeeStatusFilter } from "./monthly-fees-types";
 
 export const monthlyFeesKeys = {
-  all: (academyId: string | null | undefined) =>
-    ["academy", academyId ?? "no-academy", "monthly-fees"] as const,
+  all: (academyId: string | null | undefined) => academyQueryKey(academyId, "monthly-fees"),
   list: (academyId: string | null | undefined, status: FeeStatusFilter) =>
-    [...monthlyFeesKeys.all(academyId), status] as const,
+    academyQueryKey(academyId, "monthly-fees", status),
   detailRoot: (academyId: string | null | undefined) =>
-    [...monthlyFeesKeys.all(academyId), "detail"] as const,
+    academyQueryKey(academyId, "monthly-fees", "detail"),
   detail: (academyId: string | null | undefined, feeId: string | null) =>
-    [...monthlyFeesKeys.detailRoot(academyId), feeId] as const,
+    academyQueryKey(academyId, "monthly-fees", "detail", feeId),
 };
 
 export async function fetchMonthlyFees(statusFilter: FeeStatusFilter) {

@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { classGroupsKeys } from "./class-groups-page";
+import { classGroupsKeys } from "./class-groups-queries";
 
 describe("classGroupsKeys", () => {
   it("scopes class group lists by active academy", () => {
     expect(classGroupsKeys.list("academy-1", "active")).toEqual([
-      "class-groups",
+      "academy",
       "academy-1",
+      "class-groups",
       "active",
     ]);
     expect(classGroupsKeys.list("academy-1", "active")).not.toEqual(
@@ -15,8 +16,9 @@ describe("classGroupsKeys", () => {
 
   it("scopes class group student pickers by active academy", () => {
     expect(classGroupsKeys.students("academy-1")).toEqual([
-      "students",
+      "academy",
       "academy-1",
+      "students",
       "active",
       "for-class-groups",
     ]);

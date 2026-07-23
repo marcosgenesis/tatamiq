@@ -300,8 +300,8 @@ export class PreRegistrationService {
           email: existing.email,
           monthlyAmountInCents: null,
           monthlyDueDay: null,
-          currentBeltId: whiteBelt.id,
-          currentDegree: 0,
+          currentBeltId: existing.declaredBeltId ?? whiteBelt.id,
+          currentDegree: existing.declaredDegree ?? 0,
           createdAt: now,
           updatedAt: now,
         });

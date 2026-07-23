@@ -31,6 +31,7 @@ import {
   addPlatformAdministrator,
   type PlatformAdministrator,
   platformAdministratorsQuery,
+  platformKeys,
   platformMeQuery,
   removePlatformAdministrator,
 } from "./platform-queries";
@@ -57,13 +58,13 @@ export function PlatformAdministratorsPage() {
     onSuccess: async () => {
       setForm({ email: "", name: "" });
       setPagination((c) => ({ ...c, pageIndex: 0 }));
-      await queryClient.invalidateQueries({ queryKey: ["platform", "administrators"] });
+      await queryClient.invalidateQueries({ queryKey: platformKeys.administratorsRoot() });
     },
   });
   const removeAdmin = useMutation({
     mutationFn: (id: string) => removePlatformAdministrator(id),
     onSuccess: async () =>
-      queryClient.invalidateQueries({ queryKey: ["platform", "administrators"] }),
+      queryClient.invalidateQueries({ queryKey: platformKeys.administratorsRoot() }),
   });
 
   if (session.isPending || platform.isLoading)

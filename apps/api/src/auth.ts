@@ -4,7 +4,9 @@ import * as schema from "@tatamiq/database/schema";
 import { betterAuth } from "better-auth";
 import { APIError } from "better-auth/api";
 import { admin, organization } from "better-auth/plugins";
+import { resolveAuthCookieOptions } from "./auth-cookies";
 import { seedIbjjfBelts } from "./belts/seed-belts";
+import { resolveWebOrigins } from "./web-origins";
 
 const MIN_NAME_LENGTH = 2;
 const MAX_NAME_LENGTH = 120;
@@ -45,7 +47,7 @@ export function normalizeOrganizationName(rawName: unknown): string {
 }
 
 const apiUrl = process.env.BETTER_AUTH_URL ?? "http://localhost:3100";
-const webUrl = process.env.WEB_APP_URL ?? process.env.CORS_ORIGIN ?? "http://localhost:5173";
+const webOrigins = resolveWebOrigins();
 
 const db = createDatabase();
 export const DEV_BETTER_AUTH_SECRET =
@@ -94,7 +96,8 @@ export const auth = betterAuth({
   baseURL: apiUrl,
   basePath: "/auth",
   secret: resolveBetterAuthSecret(),
-  trustedOrigins: [webUrl],
+  trustedOrigins: webOrigins,
+  advanced: resolveAuthCookieOptions(),
   database: drizzleAdapter(db, {
     provider: "pg",
     schema,

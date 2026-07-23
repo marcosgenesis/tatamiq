@@ -3,6 +3,7 @@ import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { Logger } from "nestjs-pino";
 import { cleanupOpenApiDoc, ZodValidationPipe } from "nestjs-zod";
 import { AppModule } from "./app.module";
+import { resolveWebOrigins } from "./web-origins";
 
 export async function createApp() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true, bodyParser: false });
@@ -10,7 +11,7 @@ export async function createApp() {
   app.useGlobalPipes(new ZodValidationPipe());
 
   app.enableCors({
-    origin: process.env.WEB_APP_URL ?? process.env.CORS_ORIGIN ?? "http://localhost:5173",
+    origin: resolveWebOrigins(),
     credentials: true,
   });
 

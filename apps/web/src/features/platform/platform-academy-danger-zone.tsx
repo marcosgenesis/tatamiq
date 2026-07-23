@@ -55,7 +55,7 @@ export function PlatformAcademyDangerZone({
     onSuccess: async (result) => {
       toast.success("Academia excluída definitivamente.");
       queryClient.setQueriesData<PlatformAcademiesResponse | undefined>(
-        { queryKey: ["platform", "academies"] },
+        { queryKey: platformKeys.academiesRoot() },
         (current) => removeAcademyFromAcademiesResponse(current, result.deletedAcademyId),
       );
       queryClient.removeQueries({ queryKey: platformKeys.academy(sessionUserId, academy.id) });
@@ -65,7 +65,7 @@ export function PlatformAcademyDangerZone({
       queryClient.removeQueries({
         queryKey: platformKeys.academyDeletionPreview(sessionUserId, academy.id),
       });
-      await queryClient.invalidateQueries({ queryKey: ["platform", "academies"] });
+      await queryClient.invalidateQueries({ queryKey: platformKeys.academiesRoot() });
       await navigate({ to: "/platform/academies" });
     },
     onError: () => {
