@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { describeCreateAcademyError } from "./academy-onboarding-page";
+import {
+  describeCreateAcademyError,
+  shouldRedirectAwayFromOnboarding,
+} from "./academy-onboarding-page";
 
 describe("describeCreateAcademyError", () => {
   it("maps a name that is too short", () => {
@@ -21,5 +24,40 @@ describe("describeCreateAcademyError", () => {
     expect(describeCreateAcademyError(null)).toBe(
       "Não foi possível criar sua academia. Tente novamente.",
     );
+  });
+});
+
+describe("shouldRedirectAwayFromOnboarding", () => {
+  it("redirects only when an already-onboarded user opens onboarding before starting", () => {
+    expect(
+      shouldRedirectAwayFromOnboarding({
+        started: false,
+        isSubmitting: false,
+        organizationsPending: false,
+        organizationCount: 1,
+      }),
+    ).toBe(true);
+  });
+
+  it("keeps the onboarding visible while academy creation is in progress", () => {
+    expect(
+      shouldRedirectAwayFromOnboarding({
+        started: false,
+        isSubmitting: true,
+        organizationsPending: false,
+        organizationCount: 1,
+      }),
+    ).toBe(false);
+  });
+
+  it("keeps the onboarding visible after the flow has started", () => {
+    expect(
+      shouldRedirectAwayFromOnboarding({
+        started: true,
+        isSubmitting: false,
+        organizationsPending: false,
+        organizationCount: 1,
+      }),
+    ).toBe(false);
   });
 });
