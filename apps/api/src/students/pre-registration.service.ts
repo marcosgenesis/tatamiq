@@ -43,6 +43,7 @@ import { hashToken, STUDENT_ACCESS_TERMS_VERSION } from "../student-access/stude
 import { EmailService } from "./email.service";
 import { PreRegistrationLinkLifecycle } from "./pre-registration-link-lifecycle";
 import { parseLinkStatus } from "./pre-registration-link-rules";
+import { apiBaseUrl } from "./pre-registration-share-page";
 import { isMinor } from "./student-rules";
 
 const FIRST_ACCESS_DAYS = 7;
@@ -107,6 +108,10 @@ export class PreRegistrationService {
 
   async publicProfile(token: string): Promise<PreRegistrationPublicProfile> {
     return this.linkLifecycle.resolvePublicProfile(token);
+  }
+
+  publicFormUrl(token: string): string {
+    return `${webAppUrl()}/pre-register/${token}`;
   }
 
   async createRequest(
@@ -781,7 +786,7 @@ export class PreRegistrationService {
     return {
       id: row.id,
       status: parseLinkStatus(row.status),
-      url: `${webAppUrl()}/pre-register/${row.token}`,
+      url: `${apiBaseUrl()}/pre-register/${row.token}/share`,
       regeneratedAt: row.regeneratedAt?.toISOString() ?? null,
       copiedAt: row.copiedAt?.toISOString() ?? null,
       updatedAt: row.updatedAt.toISOString(),

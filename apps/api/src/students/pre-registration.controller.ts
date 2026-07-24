@@ -1,9 +1,10 @@
-import { Controller, Get, HttpCode, Inject, Param, Post, Req } from "@nestjs/common";
+import { Controller, Get, Header, HttpCode, Inject, Param, Post, Req } from "@nestjs/common";
 import { ApiBody, ApiOkResponse, ApiParam, ApiTags } from "@nestjs/swagger";
 import { AllowAnonymous, OrgRoles } from "@thallesp/nestjs-better-auth";
 import { AcademyId, ActorId } from "../academy-request";
 import { ZodBody } from "../zod-body.decorator";
 import { PreRegistrationService } from "./pre-registration.service";
+import { preRegistrationSharePage } from "./pre-registration-share-page";
 
 type PreRegistrationRequestMetadata = { ip?: string };
 
@@ -39,6 +40,17 @@ export class PreRegistrationController {
   @ApiOkResponse({ type: PreRegistrationPublicProfileDto })
   publicProfile(@Param("token") token: string): Promise<PreRegistrationPublicProfileDto> {
     return this.preRegistrationService.publicProfile(token);
+  }
+
+  @Get("pre-register/:token/share")
+  @AllowAnonymous()
+  @Header("Content-Type", "text/html; charset=utf-8")
+  async sharePage(@Param("token") token: string): Promise<string> {
+    const profile = await this.preRegistrationService.publicProfile(token);
+    return preRegistrationSharePage(
+      profile.academy,
+      this.preRegistrationService.publicFormUrl(token),
+    );
   }
 
   @Post("pre-register/:token/requests")

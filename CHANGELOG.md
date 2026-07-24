@@ -1,3 +1,11 @@
+# [0.7.0](https://github.com/marcosgenesis/tatamiq/compare/v0.6.0...v0.7.0) (2026-07-23)
+
+
+### Features
+
+* add sign-out option on academy onboarding name step ([8802a12](https://github.com/marcosgenesis/tatamiq/commit/8802a125ca1f06b16703341bf4c1c7cfc43a863f))
+* **schedule:** replace agenda with reui event calendar ([2e721d9](https://github.com/marcosgenesis/tatamiq/commit/2e721d958e2b10eb2d9cfd53e98d95ce83eaca11))
+
 # [0.6.0](https://github.com/marcosgenesis/tatamiq/compare/v0.5.0...v0.6.0) (2026-07-23)
 
 
