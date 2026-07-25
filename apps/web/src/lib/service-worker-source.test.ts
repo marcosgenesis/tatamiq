@@ -12,7 +12,10 @@ describe("service worker cache strategy", () => {
 
   it("uses network-first fetches for non-navigation assets", () => {
     const fetchAndCacheIndex = serviceWorkerSource.indexOf("async function fetchAndCache");
-    const fetchIndex = serviceWorkerSource.indexOf("await fetch(request)", fetchAndCacheIndex);
+    const fetchIndex = serviceWorkerSource.indexOf(
+      "await fetchWithTimeout(request",
+      fetchAndCacheIndex,
+    );
     const cachedFallbackIndex = serviceWorkerSource.indexOf(
       "if (cached) return cached",
       fetchIndex,
@@ -21,5 +24,10 @@ describe("service worker cache strategy", () => {
     expect(fetchAndCacheIndex).toBeGreaterThanOrEqual(0);
     expect(fetchIndex).toBeGreaterThan(fetchAndCacheIndex);
     expect(cachedFallbackIndex).toBeGreaterThan(fetchIndex);
+  });
+
+  it("times out hung asset fetches so the app can recover instead of spinning forever", () => {
+    expect(serviceWorkerSource).toContain("AbortController");
+    expect(serviceWorkerSource).toContain("controller.abort()");
   });
 });
