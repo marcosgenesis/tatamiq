@@ -16,7 +16,10 @@ import {
   DrawerTitle,
 } from "../../components/ui/drawer";
 import { useBelts } from "../../hooks/use-belts";
+import { useIsMobile } from "../../hooks/use-mobile";
 import { academyQueryKey } from "../../lib/academy-query-keys";
+import { GraduationMobileBody } from "./graduation-mobile";
+import type { EligibilityType, EligibleStudent } from "./graduation-types";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3100";
 
@@ -30,22 +33,7 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   return res.json();
 }
 
-type EligibilityType = "degree" | "belt" | "transition";
 type TypeFilter = "all" | EligibilityType;
-
-type EligibleStudent = {
-  id: string;
-  name: string;
-  currentBeltId: string;
-  currentBeltName: string;
-  currentBeltPath: string;
-  currentDegree: number;
-  eligibilityType: EligibilityType;
-  monthsSinceReference: number;
-  attendancesSinceReference: number;
-  requiredMonths: number;
-  requiredAttendances: number;
-};
 
 const typeLabels: Record<EligibilityType, string> = {
   degree: "Grau",
@@ -63,6 +51,7 @@ export function GraduationPage() {
   const queryClient = useQueryClient();
   const { activeAcademy } = useAppShell();
   const activeAcademyId = activeAcademy.id;
+  const isMobile = useIsMobile();
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
 
   // Promotion dialog state
@@ -205,48 +194,8 @@ export function GraduationPage() {
     dismissMutation.mutate(dismissPayload);
   }
 
-  return (
-    <div className="space-y-6">
-      <section className="rounded-[2rem] border border-border bg-card p-6 shadow-2xl md:p-8">
-        <Badge variant="muted">Graduação</Badge>
-        <div className="mt-5 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight md:text-5xl">Graduação</h1>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
-              Alunos elegíveis para promoção de grau, faixa ou transição. Promova ou adie conforme
-              necessário.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <div className="grid gap-3 md:grid-cols-4">
-        <SummaryCard
-          label="Grau"
-          value={summary?.degree ?? 0}
-          active={typeFilter === "degree"}
-          onClick={() => setTypeFilter("degree")}
-        />
-        <SummaryCard
-          label="Faixa"
-          value={summary?.belt ?? 0}
-          active={typeFilter === "belt"}
-          onClick={() => setTypeFilter("belt")}
-        />
-        <SummaryCard
-          label="Transição"
-          value={summary?.transition ?? 0}
-          active={typeFilter === "transition"}
-          onClick={() => setTypeFilter("transition")}
-        />
-        <SummaryCard
-          label="Total"
-          value={(summary?.degree ?? 0) + (summary?.belt ?? 0) + (summary?.transition ?? 0)}
-          active={typeFilter === "all"}
-          onClick={() => setTypeFilter("all")}
-        />
-      </div>
-
+  const overlays = (
+    <>
       <Drawer
         direction="right"
         open={promoteStudent !== null}
@@ -348,6 +297,69 @@ export function GraduationPage() {
           </form>
         </DrawerContent>
       </Drawer>
+    </>
+  );
+
+  if (isMobile) {
+    return (
+      <>
+        <GraduationMobileBody
+          students={students}
+          summary={summary}
+          typeFilter={typeFilter}
+          setTypeFilter={setTypeFilter}
+          isLoading={eligibleQuery.isLoading}
+          onPromote={openPromote}
+          onDismiss={openDismiss}
+        />
+        {overlays}
+      </>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <section className="rounded-[2rem] border border-border bg-card p-6 shadow-2xl md:p-8">
+        <Badge variant="muted">Graduação</Badge>
+        <div className="mt-5 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h1 className="text-3xl font-semibold tracking-tight md:text-5xl">Graduação</h1>
+            <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
+              Alunos elegíveis para promoção de grau, faixa ou transição. Promova ou adie conforme
+              necessário.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <div className="grid gap-3 md:grid-cols-4">
+        <SummaryCard
+          label="Grau"
+          value={summary?.degree ?? 0}
+          active={typeFilter === "degree"}
+          onClick={() => setTypeFilter("degree")}
+        />
+        <SummaryCard
+          label="Faixa"
+          value={summary?.belt ?? 0}
+          active={typeFilter === "belt"}
+          onClick={() => setTypeFilter("belt")}
+        />
+        <SummaryCard
+          label="Transição"
+          value={summary?.transition ?? 0}
+          active={typeFilter === "transition"}
+          onClick={() => setTypeFilter("transition")}
+        />
+        <SummaryCard
+          label="Total"
+          value={(summary?.degree ?? 0) + (summary?.belt ?? 0) + (summary?.transition ?? 0)}
+          active={typeFilter === "all"}
+          onClick={() => setTypeFilter("all")}
+        />
+      </div>
+
+      {overlays}
 
       {/* Students table */}
       <Card>
