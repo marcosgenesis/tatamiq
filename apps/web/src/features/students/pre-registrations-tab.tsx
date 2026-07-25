@@ -375,48 +375,54 @@ export function RequestCard(props: {
       {request.status === "approved" && (
         <div className="mx-4 mb-4 space-y-3 rounded-[10px] border border-green-500/30 bg-green-500/10 p-3">
           <p className="text-xs font-medium text-green-400">
-            {props.approvalResult
-              ? "Aluno aprovado com sucesso!"
-              : "Aprovada. Você pode enviar ou gerar um novo link de primeiro acesso."}
+            {request.firstAccessStatus === "password_registered"
+              ? "Senha já cadastrada. O aluno pode acessar com a conta existente."
+              : request.firstAccessStatus === "unavailable"
+                ? "Não foi possível consultar a conta de acesso deste aluno."
+                : props.approvalResult
+                  ? "Aluno aprovado com sucesso!"
+                  : "Aguardando cadastro da senha. Envie um link de primeiro acesso ao aluno."}
           </p>
-          <div className="flex flex-wrap gap-2">
-            {props.approvalResult ? (
+          {request.firstAccessStatus === "awaiting_password" && (
+            <div className="flex flex-wrap gap-2">
+              {props.approvalResult ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    if (props.approvalResult)
+                      props.onCopyFirstAccess(props.approvalResult.firstAccessLink);
+                  }}
+                >
+                  <Copy01Icon className="size-4" /> Copiar link de primeiro acesso
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={props.generateFirstAccessLinkPending}
+                  onClick={props.onGenerateFirstAccessLink}
+                >
+                  <Copy01Icon className="size-4" />
+                  {props.generateFirstAccessLinkPending
+                    ? "Gerando..."
+                    : "Gerar novo link de primeiro acesso"}
+                </Button>
+              )}
               <Button
                 type="button"
-                variant="secondary"
+                variant="outline"
                 size="sm"
-                onClick={() => {
-                  if (props.approvalResult)
-                    props.onCopyFirstAccess(props.approvalResult.firstAccessLink);
-                }}
+                disabled={props.sendEmailPending}
+                onClick={props.onSendEmail}
               >
-                <Copy01Icon className="size-4" /> Copiar link de primeiro acesso
+                <Mail01Icon className="size-4" />
+                {props.sendEmailPending ? "Enviando..." : "Enviar por email"}
               </Button>
-            ) : (
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                disabled={props.generateFirstAccessLinkPending}
-                onClick={props.onGenerateFirstAccessLink}
-              >
-                <Copy01Icon className="size-4" />
-                {props.generateFirstAccessLinkPending
-                  ? "Gerando..."
-                  : "Gerar novo link de primeiro acesso"}
-              </Button>
-            )}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={props.sendEmailPending}
-              onClick={props.onSendEmail}
-            >
-              <Mail01Icon className="size-4" />
-              {props.sendEmailPending ? "Enviando..." : "Enviar por email"}
-            </Button>
-          </div>
+            </div>
+          )}
         </div>
       )}
 

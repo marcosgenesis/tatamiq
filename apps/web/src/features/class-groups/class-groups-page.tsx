@@ -35,15 +35,29 @@ import {
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu";
 import { Input } from "../../components/ui/input";
+import { useIsMobile } from "../../hooks/use-mobile";
 import { academyQueryKey, onboardingChecklistQueryKey } from "../../lib/academy-query-keys";
+import { initials } from "../../lib/initials";
 import { ClassGroupForm, type ClassGroupPayload } from "./class-group-form";
-import { type ClassGroupStatusFilter, classGroupsKeys } from "./class-groups-queries";
+import { ClassGroupsMobile } from "./class-groups-mobile";
+import {
+  type ClassGroupStatusFilter,
+  classGroupsKeys,
+  saveClassGroup,
+  setClassGroupStatus,
+} from "./class-groups-queries";
 
 const weekdays = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 const weekdaysShort = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const weekdayInitials = ["D", "S", "T", "Q", "Q", "S", "S"];
 
 export function ClassGroupsPage() {
+  const isMobile = useIsMobile();
+  if (isMobile) return <ClassGroupsMobile />;
+  return <ClassGroupsPageDesktop />;
+}
+
+function ClassGroupsPageDesktop() {
   const queryClient = useQueryClient();
   const { activeAcademy } = useAppShell();
   const activeAcademyId = activeAcademy.id;
@@ -79,20 +93,7 @@ export function ClassGroupsPage() {
   });
 
   const saveMutation = useMutation({
-    mutationFn: async (input: ClassGroupPayload) => {
-      if (editingClassGroup) {
-        const { data, error } = await api.PATCH("/class-groups/{id}", {
-          params: { path: { id: editingClassGroup.id } },
-          body: input,
-        });
-        if (error) throw new Error("Não foi possível salvar a turma.");
-        return data;
-      }
-
-      const { data, error } = await api.POST("/class-groups", { body: input });
-      if (error) throw new Error("Não foi possível criar a turma.");
-      return data;
-    },
+    mutationFn: (input: ClassGroupPayload) => saveClassGroup(editingClassGroup?.id ?? null, input),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: classGroupsKeys.all(activeAcademyId) });
       await queryClient.invalidateQueries({
@@ -109,19 +110,8 @@ export function ClassGroupsPage() {
   });
 
   const statusMutation = useMutation({
-    mutationFn: async ({ id, action }: { id: string; action: "archive" | "reactivate" }) => {
-      if (action === "archive") {
-        const { error } = await api.POST("/class-groups/{id}/archive", {
-          params: { path: { id } },
-        });
-        if (error) throw new Error("Não foi possível arquivar a turma.");
-        return;
-      }
-      const { error } = await api.POST("/class-groups/{id}/reactivate", {
-        params: { path: { id } },
-      });
-      if (error) throw new Error("Não foi possível reativar a turma.");
-    },
+    mutationFn: ({ id, action }: { id: string; action: "archive" | "reactivate" }) =>
+      setClassGroupStatus(id, action),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: classGroupsKeys.all(activeAcademyId) });
       await queryClient.invalidateQueries({
@@ -470,12 +460,6 @@ function EmptyState(props: { onCreate: () => void }) {
       </Button>
     </div>
   );
-}
-
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  const value = (parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "");
-  return value.toUpperCase() || "?";
 }
 
 function scheduleSummary(classGroup: ClassGroup): string {

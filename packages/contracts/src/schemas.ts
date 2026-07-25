@@ -293,6 +293,12 @@ export const preRegistrationRequestSchema = z.object({
     .nullable(),
   rejectionReason: z.string().nullable(),
   approvedStudentId: z.string().nullable(),
+  firstAccessStatus: z.enum([
+    "not_applicable",
+    "awaiting_password",
+    "password_registered",
+    "unavailable",
+  ]),
   isInstructorAccount: z.boolean(),
   duplicateStudentHasActiveAccess: z.boolean(),
   cpf: z.string().nullable(),
