@@ -3,11 +3,13 @@ import type { MonthlyFee } from "@tatamiq/contracts";
 import { type FormEvent, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useAppShell } from "../../components/app-shell";
+import { useIsMobile } from "../../hooks/use-mobile";
 import { centsToReais, reaisToCents } from "../../lib/formatting";
 import { CreateMonthlyFeeDrawer } from "./create-monthly-fee-drawer";
 import { MonthlyFeeActionDrawer } from "./monthly-fee-action-drawer";
 import { MonthlyFeesHeader } from "./monthly-fees-header";
 import { MonthlyFeesList } from "./monthly-fees-list";
+import { MonthlyFeesMobileBody } from "./monthly-fees-mobile";
 import {
   adjustMonthlyFee,
   approveMonthlyFeeReceipt,
@@ -29,6 +31,7 @@ export function MonthlyFeesPage() {
   const queryClient = useQueryClient();
   const { activeAcademy } = useAppShell();
   const activeAcademyId = activeAcademy.id;
+  const isMobile = useIsMobile();
   const [statusFilter] = useState<FeeStatusFilter>(() => {
     const status = new URLSearchParams(window.location.search).get("status");
     return isFeeStatusFilter(status) ? status : "all";
@@ -120,6 +123,7 @@ export function MonthlyFeesPage() {
   });
 
   const fees = feesQuery.data?.fees ?? [];
+  const summary = feesQuery.data?.summary;
   const detail = detailQuery.data ?? null;
   const pendingReceipt = useMemo(() => (detail ? activePendingReceipt(detail) : null), [detail]);
 
@@ -156,29 +160,9 @@ export function MonthlyFeesPage() {
     setIsFormOpen(true);
   }
 
-  return (
-    <div className="space-y-6 p-6">
-      <MonthlyFeesHeader
-        generatingMissing={generateMissingMutation.isPending}
-        onExportCsv={() => window.open(monthlyFeesExportUrl(statusFilter), "_blank")}
-        onCreate={openCreateForm}
-        onGenerateMissing={() => generateMissingMutation.mutate()}
-      />
-
+  const overlays = (
+    <>
       <CreateMonthlyFeeDrawer open={isFormOpen} onClose={() => setIsFormOpen(false)} />
-      <MonthlyFeesList
-        fees={fees}
-        loading={feesQuery.isLoading}
-        error={feesQuery.isError}
-        onCreate={openCreateForm}
-        onAdjust={(fee) => openAction(fee.id, "adjust", fee)}
-        onWaive={(fee) => openAction(fee.id, "waive", fee)}
-        onManualPay={(fee) => openAction(fee.id, "manual_payment", fee)}
-        onReview={(fee) => {
-          setDetailFeeId(fee.id);
-          setRejectReason("");
-        }}
-      />
       <ReceiptReviewDrawer
         detail={detail}
         isLoading={detailQuery.isLoading}
@@ -207,6 +191,51 @@ export function MonthlyFeesPage() {
         onReasonChange={setActionReason}
         onAmountChange={setActionAmount}
       />
+    </>
+  );
+
+  if (isMobile) {
+    return (
+      <>
+        <MonthlyFeesMobileBody
+          fees={fees}
+          summary={summary}
+          onCreate={openCreateForm}
+          onReview={(fee) => {
+            setDetailFeeId(fee.id);
+            setRejectReason("");
+          }}
+          onAdjust={(fee) => openAction(fee.id, "adjust", fee)}
+          onManualPay={(fee) => openAction(fee.id, "manual_payment", fee)}
+          onWaive={(fee) => openAction(fee.id, "waive", fee)}
+        />
+        {overlays}
+      </>
+    );
+  }
+
+  return (
+    <div className="space-y-6 p-6">
+      <MonthlyFeesHeader
+        generatingMissing={generateMissingMutation.isPending}
+        onExportCsv={() => window.open(monthlyFeesExportUrl(statusFilter), "_blank")}
+        onCreate={openCreateForm}
+        onGenerateMissing={() => generateMissingMutation.mutate()}
+      />
+      <MonthlyFeesList
+        fees={fees}
+        loading={feesQuery.isLoading}
+        error={feesQuery.isError}
+        onCreate={openCreateForm}
+        onAdjust={(fee) => openAction(fee.id, "adjust", fee)}
+        onWaive={(fee) => openAction(fee.id, "waive", fee)}
+        onManualPay={(fee) => openAction(fee.id, "manual_payment", fee)}
+        onReview={(fee) => {
+          setDetailFeeId(fee.id);
+          setRejectReason("");
+        }}
+      />
+      {overlays}
     </div>
   );
 }

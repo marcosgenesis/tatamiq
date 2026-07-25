@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import type { ScheduleOccurrence } from "@tatamiq/contracts";
-import type { components } from "@tatamiq/contracts/generated";
 import { ptBR } from "date-fns/locale";
 import { Calendar03Icon, Clock01Icon, PlusSignIcon, UserMultiple02Icon } from "hugeicons-react";
 import { type FormEvent, useMemo, useState } from "react";
@@ -28,14 +27,16 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "../../components/ui/drawer";
+import { useIsMobile } from "../../hooks/use-mobile";
 import { academyQueryKey } from "../../lib/academy-query-keys";
 import { formatAttendanceSummary } from "../classes/attendance-summary";
 import { AdHocClassForm, type AdHocFormState } from "./ad-hoc-class-form";
+import { type CreateAdHocPayload, createAdHocClass } from "./schedule-api";
 import { fmtMinutes, localStartMinutes } from "./schedule-calendar-layout";
+import { ScheduleMobile } from "./schedule-mobile";
 
 /* ── types ── */
 
-type CreateAdHocPayload = components["schemas"]["CreateAdHocClassDto"];
 type ScheduleDay = { date: string; weekday: number; occurrences: ScheduleOccurrence[] };
 type ScheduleEvent = CalendarEvent<ScheduleOccurrence>;
 
@@ -67,6 +68,12 @@ function occurrenceStart(occ: ScheduleOccurrence): Date {
 /* ═══════════════ PAGE ═══════════════ */
 
 export function SchedulePage() {
+  const isMobile = useIsMobile();
+  if (isMobile) return <ScheduleMobile />;
+  return <SchedulePageDesktop />;
+}
+
+function SchedulePageDesktop() {
   const queryClient = useQueryClient();
   const { activeAcademy } = useAppShell();
   const activeAcademyId = activeAcademy.id;
@@ -105,10 +112,7 @@ export function SchedulePage() {
   });
 
   const createAdHocMutation = useMutation({
-    mutationFn: async (payload: CreateAdHocPayload) => {
-      const { error } = await api.POST("/schedule/ad-hoc-classes", { body: payload });
-      if (error) throw new Error("Não foi possível criar a aula avulsa.");
-    },
+    mutationFn: createAdHocClass,
     onSuccess: async () => {
       await invalidateSchedule(queryClient, activeAcademyId);
       setIsFormOpen(false);

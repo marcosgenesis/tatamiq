@@ -25,6 +25,7 @@ import {
 } from "../../components/ui/dropdown-menu";
 import { Skeleton } from "../../components/ui/skeleton";
 import { useBelts } from "../../hooks/use-belts";
+import { useIsMobile } from "../../hooks/use-mobile";
 import { useStudents } from "../../hooks/use-students";
 import { academyQueryKey } from "../../lib/academy-query-keys";
 import { ageLabel, billingLabel, formatDate } from "../../lib/formatting";
@@ -33,10 +34,17 @@ import { beltKeyFromName } from "../student-portal/lib/belt-progress";
 import { exportStudentsCsv, StudentCsvImport } from "./components/student-csv-import";
 import { StudentForm } from "./components/student-form";
 import { PreRegistrationsTab } from "./pre-registrations-tab";
+import { StudentsMobile } from "./students-mobile";
 
 type StudentsTab = "students" | "pre-registrations";
 
 export function StudentsPage() {
+  const isMobile = useIsMobile();
+  if (isMobile) return <StudentsMobile />;
+  return <StudentsPageDesktop />;
+}
+
+function StudentsPageDesktop() {
   const queryClient = useQueryClient();
   const { activeAcademy } = useAppShell();
   const activeAcademyId = activeAcademy.id;
