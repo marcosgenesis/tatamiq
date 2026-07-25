@@ -1,3 +1,24 @@
+# [0.8.0](https://github.com/marcosgenesis/tatamiq/compare/v0.7.0...v0.8.0) (2026-07-25)
+
+
+### Bug Fixes
+
+* model first-access status explicitly ([7934a26](https://github.com/marcosgenesis/tatamiq/commit/7934a26f9f23313f87a31011a9f272995ae708cf))
+* reuse configured API origin for share links ([d4dc64c](https://github.com/marcosgenesis/tatamiq/commit/d4dc64c74bbf98239311d54710866ef0c011051b))
+
+
+### Features
+
+* **class-groups:** add mobile view ([283b45f](https://github.com/marcosgenesis/tatamiq/commit/283b45fbfe12c836cc65ad906f8c96438aed1ff1))
+* **classes:** add mobile active-class view ([5601459](https://github.com/marcosgenesis/tatamiq/commit/5601459a7267dd3eb6b6a685233f4debb40c4459))
+* **dashboard:** add mobile view ([d107e06](https://github.com/marcosgenesis/tatamiq/commit/d107e06d7865d80dce0f06828ab654708dc90bb4))
+* **graduation:** add mobile view ([32787f8](https://github.com/marcosgenesis/tatamiq/commit/32787f879aacfd8f763909401125f7b4218d4efb))
+* **monthly-fees:** add mobile view ([e9121a8](https://github.com/marcosgenesis/tatamiq/commit/e9121a8d3d1e12c4345da7f4850b60cb45c4745f))
+* **schedule:** add mobile agenda view ([1ca2159](https://github.com/marcosgenesis/tatamiq/commit/1ca2159f70192d53e0985c00b54807cecd2fb902))
+* **students:** add mobile view ([c5ce974](https://github.com/marcosgenesis/tatamiq/commit/c5ce974f7a1c4ee726581e7c0e31d4f96fd2fa8e))
+* **web:** add mobile app shell and shared UI kit ([7b959fa](https://github.com/marcosgenesis/tatamiq/commit/7b959fa3bb7ad253f724b9c4744c815cf3e363f5))
+* **web:** add mobile design tokens ([ea67e5f](https://github.com/marcosgenesis/tatamiq/commit/ea67e5f86eb77fd02d7a1c58c43429d48ea20b9a))
+
 # [0.7.0](https://github.com/marcosgenesis/tatamiq/compare/v0.6.0...v0.7.0) (2026-07-23)
 
 
