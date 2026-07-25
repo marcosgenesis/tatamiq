@@ -1,4 +1,5 @@
-const CACHE_NAME = "tatamiq-shell-v2";
+const CACHE_NAME = "tatamiq-shell-v3";
+const ASSET_FETCH_TIMEOUT_MS = 10000;
 const SHELL_ASSETS = [
   "/offline.html",
   "/manifest.json",
@@ -45,7 +46,7 @@ self.addEventListener("fetch", (event) => {
 async function fetchAndCache(request) {
   const cached = await caches.match(request);
   try {
-    const response = await fetch(request);
+    const response = await fetchWithTimeout(request, ASSET_FETCH_TIMEOUT_MS);
     if (response && response.status === 200 && response.type !== "opaque") {
       const cache = await caches.open(CACHE_NAME);
       await cache.put(request, response.clone());
@@ -55,4 +56,14 @@ async function fetchAndCache(request) {
     if (cached) return cached;
     throw error;
   }
+}
+
+// A hung network response must not stall the app forever: a lazily imported route chunk
+// that never resolves leaves the Suspense fallback ("Carregando...") spinning with no
+// recovery. Time out and fail so the page's `vite:preloadError` handler reloads onto
+// fresh chunks instead.
+function fetchWithTimeout(request, timeoutMs) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(request, { signal: controller.signal }).finally(() => clearTimeout(timer));
 }
