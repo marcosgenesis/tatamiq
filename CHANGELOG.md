@@ -1,3 +1,10 @@
+## [0.8.3](https://github.com/marcosgenesis/tatamiq/compare/v0.8.2...v0.8.3) (2026-07-28)
+
+
+### Bug Fixes
+
+* **web:** guard academy onboarding entry ([87cefd4](https://github.com/marcosgenesis/tatamiq/commit/87cefd4e11060ff320b2813187c655ad0b38d5ce))
+
 ## [0.8.2](https://github.com/marcosgenesis/tatamiq/compare/v0.8.1...v0.8.2) (2026-07-28)
 
 
