@@ -1,3 +1,10 @@
+## [0.8.2](https://github.com/marcosgenesis/tatamiq/compare/v0.8.1...v0.8.2) (2026-07-28)
+
+
+### Bug Fixes
+
+* **web:** guard all instructor entry routes ([5a89107](https://github.com/marcosgenesis/tatamiq/commit/5a89107889919d71bcfe71172d7dd30eee7006fb))
+
 ## [0.8.1](https://github.com/marcosgenesis/tatamiq/compare/v0.8.0...v0.8.1) (2026-07-28)
 
 
