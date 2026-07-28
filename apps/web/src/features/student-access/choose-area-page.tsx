@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { api } from "../../api";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { useSessionOrganizations } from "../../hooks/use-session-organizations";
 import { authClient } from "../../lib/auth-client";
 import { studentQueryKey } from "../../lib/session-query-keys";
 import {
@@ -12,6 +13,32 @@ import {
   platformMeQuery,
   readPendingPlatformSupportActivation,
 } from "../platform/platform-queries";
+
+export function chooseAreaDestination(params: {
+  areasLoading: boolean;
+  organizationsResolvedForSession: boolean;
+  hasOrganizationsError: boolean;
+  hasPlatform: boolean;
+  hasInstructor: boolean;
+  hasStudent: boolean;
+}): "/platform" | "/" | "/student" | "/onboarding/academy" | null {
+  if (
+    params.areasLoading ||
+    !params.organizationsResolvedForSession ||
+    params.hasOrganizationsError
+  ) {
+    return null;
+  }
+
+  const availableAreaCount = [params.hasPlatform, params.hasInstructor, params.hasStudent].filter(
+    Boolean,
+  ).length;
+  if (availableAreaCount > 1) return null;
+  if (params.hasPlatform) return "/platform";
+  if (params.hasInstructor) return "/";
+  if (params.hasStudent) return "/student";
+  return "/onboarding/academy";
+}
 
 export function ChooseAreaPage() {
   const navigate = useNavigate();
@@ -23,7 +50,8 @@ export function ChooseAreaPage() {
   );
   const [supportActivationAttempt, setSupportActivationAttempt] = useState(0);
   const [supportActivationError, setSupportActivationError] = useState(false);
-  const organizations = authClient.useListOrganizations();
+  const { organizations, resolvedForSession: organizationsResolvedForSession } =
+    useSessionOrganizations(sessionUserId, !pendingSupportActivationId);
   const studentQuery = useQuery({
     queryKey: studentQueryKey(sessionUserId, "me"),
     queryFn: async () => {
@@ -89,19 +117,24 @@ export function ChooseAreaPage() {
   ]);
 
   useEffect(() => {
-    if (pendingSupportActivationId || isLoadingAreas) return;
-    if (availableAreaCount > 1) return;
-    if (hasPlatform) void navigate({ to: "/platform" });
-    else if (hasInstructor) void navigate({ to: "/" });
-    else if (hasStudent) void navigate({ to: "/student" });
-    else void navigate({ to: "/onboarding/academy" });
+    if (pendingSupportActivationId) return;
+    const destination = chooseAreaDestination({
+      areasLoading: isLoadingAreas,
+      organizationsResolvedForSession,
+      hasOrganizationsError: !!organizations.error,
+      hasPlatform,
+      hasInstructor,
+      hasStudent,
+    });
+    if (destination) void navigate({ to: destination });
   }, [
     pendingSupportActivationId,
     isLoadingAreas,
-    availableAreaCount,
     hasPlatform,
     hasInstructor,
     hasStudent,
+    organizations.error,
+    organizationsResolvedForSession,
     navigate,
   ]);
 
@@ -117,7 +150,7 @@ export function ChooseAreaPage() {
     );
   }
 
-  if (isLoadingAreas || availableAreaCount <= 1) {
+  if (isLoadingAreas || !organizationsResolvedForSession || availableAreaCount <= 1) {
     return <ChooseAreaLoading />;
   }
 
