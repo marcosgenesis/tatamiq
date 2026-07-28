@@ -34,6 +34,8 @@ describe("shouldRedirectAwayFromOnboarding", () => {
         started: false,
         isSubmitting: false,
         organizationsPending: false,
+        organizationsResolvedForSession: true,
+        hasOrganizationsError: false,
         organizationCount: 1,
       }),
     ).toBe(true);
@@ -45,6 +47,8 @@ describe("shouldRedirectAwayFromOnboarding", () => {
         started: false,
         isSubmitting: true,
         organizationsPending: false,
+        organizationsResolvedForSession: true,
+        hasOrganizationsError: false,
         organizationCount: 1,
       }),
     ).toBe(false);
@@ -56,6 +60,32 @@ describe("shouldRedirectAwayFromOnboarding", () => {
         started: true,
         isSubmitting: false,
         organizationsPending: false,
+        organizationsResolvedForSession: true,
+        hasOrganizationsError: false,
+        organizationCount: 1,
+      }),
+    ).toBe(false);
+  });
+
+  it("does not trust organization data from a previous or failed session", () => {
+    expect(
+      shouldRedirectAwayFromOnboarding({
+        started: false,
+        isSubmitting: false,
+        organizationsPending: false,
+        organizationsResolvedForSession: false,
+        hasOrganizationsError: false,
+        organizationCount: 1,
+      }),
+    ).toBe(false);
+
+    expect(
+      shouldRedirectAwayFromOnboarding({
+        started: false,
+        isSubmitting: false,
+        organizationsPending: false,
+        organizationsResolvedForSession: true,
+        hasOrganizationsError: true,
         organizationCount: 1,
       }),
     ).toBe(false);

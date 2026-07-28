@@ -22,6 +22,7 @@ import {
   platformMeQuery,
   resolvePlatformAccess,
 } from "./features/platform/platform-queries";
+import { useSessionOrganizations } from "./hooks/use-session-organizations";
 import { ThemeProvider } from "./hooks/use-theme";
 import "./index.css";
 import { authClient } from "./lib/auth-client";
@@ -494,7 +495,9 @@ function AuthBareLayout() {
 function InstructorLayout() {
   const navigate = useNavigate();
   const session = authClient.useSession();
-  const organizations = authClient.useListOrganizations();
+  const sessionUserId = session.data?.user.id;
+  const { organizations, resolvedForSession: organizationsResolvedForSession } =
+    useSessionOrganizations(sessionUserId);
   const activeOrganization = authClient.useActiveOrganization();
   const [switchingAcademyId, setSwitchingAcademyId] = useState<string | null>(null);
 
@@ -505,9 +508,8 @@ function InstructorLayout() {
 
   useEffect(() => {
     if (!session.data) return;
-    void organizations.refetch();
     void activeOrganization.refetch();
-  }, [session.data, organizations.refetch, activeOrganization.refetch]);
+  }, [session.data, activeOrganization.refetch]);
 
   // On a fresh login the org-list request can fire before the session cookie
   // has propagated and come back 401. Without this, an existing instructor gets
@@ -537,11 +539,16 @@ function InstructorLayout() {
   }, [session.data, activeAcademy, firstOrganization, activeOrganization.refetch]);
 
   if (!session.data) return <Navigate to="/sign-in" />;
-  if (organizations.isPending || activeOrganization.isPending || switchingAcademyId) {
+  if (
+    !organizationsResolvedForSession ||
+    organizations.isPending ||
+    activeOrganization.isPending ||
+    switchingAcademyId
+  ) {
     return <LoadingScreen />;
   }
   // Still recovering from a transient org-list failure — don't route to onboarding yet.
-  if (organizations.error && orgLoadRetries < MAX_ORG_LOAD_RETRIES) return <LoadingScreen />;
+  if (organizations.error) return <LoadingScreen />;
   if (!firstOrganization) return <Navigate to="/onboarding/academy" />;
   if (!activeAcademy) return <LoadingScreen />;
 

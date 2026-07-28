@@ -19,6 +19,7 @@ import { Button } from "../../components/ui/button";
 import { Field, FieldLabel } from "../../components/ui/field";
 import { Input } from "../../components/ui/input";
 import { formatBytes, useFileUpload } from "../../hooks/use-file-upload";
+import { useSessionOrganizations } from "../../hooks/use-session-organizations";
 import { createAcademySlug } from "../../lib/academy-slug";
 import { authClient } from "../../lib/auth-client";
 import { cn } from "../../lib/utils";
@@ -59,12 +60,16 @@ export function shouldRedirectAwayFromOnboarding(params: {
   started: boolean;
   isSubmitting: boolean;
   organizationsPending: boolean;
+  organizationsResolvedForSession: boolean;
+  hasOrganizationsError: boolean;
   organizationCount: number;
 }): boolean {
   return (
     !params.started &&
     !params.isSubmitting &&
     !params.organizationsPending &&
+    params.organizationsResolvedForSession &&
+    !params.hasOrganizationsError &&
     params.organizationCount > 0
   );
 }
@@ -73,6 +78,7 @@ export function AcademyOnboardingPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const session = authClient.useSession();
+  const sessionUserId = session.data?.user.id;
   const [step, setStep] = useState(0);
   const [started, setStarted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -86,12 +92,20 @@ export function AcademyOnboardingPage() {
     instagram: "",
   });
 
-  const organizations = authClient.useListOrganizations();
+  const { organizations, resolvedForSession: organizationsResolvedForSession } =
+    useSessionOrganizations(sessionUserId);
+
+  if (!organizationsResolvedForSession || organizations.isPending || organizations.error) {
+    return <OnboardingLoading />;
+  }
+
   if (
     shouldRedirectAwayFromOnboarding({
       started,
       isSubmitting,
       organizationsPending: organizations.isPending,
+      organizationsResolvedForSession,
+      hasOrganizationsError: !!organizations.error,
       organizationCount: organizations.data?.length ?? 0,
     })
   ) {
@@ -261,6 +275,14 @@ export function AcademyOnboardingPage() {
           )}
         </div>
       </div>
+    </main>
+  );
+}
+
+function OnboardingLoading() {
+  return (
+    <main className="grid min-h-screen place-items-center bg-background text-foreground">
+      <p className="text-sm text-muted-foreground">Carregando...</p>
     </main>
   );
 }
