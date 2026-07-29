@@ -1,6 +1,25 @@
 -- Complete the IBJJF children's hierarchy for every existing academy.
 -- Existing belt records and student assignments remain untouched.
 
+-- `grey` was used by the development seed before `gray` became canonical.
+-- Rename it first so the backfill neither creates duplicate child belts nor loses references.
+WITH legacy_slug_map ("legacy_slug", "canonical_slug") AS (
+  VALUES
+    ('child-grey', 'child-gray'),
+    ('child-grey-white', 'child-gray-white'),
+    ('child-grey-black', 'child-gray-black')
+)
+UPDATE "belts" AS legacy
+SET "slug" = legacy_slug_map."canonical_slug"
+FROM legacy_slug_map
+WHERE legacy."slug" = legacy_slug_map."legacy_slug"
+  AND NOT EXISTS (
+    SELECT 1
+    FROM "belts" AS canonical
+    WHERE canonical."organization_id" = legacy."organization_id"
+      AND canonical."slug" = legacy_slug_map."canonical_slug"
+  );
+
 UPDATE "belts"
 SET "position" = CASE "slug"
   WHEN 'child-white' THEN 0

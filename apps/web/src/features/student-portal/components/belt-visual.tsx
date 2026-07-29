@@ -23,7 +23,7 @@ const DIMS: Record<
 };
 
 /**
- * Jiu-jitsu belt: colored bar + black tip + N white degree stripes.
+ * Jiu-jitsu belt: colored bar + rank bar + N degree stripes.
  * Prefers the academy-provided belt image when present, else renders the bar.
  */
 export function BeltVisual({
@@ -58,8 +58,9 @@ export function BeltVisual({
   }
 
   const d = DIMS[size];
-  const tipColor = info.tipColor === "white" ? "#e5e5e5" : "#171717";
-  const degreeColor = info.tipColor === "white" ? "#171717" : "#ffffff";
+  const tipColor =
+    info.tipStyle === "color" ? info.color : info.tipStyle === "white" ? "#e5e5e5" : "#171717";
+  const degreeColor = info.tipStyle === "white" ? "#171717" : "#ffffff";
   return (
     <div
       role="img"

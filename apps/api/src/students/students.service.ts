@@ -9,6 +9,8 @@ import {
   promotions,
   studentAcceptances,
   studentAccess,
+  studentAccessInvites,
+  studentContactChanges,
   studentGuardians,
   studentNotes,
   students,
@@ -270,6 +272,8 @@ export class StudentsService {
       [acceptance],
       [note],
       [preRegistration],
+      [accessInvite],
+      [contactChange],
     ] = await Promise.all([
       db
         .select({ id: attendances.id })
@@ -311,9 +315,29 @@ export class StudentsService {
           ),
         )
         .limit(1),
+      db
+        .select({ id: studentAccessInvites.id })
+        .from(studentAccessInvites)
+        .where(eq(studentAccessInvites.studentId, studentId))
+        .limit(1),
+      db
+        .select({ id: studentContactChanges.id })
+        .from(studentContactChanges)
+        .where(eq(studentContactChanges.studentId, studentId))
+        .limit(1),
     ]);
 
-    if (attendance || monthlyFee || promotion || access || acceptance || note || preRegistration) {
+    if (
+      attendance ||
+      monthlyFee ||
+      promotion ||
+      access ||
+      acceptance ||
+      note ||
+      preRegistration ||
+      accessInvite ||
+      contactChange
+    ) {
       throw new BadRequestException(
         "Este aluno possui histórico e não pode ser excluído. Use a inativação para preservá-lo.",
       );

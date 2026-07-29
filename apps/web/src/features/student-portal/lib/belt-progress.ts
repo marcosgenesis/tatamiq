@@ -28,8 +28,8 @@ export type BeltInfo = {
   color: string;
   /** Whether the belt color needs a border to read on a light surface. */
   needsBorder: boolean;
-  /** Tip color for the IBJJF children's intermediate belts. */
-  tipColor?: "white" | "black";
+  /** Rank-bar treatment used by the fallback belt visual. */
+  tipStyle?: "color" | "white" | "black";
 };
 
 export const BELT_ORDER: BeltInfo[] = [
@@ -47,60 +47,60 @@ const CHILD_BELT_ORDER: BeltInfo[] = [
     name: "Cinza / Branca",
     color: "#6b7280",
     needsBorder: false,
-    tipColor: "white",
+    tipStyle: "white",
   },
-  { key: "cinza", name: "Cinza", color: "#6b7280", needsBorder: false },
+  { key: "cinza", name: "Cinza", color: "#6b7280", needsBorder: false, tipStyle: "color" },
   {
     key: "cinza-preta",
     name: "Cinza / Preta",
     color: "#6b7280",
     needsBorder: false,
-    tipColor: "black",
+    tipStyle: "black",
   },
   {
     key: "amarela-branca",
     name: "Amarela / Branca",
     color: "#eab308",
     needsBorder: false,
-    tipColor: "white",
+    tipStyle: "white",
   },
-  { key: "amarela", name: "Amarela", color: "#eab308", needsBorder: false },
+  { key: "amarela", name: "Amarela", color: "#eab308", needsBorder: false, tipStyle: "color" },
   {
     key: "amarela-preta",
     name: "Amarela / Preta",
     color: "#eab308",
     needsBorder: false,
-    tipColor: "black",
+    tipStyle: "black",
   },
   {
     key: "laranja-branca",
     name: "Laranja / Branca",
     color: "#ea580c",
     needsBorder: false,
-    tipColor: "white",
+    tipStyle: "white",
   },
-  { key: "laranja", name: "Laranja", color: "#ea580c", needsBorder: false },
+  { key: "laranja", name: "Laranja", color: "#ea580c", needsBorder: false, tipStyle: "color" },
   {
     key: "laranja-preta",
     name: "Laranja / Preta",
     color: "#ea580c",
     needsBorder: false,
-    tipColor: "black",
+    tipStyle: "black",
   },
   {
     key: "verde-branca",
     name: "Verde / Branca",
     color: "#16a34a",
     needsBorder: false,
-    tipColor: "white",
+    tipStyle: "white",
   },
-  { key: "verde", name: "Verde", color: "#16a34a", needsBorder: false },
+  { key: "verde", name: "Verde", color: "#16a34a", needsBorder: false, tipStyle: "color" },
   {
     key: "verde-preta",
     name: "Verde / Preta",
     color: "#16a34a",
     needsBorder: false,
-    tipColor: "black",
+    tipStyle: "black",
   },
 ];
 

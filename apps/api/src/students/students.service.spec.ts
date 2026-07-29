@@ -181,4 +181,30 @@ describe("StudentsService transactions", () => {
 
     expect(dbDelete).not.toHaveBeenCalled();
   });
+
+  it("keeps a student when their contact-change audit exists", async () => {
+    const dbDelete = deleteSpy();
+    const txSelect = vi
+      .fn()
+      // locked student, then the eight existing history checks
+      .mockReturnValueOnce(selectResult([{ id: "student-1" }]))
+      .mockImplementationOnce(() => selectResult([]))
+      .mockImplementationOnce(() => selectResult([]))
+      .mockImplementationOnce(() => selectResult([]))
+      .mockImplementationOnce(() => selectResult([]))
+      .mockImplementationOnce(() => selectResult([]))
+      .mockImplementationOnce(() => selectResult([]))
+      .mockImplementationOnce(() => selectResult([]))
+      .mockImplementationOnce(() => selectResult([]))
+      // contact-change audit
+      .mockImplementationOnce(() => selectResult([{ id: "contact-change-1" }]));
+    const db = {
+      transaction: vi.fn(async (callback) => callback({ select: txSelect, delete: dbDelete })),
+    };
+    const service = new StudentsService(db as never, {} as never, {} as never);
+
+    await expect(service.remove("org-1", "student-1")).rejects.toBeInstanceOf(BadRequestException);
+
+    expect(dbDelete).not.toHaveBeenCalled();
+  });
 });
