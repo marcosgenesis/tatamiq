@@ -1,7 +1,7 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { StudentMeResponse, StudentMonthlyFee } from "@tatamiq/contracts";
 import { Camera01Icon, CheckmarkCircle03Icon } from "hugeicons-react";
-import { type FormEvent, useState } from "react";
+import { useState } from "react";
 import { api } from "../../api";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
@@ -18,17 +18,13 @@ import {
 } from "../monthly-fees/receipt-state";
 import { StudentEmptyState } from "./components/student-empty-state";
 import { dueInLabel } from "./lib/student-format";
-
-const ACCEPTED_TYPES = "image/jpeg,image/png,image/webp,image/heic,application/pdf";
-const MAX_SIZE_BYTES = 10 * 1024 * 1024;
+import { StudentReceiptUploadForm } from "./student-receipt-upload-form";
 
 export function StudentMonthlyFeesSection({ me }: { me: StudentMeResponse }) {
   const queryClient = useQueryClient();
   const session = authClient.useSession();
   const sessionUserId = session.data?.user.id;
   const [selectedFee, setSelectedFee] = useState<StudentMonthlyFee | null>(null);
-  const [file, setFile] = useState<File | null>(null);
-  const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const feesQuery = useQuery({
@@ -39,53 +35,6 @@ export function StudentMonthlyFeesSection({ me }: { me: StudentMeResponse }) {
       return data;
     },
     enabled: !!sessionUserId,
-  });
-
-  const uploadMutation = useMutation({
-    mutationFn: async () => {
-      if (!selectedFee || !file) return;
-      if (file.size > MAX_SIZE_BYTES) throw new Error("Arquivo excede o limite de 10 MB.");
-
-      const { data: uploadData, error: uploadError } = await api.POST(
-        "/student/monthly-fees/{id}/upload-url",
-        {
-          params: { path: { id: selectedFee.id }, query: { contentType: file.type } },
-        },
-      );
-      if (uploadError || !uploadData) throw new Error("Não foi possível preparar o envio.");
-
-      const uploadResponse = await fetch(uploadData.uploadUrl, {
-        method: "PUT",
-        headers: { "Content-Type": file.type },
-        body: file,
-      });
-      if (!uploadResponse.ok) throw new Error("Falha ao enviar o arquivo.");
-
-      const { error: confirmError } = await api.POST("/student/monthly-fees/{id}/receipts", {
-        params: { path: { id: selectedFee.id } },
-        body: {
-          fileKey: uploadData.fileKey,
-          fileKeySignature: uploadData.fileKeySignature,
-          fileType: file.type,
-          fileSizeBytes: file.size,
-          note,
-        },
-      });
-      if (confirmError) throw new Error("Não foi possível confirmar o comprovante.");
-    },
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: studentQueryKey(sessionUserId, "monthly-fees") }),
-        queryClient.invalidateQueries({ queryKey: studentQueryKey(sessionUserId, "indicators") }),
-      ]);
-      setSelectedFee(null);
-      setFile(null);
-      setNote("");
-      setError(null);
-    },
-    onError: (mutationError) => {
-      setError(mutationError instanceof Error ? mutationError.message : "Erro ao enviar.");
-    },
   });
 
   async function openReceipt(fee: StudentMonthlyFee) {
@@ -103,19 +52,16 @@ export function StudentMonthlyFeesSection({ me }: { me: StudentMeResponse }) {
 
   function startUpload(fee: StudentMonthlyFee) {
     setSelectedFee(fee);
-    setFile(null);
-    setNote("");
     setError(null);
   }
 
-  function submitUpload(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleReceiptUploaded() {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: studentQueryKey(sessionUserId, "monthly-fees") }),
+      queryClient.invalidateQueries({ queryKey: studentQueryKey(sessionUserId, "indicators") }),
+    ]);
+    setSelectedFee(null);
     setError(null);
-    if (!file) {
-      setError("Escolha um arquivo de imagem ou PDF.");
-      return;
-    }
-    uploadMutation.mutate();
   }
 
   const fees = feesQuery.data?.fees ?? [];
@@ -176,48 +122,11 @@ export function StudentMonthlyFeesSection({ me }: { me: StudentMeResponse }) {
       ) : null}
 
       {selectedFee ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>{studentReceiptCta(deriveStudentReceiptStatus(selectedFee))}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form className="space-y-4" onSubmit={submitUpload}>
-              <input
-                type="file"
-                accept={ACCEPTED_TYPES}
-                capture="environment"
-                onChange={(event) => setFile(event.currentTarget.files?.[0] ?? null)}
-                className="block min-h-11 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-              />
-              {file?.type.startsWith("image/") ? (
-                <img
-                  src={URL.createObjectURL(file)}
-                  alt="Prévia do comprovante"
-                  className="max-h-80 w-full rounded-2xl border border-border object-contain"
-                />
-              ) : null}
-              <Textarea
-                value={note}
-                onChange={(event) => setNote(event.target.value)}
-                placeholder="Observação para o instrutor (opcional)"
-              />
-              {error ? <p className="text-sm text-destructive">{error}</p> : null}
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Button type="submit" disabled={uploadMutation.isPending} className="min-h-11">
-                  {uploadMutation.isPending ? "Enviando..." : "Confirmar envio"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => setSelectedFee(null)}
-                  className="min-h-11"
-                >
-                  Cancelar
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+        <StudentReceiptUploadForm
+          fee={selectedFee}
+          onCancel={() => setSelectedFee(null)}
+          onUploaded={handleReceiptUploaded}
+        />
       ) : null}
     </div>
   );
