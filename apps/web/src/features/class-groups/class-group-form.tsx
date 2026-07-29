@@ -598,8 +598,11 @@ function WeekdaySelect({
   );
 }
 
-function beltColor(slug: string): string {
-  const value = slug.toLowerCase();
+export function beltColor(slug: string): string {
+  const rawValue = slug.toLowerCase();
+  const value = rawValue.startsWith("child-")
+    ? rawValue.replace(/-(?:white|black)$/, "")
+    : rawValue;
   if (value.includes("black")) return "#171717";
   if (value.includes("brown")) return "#92400e";
   if (value.includes("purple")) return "#7c3aed";

@@ -10,6 +10,9 @@
 1. **[2026-07-17] Issue work usually expects focused verification, not repo-wide sweeps**
    Do instead: run the narrowest API/web tests and typechecks that cover the touched behavior, then expand only if failures suggest wider fallout.
 
+2. **[2026-07-28] Web build can fail before app code due to missing `qr-scanner` types**
+   Do instead: report the unrelated `qr-check-in-scanner.tsx` failure, and use focused API tests plus formatter/type checks for the changed files.
+
 ## Shell & Command Reliability
 1. **[2026-07-17] `rg` is not guaranteed in this workspace runtime**
    Do instead: fall back to `find`, `grep -R`, and targeted `sed` reads without assuming ripgrep exists.

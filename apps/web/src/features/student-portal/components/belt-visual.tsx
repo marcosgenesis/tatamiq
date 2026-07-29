@@ -58,6 +58,8 @@ export function BeltVisual({
   }
 
   const d = DIMS[size];
+  const tipColor = info.tipColor === "white" ? "#e5e5e5" : "#171717";
+  const degreeColor = info.tipColor === "white" ? "#171717" : "#ffffff";
   return (
     <div
       role="img"
@@ -77,15 +79,15 @@ export function BeltVisual({
       }}
     >
       <div
-        className="flex h-full items-center justify-center bg-neutral-900"
-        style={{ width: d.tab, gap: d.gap }}
+        className="flex h-full items-center justify-center"
+        style={{ width: d.tab, gap: d.gap, backgroundColor: tipColor }}
       >
         {Array.from({ length: Math.min(degrees, 6) }).map((_, i) => (
           <span
             // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length decorative stripes
             key={i}
-            className="rounded-[1px] bg-white"
-            style={{ width: d.sw, height: d.sh }}
+            className="rounded-[1px]"
+            style={{ width: d.sw, height: d.sh, backgroundColor: degreeColor }}
           />
         ))}
       </div>

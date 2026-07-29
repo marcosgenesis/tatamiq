@@ -1,7 +1,19 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { CreateStudentInput, Student, UpdateStudentInput } from "@tatamiq/contracts";
-import { belts, type Database, studentGuardians, students } from "@tatamiq/database";
-import { and, count, eq, inArray, ne, sql } from "drizzle-orm";
+import {
+  attendances,
+  belts,
+  type Database,
+  monthlyFees,
+  preRegistrationRequests,
+  promotions,
+  studentAcceptances,
+  studentAccess,
+  studentGuardians,
+  studentNotes,
+  students,
+} from "@tatamiq/database";
+import { and, count, eq, inArray, ne, or, sql } from "drizzle-orm";
 import { BeltsService, toBeltDto } from "../belts/belts.service";
 import { DATABASE } from "../database/database.module";
 import { StudentAccessService } from "../student-access/student-access.service";
@@ -178,6 +190,22 @@ export class StudentsService {
     return this.get(organizationId, id);
   }
 
+  async remove(organizationId: string, id: string): Promise<void> {
+    await this.db.transaction(async (tx) => {
+      const [student] = await tx
+        .select({ id: students.id })
+        .from(students)
+        .where(and(eq(students.id, id), eq(students.organizationId, organizationId)))
+        .for("update")
+        .limit(1);
+
+      if (!student) throw new NotFoundException("Aluno nao encontrado.");
+
+      await this.assertCanRemove(id, tx);
+      await tx.delete(students).where(eq(students.id, id));
+    });
+  }
+
   async inactivate(organizationId: string, id: string): Promise<Student> {
     const current = await this.findStudent(organizationId, id);
     const now = new Date();
@@ -230,6 +258,65 @@ export class StudentsService {
 
     if (existing) {
       throw new BadRequestException("Já existe um aluno com este email.");
+    }
+  }
+
+  private async assertCanRemove(studentId: string, db: ServiceDb): Promise<void> {
+    const [
+      [attendance],
+      [monthlyFee],
+      [promotion],
+      [access],
+      [acceptance],
+      [note],
+      [preRegistration],
+    ] = await Promise.all([
+      db
+        .select({ id: attendances.id })
+        .from(attendances)
+        .where(eq(attendances.studentId, studentId))
+        .limit(1),
+      db
+        .select({ id: monthlyFees.id })
+        .from(monthlyFees)
+        .where(eq(monthlyFees.studentId, studentId))
+        .limit(1),
+      db
+        .select({ id: promotions.id })
+        .from(promotions)
+        .where(eq(promotions.studentId, studentId))
+        .limit(1),
+      db
+        .select({ id: studentAccess.id })
+        .from(studentAccess)
+        .where(eq(studentAccess.studentId, studentId))
+        .limit(1),
+      db
+        .select({ id: studentAcceptances.id })
+        .from(studentAcceptances)
+        .where(eq(studentAcceptances.studentId, studentId))
+        .limit(1),
+      db
+        .select({ id: studentNotes.id })
+        .from(studentNotes)
+        .where(eq(studentNotes.studentId, studentId))
+        .limit(1),
+      db
+        .select({ id: preRegistrationRequests.id })
+        .from(preRegistrationRequests)
+        .where(
+          or(
+            eq(preRegistrationRequests.approvedStudentId, studentId),
+            eq(preRegistrationRequests.duplicateStudentId, studentId),
+          ),
+        )
+        .limit(1),
+    ]);
+
+    if (attendance || monthlyFee || promotion || access || acceptance || note || preRegistration) {
+      throw new BadRequestException(
+        "Este aluno possui histórico e não pode ser excluído. Use a inativação para preservá-lo.",
+      );
     }
   }
 

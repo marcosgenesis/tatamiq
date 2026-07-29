@@ -31,10 +31,12 @@ import { academyQueryKey } from "../../lib/academy-query-keys";
 import { ageLabel, billingLabel, formatDate } from "../../lib/formatting";
 import { BeltVisual } from "../student-portal/components/belt-visual";
 import { beltKeyFromName } from "../student-portal/lib/belt-progress";
+import { DeleteStudentDialog } from "./components/delete-student-dialog";
 import { exportStudentsCsv, StudentCsvImport } from "./components/student-csv-import";
 import { StudentForm } from "./components/student-form";
 import { PreRegistrationsTab } from "./pre-registrations-tab";
 import { StudentsMobile } from "./students-mobile";
+import { useStudentDeletion } from "./use-student-deletion";
 
 type StudentsTab = "students" | "pre-registrations";
 
@@ -140,6 +142,9 @@ function StudentsPageDesktop() {
       });
     },
   });
+
+  const studentDeletion = useStudentDeletion(activeAcademyId);
+  const { requestDeletion } = studentDeletion;
 
   const [isImportOpen, setIsImportOpen] = useState(false);
 
@@ -269,13 +274,21 @@ function StudentsPageDesktop() {
                 onRevokeAccess={() => revokeAccessMutation.mutate(s.id)}
                 onInactivate={() => statusMutation.mutate({ id: s.id, action: "inactivate" })}
                 onReactivate={() => statusMutation.mutate({ id: s.id, action: "reactivate" })}
+                onDelete={() => requestDeletion(s)}
               />
             </div>
           );
         },
       },
     ],
-    [statusMutation, inviteMutation, revokeInviteMutation, revokeAccessMutation, openEditForm],
+    [
+      statusMutation,
+      inviteMutation,
+      revokeInviteMutation,
+      revokeAccessMutation,
+      openEditForm,
+      requestDeletion,
+    ],
   );
 
   const serverPagination = studentsQuery.data?.pagination;
@@ -382,6 +395,12 @@ function StudentsPageDesktop() {
             }
             onClose={closeForm}
           />
+          <DeleteStudentDialog
+            studentName={studentDeletion.studentToDelete?.name ?? null}
+            isDeleting={studentDeletion.isDeleting}
+            onClose={studentDeletion.cancelDeletion}
+            onConfirm={studentDeletion.confirmDeletion}
+          />
 
           {/* Search */}
           <div className="flex sm:justify-end">
@@ -437,6 +456,7 @@ function OverflowMenu({
   onRevokeAccess,
   onInactivate,
   onReactivate,
+  onDelete,
 }: {
   student: Student;
   onGenerateInvite: () => void;
@@ -444,6 +464,7 @@ function OverflowMenu({
   onRevokeAccess: () => void;
   onInactivate: () => void;
   onReactivate: () => void;
+  onDelete: () => void;
 }) {
   const access = student.accessState;
   return (
@@ -480,6 +501,9 @@ function OverflowMenu({
         ) : (
           <DropdownMenuItem onClick={onReactivate}>Reativar aluno</DropdownMenuItem>
         )}
+        <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={onDelete}>
+          Excluir cadastro
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
