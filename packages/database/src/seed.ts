@@ -251,7 +251,7 @@ const beltChildData = [
   },
   {
     id: randomUUID(),
-    slug: "child-grey-white",
+    slug: "child-gray-white",
     name: "Cinza / Branca",
     position: 1,
     maxDegrees: 4,
@@ -262,7 +262,7 @@ const beltChildData = [
   },
   {
     id: randomUUID(),
-    slug: "child-grey",
+    slug: "child-gray",
     name: "Cinza",
     position: 2,
     maxDegrees: 4,
@@ -273,7 +273,7 @@ const beltChildData = [
   },
   {
     id: randomUUID(),
-    slug: "child-grey-black",
+    slug: "child-gray-black",
     name: "Cinza / Preta",
     position: 3,
     maxDegrees: 4,

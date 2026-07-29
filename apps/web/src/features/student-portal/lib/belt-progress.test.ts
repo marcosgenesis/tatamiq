@@ -50,6 +50,11 @@ describe("child belt visuals", () => {
     expect(beltInfo(beltKeyFromName(name)).color).toBe(color);
   });
 
+  it("distinguishes a plain child belt from its black-tip variant", () => {
+    expect(beltInfo("verde").tipStyle).toBe("color");
+    expect(beltInfo("verde-preta").tipStyle).toBe("black");
+  });
+
   it("uses the child journey in graduation progress", () => {
     const progress = beltProgress(
       { currentBelt: { name: "Amarela", path: "child" }, currentDegree: 4, promotions: [] },
