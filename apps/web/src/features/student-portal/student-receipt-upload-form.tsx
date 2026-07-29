@@ -142,7 +142,9 @@ export function StudentReceiptUploadForm({
               </span>
               <span className="flex flex-col items-start gap-0.5 whitespace-normal">
                 <span className="font-semibold">Escolher da galeria</span>
-                <span className="text-xs font-normal text-muted-foreground">Use uma foto já salva</span>
+                <span className="text-xs font-normal text-muted-foreground">
+                  Use uma foto já salva
+                </span>
               </span>
             </Button>
             <Button
@@ -155,7 +157,9 @@ export function StudentReceiptUploadForm({
               </span>
               <span className="flex flex-col items-start gap-0.5 whitespace-normal">
                 <span className="font-semibold">Tirar foto agora</span>
-                <span className="text-xs font-normal text-primary-foreground/80">Abra a câmera do celular</span>
+                <span className="text-xs font-normal text-primary-foreground/80">
+                  Abra a câmera do celular
+                </span>
               </span>
             </Button>
           </div>
