@@ -1,4 +1,14 @@
-import { Controller, Get, HttpCode, Inject, Param, Patch, Post, Query } from "@nestjs/common";
+import {
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Inject,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from "@nestjs/common";
 import { ApiBody, ApiOkResponse, ApiParam, ApiQuery, ApiTags } from "@nestjs/swagger";
 import { OrgRoles } from "@thallesp/nestjs-better-auth";
 import { AcademyId } from "../academy-request";
@@ -79,6 +89,13 @@ export class StudentsController {
     @ZodBody(UpdateStudentDto) body: UpdateStudentDto,
   ): Promise<StudentDto> {
     return this.studentsService.update(academyId, id, body);
+  }
+
+  @Delete(":id")
+  @HttpCode(204)
+  @ApiParam({ name: "id" })
+  async remove(@AcademyId() academyId: string, @Param("id") id: string): Promise<void> {
+    await this.studentsService.remove(academyId, id);
   }
 
   @Post(":id/inactivate")

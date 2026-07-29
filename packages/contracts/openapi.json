@@ -1425,6 +1425,25 @@
         "tags": [
           "students"
         ]
+      },
+      "delete": {
+        "operationId": "StudentsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "students"
+        ]
       }
     },
     "/students/{id}/inactivate": {

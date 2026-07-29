@@ -686,7 +686,7 @@ export interface paths {
         get: operations["StudentsController_get"];
         put?: never;
         post?: never;
-        delete?: never;
+        delete: operations["StudentsController_remove"];
         options?: never;
         head?: never;
         patch: operations["StudentsController_update"];
@@ -4338,6 +4338,25 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["StudentDto"];
                 };
+            };
+        };
+    };
+    StudentsController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

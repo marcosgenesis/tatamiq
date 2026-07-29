@@ -352,12 +352,12 @@ export function StudentForm(props: {
             {/* Dados pessoais */}
             <section>
               <SectionHeader title="Dados pessoais" />
-              <FieldGroup className="grid grid-cols-2 gap-4">
+              <FieldGroup className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Controller
                   name="name"
                   control={control}
                   render={({ field, fieldState }) => (
-                    <Field className="col-span-2" data-invalid={fieldState.invalid}>
+                    <Field className="sm:col-span-2" data-invalid={fieldState.invalid}>
                       <FieldLabel htmlFor={`${formId}-name`}>
                         Nome <span className="text-destructive">*</span>
                       </FieldLabel>
@@ -410,7 +410,7 @@ export function StudentForm(props: {
             {/* Contato */}
             <section>
               <SectionHeader title="Contato" />
-              <FieldGroup className="grid grid-cols-2 gap-4">
+              <FieldGroup className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Controller
                   name="phone"
                   control={control}
@@ -460,12 +460,12 @@ export function StudentForm(props: {
                 <p className="mb-4 text-xs text-muted-foreground">
                   Obrigatório para aluno menor de idade.
                 </p>
-                <FieldGroup className="grid grid-cols-2 gap-4">
+                <FieldGroup className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <Controller
                     name="guardianName"
                     control={control}
                     render={({ field, fieldState }) => (
-                      <Field className="col-span-2" data-invalid={fieldState.invalid}>
+                      <Field className="sm:col-span-2" data-invalid={fieldState.invalid}>
                         <FieldLabel htmlFor={`${formId}-guardian-name`}>
                           Nome do responsável <span className="text-destructive">*</span>
                         </FieldLabel>
@@ -549,7 +549,7 @@ export function StudentForm(props: {
             {/* Mensalidade */}
             <section>
               <SectionHeader title="Mensalidade" />
-              <FieldGroup className="grid grid-cols-2 gap-4">
+              <FieldGroup className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Controller
                   name="monthlyAmount"
                   control={control}
@@ -611,7 +611,7 @@ export function StudentForm(props: {
             {/* Graduação */}
             <section>
               <SectionHeader title="Graduação" />
-              <FieldGroup className="grid grid-cols-2 gap-4">
+              <FieldGroup className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Controller
                   name="currentBeltId"
                   control={control}
@@ -722,7 +722,7 @@ export function StudentForm(props: {
                 />
 
                 {selectedBelt && (
-                  <div className="col-span-2 flex items-center gap-3 rounded-[14px] border border-border bg-card p-3">
+                  <div className="flex items-center gap-3 rounded-[14px] border border-border bg-card p-3 sm:col-span-2">
                     <BeltVisual
                       beltKey={beltKeyFromName(selectedBelt.name)}
                       degrees={Number(currentDegree)}

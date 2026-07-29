@@ -1,5 +1,4 @@
 import { belts, type Database } from "@tatamiq/database";
-import { eq } from "drizzle-orm";
 
 type BeltSeed = {
   name: string;
@@ -13,7 +12,7 @@ type BeltSeed = {
   minAttendancesForNextBelt: number;
 };
 
-const IBJJF_BELTS: BeltSeed[] = [
+export const IBJJF_BELTS: BeltSeed[] = [
   {
     name: "Branca",
     slug: "white",
@@ -82,10 +81,43 @@ const IBJJF_BELTS: BeltSeed[] = [
     minAttendancesForNextBelt: 120,
   },
   {
+    name: "Cinza / Branca",
+    slug: "gray-white",
+    path: "child",
+    position: 1,
+    maxDegrees: 4,
+    minMonthsForNextDegree: 4,
+    minAttendancesForNextDegree: 30,
+    minMonthsForNextBelt: 12,
+    minAttendancesForNextBelt: 120,
+  },
+  {
     name: "Cinza",
     slug: "gray",
     path: "child",
-    position: 1,
+    position: 2,
+    maxDegrees: 4,
+    minMonthsForNextDegree: 4,
+    minAttendancesForNextDegree: 30,
+    minMonthsForNextBelt: 12,
+    minAttendancesForNextBelt: 120,
+  },
+  {
+    name: "Cinza / Preta",
+    slug: "gray-black",
+    path: "child",
+    position: 3,
+    maxDegrees: 4,
+    minMonthsForNextDegree: 4,
+    minAttendancesForNextDegree: 30,
+    minMonthsForNextBelt: 12,
+    minAttendancesForNextBelt: 120,
+  },
+  {
+    name: "Amarela / Branca",
+    slug: "yellow-white",
+    path: "child",
+    position: 4,
     maxDegrees: 4,
     minMonthsForNextDegree: 4,
     minAttendancesForNextDegree: 30,
@@ -96,7 +128,29 @@ const IBJJF_BELTS: BeltSeed[] = [
     name: "Amarela",
     slug: "yellow",
     path: "child",
-    position: 2,
+    position: 5,
+    maxDegrees: 4,
+    minMonthsForNextDegree: 4,
+    minAttendancesForNextDegree: 30,
+    minMonthsForNextBelt: 12,
+    minAttendancesForNextBelt: 120,
+  },
+  {
+    name: "Amarela / Preta",
+    slug: "yellow-black",
+    path: "child",
+    position: 6,
+    maxDegrees: 4,
+    minMonthsForNextDegree: 4,
+    minAttendancesForNextDegree: 30,
+    minMonthsForNextBelt: 12,
+    minAttendancesForNextBelt: 120,
+  },
+  {
+    name: "Laranja / Branca",
+    slug: "orange-white",
+    path: "child",
+    position: 7,
     maxDegrees: 4,
     minMonthsForNextDegree: 4,
     minAttendancesForNextDegree: 30,
@@ -107,7 +161,29 @@ const IBJJF_BELTS: BeltSeed[] = [
     name: "Laranja",
     slug: "orange",
     path: "child",
-    position: 3,
+    position: 8,
+    maxDegrees: 4,
+    minMonthsForNextDegree: 4,
+    minAttendancesForNextDegree: 30,
+    minMonthsForNextBelt: 12,
+    minAttendancesForNextBelt: 120,
+  },
+  {
+    name: "Laranja / Preta",
+    slug: "orange-black",
+    path: "child",
+    position: 9,
+    maxDegrees: 4,
+    minMonthsForNextDegree: 4,
+    minAttendancesForNextDegree: 30,
+    minMonthsForNextBelt: 12,
+    minAttendancesForNextBelt: 120,
+  },
+  {
+    name: "Verde / Branca",
+    slug: "green-white",
+    path: "child",
+    position: 10,
     maxDegrees: 4,
     minMonthsForNextDegree: 4,
     minAttendancesForNextDegree: 30,
@@ -118,7 +194,18 @@ const IBJJF_BELTS: BeltSeed[] = [
     name: "Verde",
     slug: "green",
     path: "child",
-    position: 4,
+    position: 11,
+    maxDegrees: 4,
+    minMonthsForNextDegree: 4,
+    minAttendancesForNextDegree: 30,
+    minMonthsForNextBelt: 12,
+    minAttendancesForNextBelt: 120,
+  },
+  {
+    name: "Verde / Preta",
+    slug: "green-black",
+    path: "child",
+    position: 12,
     maxDegrees: 4,
     minMonthsForNextDegree: 4,
     minAttendancesForNextDegree: 30,
@@ -128,14 +215,6 @@ const IBJJF_BELTS: BeltSeed[] = [
 ];
 
 export async function seedIbjjfBelts(db: Database, organizationId: string) {
-  const existing = await db
-    .select({ id: belts.id })
-    .from(belts)
-    .where(eq(belts.organizationId, organizationId))
-    .limit(1);
-
-  if (existing.length > 0) return;
-
   const values = IBJJF_BELTS.map((seed) => ({
     id: crypto.randomUUID(),
     organizationId,
@@ -150,5 +229,5 @@ export async function seedIbjjfBelts(db: Database, organizationId: string) {
     minAttendancesForNextBelt: seed.minAttendancesForNextBelt,
   }));
 
-  await db.insert(belts).values(values);
+  await db.insert(belts).values(values).onConflictDoNothing();
 }
