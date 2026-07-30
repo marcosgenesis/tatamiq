@@ -1,3 +1,10 @@
+## [0.8.4](https://github.com/marcosgenesis/tatamiq/compare/v0.8.3...v0.8.4) (2026-07-30)
+
+
+### Bug Fixes
+
+* **contracts:** regenerate billing OpenAPI types ([45af4cc](https://github.com/marcosgenesis/tatamiq/commit/45af4cc734e66d7b4f42401ddacf44401e3bc105))
+
 ## [0.8.3](https://github.com/marcosgenesis/tatamiq/compare/v0.8.2...v0.8.3) (2026-07-28)
 
 
