@@ -56,6 +56,8 @@ export class AcademyService {
     if (input.pixKeyType !== undefined) updates.pixKeyType = input.pixKeyType;
     if (input.pixKey !== undefined) updates.pixKey = input.pixKey || null;
     if (input.pixCopyPaste !== undefined) updates.pixCopyPaste = input.pixCopyPaste || null;
+    if (input.dailyAmountInCents !== undefined)
+      updates.dailyAmountInCents = input.dailyAmountInCents;
 
     if (Object.keys(updates).length > 0) {
       await this.db.update(organization).set(updates).where(eq(organization.id, organizationId));
@@ -202,6 +204,7 @@ function toProfile(row: OrganizationRow): AcademyProfile {
     pixKeyType: parsePixKeyType(row.pixKeyType),
     pixKey: row.pixKey,
     pixCopyPaste: row.pixCopyPaste,
+    dailyAmountInCents: row.dailyAmountInCents,
   };
 }
 

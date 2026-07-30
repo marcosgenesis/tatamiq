@@ -8,7 +8,7 @@ import { authClient } from "../../../lib/auth-client";
 import { studentQueryKey } from "../../../lib/session-query-keys";
 import { cn } from "../../../lib/utils";
 import { BeltVisual } from "../components/belt-visual";
-import { BELT_ORDER, beltProgress } from "../lib/belt-progress";
+import { beltInfo, beltKeyFromName, beltOrderFor, beltProgress } from "../lib/belt-progress";
 import { toGraduationInput } from "../lib/graduation-response";
 
 const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
@@ -33,6 +33,7 @@ export function StudentGraduationScreen() {
 
   const graduation = query.data ? toGraduationInput(query.data) : null;
   const belt = graduation ? beltProgress(graduation) : null;
+  const beltOrder = beltOrderFor(graduation?.currentBelt?.path);
   const promotions = (graduation?.promotions ?? [])
     .slice()
     .sort((a, b) => +new Date(b.promotedAt) - +new Date(a.promotedAt));
@@ -97,7 +98,7 @@ export function StudentGraduationScreen() {
         <section>
           <h2 className="mb-3 font-heading text-[0.95rem] font-bold tracking-tight">Sua jornada</h2>
           <div className="flex items-start justify-between">
-            {BELT_ORDER.map((b, i) => {
+            {beltOrder.map((b, i) => {
               const current = belt?.journeyIndex === i;
               const reached = (belt?.journeyIndex ?? 0) >= i;
               return (
@@ -145,9 +146,7 @@ export function StudentGraduationScreen() {
             <ol className="space-y-0">
               {promotions.map((promo, i) => {
                 const last = i === promotions.length - 1;
-                const color = BELT_ORDER.find(
-                  (b) => b.name.toLowerCase() === promo.beltName.toLowerCase(),
-                )?.color;
+                const color = beltInfo(beltKeyFromName(promo.beltName)).color;
                 return (
                   <li
                     key={`${promo.beltName}-${promo.degree}-${promo.promotedAt}`}

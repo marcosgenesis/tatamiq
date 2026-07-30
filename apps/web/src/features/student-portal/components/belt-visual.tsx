@@ -23,7 +23,7 @@ const DIMS: Record<
 };
 
 /**
- * Jiu-jitsu belt: colored bar + black tip + N white degree stripes.
+ * Jiu-jitsu belt: colored bar + rank bar + N degree stripes.
  * Prefers the academy-provided belt image when present, else renders the bar.
  */
 export function BeltVisual({
@@ -58,6 +58,9 @@ export function BeltVisual({
   }
 
   const d = DIMS[size];
+  const tipColor =
+    info.tipStyle === "color" ? info.color : info.tipStyle === "white" ? "#e5e5e5" : "#171717";
+  const degreeColor = info.tipStyle === "white" ? "#171717" : "#ffffff";
   return (
     <div
       role="img"
@@ -77,15 +80,15 @@ export function BeltVisual({
       }}
     >
       <div
-        className="flex h-full items-center justify-center bg-neutral-900"
-        style={{ width: d.tab, gap: d.gap }}
+        className="flex h-full items-center justify-center"
+        style={{ width: d.tab, gap: d.gap, backgroundColor: tipColor }}
       >
         {Array.from({ length: Math.min(degrees, 6) }).map((_, i) => (
           <span
             // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length decorative stripes
             key={i}
-            className="rounded-[1px] bg-white"
-            style={{ width: d.sw, height: d.sh }}
+            className="rounded-[1px]"
+            style={{ width: d.sw, height: d.sh, backgroundColor: degreeColor }}
           />
         ))}
       </div>

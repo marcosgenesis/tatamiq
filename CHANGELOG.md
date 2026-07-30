@@ -1,3 +1,85 @@
+# [0.10.0](https://github.com/marcosgenesis/tatamiq/compare/v0.9.1...v0.10.0) (2026-07-30)
+
+
+### Features
+
+* **students:** select billing method in form ([bcdde9d](https://github.com/marcosgenesis/tatamiq/commit/bcdde9d6115dc28314c5a3779ef24ee1c4938ee8))
+
+## [0.9.1](https://github.com/marcosgenesis/tatamiq/compare/v0.9.0...v0.9.1) (2026-07-30)
+
+
+### Bug Fixes
+
+* **billing:** resolve daily fee invalidations ([e617a9a](https://github.com/marcosgenesis/tatamiq/commit/e617a9ac6122d7b54f404213b83f2ca94e97e682))
+
+# [0.9.0](https://github.com/marcosgenesis/tatamiq/compare/v0.8.5...v0.9.0) (2026-07-30)
+
+
+### Bug Fixes
+
+* **settings:** mask daily fee input ([69ce9ef](https://github.com/marcosgenesis/tatamiq/commit/69ce9ef5d8a40e4dd22958cf26dc4e40decffb4a))
+
+
+### Features
+
+* **settings:** configure academy daily fee ([165548d](https://github.com/marcosgenesis/tatamiq/commit/165548d71176b1109116230aff0dcae9ddf6f9a9))
+
+## [0.8.5](https://github.com/marcosgenesis/tatamiq/compare/v0.8.4...v0.8.5) (2026-07-30)
+
+
+### Bug Fixes
+
+* **database:** register daily fees migration ([073c4f6](https://github.com/marcosgenesis/tatamiq/commit/073c4f6c8c5e1be4d6aa14d83596e4e899ad64fd))
+
+## [0.8.4](https://github.com/marcosgenesis/tatamiq/compare/v0.8.3...v0.8.4) (2026-07-30)
+
+
+### Bug Fixes
+
+* **contracts:** regenerate billing OpenAPI types ([45af4cc](https://github.com/marcosgenesis/tatamiq/commit/45af4cc734e66d7b4f42401ddacf44401e3bc105))
+
+## [0.8.3](https://github.com/marcosgenesis/tatamiq/compare/v0.8.2...v0.8.3) (2026-07-28)
+
+
+### Bug Fixes
+
+* **web:** guard academy onboarding entry ([87cefd4](https://github.com/marcosgenesis/tatamiq/commit/87cefd4e11060ff320b2813187c655ad0b38d5ce))
+
+## [0.8.2](https://github.com/marcosgenesis/tatamiq/compare/v0.8.1...v0.8.2) (2026-07-28)
+
+
+### Bug Fixes
+
+* **web:** guard all instructor entry routes ([5a89107](https://github.com/marcosgenesis/tatamiq/commit/5a89107889919d71bcfe71172d7dd30eee7006fb))
+
+## [0.8.1](https://github.com/marcosgenesis/tatamiq/compare/v0.8.0...v0.8.1) (2026-07-28)
+
+
+### Bug Fixes
+
+* **web:** time out hung service-worker asset fetches ([a015414](https://github.com/marcosgenesis/tatamiq/commit/a015414ec802b8d47db6667598eb721a06368985))
+
+# [0.8.0](https://github.com/marcosgenesis/tatamiq/compare/v0.7.0...v0.8.0) (2026-07-25)
+
+
+### Bug Fixes
+
+* model first-access status explicitly ([7934a26](https://github.com/marcosgenesis/tatamiq/commit/7934a26f9f23313f87a31011a9f272995ae708cf))
+* reuse configured API origin for share links ([d4dc64c](https://github.com/marcosgenesis/tatamiq/commit/d4dc64c74bbf98239311d54710866ef0c011051b))
+
+
+### Features
+
+* **class-groups:** add mobile view ([283b45f](https://github.com/marcosgenesis/tatamiq/commit/283b45fbfe12c836cc65ad906f8c96438aed1ff1))
+* **classes:** add mobile active-class view ([5601459](https://github.com/marcosgenesis/tatamiq/commit/5601459a7267dd3eb6b6a685233f4debb40c4459))
+* **dashboard:** add mobile view ([d107e06](https://github.com/marcosgenesis/tatamiq/commit/d107e06d7865d80dce0f06828ab654708dc90bb4))
+* **graduation:** add mobile view ([32787f8](https://github.com/marcosgenesis/tatamiq/commit/32787f879aacfd8f763909401125f7b4218d4efb))
+* **monthly-fees:** add mobile view ([e9121a8](https://github.com/marcosgenesis/tatamiq/commit/e9121a8d3d1e12c4345da7f4850b60cb45c4745f))
+* **schedule:** add mobile agenda view ([1ca2159](https://github.com/marcosgenesis/tatamiq/commit/1ca2159f70192d53e0985c00b54807cecd2fb902))
+* **students:** add mobile view ([c5ce974](https://github.com/marcosgenesis/tatamiq/commit/c5ce974f7a1c4ee726581e7c0e31d4f96fd2fa8e))
+* **web:** add mobile app shell and shared UI kit ([7b959fa](https://github.com/marcosgenesis/tatamiq/commit/7b959fa3bb7ad253f724b9c4744c815cf3e363f5))
+* **web:** add mobile design tokens ([ea67e5f](https://github.com/marcosgenesis/tatamiq/commit/ea67e5f86eb77fd02d7a1c58c43429d48ea20b9a))
+
 # [0.7.0](https://github.com/marcosgenesis/tatamiq/compare/v0.6.0...v0.7.0) (2026-07-23)
 
 

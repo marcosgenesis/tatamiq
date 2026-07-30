@@ -19,6 +19,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import { resolveQrTokenSecret } from "../auth";
 import { parseClassStatus } from "../class-status";
 import { verifyQrToken } from "../classes/qr-token";
+import { createDailyFeeForAttendance } from "../daily-fees/create-daily-fee-for-attendance";
 import { DATABASE } from "../database/database.module";
 
 @Injectable()
@@ -110,6 +111,11 @@ export class QrAttendanceService {
         invalidationReason: null,
         createdByUserId: userId,
         createdAt: now,
+      });
+      await createDailyFeeForAttendance(tx, {
+        organizationId: access.organizationId,
+        studentId: access.studentId,
+        occurredAt: session.actualStartAt ?? now,
       });
     });
 

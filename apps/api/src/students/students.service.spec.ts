@@ -21,10 +21,11 @@ const studentRow = {
 };
 
 function selectResult(rows: unknown[]) {
+  const result = { limit: vi.fn().mockResolvedValue(rows) };
   return {
     from: vi.fn(() => ({
       leftJoin: vi.fn(() => ({ where: vi.fn(() => ({ limit: vi.fn().mockResolvedValue(rows) })) })),
-      where: vi.fn(() => ({ limit: vi.fn().mockResolvedValue(rows) })),
+      where: vi.fn(() => ({ ...result, for: vi.fn(() => result) })),
     })),
   };
 }
@@ -138,5 +139,72 @@ describe("StudentsService transactions", () => {
     ).rejects.toBeInstanceOf(BadRequestException);
 
     expect(db.transaction).not.toHaveBeenCalled();
+  });
+
+  it("permanently removes a student with no history", async () => {
+    const dbDelete = deleteSpy();
+    const txSelect = vi
+      .fn()
+      // locked student
+      .mockReturnValueOnce(selectResult([{ id: "student-1" }]))
+      // history checks
+      .mockImplementation(() => selectResult([]));
+    const db = {
+      transaction: vi.fn(async (callback) => callback({ select: txSelect, delete: dbDelete })),
+    };
+    const service = new StudentsService(db as never, {} as never, {} as never);
+
+    await expect(service.remove("org-1", "student-1")).resolves.toBeUndefined();
+
+    expect(db.transaction).toHaveBeenCalledTimes(1);
+    expect(dbDelete).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps a student when they have operational history", async () => {
+    const dbDelete = deleteSpy();
+    const txSelect = vi
+      .fn()
+      // locked student
+      .mockReturnValueOnce(selectResult([{ id: "student-1" }]))
+      // attendance
+      .mockReturnValueOnce(selectResult([]))
+      // monthly fee
+      .mockReturnValueOnce(selectResult([{ id: "fee-1" }]))
+      // remaining history checks
+      .mockImplementation(() => selectResult([]));
+    const db = {
+      transaction: vi.fn(async (callback) => callback({ select: txSelect, delete: dbDelete })),
+    };
+    const service = new StudentsService(db as never, {} as never, {} as never);
+
+    await expect(service.remove("org-1", "student-1")).rejects.toBeInstanceOf(BadRequestException);
+
+    expect(dbDelete).not.toHaveBeenCalled();
+  });
+
+  it("keeps a student when their contact-change audit exists", async () => {
+    const dbDelete = deleteSpy();
+    const txSelect = vi
+      .fn()
+      // locked student, then the eight existing history checks
+      .mockReturnValueOnce(selectResult([{ id: "student-1" }]))
+      .mockImplementationOnce(() => selectResult([]))
+      .mockImplementationOnce(() => selectResult([]))
+      .mockImplementationOnce(() => selectResult([]))
+      .mockImplementationOnce(() => selectResult([]))
+      .mockImplementationOnce(() => selectResult([]))
+      .mockImplementationOnce(() => selectResult([]))
+      .mockImplementationOnce(() => selectResult([]))
+      .mockImplementationOnce(() => selectResult([]))
+      // contact-change audit
+      .mockImplementationOnce(() => selectResult([{ id: "contact-change-1" }]));
+    const db = {
+      transaction: vi.fn(async (callback) => callback({ select: txSelect, delete: dbDelete })),
+    };
+    const service = new StudentsService(db as never, {} as never, {} as never);
+
+    await expect(service.remove("org-1", "student-1")).rejects.toBeInstanceOf(BadRequestException);
+
+    expect(dbDelete).not.toHaveBeenCalled();
   });
 });

@@ -1,7 +1,24 @@
 // Pure graduation/belt-progression logic. No React, no fetching.
 // Tested in belt-progress.test.ts.
 
-export type BeltKey = "branca" | "azul" | "roxa" | "marrom" | "preta";
+export type BeltKey =
+  | "branca"
+  | "cinza-branca"
+  | "cinza"
+  | "cinza-preta"
+  | "amarela-branca"
+  | "amarela"
+  | "amarela-preta"
+  | "laranja-branca"
+  | "laranja"
+  | "laranja-preta"
+  | "verde-branca"
+  | "verde"
+  | "verde-preta"
+  | "azul"
+  | "roxa"
+  | "marrom"
+  | "preta";
 
 export type BeltInfo = {
   key: BeltKey;
@@ -11,6 +28,8 @@ export type BeltInfo = {
   color: string;
   /** Whether the belt color needs a border to read on a light surface. */
   needsBorder: boolean;
+  /** Rank-bar treatment used by the fallback belt visual. */
+  tipStyle?: "color" | "white" | "black";
 };
 
 export const BELT_ORDER: BeltInfo[] = [
@@ -20,6 +39,72 @@ export const BELT_ORDER: BeltInfo[] = [
   { key: "marrom", name: "Marrom", color: "#6b4423", needsBorder: false },
   { key: "preta", name: "Preta", color: "#111111", needsBorder: false },
 ];
+
+const CHILD_BELT_ORDER: BeltInfo[] = [
+  { key: "branca", name: "Branca", color: "#d4d4d4", needsBorder: true },
+  {
+    key: "cinza-branca",
+    name: "Cinza / Branca",
+    color: "#6b7280",
+    needsBorder: false,
+    tipStyle: "white",
+  },
+  { key: "cinza", name: "Cinza", color: "#6b7280", needsBorder: false, tipStyle: "color" },
+  {
+    key: "cinza-preta",
+    name: "Cinza / Preta",
+    color: "#6b7280",
+    needsBorder: false,
+    tipStyle: "black",
+  },
+  {
+    key: "amarela-branca",
+    name: "Amarela / Branca",
+    color: "#eab308",
+    needsBorder: false,
+    tipStyle: "white",
+  },
+  { key: "amarela", name: "Amarela", color: "#eab308", needsBorder: false, tipStyle: "color" },
+  {
+    key: "amarela-preta",
+    name: "Amarela / Preta",
+    color: "#eab308",
+    needsBorder: false,
+    tipStyle: "black",
+  },
+  {
+    key: "laranja-branca",
+    name: "Laranja / Branca",
+    color: "#ea580c",
+    needsBorder: false,
+    tipStyle: "white",
+  },
+  { key: "laranja", name: "Laranja", color: "#ea580c", needsBorder: false, tipStyle: "color" },
+  {
+    key: "laranja-preta",
+    name: "Laranja / Preta",
+    color: "#ea580c",
+    needsBorder: false,
+    tipStyle: "black",
+  },
+  {
+    key: "verde-branca",
+    name: "Verde / Branca",
+    color: "#16a34a",
+    needsBorder: false,
+    tipStyle: "white",
+  },
+  { key: "verde", name: "Verde", color: "#16a34a", needsBorder: false, tipStyle: "color" },
+  {
+    key: "verde-preta",
+    name: "Verde / Preta",
+    color: "#16a34a",
+    needsBorder: false,
+    tipStyle: "black",
+  },
+];
+
+const BELT_INFO = [...BELT_ORDER, ...CHILD_BELT_ORDER.slice(1)];
 
 export const MAX_DEGREE = 4;
 export const EXPECTED_MONTHS_PER_DEGREE = 6;
@@ -59,6 +144,18 @@ export type BeltProgress = {
 
 export function beltKeyFromName(name: string | null | undefined): BeltKey {
   const n = (name ?? "").toLowerCase();
+  if (n.includes("cinza") && n.includes("branca")) return "cinza-branca";
+  if (n.includes("cinza") && n.includes("preta")) return "cinza-preta";
+  if (n.includes("amarel") && n.includes("branca")) return "amarela-branca";
+  if (n.includes("amarel") && n.includes("preta")) return "amarela-preta";
+  if (n.includes("laranja") && n.includes("branca")) return "laranja-branca";
+  if (n.includes("laranja") && n.includes("preta")) return "laranja-preta";
+  if (n.includes("verde") && n.includes("branca")) return "verde-branca";
+  if (n.includes("verde") && n.includes("preta")) return "verde-preta";
+  if (n.includes("cinza") || n.includes("gray") || n.includes("grey")) return "cinza";
+  if (n.includes("amarel") || n.includes("yellow")) return "amarela";
+  if (n.includes("laranja") || n.includes("orange")) return "laranja";
+  if (n.includes("verde") || n.includes("green")) return "verde";
   if (n.includes("azul")) return "azul";
   if (n.includes("rox")) return "roxa";
   if (n.includes("marrom") || n.includes("brown")) return "marrom";
@@ -67,7 +164,11 @@ export function beltKeyFromName(name: string | null | undefined): BeltKey {
 }
 
 export function beltInfo(key: BeltKey): BeltInfo {
-  return BELT_ORDER.find((b) => b.key === key) ?? (BELT_ORDER[0] as BeltInfo);
+  return BELT_INFO.find((b) => b.key === key) ?? (BELT_ORDER[0] as BeltInfo);
+}
+
+export function beltOrderFor(path: string | null | undefined): readonly BeltInfo[] {
+  return path === "child" ? CHILD_BELT_ORDER : BELT_ORDER;
 }
 
 function clamp01(value: number): number {
@@ -97,8 +198,9 @@ export function beltProgress(
 ): BeltProgress {
   const beltKey = beltKeyFromName(graduation.currentBelt?.name);
   const info = beltInfo(beltKey);
+  const beltOrder = beltOrderFor(graduation.currentBelt?.path);
   const degree = Math.max(0, graduation.currentDegree ?? 0);
-  const journeyIndex = BELT_ORDER.findIndex((b) => b.key === beltKey);
+  const journeyIndex = beltOrder.findIndex((b) => b.key === beltKey);
   const promotions = graduation.promotions ?? [];
   const isWhiteBelt = beltKey === "branca" && degree === 0;
 
@@ -120,7 +222,7 @@ export function beltProgress(
     ? 0
     : Math.max(0, Math.ceil(EXPECTED_MONTHS_PER_DEGREE - monthsSince));
 
-  const nextBelt = BELT_ORDER[journeyIndex + 1];
+  const nextBelt = beltOrder[journeyIndex + 1];
   let nextLabel: string;
   let nextCopy: string;
   if (atMaxDegree) {

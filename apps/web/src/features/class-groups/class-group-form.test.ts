@@ -1,10 +1,21 @@
 import { describe, expect, it } from "vitest";
 import {
+  beltColor,
   type ClassGroupFormValues,
   classGroupFormSchema,
   normalizeClassGroupTags,
   toClassGroupPayload,
 } from "./class-group-form";
+
+describe("beltColor", () => {
+  it("keeps the base color for an intermediate child belt with a black tip", () => {
+    expect(beltColor("child-green-black")).toBe("#16a34a");
+  });
+
+  it("keeps adult black belts black", () => {
+    expect(beltColor("adult-black")).toBe("#171717");
+  });
+});
 
 describe("classGroupFormSchema", () => {
   const validValues: ClassGroupFormValues = {

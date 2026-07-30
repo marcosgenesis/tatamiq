@@ -436,6 +436,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/pre-register/{token}/share": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PreRegistrationController_sharePage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/pre-register/{token}/requests": {
         parameters: {
             query?: never;
@@ -686,7 +702,7 @@ export interface paths {
         get: operations["StudentsController_get"];
         put?: never;
         post?: never;
-        delete?: never;
+        delete: operations["StudentsController_remove"];
         options?: never;
         head?: never;
         patch: operations["StudentsController_update"];
@@ -1920,6 +1936,7 @@ export interface components {
             pixKeyType: "cpf" | "email" | "phone" | "random" | null;
             pixKey: string | null;
             pixCopyPaste: string | null;
+            dailyAmountInCents: number | null;
         };
         AcademyOnboardingChecklistDto: {
             steps: {
@@ -1941,6 +1958,7 @@ export interface components {
             pixKeyType?: "cpf" | "email" | "phone" | "random" | null;
             pixKey?: string | "";
             pixCopyPaste?: string | "";
+            dailyAmountInCents?: number | null;
         };
         AcademyLogoUploadResponseDto: {
             /** Format: uri */
@@ -2313,6 +2331,8 @@ export interface components {
                 email: string | null;
                 monthlyAmountInCents: number | null;
                 monthlyDueDay: number | null;
+                /** @enum {string} */
+                billingMethod: "monthly" | "daily";
                 currentBeltId: string;
                 currentDegree: number;
                 belt: {
@@ -2368,6 +2388,8 @@ export interface components {
             email?: string | "";
             monthlyAmountInCents?: number | null;
             monthlyDueDay?: number | null;
+            /** @enum {string} */
+            billingMethod?: "monthly" | "daily";
             currentBeltId: string;
             currentDegree: number;
             guardian?: {
@@ -2390,6 +2412,8 @@ export interface components {
             email: string | null;
             monthlyAmountInCents: number | null;
             monthlyDueDay: number | null;
+            /** @enum {string} */
+            billingMethod: "monthly" | "daily";
             currentBeltId: string;
             currentDegree: number;
             belt: {
@@ -2433,6 +2457,8 @@ export interface components {
             email?: string | "";
             monthlyAmountInCents?: number | null;
             monthlyDueDay?: number | null;
+            /** @enum {string} */
+            billingMethod?: "monthly" | "daily";
             currentBeltId: string;
             currentDegree: number;
             guardian?: {
@@ -3976,6 +4002,23 @@ export interface operations {
             };
         };
     };
+    PreRegistrationController_sharePage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     PreRegistrationController_createRequest: {
         parameters: {
             query?: never;
@@ -4338,6 +4381,25 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["StudentDto"];
                 };
+            };
+        };
+    };
+    StudentsController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

@@ -13,6 +13,11 @@ import {
   students,
 } from "@tatamiq/database";
 import { and, eq, isNull } from "drizzle-orm";
+import {
+  createDailyFeeForAttendance,
+  dateInSaoPaulo,
+  resolveDailyFeeAfterAttendanceInvalidation,
+} from "../daily-fees/create-daily-fee-for-attendance";
 import { DATABASE } from "../database/database.module";
 import { canAddAttendance, canInvalidateAttendance } from "./attendance-rules";
 
@@ -158,17 +163,24 @@ export class AttendancesService {
     const id = crypto.randomUUID();
     const now = new Date();
 
-    await this.db.insert(attendances).values({
-      id,
-      organizationId,
-      classSessionId,
-      studentId: input.studentId,
-      source: "manual",
-      invalidatedAt: null,
-      invalidatedByUserId: null,
-      invalidationReason: null,
-      createdByUserId: userId,
-      createdAt: now,
+    await this.db.transaction(async (tx) => {
+      await tx.insert(attendances).values({
+        id,
+        organizationId,
+        classSessionId,
+        studentId: input.studentId,
+        source: "manual",
+        invalidatedAt: null,
+        invalidatedByUserId: null,
+        invalidationReason: null,
+        createdByUserId: userId,
+        createdAt: now,
+      });
+      await createDailyFeeForAttendance(tx, {
+        organizationId,
+        studentId: input.studentId,
+        occurredAt: session.actualStartAt ?? now,
+      });
     });
 
     return {
@@ -190,7 +202,7 @@ export class AttendancesService {
     attendanceId: string,
     input: InvalidateAttendanceInput,
   ): Promise<Attendance> {
-    await this.findSession(organizationId, classSessionId);
+    const session = await this.findSession(organizationId, classSessionId);
 
     const [row] = await this.db
       .select()
@@ -210,14 +222,17 @@ export class AttendancesService {
     if (!check.allowed) throw new BadRequestException(check.reason);
 
     const now = new Date();
-    await this.db
-      .update(attendances)
-      .set({
-        invalidatedAt: now,
-        invalidatedByUserId: userId,
-        invalidationReason: input.reason,
-      })
-      .where(eq(attendances.id, attendanceId));
+    await this.db.transaction(async (tx) => {
+      await tx
+        .update(attendances)
+        .set({ invalidatedAt: now, invalidatedByUserId: userId, invalidationReason: input.reason })
+        .where(eq(attendances.id, attendanceId));
+      await resolveDailyFeeAfterAttendanceInvalidation(tx, {
+        organizationId,
+        studentId: row.studentId,
+        attendanceDate: dateInSaoPaulo(session.actualStartAt ?? row.createdAt),
+      });
+    });
 
     const [student] = await this.db
       .select({ name: students.name })
@@ -227,7 +242,7 @@ export class AttendancesService {
 
     const isOutOfGroup = await this.checkOutOfGroup(
       organizationId,
-      (await this.findSession(organizationId, classSessionId)).classGroupId,
+      session.classGroupId,
       row.studentId,
     );
 

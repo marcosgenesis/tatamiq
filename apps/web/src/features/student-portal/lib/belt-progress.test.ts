@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { beltKeyFromName, beltProgress, monthsBetween, timeSpanLabel } from "./belt-progress";
+import {
+  beltInfo,
+  beltKeyFromName,
+  beltOrderFor,
+  beltProgress,
+  monthsBetween,
+  timeSpanLabel,
+} from "./belt-progress";
 
 const NOW = "2026-06-06T12:00:00.000Z";
 
@@ -12,11 +19,65 @@ describe("beltKeyFromName", () => {
     ["BJJ Brown belt", "marrom"],
     ["Preta", "preta"],
     ["Black", "preta"],
+    ["Cinza / Branca", "cinza-branca"],
+    ["Cinza", "cinza"],
+    ["Cinza / Preta", "cinza-preta"],
+    ["Amarela / Branca", "amarela-branca"],
+    ["Amarela", "amarela"],
+    ["Amarela / Preta", "amarela-preta"],
+    ["Laranja / Branca", "laranja-branca"],
+    ["Laranja", "laranja"],
+    ["Laranja / Preta", "laranja-preta"],
+    ["Verde / Branca", "verde-branca"],
+    ["Verde", "verde"],
+    ["Verde / Preta", "verde-preta"],
     ["Branca", "branca"],
     ["", "branca"],
     [null, "branca"],
   ])("maps %s to %s", (name, key) => {
     expect(beltKeyFromName(name as string)).toBe(key);
+  });
+});
+
+describe("child belt visuals", () => {
+  it.each([
+    ["Cinza", "#6b7280"],
+    ["Cinza / Branca", "#6b7280"],
+    ["Amarela", "#eab308"],
+    ["Laranja", "#ea580c"],
+    ["Verde", "#16a34a"],
+  ])("gives %s its own swatch color", (name, color) => {
+    expect(beltInfo(beltKeyFromName(name)).color).toBe(color);
+  });
+
+  it("distinguishes a plain child belt from its black-tip variant", () => {
+    expect(beltInfo("verde").tipStyle).toBe("color");
+    expect(beltInfo("verde-preta").tipStyle).toBe("black");
+  });
+
+  it("uses the child journey in graduation progress", () => {
+    const progress = beltProgress(
+      { currentBelt: { name: "Amarela", path: "child" }, currentDegree: 4, promotions: [] },
+      NOW,
+    );
+
+    expect(beltOrderFor("child").map((belt) => belt.name)).toEqual([
+      "Branca",
+      "Cinza / Branca",
+      "Cinza",
+      "Cinza / Preta",
+      "Amarela / Branca",
+      "Amarela",
+      "Amarela / Preta",
+      "Laranja / Branca",
+      "Laranja",
+      "Laranja / Preta",
+      "Verde / Branca",
+      "Verde",
+      "Verde / Preta",
+    ]);
+    expect(progress.journeyIndex).toBe(5);
+    expect(progress.nextLabel).toBe("Faixa Amarela / Preta");
   });
 });
 

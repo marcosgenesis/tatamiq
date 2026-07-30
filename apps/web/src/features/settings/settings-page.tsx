@@ -31,6 +31,7 @@ import { Textarea } from "../../components/ui/textarea";
 import { useBelts } from "../../hooks/use-belts";
 import { formatBytes, useFileUpload } from "../../hooks/use-file-upload";
 import { academyQueryKey } from "../../lib/academy-query-keys";
+import { formatCurrencyInput } from "../../lib/formatting";
 import { cn } from "../../lib/utils";
 
 type UpdateAcademyInput = components["schemas"]["UpdateAcademyDto"];
@@ -47,6 +48,7 @@ type SettingsFormState = {
   pixKeyType: PixKeyType;
   pixKey: string;
   pixCopyPaste: string;
+  dailyAmount: string;
 };
 
 const emptyForm: SettingsFormState = {
@@ -58,6 +60,7 @@ const emptyForm: SettingsFormState = {
   pixKeyType: "cpf",
   pixKey: "",
   pixCopyPaste: "",
+  dailyAmount: "",
 };
 
 function LogoUpload({
@@ -207,6 +210,9 @@ export function SettingsPage() {
         pixKeyType: (data.pixKeyType as PixKeyType) ?? "cpf",
         pixKey: data.pixKey ?? "",
         pixCopyPaste: data.pixCopyPaste ?? "",
+        dailyAmount: data.dailyAmountInCents
+          ? (data.dailyAmountInCents / 100).toFixed(2).replace(".", ",")
+          : "",
       });
     }
   }, [academyQuery.data]);
@@ -240,6 +246,7 @@ export function SettingsPage() {
       address: form.address,
       phone: form.phone,
       instagram: form.instagram,
+      dailyAmountInCents: parseCurrencyToCents(form.dailyAmount),
       ...(form.pixMode === "key"
         ? {
             pixKeyType: form.pixKeyType,
@@ -487,6 +494,42 @@ export function SettingsPage() {
 
         <Separator className="my-8" />
 
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
+          <div>
+            <h2 className="text-balance font-semibold text-foreground">Diária</h2>
+            <p className="text-pretty mt-1 text-sm leading-6 text-muted-foreground">
+              Defina o valor cobrado por dia de treino. Alunos com cobrança por diária usam este
+              valor nas novas presenças.
+            </p>
+          </div>
+          <div className="sm:max-w-md md:col-span-2">
+            <Field className="gap-2">
+              <FieldLabel htmlFor="daily-amount">Valor da diária</FieldLabel>
+              <div className="relative">
+                <span className="pointer-events-none absolute inset-y-0 start-3 flex items-center text-sm font-medium text-muted-foreground">
+                  R$
+                </span>
+                <Input
+                  id="daily-amount"
+                  inputMode="numeric"
+                  placeholder="0,00"
+                  value={form.dailyAmount}
+                  onChange={(event) =>
+                    updateForm("dailyAmount", formatCurrencyInput(event.target.value))
+                  }
+                  className="ps-10"
+                  aria-describedby="daily-amount-hint"
+                />
+              </div>
+              <p id="daily-amount-hint" className="text-xs leading-5 text-muted-foreground">
+                Deixe em branco para não disponibilizar a cobrança por diária aos alunos.
+              </p>
+            </Field>
+          </div>
+        </div>
+
+        <Separator className="my-8" />
+
         <div className="flex items-center justify-end gap-4">
           <Button type="submit" disabled={saveMutation.isPending}>
             {saveMutation.isPending ? "Salvando..." : "Salvar configurações"}
@@ -499,6 +542,16 @@ export function SettingsPage() {
       <BeltRulesSection />
     </div>
   );
+}
+
+function parseCurrencyToCents(value: string): number | null {
+  const trimmed = value.trim();
+  const normalized = trimmed.includes(",")
+    ? trimmed.replaceAll(".", "").replace(",", ".")
+    : trimmed;
+  if (!normalized) return null;
+  const amount = Number(normalized);
+  return Number.isFinite(amount) && amount > 0 ? Math.round(amount * 100) : null;
 }
 
 function BeltRulesSection() {
