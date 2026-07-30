@@ -1,3 +1,10 @@
+# [0.10.0](https://github.com/marcosgenesis/tatamiq/compare/v0.9.1...v0.10.0) (2026-07-30)
+
+
+### Features
+
+* **students:** select billing method in form ([bcdde9d](https://github.com/marcosgenesis/tatamiq/commit/bcdde9d6115dc28314c5a3779ef24ee1c4938ee8))
+
 ## [0.9.1](https://github.com/marcosgenesis/tatamiq/compare/v0.9.0...v0.9.1) (2026-07-30)
 
 
