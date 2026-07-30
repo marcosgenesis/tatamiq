@@ -176,6 +176,13 @@
       "when": 1785196800000,
       "tag": "0024_ibjjf_child_intermediate_belts",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1785428219000,
+      "tag": "0025_daily_fees",
+      "breakpoints": true
     }
   ]
 }
