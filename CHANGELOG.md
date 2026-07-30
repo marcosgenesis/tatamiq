@@ -1,3 +1,10 @@
+## [0.9.1](https://github.com/marcosgenesis/tatamiq/compare/v0.9.0...v0.9.1) (2026-07-30)
+
+
+### Bug Fixes
+
+* **billing:** resolve daily fee invalidations ([e617a9a](https://github.com/marcosgenesis/tatamiq/commit/e617a9ac6122d7b54f404213b83f2ca94e97e682))
+
 # [0.9.0](https://github.com/marcosgenesis/tatamiq/compare/v0.8.5...v0.9.0) (2026-07-30)
 
 
