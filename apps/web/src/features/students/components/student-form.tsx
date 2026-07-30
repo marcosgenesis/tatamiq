@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import type { BeltDto, Student } from "@tatamiq/contracts";
 import type { components } from "@tatamiq/contracts/generated";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { api } from "../../../api";
+import { useAppShell } from "../../../components/app-shell";
 import { Button } from "../../../components/ui/button";
 import {
   Drawer,
@@ -31,6 +32,7 @@ import {
 } from "../../../components/ui/drawer";
 import { Field, FieldError, FieldGroup, FieldLabel } from "../../../components/ui/field";
 import { Input } from "../../../components/ui/input";
+import { academyQueryKey } from "../../../lib/academy-query-keys";
 import {
   brToIsoDate,
   isFutureBrDate,
@@ -78,6 +80,7 @@ const studentFormSchema = z
       return Number.isSafeInteger(cents) && cents <= maxMonthlyAmountInCents;
     }, "Valor mensal deve ser menor ou igual a R$ 1.000.000,00."),
     monthlyDueDay: z.string(),
+    billingMethod: z.enum(["monthly", "daily"]),
     currentBeltId: z.string().min(1, "Selecione a faixa."),
     currentDegree: z.string().min(1, "Selecione o grau."),
     status: z.enum(["active", "inactive"]),
@@ -121,6 +124,7 @@ function createEmptyFormValues(): StudentFormValues {
     email: "",
     monthlyAmount: "",
     monthlyDueDay: "",
+    billingMethod: "monthly",
     currentBeltId: "",
     currentDegree: "0",
     status: "active",
@@ -142,6 +146,7 @@ function studentToFormValues(student?: Student): StudentFormValues {
     email: student.email ?? "",
     monthlyAmount: student.monthlyAmountInCents?.toString() ?? "",
     monthlyDueDay: student.monthlyDueDay?.toString() ?? "",
+    billingMethod: student.billingMethod,
     currentBeltId: student.currentBeltId,
     currentDegree: student.currentDegree.toString(),
     status: student.status,
@@ -194,6 +199,7 @@ function toStudentPayload(values: StudentFormValues, isEditing: boolean): Studen
     email: values.email,
     monthlyAmountInCents: values.monthlyAmount ? Number(values.monthlyAmount) : null,
     monthlyDueDay: values.monthlyDueDay ? Number(values.monthlyDueDay) : null,
+    billingMethod: values.billingMethod,
     currentBeltId: values.currentBeltId,
     currentDegree: Number(values.currentDegree),
     guardian,
@@ -221,6 +227,7 @@ export function StudentForm(props: {
   onClose: () => void;
 }) {
   const formId = useId();
+  const { activeAcademy } = useAppShell();
   const submitInFlightRef = useRef(false);
 
   const adultBelts = props.belts.filter((b) => b.path === "adult");
@@ -231,6 +238,16 @@ export function StudentForm(props: {
     mode: "onSubmit",
     reValidateMode: "onChange",
     defaultValues: studentToFormValues(props.student),
+  });
+  const academyQuery = useQuery({
+    queryKey: academyQueryKey(activeAcademy.id, "academy"),
+    queryFn: async () => {
+      const { data, error } = await api.GET("/academy");
+      if (error || !data)
+        throw new Error("Não foi possível carregar as configurações da Academia.");
+      return data;
+    },
+    enabled: !!activeAcademy.id,
   });
 
   const {
@@ -246,6 +263,8 @@ export function StudentForm(props: {
   const currentDegree = watch("currentDegree");
   const birthDate = watch("birthDate");
   const monthlyDueDay = watch("monthlyDueDay");
+  const billingMethod = watch("billingMethod");
+  const dailyEnabled = Boolean(academyQuery.data?.dailyAmountInCents);
   const isMinor = isMinorBirthDate(birthDate);
   const selectedBelt = props.belts.find((b) => b.id === currentBeltId);
   const isBlackBelt = selectedBelt?.slug.includes("black") ?? false;
@@ -546,66 +565,103 @@ export function StudentForm(props: {
               </section>
             )}
 
-            {/* Mensalidade */}
+            {/* Cobrança */}
             <section>
-              <SectionHeader title="Mensalidade" />
-              <FieldGroup className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Controller
-                  name="monthlyAmount"
-                  control={control}
-                  render={({ field, fieldState }) => (
-                    <Field data-invalid={fieldState.invalid}>
-                      <FieldLabel htmlFor={`${formId}-amount`}>Valor mensal</FieldLabel>
-                      <div className="relative">
-                        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                          R$
-                        </span>
-                        <Input
-                          id={`${formId}-amount`}
-                          name={field.name}
-                          ref={field.ref}
-                          onBlur={field.onBlur}
-                          inputMode="numeric"
-                          placeholder="0,00"
-                          value={maskCurrency(field.value)}
-                          onChange={(event) =>
-                            field.onChange(event.target.value.replace(/\D/g, ""))
-                          }
-                          aria-invalid={fieldState.invalid}
-                          className="h-11 rounded-2xl pl-9 pr-3"
-                        />
-                      </div>
-                      {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
-                    </Field>
-                  )}
-                />
+              <SectionHeader title="Cobrança" />
+              <Field className="mb-5 gap-2">
+                <FieldLabel>Forma de cobrança</FieldLabel>
+                <div className="grid grid-cols-2 gap-2">
+                  {(
+                    [
+                      ["monthly", "Mensalidade"],
+                      ["daily", "Diária"],
+                    ] as const
+                  ).map(([value, label]) => {
+                    const disabled = value === "daily" && !dailyEnabled;
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        disabled={disabled}
+                        aria-pressed={billingMethod === value}
+                        onClick={() => setValue("billingMethod", value, { shouldDirty: true })}
+                        className={`h-11 rounded-xl border px-3 text-sm font-medium transition ${
+                          billingMethod === value
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border bg-background text-foreground hover:border-primary/50"
+                        } disabled:cursor-not-allowed disabled:opacity-50`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {!dailyEnabled && (
+                  <p className="text-xs leading-5 text-muted-foreground">
+                    Configure o valor da diária nas Configurações da Academia para habilitar esta
+                    opção.
+                  </p>
+                )}
+              </Field>
+              {billingMethod === "monthly" && (
+                <FieldGroup className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <Controller
+                    name="monthlyAmount"
+                    control={control}
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <FieldLabel htmlFor={`${formId}-amount`}>Valor mensal</FieldLabel>
+                        <div className="relative">
+                          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                            R$
+                          </span>
+                          <Input
+                            id={`${formId}-amount`}
+                            name={field.name}
+                            ref={field.ref}
+                            onBlur={field.onBlur}
+                            inputMode="numeric"
+                            placeholder="0,00"
+                            value={maskCurrency(field.value)}
+                            onChange={(event) =>
+                              field.onChange(event.target.value.replace(/\D/g, ""))
+                            }
+                            aria-invalid={fieldState.invalid}
+                            className="h-11 rounded-2xl pl-9 pr-3"
+                          />
+                        </div>
+                        {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+                      </Field>
+                    )}
+                  />
 
-                <Field>
-                  <FieldLabel>Dia de vencimento</FieldLabel>
-                  <div className="flex flex-nowrap">
-                    {DUE_DAYS.map((day, index) => {
-                      const selected = monthlyDueDay === day;
-                      return (
-                        <button
-                          key={day}
-                          type="button"
-                          aria-pressed={selected}
-                          onClick={() => setValue("monthlyDueDay", selected ? "" : day)}
-                          className={`h-11 flex-1 border text-sm font-medium transition ${
-                            index === 0 ? "rounded-l-2xl" : ""
-                          } ${index === DUE_DAYS.length - 1 ? "rounded-r-2xl" : "border-r-0"} ${
-                            selected
-                              ? "border-primary bg-primary text-primary-foreground"
-                              : "border-border bg-background text-foreground hover:border-primary/50"
-                          }`}
-                        >
-                          {day}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </Field>
-              </FieldGroup>
+                  <Field>
+                    <FieldLabel>Dia de vencimento</FieldLabel>
+                    <div className="flex flex-nowrap">
+                      {DUE_DAYS.map((day, index) => {
+                        const selected = monthlyDueDay === day;
+                        return (
+                          <button
+                            key={day}
+                            type="button"
+                            aria-pressed={selected}
+                            onClick={() => setValue("monthlyDueDay", selected ? "" : day)}
+                            className={`h-11 flex-1 border text-sm font-medium transition ${
+                              index === 0 ? "rounded-l-2xl" : ""
+                            } ${index === DUE_DAYS.length - 1 ? "rounded-r-2xl" : "border-r-0"} ${
+                              selected
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-border bg-background text-foreground hover:border-primary/50"
+                            }`}
+                          >
+                            {day}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </Field>
+                </FieldGroup>
+              )}
             </section>
 
             {/* Graduação */}
