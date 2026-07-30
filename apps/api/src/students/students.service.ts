@@ -144,7 +144,7 @@ export class StudentsService {
         organizationId,
         studentId,
         method: input.billingMethod ?? "monthly",
-        startsOn: dateInSaoPaulo(now),
+        startsOn: input.enrollmentDate,
         endsOn: null,
         createdAt: now,
       });

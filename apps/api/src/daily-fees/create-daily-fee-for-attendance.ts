@@ -1,4 +1,12 @@
-import { type Database, dailyFees, organization, studentBillingPeriods } from "@tatamiq/database";
+import { BadRequestException } from "@nestjs/common";
+import {
+  attendances,
+  classSessions,
+  type Database,
+  dailyFees,
+  organization,
+  studentBillingPeriods,
+} from "@tatamiq/database";
 import { and, eq, gte, isNull, lte, or } from "drizzle-orm";
 
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
@@ -55,4 +63,49 @@ export function dateInSaoPaulo(value: Date): string {
   }).formatToParts(value);
   const part = (type: string) => parts.find((item) => item.type === type)?.value;
   return `${part("year")}-${part("month")}-${part("day")}`;
+}
+
+export async function resolveDailyFeeAfterAttendanceInvalidation(
+  tx: Transaction,
+  input: { organizationId: string; studentId: string; attendanceDate: string },
+): Promise<void> {
+  const remaining = await tx
+    .select({ actualStartAt: classSessions.actualStartAt })
+    .from(attendances)
+    .innerJoin(classSessions, eq(classSessions.id, attendances.classSessionId))
+    .where(
+      and(
+        eq(attendances.organizationId, input.organizationId),
+        eq(attendances.studentId, input.studentId),
+        isNull(attendances.invalidatedAt),
+      ),
+    );
+  if (
+    remaining.some(
+      (row) => row.actualStartAt && dateInSaoPaulo(row.actualStartAt) === input.attendanceDate,
+    )
+  )
+    return;
+
+  const [fee] = await tx
+    .select()
+    .from(dailyFees)
+    .where(
+      and(
+        eq(dailyFees.studentId, input.studentId),
+        eq(dailyFees.attendanceDate, input.attendanceDate),
+      ),
+    )
+    .for("update")
+    .limit(1);
+  if (!fee || fee.status === "waived") return;
+  if (fee.status !== "open") {
+    throw new BadRequestException(
+      "Esta diária já recebeu pagamento e exige compensação antes da invalidação.",
+    );
+  }
+  await tx
+    .update(dailyFees)
+    .set({ status: "waived", updatedAt: new Date() })
+    .where(eq(dailyFees.id, fee.id));
 }

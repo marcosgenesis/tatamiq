@@ -31,6 +31,7 @@ import { Textarea } from "../../components/ui/textarea";
 import { useBelts } from "../../hooks/use-belts";
 import { formatBytes, useFileUpload } from "../../hooks/use-file-upload";
 import { academyQueryKey } from "../../lib/academy-query-keys";
+import { formatCurrencyInput } from "../../lib/formatting";
 import { cn } from "../../lib/utils";
 
 type UpdateAcademyInput = components["schemas"]["UpdateAcademyDto"];
@@ -551,16 +552,6 @@ function parseCurrencyToCents(value: string): number | null {
   if (!normalized) return null;
   const amount = Number(normalized);
   return Number.isFinite(amount) && amount > 0 ? Math.round(amount * 100) : null;
-}
-
-function formatCurrencyInput(value: string): string {
-  if (!value) return "";
-  const digits = value.replace(/\D/g, "");
-  if (!digits) return "";
-  return (Number(digits) / 100).toLocaleString("pt-BR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
 }
 
 function BeltRulesSection() {
