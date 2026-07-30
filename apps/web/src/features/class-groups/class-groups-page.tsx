@@ -43,6 +43,7 @@ import { ClassGroupsMobile } from "./class-groups-mobile";
 import {
   type ClassGroupStatusFilter,
   classGroupsKeys,
+  listActiveStudentsForClassGroups,
   saveClassGroup,
   setClassGroupStatus,
 } from "./class-groups-queries";
@@ -82,13 +83,7 @@ function ClassGroupsPageDesktop() {
 
   const studentsQuery = useQuery({
     queryKey: classGroupsKeys.students(activeAcademyId),
-    queryFn: async () => {
-      const { data, error } = await api.GET("/students", {
-        params: { query: { status: "active" } },
-      });
-      if (error) throw new Error("Não foi possível carregar alunos.");
-      return data.students;
-    },
+    queryFn: listActiveStudentsForClassGroups,
     enabled: !!activeAcademyId,
   });
 
