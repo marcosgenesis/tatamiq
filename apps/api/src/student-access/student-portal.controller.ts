@@ -28,6 +28,7 @@ import {
   ConfirmQrAttendanceResponseDto,
   MarkSeenDto,
   StudentAttendancesResponseDto,
+  StudentDailyFeesResponseDto,
   StudentGraduationResponseDto,
   StudentIndicatorsResponseDto,
   StudentMeResponseDto,
@@ -72,6 +73,13 @@ export class StudentPortalController {
   async studentMonthlyFees(@ActorId() actorId: string): Promise<StudentMonthlyFeesResponseDto> {
     const meData = await this.studentAccessService.me(actorId);
     return this.monthlyFeesService.studentFees(meData.student.id, meData.academy.id);
+  }
+
+  @Get("daily-fees")
+  @ApiOkResponse({ type: StudentDailyFeesResponseDto })
+  async studentDailyFees(@ActorId() actorId: string): Promise<StudentDailyFeesResponseDto> {
+    const meData = await this.studentAccessService.me(actorId);
+    return this.portalService.dailyFees(meData.student.id, meData.academy.id);
   }
 
   @Post("monthly-fees/:id/upload-url")

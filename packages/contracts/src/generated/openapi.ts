@@ -884,6 +884,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/student/daily-fees": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["StudentPortalController_studentDailyFees"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/student/monthly-fees/{id}/upload-url": {
         parameters: {
             query?: never;
@@ -2599,6 +2615,17 @@ export interface components {
                     /** Format: date-time */
                     createdAt: string;
                 } | null;
+            }[];
+        };
+        StudentDailyFeesResponseDto: {
+            fees: {
+                id: string;
+                attendanceDate: string;
+                amountInCents: number;
+                /** @enum {string} */
+                status: "open" | "paid" | "waived";
+                /** Format: date-time */
+                paidAt: string | null;
             }[];
         };
         StudentScheduleResponseDto: {
@@ -4652,6 +4679,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StudentMonthlyFeesResponseDto"];
+                };
+            };
+        };
+    };
+    StudentPortalController_studentDailyFees: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentDailyFeesResponseDto"];
                 };
             };
         };

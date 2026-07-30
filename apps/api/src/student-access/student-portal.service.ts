@@ -2,6 +2,7 @@ import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type {
   MarkSeenInput,
   StudentAttendancesResponse,
+  StudentDailyFeesResponse,
   StudentIndicatorsResponse,
   StudentScheduleResponse,
   UpdateStudentProfileInput,
@@ -13,6 +14,7 @@ import {
   classGroups,
   classSessions,
   type Database,
+  dailyFees,
   monthlyFees,
   promotions,
   studentAccess,
@@ -35,6 +37,25 @@ import {
 @Injectable()
 export class StudentPortalService {
   constructor(@Inject(DATABASE) private readonly db: Database) {}
+
+  async dailyFees(studentId: string, organizationId: string): Promise<StudentDailyFeesResponse> {
+    const cutoff = new Date();
+    cutoff.setUTCFullYear(cutoff.getUTCFullYear() - 1);
+
+    const rows = await this.db
+      .select()
+      .from(dailyFees)
+      .where(
+        and(
+          eq(dailyFees.studentId, studentId),
+          eq(dailyFees.organizationId, organizationId),
+          gte(dailyFees.attendanceDate, cutoff.toISOString().slice(0, 10)),
+        ),
+      )
+      .orderBy(desc(dailyFees.attendanceDate));
+
+    return projectStudentDailyFees(rows);
+  }
 
   async schedule(studentId: string): Promise<StudentScheduleResponse> {
     const groupLinks = await this.db
@@ -289,10 +310,18 @@ export class StudentPortalService {
     const lastSeenGraduation = access.lastSeenGraduationAt ?? access.createdAt;
     const lastSeenSchedule = access.lastSeenScheduleAt ?? access.createdAt;
 
-    const [feesResult] = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(monthlyFees)
-      .where(and(eq(monthlyFees.studentId, studentId), gte(monthlyFees.updatedAt, lastSeenFees)));
+    const [monthlyFeesResult, dailyFeesResult] = await Promise.all([
+      this.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(monthlyFees)
+        .where(and(eq(monthlyFees.studentId, studentId), gte(monthlyFees.updatedAt, lastSeenFees)))
+        .then(([result]) => result),
+      this.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(dailyFees)
+        .where(and(eq(dailyFees.studentId, studentId), gte(dailyFees.updatedAt, lastSeenFees)))
+        .then(([result]) => result),
+    ]);
 
     const [notesResult] = await this.db
       .select({ count: sql<number>`count(*)::int` })
@@ -345,7 +374,7 @@ export class StudentPortalService {
     }
 
     return {
-      hasNewFees: (feesResult?.count ?? 0) > 0,
+      hasNewFees: (monthlyFeesResult?.count ?? 0) > 0 || (dailyFeesResult?.count ?? 0) > 0,
       hasNewNotes: (notesResult?.count ?? 0) > 0,
       hasNewPromotion: (promoResult?.count ?? 0) > 0,
       hasCancelledClass,
@@ -388,6 +417,20 @@ export function projectStudentAttendanceHistory(
       isOutOfGroup: !activeClassGroupIds.has(r.classGroupId),
       invalidatedAt: r.attendance.invalidatedAt?.toISOString() ?? null,
       createdAt: r.attendance.createdAt.toISOString(),
+    })),
+  };
+}
+
+export function projectStudentDailyFees(
+  rows: InferSelectModel<typeof dailyFees>[],
+): StudentDailyFeesResponse {
+  return {
+    fees: rows.map((fee) => ({
+      id: fee.id,
+      attendanceDate: fee.attendanceDate,
+      amountInCents: fee.amountInCents,
+      status: fee.status as "open" | "paid" | "waived",
+      paidAt: fee.paidAt?.toISOString() ?? null,
     })),
   };
 }

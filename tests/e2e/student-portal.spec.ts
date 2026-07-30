@@ -46,16 +46,16 @@ test("student portal renders home, schedule, attendance, graduation, and blocks 
   await expect(page.getByRole("heading", { name: "Alunos" })).toHaveCount(0);
 });
 
-test("student indicators clear after opening mensalidades", async ({ page }) => {
+test("student indicators clear after opening cobranças", async ({ page }) => {
   await page.goto("/student");
-  await expect(page.getByRole("button", { name: "Mensalidades" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Cobranças" })).toBeVisible();
 
   const before = await readStudentIndicators(page);
   expect(typeof before.hasNewFees).toBe("boolean");
 
-  await page.getByRole("button", { name: "Mensalidades" }).click();
+  await page.getByRole("button", { name: "Cobranças" }).click();
 
-  await expect(page.getByRole("heading", { name: "Mensalidades" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Cobranças" })).toBeVisible();
   await expect
     .poll(() => readStudentIndicators(page).then((result) => result.hasNewFees))
     .toBe(false);
@@ -66,8 +66,8 @@ test("student sends a receipt, updates profile, and can check in with QR", async
   page,
 }) => {
   await page.goto("/student");
-  await page.getByRole("button", { name: "Mensalidades" }).click();
-  await expect(page.getByRole("heading", { name: "Mensalidades" })).toBeVisible();
+  await page.getByRole("button", { name: "Cobranças" }).click();
+  await expect(page.getByRole("heading", { name: "Cobranças" })).toBeVisible();
 
   const receiptButton = page
     .getByRole("button", { name: /Enviar comprovante|Substituir comprovante/ })

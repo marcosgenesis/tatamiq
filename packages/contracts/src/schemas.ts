@@ -770,6 +770,21 @@ export const studentMonthlyFeesResponseSchema = z.object({
 export type StudentMonthlyFee = z.infer<typeof studentMonthlyFeeSchema>;
 export type StudentMonthlyFeesResponse = z.infer<typeof studentMonthlyFeesResponseSchema>;
 
+export const studentDailyFeeSchema = z.object({
+  id: z.string(),
+  attendanceDate: z.string(),
+  amountInCents: z.number().int().nonnegative(),
+  status: z.enum(["open", "paid", "waived"]),
+  paidAt: z.string().datetime().nullable(),
+});
+
+export const studentDailyFeesResponseSchema = z.object({
+  fees: z.array(studentDailyFeeSchema),
+});
+
+export type StudentDailyFee = z.infer<typeof studentDailyFeeSchema>;
+export type StudentDailyFeesResponse = z.infer<typeof studentDailyFeesResponseSchema>;
+
 export type MonthlyFeeStatus = z.infer<typeof monthlyFeeStatusSchema>;
 export type MonthlyFeePaymentOrigin = z.infer<typeof monthlyFeePaymentOriginSchema>;
 export type MonthlyFeeEventType = z.infer<typeof monthlyFeeEventTypeSchema>;
