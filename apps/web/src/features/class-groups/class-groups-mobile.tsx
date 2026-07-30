@@ -37,6 +37,7 @@ import { ClassGroupForm, type ClassGroupPayload } from "./class-group-form";
 import {
   type ClassGroupStatusFilter,
   classGroupsKeys,
+  listActiveStudentsForClassGroups,
   saveClassGroup,
   setClassGroupStatus,
 } from "./class-groups-queries";
@@ -84,13 +85,7 @@ export function ClassGroupsMobile() {
 
   const studentsQuery = useQuery({
     queryKey: classGroupsKeys.students(academyId),
-    queryFn: async () => {
-      const { data, error: err } = await api.GET("/students", {
-        params: { query: { status: "active" } },
-      });
-      if (err) throw new Error("Não foi possível carregar alunos.");
-      return data.students;
-    },
+    queryFn: listActiveStudentsForClassGroups,
     enabled: !!academyId,
   });
 

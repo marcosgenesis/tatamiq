@@ -4,6 +4,30 @@ import type { ClassGroupPayload } from "./class-group-form";
 
 export type ClassGroupStatusFilter = "active" | "archived" | "all";
 
+const STUDENT_PICKER_PAGE_SIZE = 100;
+
+/** Load every active student so the class-group picker can search beyond the first API page. */
+export async function listActiveStudentsForClassGroups() {
+  const students = [];
+  let page = 0;
+  let totalPages = 1;
+
+  do {
+    const { data, error } = await api.GET("/students", {
+      params: {
+        query: { status: "active", page, pageSize: STUDENT_PICKER_PAGE_SIZE },
+      },
+    });
+    if (error) throw new Error("Não foi possível carregar alunos.");
+
+    students.push(...data.students);
+    totalPages = data.pagination.totalPages;
+    page += 1;
+  } while (page < totalPages);
+
+  return students;
+}
+
 /** Create (id null) or update a class group. Canonical endpoint used by both desktop and mobile. */
 export async function saveClassGroup(id: string | null, payload: ClassGroupPayload): Promise<void> {
   if (id) {
