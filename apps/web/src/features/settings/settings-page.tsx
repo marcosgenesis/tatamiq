@@ -510,10 +510,12 @@ export function SettingsPage() {
                 </span>
                 <Input
                   id="daily-amount"
-                  inputMode="decimal"
-                  placeholder="Ex.: 30,00"
+                  inputMode="numeric"
+                  placeholder="0,00"
                   value={form.dailyAmount}
-                  onChange={(event) => updateForm("dailyAmount", event.target.value)}
+                  onChange={(event) =>
+                    updateForm("dailyAmount", formatCurrencyInput(event.target.value))
+                  }
                   className="ps-10"
                   aria-describedby="daily-amount-hint"
                 />
@@ -549,6 +551,16 @@ function parseCurrencyToCents(value: string): number | null {
   if (!normalized) return null;
   const amount = Number(normalized);
   return Number.isFinite(amount) && amount > 0 ? Math.round(amount * 100) : null;
+}
+
+function formatCurrencyInput(value: string): string {
+  if (!value) return "";
+  const digits = value.replace(/\D/g, "");
+  if (!digits) return "";
+  return (Number(digits) / 100).toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
 function BeltRulesSection() {
