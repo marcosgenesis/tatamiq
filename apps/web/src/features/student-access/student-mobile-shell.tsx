@@ -38,7 +38,7 @@ const LEFT: NavItem[] = [
   { key: "schedule", label: "Agenda", Icon: Calendar03Icon, indicator: "schedule" },
 ];
 const RIGHT: NavItem[] = [
-  { key: "fees", label: "Mensalidades", Icon: Wallet01Icon, indicator: "fees" },
+  { key: "fees", label: "Cobranças", Icon: Wallet01Icon, indicator: "fees" },
   { key: "profile", label: "Perfil", Icon: UserCircleIcon },
 ];
 
