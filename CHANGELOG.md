@@ -1,3 +1,15 @@
+# [0.9.0](https://github.com/marcosgenesis/tatamiq/compare/v0.8.5...v0.9.0) (2026-07-30)
+
+
+### Bug Fixes
+
+* **settings:** mask daily fee input ([69ce9ef](https://github.com/marcosgenesis/tatamiq/commit/69ce9ef5d8a40e4dd22958cf26dc4e40decffb4a))
+
+
+### Features
+
+* **settings:** configure academy daily fee ([165548d](https://github.com/marcosgenesis/tatamiq/commit/165548d71176b1109116230aff0dcae9ddf6f9a9))
+
 ## [0.8.5](https://github.com/marcosgenesis/tatamiq/compare/v0.8.4...v0.8.5) (2026-07-30)
 
 
