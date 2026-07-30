@@ -1,3 +1,10 @@
+## [0.8.5](https://github.com/marcosgenesis/tatamiq/compare/v0.8.4...v0.8.5) (2026-07-30)
+
+
+### Bug Fixes
+
+* **database:** register daily fees migration ([073c4f6](https://github.com/marcosgenesis/tatamiq/commit/073c4f6c8c5e1be4d6aa14d83596e4e899ad64fd))
+
 ## [0.8.4](https://github.com/marcosgenesis/tatamiq/compare/v0.8.3...v0.8.4) (2026-07-30)
 
 
