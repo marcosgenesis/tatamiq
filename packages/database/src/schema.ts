@@ -38,6 +38,7 @@ export const organization = pgTable("organization", {
   pixKeyType: text("pix_key_type"),
   pixKey: text("pix_key"),
   pixCopyPaste: text("pix_copy_paste"),
+  dailyAmountInCents: integer("daily_amount_in_cents"),
   onboardingChecklistDismissedAt: timestamp("onboarding_checklist_dismissed_at", {
     withTimezone: true,
   }),
@@ -161,6 +162,7 @@ export const students = pgTable(
     email: text("email"),
     monthlyAmountInCents: integer("monthly_amount_in_cents"),
     monthlyDueDay: integer("monthly_due_day"),
+    billingMethod: text("billing_method").notNull().default("monthly"),
     currentBeltId: text("current_belt_id")
       .notNull()
       .references(() => belts.id, { onDelete: "restrict" }),
@@ -613,6 +615,44 @@ export const monthlyFeeEvents = pgTable(
   (table) => [
     index("monthly_fee_events_monthly_fee_id_idx").on(table.monthlyFeeId),
     index("monthly_fee_events_organization_id_idx").on(table.organizationId),
+  ],
+);
+
+export const dailyFees = pgTable(
+  "daily_fees",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+    studentId: text("student_id").notNull().references(() => students.id, { onDelete: "cascade" }),
+    attendanceDate: date("attendance_date").notNull(),
+    amountInCents: integer("amount_in_cents").notNull(),
+    status: text("status").notNull().default("open"),
+    paidAt: timestamp("paid_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("daily_fees_organization_id_idx").on(table.organizationId),
+    index("daily_fees_student_id_idx").on(table.studentId),
+    index("daily_fees_status_idx").on(table.status),
+    uniqueIndex("daily_fees_student_day_uniq").on(table.studentId, table.attendanceDate),
+  ],
+);
+
+export const studentBillingPeriods = pgTable(
+  "student_billing_periods",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+    studentId: text("student_id").notNull().references(() => students.id, { onDelete: "cascade" }),
+    method: text("method").notNull(),
+    startsOn: date("starts_on").notNull(),
+    endsOn: date("ends_on"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("student_billing_periods_student_id_idx").on(table.studentId),
+    uniqueIndex("student_billing_periods_one_open_uniq").on(table.studentId).where(sql`ends_on IS NULL`),
   ],
 );
 

@@ -14,6 +14,7 @@ import {
 } from "@tatamiq/database";
 import { and, eq, isNull } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
+import { createDailyFeeForAttendance } from "../daily-fees/create-daily-fee-for-attendance";
 import { canAddAttendance, canInvalidateAttendance } from "./attendance-rules";
 
 @Injectable()
@@ -158,17 +159,24 @@ export class AttendancesService {
     const id = crypto.randomUUID();
     const now = new Date();
 
-    await this.db.insert(attendances).values({
-      id,
-      organizationId,
-      classSessionId,
-      studentId: input.studentId,
-      source: "manual",
-      invalidatedAt: null,
-      invalidatedByUserId: null,
-      invalidationReason: null,
-      createdByUserId: userId,
-      createdAt: now,
+    await this.db.transaction(async (tx) => {
+      await tx.insert(attendances).values({
+        id,
+        organizationId,
+        classSessionId,
+        studentId: input.studentId,
+        source: "manual",
+        invalidatedAt: null,
+        invalidatedByUserId: null,
+        invalidationReason: null,
+        createdByUserId: userId,
+        createdAt: now,
+      });
+      await createDailyFeeForAttendance(tx, {
+        organizationId,
+        studentId: input.studentId,
+        occurredAt: session.actualStartAt ?? now,
+      });
     });
 
     return {

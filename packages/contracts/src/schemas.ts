@@ -35,6 +35,7 @@ export const healthResponseSchema = z.object({
 export type HealthResponse = z.infer<typeof healthResponseSchema>;
 
 export const studentStatusSchema = z.enum(["active", "inactive"]);
+export const billingMethodSchema = z.enum(["monthly", "daily"]);
 export const graduationPathSchema = z.enum(["adult", "child"]);
 export const pixKeyTypeSchema = z.enum(["cpf", "email", "phone", "random"]);
 export const currentBeltSchema = z.enum([
@@ -95,6 +96,7 @@ export const studentSchema = z.object({
   email: z.string().nullable(),
   monthlyAmountInCents: z.number().int().nonnegative().nullable(),
   monthlyDueDay: z.number().int().min(1).max(31).nullable(),
+  billingMethod: billingMethodSchema,
   currentBeltId: z.string(),
   currentDegree: z.number().int().min(0).max(9),
   belt: beltSchema.nullable(),
@@ -145,6 +147,7 @@ export const createStudentSchema = z.object({
     .nullable()
     .optional(),
   monthlyDueDay: z.number().int().min(1).max(31).nullable().optional(),
+  billingMethod: billingMethodSchema.optional(),
   currentBeltId: z.string(),
   currentDegree: z.number().int().min(0).max(9),
   guardian: guardianInputSchema,
@@ -826,6 +829,7 @@ export const academyProfileSchema = z.object({
   pixKeyType: pixKeyTypeSchema.nullable(),
   pixKey: z.string().nullable(),
   pixCopyPaste: z.string().nullable(),
+  dailyAmountInCents: z.number().int().positive().nullable(),
 });
 
 export const updateAcademySchema = z.object({
@@ -836,6 +840,7 @@ export const updateAcademySchema = z.object({
   pixKeyType: pixKeyTypeSchema.nullable().optional(),
   pixKey: z.string().trim().max(140).optional().or(z.literal("")),
   pixCopyPaste: z.string().trim().max(1000).optional().or(z.literal("")),
+  dailyAmountInCents: z.number().int().positive().nullable().optional(),
 });
 
 export const academyLogoUploadResponseSchema = z.object({

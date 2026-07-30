@@ -5,6 +5,7 @@ import {
   belts,
   type Database,
   monthlyFees,
+  organization,
   preRegistrationRequests,
   promotions,
   studentAcceptances,
@@ -13,12 +14,14 @@ import {
   studentContactChanges,
   studentGuardians,
   studentNotes,
+  studentBillingPeriods,
   students,
 } from "@tatamiq/database";
 import { and, count, eq, inArray, ne, or, sql } from "drizzle-orm";
 import { BeltsService, toBeltDto } from "../belts/belts.service";
 import { DATABASE } from "../database/database.module";
 import { StudentAccessService } from "../student-access/student-access.service";
+import { dateInSaoPaulo } from "../daily-fees/create-daily-fee-for-attendance";
 import { nextInactiveAt, validateStudentInput } from "./student-rules";
 
 type StudentRow = typeof students.$inferSelect;
@@ -113,6 +116,7 @@ export class StudentsService {
     const now = new Date();
 
     await this.db.transaction(async (tx) => {
+      await this.assertDailyConfigured(tx, organizationId, input.billingMethod ?? "monthly");
       await tx.insert(students).values({
         id: studentId,
         organizationId,
@@ -125,6 +129,7 @@ export class StudentsService {
         email: emptyToNull(input.email),
         monthlyAmountInCents: input.monthlyAmountInCents ?? null,
         monthlyDueDay: input.monthlyDueDay ?? null,
+        billingMethod: input.billingMethod ?? "monthly",
         currentBeltId: input.currentBeltId,
         currentDegree: input.currentDegree,
         createdAt: now,
@@ -134,6 +139,10 @@ export class StudentsService {
       if (input.guardian) {
         await this.insertGuardian(studentId, input.guardian, tx);
       }
+      await tx.insert(studentBillingPeriods).values({
+        id: crypto.randomUUID(), organizationId, studentId, method: input.billingMethod ?? "monthly",
+        startsOn: dateInSaoPaulo(now), endsOn: null, createdAt: now,
+      });
     });
 
     return this.get(organizationId, studentId);
@@ -163,6 +172,8 @@ export class StudentsService {
     const now = new Date();
 
     await this.db.transaction(async (tx) => {
+      const nextBillingMethod = input.billingMethod ?? current.billingMethod;
+      await this.assertDailyConfigured(tx, organizationId, nextBillingMethod);
       await tx
         .update(students)
         .set({
@@ -180,6 +191,7 @@ export class StudentsService {
           email: emptyToNull(input.email),
           monthlyAmountInCents: input.monthlyAmountInCents ?? null,
           monthlyDueDay: input.monthlyDueDay ?? null,
+          billingMethod: input.billingMethod ?? current.billingMethod,
           currentBeltId: input.currentBeltId,
           currentDegree: input.currentDegree,
           updatedAt: now,
@@ -187,6 +199,11 @@ export class StudentsService {
         .where(and(eq(students.id, id), eq(students.organizationId, organizationId)));
 
       await this.replaceGuardian(id, input.guardian ?? null, tx);
+      if (nextBillingMethod !== current.billingMethod) {
+        const today = dateInSaoPaulo(now);
+        await tx.update(studentBillingPeriods).set({ endsOn: previousDate(today) }).where(and(eq(studentBillingPeriods.studentId, id), sql`${studentBillingPeriods.endsOn} IS NULL`));
+        await tx.insert(studentBillingPeriods).values({ id: crypto.randomUUID(), organizationId, studentId: id, method: nextBillingMethod, startsOn: today, endsOn: null, createdAt: now });
+      }
     });
 
     return this.get(organizationId, id);
@@ -236,6 +253,22 @@ export class StudentsService {
       .where(and(eq(students.id, id), eq(students.organizationId, organizationId)));
 
     return this.get(organizationId, id);
+  }
+
+  private async assertDailyConfigured(
+    db: ServiceDb,
+    organizationId: string,
+    billingMethod: string,
+  ): Promise<void> {
+    if (billingMethod !== "daily") return;
+    const [academy] = await db
+      .select({ dailyAmountInCents: organization.dailyAmountInCents })
+      .from(organization)
+      .where(eq(organization.id, organizationId))
+      .limit(1);
+    if (!academy?.dailyAmountInCents || academy.dailyAmountInCents <= 0) {
+      throw new BadRequestException("Configure um valor de diária antes de selecionar esta cobrança.");
+    }
   }
 
   private async assertUniqueEmail(
@@ -450,6 +483,7 @@ function toStudentDto(
     email: row.email,
     monthlyAmountInCents: row.monthlyAmountInCents,
     monthlyDueDay: row.monthlyDueDay,
+    billingMethod: row.billingMethod === "daily" ? "daily" : "monthly",
     currentBeltId: row.currentBeltId,
     currentDegree: row.currentDegree,
     belt: beltRow ? toBeltDto(beltRow) : null,
@@ -475,6 +509,12 @@ function normalizeEmail(value: string | null | undefined): string | null {
 function emptyToNull(value: string | null | undefined): string | null {
   const trimmed = value?.trim();
   return trimmed ? trimmed : null;
+}
+
+function previousDate(value: string): string {
+  const date = new Date(`${value}T12:00:00Z`);
+  date.setUTCDate(date.getUTCDate() - 1);
+  return date.toISOString().slice(0, 10);
 }
 
 function parseStatus(value: string): "active" | "inactive" {

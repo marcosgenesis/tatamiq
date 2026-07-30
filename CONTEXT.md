@@ -113,7 +113,7 @@ _Avoid_: cliente, usuário, membro
 _Avoid_: membro ativo, usuário ativo
 
 **Aluno Inativo**:
-**Aluno** mantido no histórico, removido de chamadas e da geração de mensalidades futuras, preservando mensalidades já existentes e acesso somente leitura por 12 meses; nesse período pode consultar histórico e dados visíveis, mas não confirma presença por QR, não envia comprovante Pix, não altera contato/foto e não executa ações operacionais de aluno; ao ser reativado, preserva o histórico e retoma a geração de mensalidades futuras.
+**Aluno** mantido no histórico, removido de chamadas e da geração de mensalidades ou diárias futuras, preservando cobranças já existentes e acesso somente leitura por 12 meses; nesse período pode consultar histórico e dados visíveis, mas não confirma presença por QR, não envia comprovante Pix, não altera contato/foto e não executa ações operacionais de aluno; ao ser reativado, preserva o histórico e retoma a geração de cobranças futuras conforme sua **Forma de Cobrança**.
 _Avoid_: deletado, cancelado, excluído
 
 **Aula**:
@@ -196,20 +196,60 @@ _Avoid_: conversão automática de faixa, promoção por idade
 Cobrança recorrente mensal única por aluno e mês de referência (`referenceYear` + `referenceMonth`), gerada por rotina automática diária (cron + catch-up no dashboard) para um **Aluno Ativo** 5 dias antes do vencimento, ou criada manualmente pelo instrutor para casos excepcionais (mês passado, migração), com valor snapshot do aluno no momento da geração e data de vencimento persistida (clamp ao último dia do mês quando necessário); unique constraint `(student_id, reference_year, reference_month)` garante uma por aluno/mês; mudanças no valor individual ou dia de vencimento do aluno afetam apenas mensalidades futuras.
 _Avoid_: assinatura, invoice, pagamento, plano, taxa avulsa, produto
 
+**Cobrança Financeira**:
+Registro de valor devido por um **Aluno**, que é uma **Mensalidade** ou uma **Diária**.
+_Avoid_: cobrança sem aluno, pagamento, caixa
+
+**Configuração de Diária**:
+Regra financeira definida pela **Academia**, com o valor padrão aplicável a todos os alunos cuja cobrança é por diária, que só pode ser usada após informar um valor maior que zero.
+_Avoid_: valor de diária no aluno, mensalidade diária, plano individual
+
+**Forma de Cobrança**:
+Escolha exclusiva de um **Aluno Ativo** entre mensalidade e diária, com histórico de vigência usado pela data da presença, que passa a valer imediatamente para cobranças futuras sem alterar o histórico financeiro já criado, exibindo os ajustes manuais necessários no momento da troca.
+_Avoid_: plano, duas cobranças simultâneas, assinatura
+
+**Diária**:
+Cobrança única por aluno e dia-calendário criada automaticamente pela primeira **Presença** válida de um aluno com **Forma de Cobrança** diária, preservando o valor da **Configuração de Diária** vigente naquele momento e vencendo nessa mesma data.
+_Avoid_: mensalidade diária, lançamento financeiro desconectado da presença, pacote
+
+**Pagamento de Diária**:
+Registro de um valor pago para uma **Diária**, integral ou parcial, feito pelo responsável na chamada ou solicitado pelo aluno com **Comprovante Pix** que declara o valor e é confirmado ou corrigido pelo responsável na verificação.
+_Avoid_: confirmação automática, pagamento sem diária, conciliação bancária
+
+**Histórico de Diárias**:
+Lista das diárias de um aluno visível no **Acesso do Aluno** pelos últimos 12 meses, com data da aula, valor e status, permitindo enviar **Comprovante Pix** quando estiver em aberto.
+_Avoid_: visão das cobranças de outros alunos, comprovante sem cobrança
+
+**Compensação de Diária**:
+Resolução explícita de um pagamento já recebido para uma **Diária** cuja **Presença** foi invalidada, por estorno ou crédito aplicado automaticamente à próxima diária do aluno.
+_Avoid_: apagar pagamento, reversão financeira silenciosa, ignorar valor recebido
+
+**Saldo de Diária**:
+Valor ainda devido em uma **Diária** após a aplicação de crédito ou pagamento parcial.
+_Avoid_: diária quitada sem valor integral, crédito perdido, status financeiro sem saldo
+
+**Troca de Forma de Cobrança**:
+Alteração imediata da **Forma de Cobrança** de um aluno que exige resolver explicitamente as cobranças em conflito, mantendo, dispensando ou ajustando cada uma sem mudança automática, e estornando ou aplicando à mensalidade qualquer crédito de diária pendente ao mudar para mensalidade.
+_Avoid_: transição só no mês seguinte, dupla cobrança silenciosa, alteração retroativa automática
+
+**Financeiro**:
+Área operacional da **Academia** que reúne as cobranças de **Mensalidade** e **Diária** em visões separadas e mostra as pendências de ambas no dashboard.
+_Avoid_: tela de mensalidades que também esconde diárias, caixa sem cobrança associada
+
 **Pix da Academia**:
-Chave Pix simples ou payload Pix copia-e-cola da **Academia** exibido ao aluno para pagamento manual de mensalidades na V0.
+Chave Pix simples ou payload Pix copia-e-cola da **Academia** exibido ao aluno para pagamento manual de cobranças na V0.
 _Avoid_: integração bancária, conciliação automática
 
 **Comprovante Pix**:
-Arquivo de imagem ou PDF de até 10 MB enviado pelo **Aluno** via presigned URL direto ao R2 para solicitar verificação de pagamento de uma **Mensalidade**, podendo incluir observação opcional por comprovante para o instrutor, preservado no histórico financeiro após aprovação, rejeição ou substituição; pode ser enviado mesmo sem **Pix da Academia** configurado quando a orientação de pagamento foi passada por fora pelo instrutor; múltiplos comprovantes possíveis por mensalidade, inclusive substituição pelo aluno enquanto ainda está pendente de verificação e nova tentativa após rejeição, mas aluno vê apenas o último relevante; rejeição tem motivo obrigatório inline no registro do comprovante, visível ao aluno.
+Arquivo de imagem ou PDF de até 10 MB enviado pelo **Aluno** via presigned URL direto ao R2 para solicitar verificação de pagamento de uma **Cobrança Financeira**, podendo incluir observação opcional e valor declarado por comprovante para o instrutor, preservado no histórico financeiro após aprovação, rejeição ou substituição; pode ser enviado mesmo sem **Pix da Academia** configurado quando a orientação de pagamento foi passada por fora pelo instrutor; múltiplos comprovantes possíveis por cobrança, inclusive substituição pelo aluno enquanto ainda está pendente de verificação e nova tentativa após rejeição, mas aluno vê apenas o último relevante; rejeição tem motivo obrigatório inline no registro do comprovante, visível ao aluno.
 _Avoid_: confirmação automática, recibo emitido pelo app, upload via proxy do backend
 
 **Verificação de Pagamento**:
-Análise manual feita pelo instrutor sobre um **Comprovante Pix** obrigatório, aprovando a **Mensalidade** como paga ou rejeitando a solicitação com motivo obrigatório visível ao aluno; rejeição volta status pra `open` (atrasada calculada se vencimento passou); nova tentativa permitida após rejeição; fila de verificação acessível no dashboard (card) e via filtro `under_review` na listagem de mensalidades.
+Análise manual feita pelo instrutor sobre um **Comprovante Pix** obrigatório, registrando o valor aprovado em uma **Cobrança Financeira** ou rejeitando a solicitação com motivo obrigatório visível ao aluno; rejeição volta status pra `open` (atrasada calculada se vencimento passou); nova tentativa permitida após rejeição; fila de verificação acessível no dashboard e no **Financeiro**.
 _Avoid_: conciliação bancária, pagamento automático
 
 **Pagamento Manual**:
-Marcação de uma **Mensalidade** como paga diretamente pelo instrutor, sem **Comprovante Pix** enviado pelo aluno, com observação opcional visível apenas ao instrutor.
+Registro integral ou parcial de pagamento de uma **Cobrança Financeira** diretamente pelo instrutor, sem **Comprovante Pix** enviado pelo aluno, com observação opcional visível apenas ao instrutor.
 _Avoid_: pagamento verificado, conciliação automática
 
 **Status Financeiro do Mês**:
@@ -253,6 +293,20 @@ _Avoid_: tarefa, lembrete, prontuário, workflow, comentário do aluno, exclusã
 - A **Administração da Plataforma** pode visualizar dados operacionais completos da **Academia**, incluindo arquivos privados sensíveis como fotos e **Comprovantes Pix**, preferencialmente reaproveitando telas operacionais em modo somente leitura, mas não edita diretamente alunos, turmas, mensalidades, presenças, Pix ou graduação; esse suporte ocorre por **Suporte Assistido**
 - Acesso administrativo a arquivos privados sensíveis deve registrar **Auditoria Administrativa**
 - Um **Administrador da Plataforma** pode realizar **Provisionamento de Academia** para um email de futuro ou atual **Responsável da Academia**
+- Cada **Aluno Ativo** tem exatamente uma **Forma de Cobrança** ativa: mensalidade ou diária
+- A **Forma de Cobrança** aplicável a uma **Presença** é a que estava vigente na data da presença
+- Uma **Troca de Forma de Cobrança** passa a valer imediatamente e exige decisão explícita para cada cobrança em conflito
+- Inativar um aluno exige decidir sobre cada **Diária** em aberto e estornar qualquer crédito de diária não utilizado
+- A **Configuração de Diária** da **Academia** fornece o valor padrão para alunos com **Forma de Cobrança** diária
+- Uma ou mais **Presenças** válidas de um mesmo aluno com **Forma de Cobrança** diária no mesmo dia geram uma única **Diária**
+- Uma **Diária** só é cancelada quando não resta nenhuma **Presença** válida do aluno naquele dia
+- Uma **Diária** pode ser paga manualmente na chamada ou por **Verificação de Pagamento** de um **Comprovante Pix**
+- Uma **Diária** só é quitada quando seus **Pagamentos de Diária** e créditos aplicados alcançam seu valor total
+- O **Aluno** consulta o próprio **Histórico de Diárias** no **Acesso do Aluno**
+- O **Financeiro** separa as visões de **Mensalidade** e **Diária**, mas consolida suas pendências no dashboard
+- O export do **Financeiro** permite filtrar **Mensalidade** ou **Diária** e inclui valor, pagamentos, créditos, saldo, status e origem
+- Invalidar uma **Presença** associada a uma **Diária** paga exige uma **Compensação de Diária** explícita
+- Um crédito aplicado a uma **Diária** pode deixá-la com **Saldo de Diária** em aberto
 - Na primeira versão multi-instrutor, somente **Administradores da Plataforma** adicionam ou removem **Responsáveis da Academia**; responsáveis não gerenciam outros responsáveis dentro da área da **Academia**
 - A **Adição de Responsável da Academia** preserva os responsáveis existentes e apenas amplia quem pode operar a **Academia**
 - A **Remoção de Responsável da Academia** remove um responsável específico sem substituir automaticamente por outro
