@@ -13,8 +13,8 @@ import {
   students,
 } from "@tatamiq/database";
 import { and, eq, isNull } from "drizzle-orm";
-import { DATABASE } from "../database/database.module";
 import { createDailyFeeForAttendance } from "../daily-fees/create-daily-fee-for-attendance";
+import { DATABASE } from "../database/database.module";
 import { canAddAttendance, canInvalidateAttendance } from "./attendance-rules";
 
 @Injectable()

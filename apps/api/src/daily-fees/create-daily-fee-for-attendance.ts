@@ -1,4 +1,4 @@
-import { dailyFees, organization, studentBillingPeriods, type Database } from "@tatamiq/database";
+import { type Database, dailyFees, organization, studentBillingPeriods } from "@tatamiq/database";
 import { and, eq, gte, isNull, lte, or } from "drizzle-orm";
 
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
@@ -11,14 +11,16 @@ export async function createDailyFeeForAttendance(
   const [period] = await tx
     .select({ method: studentBillingPeriods.method })
     .from(studentBillingPeriods)
-    .where(and(
-      eq(studentBillingPeriods.studentId, input.studentId),
-      eq(studentBillingPeriods.organizationId, input.organizationId),
-      lte(studentBillingPeriods.startsOn, attendanceDate),
-      or(isNull(studentBillingPeriods.endsOn), gte(studentBillingPeriods.endsOn, attendanceDate)),
-    ))
+    .where(
+      and(
+        eq(studentBillingPeriods.studentId, input.studentId),
+        eq(studentBillingPeriods.organizationId, input.organizationId),
+        lte(studentBillingPeriods.startsOn, attendanceDate),
+        or(isNull(studentBillingPeriods.endsOn), gte(studentBillingPeriods.endsOn, attendanceDate)),
+      ),
+    )
     .limit(1);
-  if (!period || period.method !== "daily") return;
+  if (period?.method !== "daily") return;
 
   const [academy] = await tx
     .select({ dailyAmountInCents: organization.dailyAmountInCents })
@@ -28,11 +30,20 @@ export async function createDailyFeeForAttendance(
   if (!academy?.dailyAmountInCents || academy.dailyAmountInCents <= 0) return;
 
   const now = new Date();
-  await tx.insert(dailyFees).values({
-    id: crypto.randomUUID(), organizationId: input.organizationId, studentId: input.studentId,
-    attendanceDate, amountInCents: academy.dailyAmountInCents, status: "open", paidAt: null,
-    createdAt: now, updatedAt: now,
-  }).onConflictDoNothing();
+  await tx
+    .insert(dailyFees)
+    .values({
+      id: crypto.randomUUID(),
+      organizationId: input.organizationId,
+      studentId: input.studentId,
+      attendanceDate,
+      amountInCents: academy.dailyAmountInCents,
+      status: "open",
+      paidAt: null,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .onConflictDoNothing();
 }
 
 export function dateInSaoPaulo(value: Date): string {

@@ -622,8 +622,12 @@ export const dailyFees = pgTable(
   "daily_fees",
   {
     id: text("id").primaryKey(),
-    organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
-    studentId: text("student_id").notNull().references(() => students.id, { onDelete: "cascade" }),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    studentId: text("student_id")
+      .notNull()
+      .references(() => students.id, { onDelete: "cascade" }),
     attendanceDate: date("attendance_date").notNull(),
     amountInCents: integer("amount_in_cents").notNull(),
     status: text("status").notNull().default("open"),
@@ -643,8 +647,12 @@ export const studentBillingPeriods = pgTable(
   "student_billing_periods",
   {
     id: text("id").primaryKey(),
-    organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
-    studentId: text("student_id").notNull().references(() => students.id, { onDelete: "cascade" }),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    studentId: text("student_id")
+      .notNull()
+      .references(() => students.id, { onDelete: "cascade" }),
     method: text("method").notNull(),
     startsOn: date("starts_on").notNull(),
     endsOn: date("ends_on"),
@@ -652,7 +660,9 @@ export const studentBillingPeriods = pgTable(
   },
   (table) => [
     index("student_billing_periods_student_id_idx").on(table.studentId),
-    uniqueIndex("student_billing_periods_one_open_uniq").on(table.studentId).where(sql`ends_on IS NULL`),
+    uniqueIndex("student_billing_periods_one_open_uniq")
+      .on(table.studentId)
+      .where(sql`ends_on IS NULL`),
   ],
 );
 

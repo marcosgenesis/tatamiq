@@ -11,17 +11,17 @@ import {
   studentAcceptances,
   studentAccess,
   studentAccessInvites,
+  studentBillingPeriods,
   studentContactChanges,
   studentGuardians,
   studentNotes,
-  studentBillingPeriods,
   students,
 } from "@tatamiq/database";
 import { and, count, eq, inArray, ne, or, sql } from "drizzle-orm";
 import { BeltsService, toBeltDto } from "../belts/belts.service";
+import { dateInSaoPaulo } from "../daily-fees/create-daily-fee-for-attendance";
 import { DATABASE } from "../database/database.module";
 import { StudentAccessService } from "../student-access/student-access.service";
-import { dateInSaoPaulo } from "../daily-fees/create-daily-fee-for-attendance";
 import { nextInactiveAt, validateStudentInput } from "./student-rules";
 
 type StudentRow = typeof students.$inferSelect;
@@ -140,8 +140,13 @@ export class StudentsService {
         await this.insertGuardian(studentId, input.guardian, tx);
       }
       await tx.insert(studentBillingPeriods).values({
-        id: crypto.randomUUID(), organizationId, studentId, method: input.billingMethod ?? "monthly",
-        startsOn: dateInSaoPaulo(now), endsOn: null, createdAt: now,
+        id: crypto.randomUUID(),
+        organizationId,
+        studentId,
+        method: input.billingMethod ?? "monthly",
+        startsOn: dateInSaoPaulo(now),
+        endsOn: null,
+        createdAt: now,
       });
     });
 
@@ -201,8 +206,24 @@ export class StudentsService {
       await this.replaceGuardian(id, input.guardian ?? null, tx);
       if (nextBillingMethod !== current.billingMethod) {
         const today = dateInSaoPaulo(now);
-        await tx.update(studentBillingPeriods).set({ endsOn: previousDate(today) }).where(and(eq(studentBillingPeriods.studentId, id), sql`${studentBillingPeriods.endsOn} IS NULL`));
-        await tx.insert(studentBillingPeriods).values({ id: crypto.randomUUID(), organizationId, studentId: id, method: nextBillingMethod, startsOn: today, endsOn: null, createdAt: now });
+        await tx
+          .update(studentBillingPeriods)
+          .set({ endsOn: previousDate(today) })
+          .where(
+            and(
+              eq(studentBillingPeriods.studentId, id),
+              sql`${studentBillingPeriods.endsOn} IS NULL`,
+            ),
+          );
+        await tx.insert(studentBillingPeriods).values({
+          id: crypto.randomUUID(),
+          organizationId,
+          studentId: id,
+          method: nextBillingMethod,
+          startsOn: today,
+          endsOn: null,
+          createdAt: now,
+        });
       }
     });
 
@@ -267,7 +288,9 @@ export class StudentsService {
       .where(eq(organization.id, organizationId))
       .limit(1);
     if (!academy?.dailyAmountInCents || academy.dailyAmountInCents <= 0) {
-      throw new BadRequestException("Configure um valor de diária antes de selecionar esta cobrança.");
+      throw new BadRequestException(
+        "Configure um valor de diária antes de selecionar esta cobrança.",
+      );
     }
   }
 
