@@ -18,6 +18,7 @@ import { Skeleton } from "../../components/ui/skeleton";
 import { authClient } from "../../lib/auth-client";
 import { studentQueryKey } from "../../lib/session-query-keys";
 import { getInitials } from "../student-access/student-mobile-shell";
+import { StudentPwaInstallGuide } from "../student-access/student-pwa-install-guide";
 import { BeltVisual } from "./components/belt-visual";
 import { beltProgress } from "./lib/belt-progress";
 import { toGraduationInput } from "./lib/graduation-response";
@@ -191,6 +192,7 @@ export function StudentProfileSection() {
             onClick={() => navigate({ to: "/student/graduation" })}
           />
           <AccountRow icon={Settings01Icon} label="Preferências" onClick={() => {}} />
+          <StudentPwaInstallGuide variant="row" />
         </div>
       </section>
 
