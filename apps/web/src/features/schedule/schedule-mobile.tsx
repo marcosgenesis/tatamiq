@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import type { ScheduleOccurrence } from "@tatamiq/contracts";
 import {
   ArrowLeft01Icon,
   ArrowRight01Icon,
@@ -24,6 +24,12 @@ import { academyQueryKey } from "@/lib/academy-query-keys";
 import { cn } from "@/lib/utils";
 import { AdHocClassForm, type AdHocFormState } from "./ad-hoc-class-form";
 import { type CreateAdHocPayload, createAdHocClass } from "./schedule-api";
+import {
+  ScheduleOccurrenceDetail,
+  useDeleteAdHocMutation,
+  useScheduleOccurrenceMutation,
+  useStartClassMutation,
+} from "./schedule-occurrence-detail";
 
 const WEEK_INITIALS = ["S", "T", "Q", "Q", "S", "S", "D"]; // Mon..Sun
 
@@ -60,12 +66,12 @@ function timelinePill(status: string): { tone: StatusTone; label: string; dot: b
 
 export function ScheduleMobile() {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
   const { activeAcademy } = useAppShell();
   const academyId = activeAcademy.id;
 
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedOccurrence, setSelectedOccurrence] = useState<ScheduleOccurrence | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<AdHocFormState>({
     classGroupId: "",
@@ -110,6 +116,9 @@ export function ScheduleMobile() {
     },
     onError: (e) => setError(e instanceof Error ? e.message : "Erro ao criar aula avulsa."),
   });
+  const occurrenceMutation = useScheduleOccurrenceMutation();
+  const startClassMutation = useStartClassMutation();
+  const deleteAdHocMutation = useDeleteAdHocMutation(() => setSelectedOccurrence(null));
 
   const weekDays = useMemo(() => {
     const monday = mondayOf(selectedDate);
@@ -249,17 +258,12 @@ export function ScheduleMobile() {
             const pill = timelinePill(occ.status);
             const isActive = occ.status === "active";
             const isCancelled = occ.status === "cancelled";
-            const canOpen = !!occ.classSessionId && (isActive || occ.status === "ended");
             return (
               <button
                 type="button"
                 key={occ.id}
-                disabled={!canOpen}
-                onClick={() => {
-                  if (occ.classSessionId)
-                    navigate({ to: "/classes/$classId", params: { classId: occ.classSessionId } });
-                }}
-                className="flex items-start gap-3 text-left disabled:cursor-default"
+                onClick={() => setSelectedOccurrence(occ)}
+                className="flex items-start gap-3 text-left"
               >
                 <div className="flex w-[46px] shrink-0 flex-col pt-0.5">
                   <span
@@ -328,6 +332,40 @@ export function ScheduleMobile() {
               setForm((current) => ({ ...current, scheduledStartAt: toDatetimeLocal(new Date()) }))
             }
           />
+        </DrawerContent>
+      </Drawer>
+
+      {/* Occurrence details and actions */}
+      <Drawer
+        direction="right"
+        open={!!selectedOccurrence}
+        onOpenChange={(open) => {
+          if (!open) setSelectedOccurrence(null);
+        }}
+      >
+        <DrawerContent>
+          {selectedOccurrence ? (
+            <ScheduleOccurrenceDetail
+              occurrence={selectedOccurrence}
+              onAction={(action) => {
+                occurrenceMutation.mutate(
+                  { occurrence: selectedOccurrence, action },
+                  { onSuccess: () => setSelectedOccurrence(null) },
+                );
+              }}
+              onStart={() => {
+                startClassMutation.mutate(selectedOccurrence);
+                setSelectedOccurrence(null);
+              }}
+              onDelete={() => {
+                if (selectedOccurrence.classSessionId) {
+                  deleteAdHocMutation.mutate(selectedOccurrence.classSessionId);
+                }
+              }}
+              isStarting={startClassMutation.isPending}
+              isDeleting={deleteAdHocMutation.isPending}
+            />
+          ) : null}
         </DrawerContent>
       </Drawer>
     </MobileScreen>
