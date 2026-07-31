@@ -1,3 +1,10 @@
+## [0.10.2](https://github.com/marcosgenesis/tatamiq/compare/v0.10.1...v0.10.2) (2026-07-31)
+
+
+### Bug Fixes
+
+* **web:** enable schedule actions on mobile ([80d8c6b](https://github.com/marcosgenesis/tatamiq/commit/80d8c6bcd0794b26902b1026b4348e801a72aacf))
+
 ## [0.10.1](https://github.com/marcosgenesis/tatamiq/compare/v0.10.0...v0.10.1) (2026-07-30)
 
 
