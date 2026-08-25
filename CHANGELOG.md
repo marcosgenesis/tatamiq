@@ -1,3 +1,10 @@
+# [0.11.0](https://github.com/marcosgenesis/tatamiq/compare/v0.10.3...v0.11.0) (2026-08-25)
+
+
+### Features
+
+* **landing:** add Tatamiq marketing landing page ([d7808a3](https://github.com/marcosgenesis/tatamiq/commit/d7808a34587b6376d9f47d68e336d676a5258045))
+
 ## [0.10.3](https://github.com/marcosgenesis/tatamiq/compare/v0.10.2...v0.10.3) (2026-08-21)
 
 
