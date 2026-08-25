@@ -1,0 +1,10 @@
+{
+  "extends": "../../packages/config/tsconfig.web.json",
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "baseUrl": ".",
+    "moduleResolution": "Bundler",
+    "types": ["vite/client"]
+  },
+  "include": ["src"]
+}
