@@ -1,0 +1,9 @@
+{
+  "name": "Totem Tatamiq",
+  "short_name": "Totem",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#111211",
+  "theme_color": "#111211",
+  "icons": []
+}

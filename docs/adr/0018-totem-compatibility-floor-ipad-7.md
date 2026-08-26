@@ -1,0 +1,3 @@
+# Totem compatibility floor is iPad 7th generation
+
+The **Totem da Academia** will be a browser-based client with no mandatory installation, and its official Apple compatibility floor is the 7th-generation iPad. The layout must support both portrait and landscape, with the QR remaining fully visible and scannable in either orientation. This gives the team a concrete legacy device to test while preserving the goal of broad tablet support without promising behavior on arbitrarily old browsers or hardware; Android has no specific required device in scope and will be supported broadly through compatible Chromium-based browsers as validation allows.

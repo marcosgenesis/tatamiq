@@ -1892,6 +1892,118 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/totem/pair": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["TotemController_pair"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/totem/state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["TotemController_state"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/totem/classes/{id}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["TotemController_start"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/totem/classes/{id}/qr": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["TotemController_qr"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/totem/admin/pairing-code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["TotemAdminController_createPairingCode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/totem/admin/devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["TotemAdminController_devices"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/totem/admin/devices/{id}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["TotemAdminController_revoke"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3344,6 +3456,78 @@ export interface components {
         };
         PlatformBanUserBodyDto: {
             reason?: string;
+        };
+        PairTotemDto: {
+            code: string;
+            /** @default  */
+            name: string;
+        };
+        TotemPairResponseDto: {
+            deviceToken: string;
+            deviceName: string;
+            academyName: string;
+        };
+        TotemStateDto: {
+            deviceName: string;
+            academyName: string;
+            activeClasses: {
+                id: string;
+                classGroupId: string;
+                classGroupName: string;
+                /** Format: date-time */
+                scheduledStartAt: string;
+                durationMinutes: number;
+                /** @enum {string} */
+                status: "scheduled" | "active" | "ended" | "cancelled";
+                /** Format: date-time */
+                actualStartAt: string | null;
+            }[];
+            today: {
+                id: string;
+                classGroupId: string;
+                classGroupName: string;
+                /** Format: date-time */
+                scheduledStartAt: string;
+                durationMinutes: number;
+                /** @enum {string} */
+                status: "scheduled" | "active" | "ended" | "cancelled";
+                /** Format: date-time */
+                actualStartAt: string | null;
+            }[];
+        };
+        TotemOccurrenceDto: {
+            id: string;
+            classGroupId: string;
+            classGroupName: string;
+            /** Format: date-time */
+            scheduledStartAt: string;
+            durationMinutes: number;
+            /** @enum {string} */
+            status: "scheduled" | "active" | "ended" | "cancelled";
+            /** Format: date-time */
+            actualStartAt: string | null;
+        };
+        TotemQrResponseDto: {
+            /** Format: uri */
+            url: string;
+            /** Format: date-time */
+            issuedAt: string;
+            /** Format: date-time */
+            expiresAt: string;
+        };
+        TotemPairingCodeResponseDto: {
+            code: string;
+            expiresInMinutes: number;
+        };
+        TotemDeviceDto: {
+            id: string;
+            name: string;
+            /** Format: date-time */
+            revokedAt: string | null;
+            /** Format: date-time */
+            lastSeenAt: string | null;
+            /** Format: date-time */
+            createdAt: string;
         };
     };
     responses: never;
@@ -6170,6 +6354,147 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PlatformActionResultDto"];
                 };
+            };
+        };
+    };
+    TotemController_pair: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PairTotemDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TotemPairResponseDto"];
+                };
+            };
+        };
+    };
+    TotemController_state: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TotemStateDto"];
+                };
+            };
+        };
+    };
+    TotemController_start: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TotemOccurrenceDto"];
+                };
+            };
+        };
+    };
+    TotemController_qr: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TotemQrResponseDto"];
+                };
+            };
+        };
+    };
+    TotemAdminController_createPairingCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TotemPairingCodeResponseDto"];
+                };
+            };
+        };
+    };
+    TotemAdminController_devices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TotemDeviceDto"][];
+                };
+            };
+        };
+    };
+    TotemAdminController_revoke: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: unknown;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

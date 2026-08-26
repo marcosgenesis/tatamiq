@@ -17,6 +17,7 @@ import { ScheduleModule } from "./schedule/schedule.module";
 import { StudentAccessModule } from "./student-access/student-access.module";
 import { StudentNotesModule } from "./student-notes/student-notes.module";
 import { StudentsModule } from "./students/students.module";
+import { TotemModule } from "./totem/totem.module";
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { StudentsModule } from "./students/students.module";
     MonthlyFeesModule,
     GraduationModule,
     PlatformModule,
+    TotemModule,
   ],
   controllers: [HealthController],
 })

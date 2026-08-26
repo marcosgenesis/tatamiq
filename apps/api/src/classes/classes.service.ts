@@ -91,7 +91,13 @@ export class ClassesService {
   }
 
   async getActive(organizationId: string): Promise<ClassSession | null> {
-    const [row] = await this.db
+    const rows = await this.getActiveMany(organizationId);
+    return rows[0] ?? null;
+  }
+
+  async getActiveMany(organizationId: string): Promise<ClassSession[]> {
+    await this.expireDueClasses(organizationId);
+    const rows = await this.db
       .select({
         id: classSessions.id,
         classGroupId: classSessions.classGroupId,
@@ -108,21 +114,41 @@ export class ClassesService {
       .where(
         and(eq(classSessions.organizationId, organizationId), eq(classSessions.status, "active")),
       )
-      .limit(1);
+      .limit(100);
 
-    if (!row) return null;
+    return rows.map((row) => this.toActiveSession(row));
+  }
 
-    return {
-      id: row.id,
-      classGroupId: row.classGroupId,
-      classGroupName: row.classGroupName,
-      kind: row.kind as "recurring" | "ad_hoc",
-      status: "active",
-      scheduledStartAt: row.scheduledStartAt.toISOString(),
-      actualStartAt: row.actualStartAt?.toISOString() ?? null,
-      durationMinutes: row.durationMinutes,
-      endedAt: null,
-    };
+  async expireDueClasses(organizationId?: string): Promise<number> {
+    const activeRows = await this.db
+      .select({
+        id: classSessions.id,
+        organizationId: classSessions.organizationId,
+        actualStartAt: classSessions.actualStartAt,
+        durationMinutes: classSessions.durationMinutes,
+      })
+      .from(classSessions)
+      .where(
+        organizationId
+          ? and(
+              eq(classSessions.organizationId, organizationId),
+              eq(classSessions.status, "active"),
+            )
+          : eq(classSessions.status, "active"),
+      );
+    const now = new Date();
+    let expired = 0;
+    for (const row of activeRows) {
+      if (!row.actualStartAt) continue;
+      const endAt = row.actualStartAt.getTime() + row.durationMinutes * 60_000;
+      if (endAt > now.getTime()) continue;
+      await this.db
+        .update(classSessions)
+        .set({ status: "ended", endedAt: new Date(endAt), updatedAt: now })
+        .where(and(eq(classSessions.id, row.id), eq(classSessions.status, "active")));
+      expired += 1;
+    }
+    return expired;
   }
 
   async getById(organizationId: string, id: string): Promise<ClassSession> {
@@ -199,6 +225,30 @@ export class ClassesService {
       classGroupName: row.classGroupName,
       kind: row.kind as "recurring" | "ad_hoc",
       status: row.status as "scheduled" | "active" | "ended" | "cancelled",
+      scheduledStartAt: row.scheduledStartAt.toISOString(),
+      actualStartAt: row.actualStartAt?.toISOString() ?? null,
+      durationMinutes: row.durationMinutes,
+      endedAt: row.endedAt?.toISOString() ?? null,
+    };
+  }
+
+  private toActiveSession(row: {
+    id: string;
+    classGroupId: string;
+    classGroupName: string;
+    kind: string;
+    status: string;
+    scheduledStartAt: Date;
+    actualStartAt: Date | null;
+    durationMinutes: number;
+    endedAt: Date | null;
+  }): ClassSession {
+    return {
+      id: row.id,
+      classGroupId: row.classGroupId,
+      classGroupName: row.classGroupName,
+      kind: row.kind as "recurring" | "ad_hoc",
+      status: "active",
       scheduledStartAt: row.scheduledStartAt.toISOString(),
       actualStartAt: row.actualStartAt?.toISOString() ?? null,
       durationMinutes: row.durationMinutes,
