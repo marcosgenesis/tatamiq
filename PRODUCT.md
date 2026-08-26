@@ -1,5 +1,9 @@
 # Product
 
+## Public name
+
+The product's public name is **App do Sensei**. Older internal references may still use **Tatamiq** while the rename is completed across the repository.
+
 ## Register
 
 product
@@ -8,7 +12,7 @@ product
 Jiu-jitsu / martial-arts academy students. They open the app on their phone, mostly inside or right after class: to check in (QR), see when their next class is, confirm their belt progress, and keep monthly payments current. Low-frequency, high-emotion moments (a promotion, a paid month) matter more than dense data work. Secondary audience: instructors/admins manage turmas and students from a desktop panel (separate area, already redesigned).
 
 ## Product Purpose
-Tatamiq runs a martial-arts academy: turmas (class groups), attendance, belt graduation, and monthly fees. The student portal is the athlete-facing slice. Success = a student can check in, know their next class, and track belt + payment status in under 10 seconds, on mobile, without help.
+App do Sensei runs a martial-arts academy: turmas (class groups), attendance, belt graduation, and monthly fees. The student portal is the athlete-facing slice. Success = a student can check in, know their next class, and track belt + payment status in under 10 seconds, on mobile, without help.
 
 ## Brand Personality
 Athletic, earned, disciplined. Three words: focused, energetic, proud. The interface should feel like progress on the mats: the belt is the hero, every degree is a milestone. Vibrant, not corporate. Confident orange against clean neutrals.
