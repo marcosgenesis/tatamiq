@@ -26,3 +26,7 @@
 ## Domain Behavior Guardrails
 1. **[2026-07-17] Academy-facing UI should use project vocabulary exactly**
    Do instead: prefer `Academia`, `Responsável da Academia`, and `Configuração Inicial da Academia` over generic `organization` or `owner` wording in user-visible strings.
+
+## User Directives
+1. **[2026-07-31] Expo prioritizes the student experience in the MVP**
+   Do instead: treat the Expo app as the primary mobile surface for `Acesso do Aluno`, keep the PWA as a supported fallback, and leave the Academy operational panel outside this effort.

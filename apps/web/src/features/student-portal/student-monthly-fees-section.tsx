@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { StudentMeResponse, StudentMonthlyFee } from "@tatamiq/contracts";
+import type { StudentDailyFee, StudentMeResponse, StudentMonthlyFee } from "@tatamiq/contracts";
 import { Camera01Icon, CheckmarkCircle03Icon } from "hugeicons-react";
 import { useState } from "react";
 import { api } from "../../api";
@@ -7,7 +7,6 @@ import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Skeleton } from "../../components/ui/skeleton";
-import { Textarea } from "../../components/ui/textarea";
 import { authClient } from "../../lib/auth-client";
 import { formatCurrency, formatDate, monthNames } from "../../lib/formatting";
 import { studentQueryKey } from "../../lib/session-query-keys";
@@ -32,6 +31,16 @@ export function StudentMonthlyFeesSection({ me }: { me: StudentMeResponse }) {
     queryFn: async () => {
       const { data, error } = await api.GET("/student/monthly-fees");
       if (error) throw new Error("Não foi possível carregar mensalidades.");
+      return data;
+    },
+    enabled: !!sessionUserId,
+  });
+
+  const dailyFeesQuery = useQuery({
+    queryKey: studentQueryKey(sessionUserId, "daily-fees"),
+    queryFn: async () => {
+      const { data, error } = await api.GET("/student/daily-fees");
+      if (error) throw new Error("Não foi possível carregar diárias.");
       return data;
     },
     enabled: !!sessionUserId,
@@ -65,43 +74,70 @@ export function StudentMonthlyFeesSection({ me }: { me: StudentMeResponse }) {
   }
 
   const fees = feesQuery.data?.fees ?? [];
+  const dailyFees = dailyFeesQuery.data?.fees ?? [];
+  const isLoading = feesQuery.isLoading || dailyFeesQuery.isLoading;
+  const isError = feesQuery.isError || dailyFeesQuery.isError;
 
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-[1.55rem] font-bold tracking-tight">Mensalidades</h1>
-        <p className="text-sm font-medium text-muted-foreground">Mantenha seus pagamentos em dia</p>
+        <h1 className="text-[1.55rem] font-bold tracking-tight">Cobranças</h1>
+        <p className="text-sm font-medium text-muted-foreground">
+          Mensalidades e diárias em um só lugar
+        </p>
       </header>
 
-      {feesQuery.isLoading ? (
+      {isLoading ? (
         <div className="space-y-3">
           <Skeleton className="h-32 w-full rounded-2xl" />
           <Skeleton className="h-20 w-full rounded-2xl" />
         </div>
       ) : null}
-      {feesQuery.isError ? (
-        <p className="text-sm text-destructive">Não foi possível carregar mensalidades.</p>
+      {isError ? (
+        <p className="text-sm text-destructive">Não foi possível carregar suas cobranças.</p>
       ) : null}
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-      {!feesQuery.isLoading && !feesQuery.isError && fees.length === 0 ? (
+      {!isLoading && !isError && fees.length === 0 && dailyFees.length === 0 ? (
         <StudentEmptyState
           icon={CheckmarkCircle03Icon}
           tone="success"
           title="Nenhuma cobrança em aberto"
-          description="Assim que sua matrícula gerar uma mensalidade, ela aparece aqui para pagamento e envio de comprovante."
+          description="Quando uma mensalidade ou diária for gerada, ela aparecerá aqui para pagamento."
         />
       ) : null}
 
-      <div className="space-y-3">
-        {fees.map((fee) => (
-          <FeeCard
-            key={fee.id}
-            fee={fee}
-            onUpload={() => startUpload(fee)}
-            onOpen={() => openReceipt(fee)}
-          />
-        ))}
-      </div>
+      {dailyFees.length > 0 ? (
+        <section className="space-y-3" aria-labelledby="daily-fees-title">
+          <div>
+            <h2 id="daily-fees-title" className="font-bold">
+              Diárias
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Uma cobrança por dia em que você treinou
+            </p>
+          </div>
+          {dailyFees.map((fee) => (
+            <DailyFeeCard key={fee.id} fee={fee} />
+          ))}
+        </section>
+      ) : null}
+
+      {fees.length > 0 ? (
+        <section className="space-y-3" aria-labelledby="monthly-fees-title">
+          <h2 id="monthly-fees-title" className="font-bold">
+            Mensalidades
+          </h2>
+          {fees.map((fee) => (
+            <FeeCard
+              key={fee.id}
+              fee={fee}
+              onUpload={() => startUpload(fee)}
+              onOpen={() => openReceipt(fee)}
+            />
+          ))}
+        </section>
+      ) : null}
 
       {me.academy.pixCopyPaste || me.academy.pixKey ? (
         <Card>
@@ -116,7 +152,10 @@ export function StudentMonthlyFeesSection({ me }: { me: StudentMeResponse }) {
                 <p className="break-all">{me.academy.pixKey}</p>
               )}
             </div>
-            <p className="text-muted-foreground">Envie imagem ou PDF do comprovante, até 10 MB.</p>
+            <p className="text-muted-foreground">
+              Use esta chave para pagar suas cobranças. Para mensalidades, você também pode enviar
+              imagem ou PDF do comprovante, até 10 MB.
+            </p>
           </CardContent>
         </Card>
       ) : null}
@@ -127,6 +166,38 @@ export function StudentMonthlyFeesSection({ me }: { me: StudentMeResponse }) {
           onCancel={() => setSelectedFee(null)}
           onUploaded={handleReceiptUploaded}
         />
+      ) : null}
+    </div>
+  );
+}
+
+function DailyFeeCard({ fee }: { fee: StudentDailyFee }) {
+  const paid = fee.status === "paid";
+  const waived = fee.status === "waived";
+  const label = paid ? "Paga" : waived ? "Dispensada" : "Pendente";
+  const className = paid
+    ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-700"
+    : waived
+      ? "border-border bg-muted text-muted-foreground"
+      : "border-amber-500/20 bg-amber-500/10 text-amber-700";
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-[1.1rem] shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[0.78rem] font-bold text-muted-foreground">
+            Treino de {formatDate(fee.attendanceDate)}
+          </p>
+          <p className="mt-1.5 text-[1.6rem] font-bold leading-none">
+            {formatCurrency(fee.amountInCents)}
+          </p>
+        </div>
+        <Badge className={className}>{label}</Badge>
+      </div>
+      {!paid && !waived ? (
+        <p className="mt-2.5 text-xs font-semibold text-muted-foreground">
+          Pague pelo Pix da academia exibido abaixo.
+        </p>
       ) : null}
     </div>
   );

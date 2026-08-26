@@ -33,7 +33,7 @@ type StudentDashboardData = StudentMeResponse;
 
 const tabs: Array<{ key: Tab; label: string }> = [
   { key: "home", label: "Início" },
-  { key: "fees", label: "Mensalidades" },
+  { key: "fees", label: "Cobranças" },
   { key: "schedule", label: "Agenda" },
   { key: "attendance", label: "Presenças" },
   { key: "graduation", label: "Graduação" },
