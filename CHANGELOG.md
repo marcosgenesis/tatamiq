@@ -1,3 +1,15 @@
+# [0.13.0](https://github.com/marcosgenesis/tatamiq/compare/v0.12.0...v0.13.0) (2026-08-26)
+
+
+### Bug Fixes
+
+* landing wpp ([604df61](https://github.com/marcosgenesis/tatamiq/commit/604df61099944daddd33ffde09ed0a7720a99e4e))
+
+
+### Features
+
+* **landing:** usa número comercial de WhatsApp nos CTAs ([07802d7](https://github.com/marcosgenesis/tatamiq/commit/07802d75a44d2cef1ccf83e36d97a5aa4be7c23c))
+
 # [0.12.0](https://github.com/marcosgenesis/tatamiq/compare/v0.11.0...v0.12.0) (2026-08-26)
 
 
