@@ -1,5 +1,5 @@
 {
-  "name": "@tatamiq/landing",
+  "name": "@appdosensei/landing",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -11,7 +11,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@fontsource-variable/geist": "^5.2.9",
+    "@fontsource/barlow-condensed": "^5.2.8",
+    "@fontsource-variable/archivo": "^5.2.8",
     "lucide-react": "^1.16.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6"

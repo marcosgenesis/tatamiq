@@ -1,10 +1,11 @@
-# Tatamiq landing
+# App do Sensei landing
 
-Landing page comercial do Tatamiq, mantida como uma aplicação independente do app autenticado em `apps/web`.
+Landing comercial independente do app autenticado em `apps/web`.
+
+## Desenvolvimento
 
 ```bash
-pnpm --filter @tatamiq/landing dev
-pnpm --filter @tatamiq/landing build
+pnpm --filter @appdosensei/landing dev
 ```
 
-Antes de publicar, substitua o destino do WhatsApp em `src/App.tsx` (`whatsappHref`) pelo número comercial da equipe.
+Antes de publicar, substitua `whatsappHref` em `src/App.tsx` pelo número comercial real e confirme os preços exibidos.
