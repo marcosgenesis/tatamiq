@@ -10,6 +10,7 @@ import type { ComponentType, ReactNode } from "react";
 import { useIsMobile } from "../../hooks/use-mobile";
 import { cn } from "../../lib/utils";
 import { IndicatorDot } from "../student-portal/student-indicators";
+import { StudentPwaInstallGuide } from "./student-pwa-install-guide";
 
 export type StudentMobileTab = "home" | "schedule" | "fees" | "profile";
 
@@ -61,6 +62,7 @@ export function StudentMobileShell({
           Acesso somente leitura: cadastro inativo.
         </div>
       ) : null}
+      {activeTab !== "profile" ? <StudentPwaInstallGuide variant="banner" /> : null}
       <div className="pb-28">{children}</div>
       <BottomNav
         activeTab={activeTab}

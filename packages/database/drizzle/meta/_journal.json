@@ -183,6 +183,13 @@
       "when": 1785428219000,
       "tag": "0025_daily_fees",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1787760000000,
+      "tag": "0026_totem_devices",
+      "breakpoints": true
     }
   ]
 }
