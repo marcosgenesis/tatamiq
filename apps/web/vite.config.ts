@@ -6,15 +6,15 @@ import { defineConfig } from "vite";
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   esbuild: {
-    target: "es2022",
+    target: "es2017",
   },
   optimizeDeps: {
     esbuildOptions: {
-      target: "es2022",
+      target: "es2017",
     },
   },
   build: {
-    target: "es2022",
+    target: "es2017",
   },
   resolve: {
     alias: {

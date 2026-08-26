@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
+    "test:legacy-safari": "pnpm build && node scripts/check-legacy-safari.mjs",
     "lint": "biome check .",
     "preview": "vite preview"
   },
@@ -38,6 +39,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "core-js": "^3.50.0",
     "date-fns": "^4.3.0",
     "hugeicons-react": "^0.4.0",
     "lucide-react": "^1.16.0",
@@ -66,6 +68,7 @@
     "@types/node": "^24.12.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "acorn": "8.16.0",
     "typescript": "^5.9.3",
     "vitest": "^3.2.6"
   }
