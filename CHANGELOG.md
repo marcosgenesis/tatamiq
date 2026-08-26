@@ -1,3 +1,15 @@
+# [0.12.0](https://github.com/marcosgenesis/tatamiq/compare/v0.11.0...v0.12.0) (2026-08-26)
+
+
+### Bug Fixes
+
+* **landing:** label logo for accessibility ([ba66cc8](https://github.com/marcosgenesis/tatamiq/commit/ba66cc8283dc78ed338a30948aff72baa289cdfe))
+
+
+### Features
+
+* **landing:** launch App do Sensei site ([d431812](https://github.com/marcosgenesis/tatamiq/commit/d4318123f6d67d88e8ac328a6808e137c9d32a93))
+
 # [0.11.0](https://github.com/marcosgenesis/tatamiq/compare/v0.10.3...v0.11.0) (2026-08-25)
 
 
