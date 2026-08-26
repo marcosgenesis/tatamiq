@@ -20,7 +20,8 @@ import { useEffect, useState } from "react";
 import { FaqAccordion } from "./components/faq-accordion";
 import { PricingTable } from "./components/pricing-table";
 
-const whatsappHref = "https://wa.me/5585992855994?text=Oi%20quero%20conhecer%20o%20App%20do%20Sensei";
+const whatsappHref =
+  "https://wa.me/5585992855994?text=Oi%20quero%20conhecer%20o%20App%20do%20Sensei";
 
 function Brand({ inverse = false }: { inverse?: boolean }) {
   return (
