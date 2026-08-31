@@ -1,3 +1,10 @@
+# [0.14.0](https://github.com/marcosgenesis/tatamiq/compare/v0.13.0...v0.14.0) (2026-08-31)
+
+
+### Features
+
+* **landing:** rework copy, a11y and animations for conversion polish ([3abb1f6](https://github.com/marcosgenesis/tatamiq/commit/3abb1f68dae627fa7efbc5011cad246714a1ad0f))
+
 # [0.13.0](https://github.com/marcosgenesis/tatamiq/compare/v0.12.0...v0.13.0) (2026-08-26)
 
 
