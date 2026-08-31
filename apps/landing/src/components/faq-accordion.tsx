@@ -4,27 +4,27 @@ import { useState } from "react";
 const items = [
   {
     icon: CircleHelp,
-    question: "O App do Sensei é feito só para Jiu-Jitsu?",
+    question: "Funciona para qualquer arte marcial?",
     answer:
-      "A primeira versão foi desenhada para CTs de Brazilian Jiu-Jitsu, incluindo faixas, graus e regras de graduação próprias dessa rotina.",
+      "A primeira versão foi desenhada para CTs de Brazilian Jiu-Jitsu. As regras de faixas, graus e graduação seguem essa rotina desde o início.",
   },
   {
     icon: Clock3,
-    question: "Quanto tempo leva para começar?",
+    question: "Como começo sem parar a rotina do CT?",
     answer:
-      "Você começa com a importação da sua planilha e acompanhamento próximo. A implantação entra aos poucos, sem parar a rotina do CT.",
+      "Você começa pela configuração da academia e pela importação da planilha atual. A entrada acontece aos poucos, com acompanhamento nos primeiros treinos.",
   },
   {
     icon: Smartphone,
-    question: "O aluno também usa o sistema?",
+    question: "O aluno precisa baixar outro app?",
     answer:
-      "Sim. O portal do aluno mostra próximas aulas, presenças, evolução e mensalidades, além de permitir o envio de comprovante Pix.",
+      "Não. O aluno acessa o portal pelo celular para ver próximas aulas, presenças, faixa, grau e mensalidades, além de enviar comprovante Pix.",
   },
   {
     icon: WalletCards,
-    question: "Existe fidelidade ou taxa de implantação?",
+    question: "Tenho fidelidade ou taxa de implantação?",
     answer:
-      "Não. O teste acompanhado não tem taxa de implantação e o plano mensal pode ser cancelado quando você quiser.",
+      "Não. A entrada assistida não tem taxa de implantação e o plano mensal pode ser cancelado quando você quiser.",
   },
 ];
 
@@ -54,7 +54,12 @@ export function FaqAccordion() {
               <span>{item.question}</span>
               <ChevronDown className="faq-chevron" aria-hidden="true" />
             </button>
-            <div className="faq-answer" id={`faq-answer-${index}`}>
+            <div
+              className="faq-answer"
+              id={`faq-answer-${index}`}
+              aria-hidden={!open}
+              hidden={!open}
+            >
               <p>{item.answer}</p>
             </div>
           </article>
