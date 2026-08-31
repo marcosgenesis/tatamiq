@@ -21,7 +21,7 @@ import { FaqAccordion } from "./components/faq-accordion";
 import { PricingTable } from "./components/pricing-table";
 
 const whatsappHref =
-  "https://wa.me/5585992855994?text=Oi%20quero%20conhecer%20o%20App%20do%20Sensei";
+  "https://wa.me/5585992855994?text=Oi%20quero%20ver%20uma%20demo%20do%20App%20do%20Sensei";
 
 function Brand({ inverse = false }: { inverse?: boolean }) {
   return (
@@ -69,7 +69,11 @@ function Header() {
         >
           {open ? <X /> : <Menu />}
         </button>
-        <nav className={open ? "main-nav open" : "main-nav"} id="main-navigation">
+        <nav
+          className={open ? "main-nav open" : "main-nav"}
+          id="main-navigation"
+          aria-label="Navegação principal"
+        >
           <a href="#produto" onClick={close}>
             Produto
           </a>
@@ -89,7 +93,7 @@ function Header() {
             rel="noreferrer"
             onClick={close}
           >
-            Ver em ação <ArrowUpRight aria-hidden="true" />
+            Ver demo <ArrowUpRight aria-hidden="true" />
           </a>
         </nav>
       </div>
@@ -123,7 +127,13 @@ function ProductScreenshot({
         <small>{detail}</small>
       </div>
       <div className="product-shot-frame">
-        <img src={src} alt={alt} loading="eager" fetchPriority={eager ? "high" : "auto"} />
+        <img
+          src={src}
+          alt={alt}
+          loading={eager ? "eager" : "lazy"}
+          decoding="async"
+          fetchPriority={eager ? "high" : "auto"}
+        />
       </div>
       <figcaption>{caption}</figcaption>
     </figure>
@@ -134,30 +144,33 @@ const capabilities = [
   {
     icon: UsersRound,
     label: "Alunos e turmas",
-    copy: "Cadastro, responsáveis e histórico no mesmo lugar.",
+    copy: "Ficha, contato e histórico sem procurar em várias abas.",
   },
   {
     icon: ScanLine,
     label: "Presença por QR",
-    copy: "Chamada rápida, correção manual e histórico confiável.",
+    copy: "QR rotativo, ajuste manual e presença salva no histórico.",
   },
   {
     icon: GraduationCap,
     label: "Graduação",
-    copy: "Faixas, graus e elegibilidade sem depender da memória.",
+    copy: "Faixas, graus e alunos aptos sem depender da memória.",
   },
   {
     icon: CreditCard,
     label: "Financeiro",
-    copy: "Mensalidades, diárias e comprovantes Pix organizados.",
+    copy: "Mensalidades, diárias e comprovantes Pix em uma fila clara.",
   },
 ];
 
 function App() {
   return (
     <div className="site" id="top">
+      <a className="skip-link" href="#conteudo">
+        Pular para o conteúdo
+      </a>
       <Header />
-      <main>
+      <main id="conteudo">
         <section className="hero">
           <div className="hero-sash" aria-hidden="true">
             <span>APP DO SENSEI</span>
@@ -166,25 +179,27 @@ function App() {
           </div>
           <div className="hero-layout">
             <div className="hero-copy">
-              <p className="audience-note">Para quem ensina, organiza e mantém o CT de pé.</p>
+              <p className="audience-note">
+                Para CTs de Jiu-Jitsu que ainda rodam no WhatsApp, planilha e memória.
+              </p>
               <h1>
-                Seu CT não precisa morar <span>na sua cabeça.</span>
+                Tire a operação <span className="hero-emphasis">da sua cabeça.</span>
               </h1>
               <p className="hero-lead">
-                O App do Sensei coloca alunos, aulas, presença, graduação e financeiro numa rotina
-                simples — para você voltar a olhar para o tatame.
+                Organize alunos, turmas, presença por QR, graduação e mensalidades em uma rotina
+                simples — antes, durante e depois do treino.
               </p>
               <div className="hero-actions">
                 <a className="primary-action" href={whatsappHref} target="_blank" rel="noreferrer">
-                  Quero ver em ação <ArrowUpRight aria-hidden="true" />
+                  Ver demo de 15 min <ArrowUpRight aria-hidden="true" />
                 </a>
                 <a className="text-action" href="#produto">
-                  Conhecer o produto <ArrowDown aria-hidden="true" />
+                  Ver como organiza o CT <ArrowDown aria-hidden="true" />
                 </a>
               </div>
               <div className="hero-trust">
                 <span>
-                  <CheckCircle2 /> 30 dias acompanhados
+                  <CheckCircle2 /> teste acompanhado por 30 dias
                 </span>
                 <span>
                   <ShieldCheck /> sem taxa de implantação
@@ -197,7 +212,7 @@ function App() {
               alt="Dashboard real do App do Sensei exibindo alunos ativos, aulas, presenças e saúde financeira"
               label="APP REAL"
               detail="VISÃO GERAL DO CT"
-              caption="Captura do apps/web com o seed oficial de desenvolvimento."
+              caption="Painel real do responsável da academia, com dados fictícios de demonstração."
               eager
             />
           </div>
@@ -226,13 +241,13 @@ function App() {
         <section className="problem-section" id="produto">
           <div className="problem-layout">
             <div className="problem-title">
-              <span className="margin-note">A operação hoje</span>
-              <h2>Planilha aberta. WhatsApp lotado. A memória fazendo hora extra.</h2>
+              <span className="margin-note">O custo do improviso</span>
+              <h2>Planilha aberta. WhatsApp lotado. A próxima faixa dependendo da memória.</h2>
             </div>
             <div className="problem-copy">
               <p>
-                O problema não é falta de dedicação. É tentar ensinar e administrar com ferramentas
-                que nunca foram feitas para um CT.
+                O problema não é falta de dedicação. É administrar presença, graduação e mensalidade
+                em ferramentas que não conversam entre si.
               </p>
               <blockquote>
                 “Quando a aula começa, o sistema precisa acompanhar — não atrapalhar.”
@@ -256,29 +271,29 @@ function App() {
 
         <section className="routine-section" id="rotina">
           <div className="routine-heading">
-            <h2>Do primeiro cadastro à próxima faixa, tudo conversa.</h2>
-            <p>Uma operação contínua, não cinco ferramentas isoladas.</p>
+            <h2>Do cadastro à próxima faixa, cada parte alimenta a outra.</h2>
+            <p>Uma rotina contínua, não cinco ferramentas isoladas.</p>
           </div>
           <div className="routine-board">
             <div className="routine-step">
               <span>ANTES DA AULA</span>
               <CalendarDays aria-hidden="true" />
-              <h3>Organize turmas e horários</h3>
-              <p>Cadastre alunos, responsáveis, faixas e a agenda semanal do CT.</p>
+              <h3>Deixe turmas e alunos prontos</h3>
+              <p>Cadastre contatos, responsáveis, faixas e a agenda semanal do CT.</p>
             </div>
             <ArrowRight className="routine-arrow" aria-hidden="true" />
             <div className="routine-step active">
               <span>NO TATAME</span>
               <QrCode aria-hidden="true" />
-              <h3>Abra a chamada em segundos</h3>
-              <p>QR Code rotativo, presença manual quando necessário e histórico preservado.</p>
+              <h3>Faça a chamada sem travar a aula</h3>
+              <p>Use QR rotativo, corrija manualmente quando precisar e preserve o histórico.</p>
             </div>
             <ArrowRight className="routine-arrow" aria-hidden="true" />
             <div className="routine-step">
               <span>DEPOIS DO TREINO</span>
               <GraduationCap aria-hidden="true" />
-              <h3>Acompanhe evolução e caixa</h3>
-              <p>Veja quem está apto a graduar e quais cobranças precisam de atenção.</p>
+              <h3>Veja graduação e caixa com clareza</h3>
+              <p>Identifique alunos aptos a graduar e mensalidades que precisam de atenção.</p>
             </div>
           </div>
           <div className="real-screen-grid">
@@ -288,7 +303,7 @@ function App() {
               alt="Tela real da agenda semanal do App do Sensei com as turmas organizadas por dia e horário"
               label="APP REAL"
               detail="AGENDA SEMANAL"
-              caption="Turmas e horários na interface real do instrutor."
+              caption="Agenda semanal real para preparar as aulas antes do treino."
             />
             <ProductScreenshot
               className="routine-product-shot"
@@ -296,7 +311,7 @@ function App() {
               alt="Tela real de mensalidades do App do Sensei com alunos, valores, vencimentos e status"
               label="APP REAL"
               detail="MENSALIDADES"
-              caption="Cobranças e status na interface real do instrutor."
+              caption="Mensalidades reais organizadas por aluno, vencimento e status."
             />
           </div>
         </section>
@@ -304,10 +319,10 @@ function App() {
         <section className="student-section">
           <div className="student-copy">
             <span className="margin-note">Para quem treina</span>
-            <h2>O aluno também entra no ritmo.</h2>
+            <h2>O aluno consulta o que precisa sem chamar você no WhatsApp.</h2>
             <p>
-              Uma experiência simples no celular para consultar a próxima aula, confirmar presença,
-              acompanhar a evolução e manter pagamentos em dia.
+              No celular, ele vê próximas aulas, confirma presença, acompanha faixa e grau e
+              consulta mensalidades sem pedir tudo de novo ao responsável da academia.
             </p>
             <ul>
               <li>
@@ -321,7 +336,7 @@ function App() {
               </li>
             </ul>
             <a href={whatsappHref} target="_blank" rel="noreferrer">
-              Ver o portal do aluno <ArrowRight />
+              Ver a experiência do aluno <ArrowRight />
             </a>
           </div>
           <ProductScreenshot
@@ -330,7 +345,7 @@ function App() {
             alt="Tela real do portal mobile do aluno com faixa, próxima aula, presença e atividade recente"
             label="APP REAL"
             detail="PORTAL DO ALUNO"
-            caption="Portal mobile real usando a conta de aluno do seed oficial."
+            caption="Portal mobile real com agenda, presença, evolução e mensalidades do aluno."
           />
         </section>
 
@@ -338,21 +353,22 @@ function App() {
           <div className="proof-quote">
             <span className="quote-mark">“</span>
             <blockquote>
-              O sistema está muito bom e quero começar a usar como padrão a partir do próximo mês.
+              Quero usar como padrão no próximo mês porque a rotina de alunos, presença e
+              mensalidades já ficou mais clara.
             </blockquote>
             <footer>
               <span>CT</span>
-              <div>
-                <strong>Responsável pelo CT-piloto</strong>
-                <small>Validação em rotina real de Jiu-Jitsu</small>
+              <div className="proof-person">
+                <strong>Responsável por CT-piloto de Jiu-Jitsu</strong>
+                <small>Feedback após uso em rotina real</small>
               </div>
             </footer>
           </div>
           <div className="proof-aside">
-            <strong>Feito perto do tatame.</strong>
+            <strong>Produto validado na rotina, não só na tela.</strong>
             <p>
-              O App do Sensei é desenvolvido ouvindo quem precisa tomar decisões entre uma aula e
-              outra.
+              Cada fluxo é ajustado com responsáveis de academia que precisam decidir rápido entre
+              uma aula e outra.
             </p>
             <div>
               <MessageCircle />
@@ -368,15 +384,15 @@ function App() {
         <section className="pricing-section" id="preco">
           <div className="pricing-heading">
             <h2>
-              Preço simples.
+              Uma mensalidade para tirar a operação do improviso.
               <br />
-              Operação completa.
+              Sem susto por aluno.
             </h2>
-            <p>Sem módulo escondido, sem cobrança por aluno e sem contrato que prende você.</p>
+            <p>Use todos os módulos, cadastre quantos alunos precisar e cancele quando quiser.</p>
           </div>
           <PricingTable whatsappHref={whatsappHref} />
           <p className="pricing-note">
-            <ShieldCheck /> Valores da oferta atual · pagamento via Pix ou cartão
+            <ShieldCheck /> Oferta atual · pagamento via Pix ou cartão · sem taxa de implantação
           </p>
         </section>
 
@@ -388,11 +404,11 @@ function App() {
               sem letra miúda.
             </h2>
             <p>
-              Se a sua pergunta não estiver aqui, fale diretamente com quem está construindo o
-              produto.
+              As respostas que costumam aparecer antes de uma demonstração. Se faltar algo, fale
+              direto com quem constrói o produto.
             </p>
             <a href={whatsappHref} target="_blank" rel="noreferrer">
-              Conversar pelo WhatsApp <ArrowUpRight />
+              Tirar dúvida no WhatsApp <ArrowUpRight />
             </a>
           </div>
           <FaqAccordion />
@@ -405,22 +421,24 @@ function App() {
             <i />
             <i />
           </div>
-          <span className="margin-note">Próximo treino</span>
+          <span className="margin-note">Próximo passo</span>
           <h2>
-            Mais presença no tatame.
+            Veja onde sua rotina ainda está vazando tempo.
             <br />
-            <span>Menos operação na cabeça.</span>
+            <span>E como o app fecha essas brechas.</span>
           </h2>
-          <p>Veja como o App do Sensei pode entrar na rotina do seu CT.</p>
+          <p>
+            Em 15 minutos, mostramos o fluxo completo: alunos, presença, graduação e mensalidades.
+          </p>
           <a href={whatsappHref} target="_blank" rel="noreferrer">
-            Agendar demonstração <ArrowUpRight />
+            Agendar demo de 15 min <ArrowUpRight />
           </a>
         </section>
       </main>
 
       <footer className="site-footer">
         <Brand inverse />
-        <nav>
+        <nav aria-label="Navegação do rodapé">
           <a href="#produto">Produto</a>
           <a href="#rotina">Como funciona</a>
           <a href="#preco">Preço</a>
