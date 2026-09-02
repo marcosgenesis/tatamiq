@@ -3,10 +3,18 @@
 @import "heroui-native/styles";
 
 @theme {
-  --color-brand: #b15300;
-  --color-brand-strong: #8c3f00;
-  --color-brand-soft: #fff0df;
-  --color-canvas: #fbf8f3;
-  --color-ink: #241f1a;
-  --color-muted-ink: #6e6258;
+  --color-canvas: #f3f1ee;
+  --color-surface: #ffffff;
+  --color-ink: #1c1a17;
+  --color-muted-ink: #8b857e;
+  --color-border: #ece7e1;
+  --color-brand: #f4531c;
+  --color-brand-strong: #d23a0a;
+  --color-brand-soft: #fde9df;
+  --color-success: #1e9e5a;
+  --color-success-soft: #e4f5ec;
+  --color-warning: #d9871f;
+  --color-danger: #e5484d;
+  --color-danger-soft: #fde7e7;
+  --color-dark: #0e0c0b;
 }
