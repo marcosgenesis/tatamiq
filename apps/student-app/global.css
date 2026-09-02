@@ -1,6 +1,12 @@
-/* biome-ignore lint/suspicious/noUnknownAtRules: NativeWind transforms Tailwind directives. */
-@tailwind base;
-/* biome-ignore lint/suspicious/noUnknownAtRules: NativeWind transforms Tailwind directives. */
-@tailwind components;
-/* biome-ignore lint/suspicious/noUnknownAtRules: NativeWind transforms Tailwind directives. */
-@tailwind utilities;
+@import "tailwindcss";
+@import "uniwind";
+@import "heroui-native/styles";
+
+@theme {
+  --color-brand: #b15300;
+  --color-brand-strong: #8c3f00;
+  --color-brand-soft: #fff0df;
+  --color-canvas: #fbf8f3;
+  --color-ink: #241f1a;
+  --color-muted-ink: #6e6258;
+}
