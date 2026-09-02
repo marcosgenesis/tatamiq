@@ -11,6 +11,7 @@ type ListRowProps = {
   onPress?: () => void;
   iconColor?: string;
   iconBackgroundClassName?: string;
+  className?: string;
 };
 export function ListRow({
   icon,
@@ -21,12 +22,13 @@ export function ListRow({
   onPress,
   iconColor = "#8B857E",
   iconBackgroundClassName = "bg-canvas",
+  className = "",
 }: ListRowProps) {
   return (
     <Pressable
       disabled={!onPress}
       onPress={onPress}
-      className="min-h-20 flex-row items-center gap-4 px-1 py-3"
+      className={`min-h-20 flex-row items-center gap-4 px-1 py-3 ${className}`}
     >
       <View
         className={`h-12 w-12 items-center justify-center rounded-[14px] ${iconBackgroundClassName}`}
