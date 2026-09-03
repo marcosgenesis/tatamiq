@@ -25,6 +25,7 @@
     "@tatamiq/design-tokens": "workspace:*",
     "better-auth": "^1.6.18",
     "expo": "~55.0.28",
+    "expo-camera": "~55.0.23",
     "expo-constants": "~55.0.17",
     "expo-dev-client": "~55.0.37",
     "expo-linking": "~55.0.16",

@@ -1,7 +1,11 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { tatamiqTokens } from "@tatamiq/design-tokens";
+import { type BarcodeScanningResult, CameraView, useCameraPermissions } from "expo-camera";
 import { useRouter } from "expo-router";
-import { Pressable, Text, View } from "react-native";
+import { useState } from "react";
+import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, Text, View } from "react-native";
 
+import { api } from "@/api";
 import { Icon } from "@/components/icon";
 import { Screen } from "@/components/screen";
 
@@ -39,12 +43,26 @@ function ScannerCorner({ position }: { position: "tl" | "tr" | "bl" | "br" }) {
   );
 }
 
-function ScannerFrame() {
+function ScannerFrame({
+  onBarcodeScanned,
+  isProcessing,
+}: {
+  onBarcodeScanned?: (result: BarcodeScanningResult) => void;
+  isProcessing: boolean;
+}) {
   return (
-    <View className="h-[264px] w-[264px] items-center justify-center bg-[#141313]">
-      <Icon name="qr-code" size={112} color="#282625" strokeWidth={4.2} />
+    <View className="h-[264px] w-[264px] overflow-hidden bg-[#141313]">
+      <CameraView
+        style={StyleSheet.absoluteFill}
+        facing="back"
+        barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
+        onBarcodeScanned={onBarcodeScanned}
+      />
+
+      <View pointerEvents="none" className="absolute inset-0 bg-black/25" />
 
       <View
+        pointerEvents="none"
         className="absolute left-[25px] right-[25px] top-1/2 h-[2px] bg-brand"
         style={{
           shadowColor: tatamiqTokens.colors.brand,
@@ -58,12 +76,50 @@ function ScannerFrame() {
       <ScannerCorner position="tr" />
       <ScannerCorner position="bl" />
       <ScannerCorner position="br" />
+
+      {isProcessing ? (
+        <View className="absolute inset-0 items-center justify-center bg-black/45">
+          <ActivityIndicator color="#FFFFFF" />
+          <Text className="mt-3 text-sm font-semibold text-white">Validando check-in...</Text>
+        </View>
+      ) : null}
     </View>
   );
 }
 
 export default function CheckInScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const [permission, requestPermission] = useCameraPermissions();
+  const [scanState, setScanState] = useState<"ready" | "submitting" | "error">("ready");
+  const [scanError, setScanError] = useState("QR Code inválido ou expirado.");
+
+  async function handleBarcodeScanned({ data }: BarcodeScanningResult) {
+    if (scanState !== "ready" || !data.trim()) return;
+
+    setScanState("submitting");
+    const result = await api.POST("/student/attendances/qr", {
+      body: { token: data.trim() },
+    });
+
+    if (!result.data) {
+      setScanError(getScanErrorMessage());
+      setScanState("error");
+      return;
+    }
+
+    await queryClient.invalidateQueries({ queryKey: ["student"] });
+    Alert.alert(
+      "Check-in confirmado",
+      `${result.data.classSession.classGroupName} · Presença registrada com sucesso.`,
+      [{ text: "Continuar", onPress: () => router.back() }],
+    );
+  }
+
+  function resetScanner() {
+    setScanError("QR Code inválido ou expirado.");
+    setScanState("ready");
+  }
 
   return (
     <Screen dark scroll={false}>
@@ -98,12 +154,33 @@ export default function CheckInScreen() {
           </Text>
 
           <View className="mt-6">
-            <ScannerFrame />
+            {permission?.granted ? (
+              <ScannerFrame
+                onBarcodeScanned={scanState === "ready" ? handleBarcodeScanned : undefined}
+                isProcessing={scanState === "submitting"}
+              />
+            ) : (
+              <CameraPermissionPrompt
+                permissionKnown={Boolean(permission)}
+                canAskAgain={permission?.canAskAgain ?? true}
+                onRequestPermission={() => void requestPermission()}
+                onOpenSettings={() => void Linking.openSettings()}
+              />
+            )}
           </View>
 
-          <Text className="mt-9 text-center text-[14px] leading-5 text-white/50">
-            Posicione o código dentro da moldura
-          </Text>
+          {scanState === "error" ? (
+            <View className="mt-5 items-center">
+              <Text className="text-center text-sm font-semibold text-danger">{scanError}</Text>
+              <Pressable onPress={resetScanner} className="mt-3 rounded-full bg-white/10 px-4 py-2">
+                <Text className="text-sm font-semibold text-white">Escanear novamente</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <Text className="mt-9 text-center text-[14px] leading-5 text-white/50">
+              Posicione o código dentro da moldura
+            </Text>
+          )}
         </View>
 
         <Pressable
@@ -119,4 +196,42 @@ export default function CheckInScreen() {
       </View>
     </Screen>
   );
+}
+
+function CameraPermissionPrompt({
+  permissionKnown,
+  canAskAgain,
+  onRequestPermission,
+  onOpenSettings,
+}: {
+  permissionKnown: boolean;
+  canAskAgain: boolean;
+  onRequestPermission: () => void;
+  onOpenSettings: () => void;
+}) {
+  return (
+    <View className="h-[264px] w-[264px] items-center justify-center bg-[#141313] px-7">
+      <Icon name="camera" size={46} color="#F4531C" strokeWidth={2} />
+      <Text className="mt-4 text-center text-base font-semibold text-white">
+        {permissionKnown ? "A câmera é necessária" : "Preparando a câmera..."}
+      </Text>
+      {permissionKnown ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={canAskAgain ? onRequestPermission : onOpenSettings}
+          className="mt-4 rounded-full bg-brand px-4 py-2.5"
+        >
+          <Text className="text-sm font-bold text-white">
+            {canAskAgain ? "Permitir câmera" : "Abrir ajustes"}
+          </Text>
+        </Pressable>
+      ) : (
+        <ActivityIndicator className="mt-4" color="#F4531C" />
+      )}
+    </View>
+  );
+}
+
+function getScanErrorMessage(): string {
+  return "QR Code inválido ou expirado.";
 }
