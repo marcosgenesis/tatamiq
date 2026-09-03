@@ -12,7 +12,6 @@ type ListRowProps = {
   onPress?: () => void;
   iconColor?: string;
   iconBackgroundClassName?: string;
-  className?: string;
 };
 export function ListRow({
   icon,
@@ -24,7 +23,6 @@ export function ListRow({
   onPress,
   iconColor = "#8B857E",
   iconBackgroundClassName = "bg-canvas",
-  className = "",
 }: ListRowProps) {
   return (
     <Pressable

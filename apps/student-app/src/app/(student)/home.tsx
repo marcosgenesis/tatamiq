@@ -52,9 +52,7 @@ export default function HomeScreen() {
             </Svg>
 
             <View className="flex-row items-center justify-between">
-              <Text className="text-xs font-bold tracking-[1.5px] text-white/85">
-                PRÓXIMA AULA
-              </Text>
+              <Text className="text-xs font-bold tracking-[1.5px] text-white/85">PRÓXIMA AULA</Text>
               <View className="rounded-full bg-white/20 px-3 py-1.5">
                 <Text className="text-sm font-semibold text-white">Hoje · 19:00</Text>
               </View>
