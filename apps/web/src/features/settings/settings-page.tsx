@@ -33,6 +33,7 @@ import { formatBytes, useFileUpload } from "../../hooks/use-file-upload";
 import { academyQueryKey } from "../../lib/academy-query-keys";
 import { formatCurrencyInput } from "../../lib/formatting";
 import { cn } from "../../lib/utils";
+import { TotemDevicesSection } from "./totem-devices-section";
 
 type UpdateAcademyInput = components["schemas"]["UpdateAcademyDto"];
 type UpdateBeltInput = components["schemas"]["UpdateBeltDto"];
@@ -538,6 +539,8 @@ export function SettingsPage() {
       </form>
 
       <Separator className="my-2" />
+
+      <TotemDevicesSection />
 
       <BeltRulesSection />
     </div>

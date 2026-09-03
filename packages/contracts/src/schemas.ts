@@ -496,6 +496,55 @@ export type ClassSession = z.infer<typeof classSessionSchema>;
 export type StartRecurringClassInput = z.infer<typeof startRecurringClassSchema>;
 export type QrTokenResponse = z.infer<typeof qrTokenResponseSchema>;
 
+export const totemOccurrenceSchema = z.object({
+  id: z.string(),
+  classGroupId: z.string(),
+  classGroupName: z.string(),
+  scheduledStartAt: z.string().datetime(),
+  durationMinutes: z.number().int().positive(),
+  status: z.enum(["scheduled", "active", "ended", "cancelled"]),
+  actualStartAt: z.string().datetime().nullable(),
+});
+
+export const totemPairResponseSchema = z.object({
+  deviceToken: z.string(),
+  deviceName: z.string(),
+  academyName: z.string(),
+});
+
+export const totemStateSchema = z.object({
+  deviceName: z.string(),
+  academyName: z.string(),
+  activeClasses: z.array(totemOccurrenceSchema),
+  today: z.array(totemOccurrenceSchema),
+});
+
+export const totemQrResponseSchema = z.object({
+  url: z.string().url(),
+  issuedAt: z.string().datetime(),
+  expiresAt: z.string().datetime(),
+});
+
+export const totemPairingCodeResponseSchema = z.object({
+  code: z.string(),
+  expiresInMinutes: z.number().int().positive(),
+});
+
+export const totemDeviceSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  revokedAt: z.string().datetime().nullable(),
+  lastSeenAt: z.string().datetime().nullable(),
+  createdAt: z.string().datetime(),
+});
+
+export type TotemOccurrence = z.infer<typeof totemOccurrenceSchema>;
+export type TotemPairResponse = z.infer<typeof totemPairResponseSchema>;
+export type TotemState = z.infer<typeof totemStateSchema>;
+export type TotemQrResponse = z.infer<typeof totemQrResponseSchema>;
+export type TotemPairingCodeResponse = z.infer<typeof totemPairingCodeResponseSchema>;
+export type TotemDevice = z.infer<typeof totemDeviceSchema>;
+
 export const scheduleOccurrenceSchema = z.object({
   id: z.string(),
   source: z.enum(["recurring", "ad_hoc"]),
@@ -769,6 +818,21 @@ export const studentMonthlyFeesResponseSchema = z.object({
 
 export type StudentMonthlyFee = z.infer<typeof studentMonthlyFeeSchema>;
 export type StudentMonthlyFeesResponse = z.infer<typeof studentMonthlyFeesResponseSchema>;
+
+export const studentDailyFeeSchema = z.object({
+  id: z.string(),
+  attendanceDate: z.string(),
+  amountInCents: z.number().int().nonnegative(),
+  status: z.enum(["open", "paid", "waived"]),
+  paidAt: z.string().datetime().nullable(),
+});
+
+export const studentDailyFeesResponseSchema = z.object({
+  fees: z.array(studentDailyFeeSchema),
+});
+
+export type StudentDailyFee = z.infer<typeof studentDailyFeeSchema>;
+export type StudentDailyFeesResponse = z.infer<typeof studentDailyFeesResponseSchema>;
 
 export type MonthlyFeeStatus = z.infer<typeof monthlyFeeStatusSchema>;
 export type MonthlyFeePaymentOrigin = z.infer<typeof monthlyFeePaymentOriginSchema>;

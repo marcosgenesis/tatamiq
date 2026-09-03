@@ -52,6 +52,50 @@ _Avoid_: admin da academia, painel do instrutor, member role global, billing int
 Capacidade do **Aluno**, inclusive menor de idade quando convidado pelo instrutor, consultar as próximas aulas dos próximos 7 dias das suas turmas, as próprias presenças e mensalidades dos últimos 12 meses, evolução e turmas vinculadas, e alterar contato pessoal e foto, sem administrar a academia/tatame; nasce somente a partir de um **Convite do Aluno** para uma ficha de **Aluno** já existente, pode coexistir com acesso de instrutor na mesma conta com escolha explícita de área ao entrar, pode ser revogado pelo instrutor sem inativar o aluno ou apagar a conta de autenticação, e alterações de telefone e email mantêm auditoria simples.
 _Avoid_: portal completo, conta administrativa, autovínculo por email
 
+**Totem da Academia**:
+Experiência compartilhada da **Academia**, executada por um aplicativo próprio e independente do gestor, para apoiar o **Responsável da Academia** durante a operação, exibindo o **QR Code Dinâmico da Aula** em andamento ou permitindo iniciar uma **Aula** para então exibi-lo.
+_Avoid_: Acesso do Aluno, portal público, painel administrativo completo, dispositivo pessoal do instrutor
+
+**Modo Totem**:
+Autorização operacional restrita concedida a um **Totem da Academia** pelo **Responsável da Academia**, limitada às ações necessárias para selecionar ou iniciar a **Aula** e exibir seu **QR Code Dinâmico da Aula**, sem acesso ao restante da gestão da Academia.
+_Avoid_: sessão completa do instrutor, conta compartilhada, login de aluno, permissão administrativa parcial genérica
+
+**Pareamento do Totem**:
+Processo em que o **Responsável da Academia** concede o **Modo Totem** a um **Totem da Academia** principalmente por meio de um código curto de uso único, válido por 10 minutos e substituível antes do uso, com QR Code opcional, sem inserir ou deixar a senha do responsável no dispositivo compartilhado.
+_Avoid_: senha do totem, conta compartilhada, login permanente do instrutor, convite do aluno
+
+**Student App**:
+Aplicativo Expo/React Native separado em `apps/student-app`, dedicado ao **Acesso do Aluno** e tratado como a superfície móvel principal do MVP; usa navegação, telas e integrações nativas no núcleo dos fluxos do aluno, compartilha contratos, cliente de API, autenticação, regras puras e tokens visuais com o restante do monorepo, e mantém o painel do **Responsável da Academia** na web. Pode incorporar **DOM Components híbridos seletivos** em telas isoladas e auxiliares, sem transformar o app inteiro em WebView nem importar a árvore de componentes de `apps/web` como padrão.
+_Avoid_: `apps/mobile` genérico, app único de aluno e instrutor, painel operacional nativo no MVP, web app inteiro dentro de WebView, compartilhar componentes DOM como fronteira principal
+
+**DOM Components híbridos seletivos**:
+Componentes React DOM renderizados pelo Expo em uma WebView, usados somente quando a reutilização de uma tela web isolada ou uma migração gradual compensar as limitações da ponte assíncrona, do estado separado e da integração nativa; não substituem as telas nativas de autenticação, pré-cadastro, QR Code, navegação, agenda, presença, mensalidades e perfil do **Student App**.
+_Avoid_: tratar componente DOM como componente nativo, colocar filhos nativos dentro dele, depender dele para navegação principal ou usar WebView como arquitetura do app inteiro
+
+**Autenticação nativa do Student App**:
+Integração do **Student App** com o plugin oficial `@better-auth/expo`, mantendo o modelo de sessão por cookie do backend do Tatamiq; no Expo, o cliente Better Auth persiste sessão e cookies com `expo-secure-store`, usa o scheme/deep link do app quando necessário e fornece o cookie para as requisições nativas autenticadas. Não cria uma autenticação Bearer paralela nem uma conta/sessão diferente da web.
+_Avoid_: `localStorage` ou `AsyncStorage` para credenciais, autenticação Bearer separada sem necessidade, sessão duplicada por plataforma, importar o cliente web sem o adaptador Expo
+
+**Roteamento do Student App**:
+Estrutura Expo Router separada em grupos de rotas públicas, autenticação e área protegida do **Acesso do Aluno**; links de pré-cadastro, acompanhamento, primeiro acesso e convite entram sem sessão e preservam seus tokens opacos, enquanto a solicitação aprovada conduz à definição de senha com o **Link de Primeiro Acesso** separado. Após autenticar, a escolha explícita de área abre o **Acesso do Aluno** nativamente ou encaminha o acesso do **Responsável da Academia** para a web, mantendo URLs HTTPS canônicas compatíveis com o fallback PWA.
+_Avoid_: proteger pré-cadastro com login, misturar token de acompanhamento com sessão, colocar painel do instrutor no stack nativo, rotas nativas paralelas sem deep link equivalente
+
+**Estilização do Student App**:
+Uso da trilha estável do NativeWind sobre componentes nativos do React Native, compartilhando tokens, convenções de utilitários e identidade visual com o web sem exigir que `apps/web` e `apps/student-app` compartilhem a mesma árvore de componentes; os componentes de interface continuam próprios de cada plataforma, e a adoção de NativeWind v5 em pré-release ou de Tamagui fica para avaliação futura.
+_Avoid_: NativeWind v5 em produção antes de estabilizar, Shopify Restyle como tentativa de compartilhar Tailwind com o web, importar componentes DOM do painel, criar um design system multiplataforma grande antes do MVP
+
+**Diferenças por plataforma do Student App**:
+O comportamento e os fluxos de negócio permanecem comuns no Expo, com módulos `.native.tsx` ou seleções de plataforma somente para APIs que realmente diferem, como câmera/QR Code, SecureStore, seletor de arquivos, permissões e deep links; a versão web do Expo pode existir para desenvolvimento ou compatibilidade técnica, mas o fallback PWA oficial continua sendo `apps/web`, sem criar uma segunda PWA do **Acesso do Aluno**.
+_Avoid_: duplicar regras por plataforma, manter três superfícies de produto, usar DOM como base do app nativo, implementar o fallback PWA dentro do Expo
+
+**Testes do Student App**:
+Estratégia em camadas que preserva Vitest para contratos e regras puras, usa Jest com `jest-expo` e React Native Testing Library para componentes/hooks nativos, Expo Router Testing Library para navegação e deep links, Playwright para o fallback PWA em `apps/web` e Maestro para jornadas reais em builds Android/iOS; fixtures e contratos podem ser compartilhados, mas os caminhos críticos de onboarding, ativação, login, presença e consulta do aluno devem ser verificados em cada superfície relevante.
+_Avoid_: confiar apenas em snapshots, testar o native somente pelo web, duplicar toda a suíte em todas as plataformas, aceitar paridade declarada sem E2E nativo dos fluxos críticos
+
+**Baseline do Student App**:
+Baseline conservador e estável para o MVP: Expo SDK 55, React Native 0.83, React 19.2, Expo Router da linha 55, módulos Expo instalados pela ferramenta de compatibilidade do SDK, `@better-auth/expo` alinhado à versão Better Auth do monorepo, NativeWind v4 estável com Tailwind 3.4.x no app e Node mínimo 22.22.1; development build é o ambiente canônico para as capacidades nativas, enquanto Expo Go fica restrito a smoke tests simples. SDKs posteriores e NativeWind v5 exigem uma atualização deliberada.
+_Avoid_: iniciar com SDK canary/beta, misturar SDK57 sem validar Better Auth/NativeWind, NativeWind v5 preview no MVP, versões independentes dos módulos Expo, executar o baseline com Node abaixo de 22.22.1
+
 **Onboarding da Academia**:
 Etapa inicial em que um **Responsável da Academia** autenticado, mas ainda sem **Academia**, informa o nome obrigatório da organização local que irá gerir.
 _Avoid_: app demo, academia implícita, tenant padrão, perfil completo obrigatório
@@ -69,19 +113,23 @@ Conta de autenticação criada pelo sistema para um email conhecido, vinculada a
 _Avoid_: senha temporária, conta fake, conta compartilhada, acesso pelo email do cliente, email automático obrigatório
 
 **Convite do Aluno**:
-Link completo que o instrutor copia e envia por fora para vincular uma conta de acesso ao cadastro de um **Aluno** existente, expirando em 7 dias; reenviar convite na V0 significa invalidar qualquer convite pendente anterior para aquele aluno e criar um novo link com nova expiração de 7 dias, desde que ainda não exista **Acesso do Aluno** ativo para aquela ficha; quando já existe acesso ativo, o instrutor precisa revogar o acesso antes de recriar convite.
+Link completo que o instrutor copia e envia por fora para vincular uma conta de acesso ao cadastro de um **Aluno** existente, podendo abrir a ativação no Expo ou na PWA, expirando em 7 dias; reenviar convite na V0 significa invalidar qualquer convite pendente anterior para aquele aluno e criar um novo link com nova expiração de 7 dias, desde que ainda não exista **Acesso do Aluno** ativo para aquela ficha; quando já existe acesso ativo, o instrutor precisa revogar o acesso antes de recriar convite.
 _Avoid_: cadastro livre, conta solta, envio integrado obrigatório, múltiplos acessos ativos para o mesmo aluno, código curto digitado pelo aluno na V0, reutilizar link pendente antigo ao reenviar
 
 **Link de Pré-Cadastro da Academia**:
-Link compartilhável único e sem expiração automática por **Academia**, copiado para canais externos como grupo de WhatsApp, que pode ser pausado, reativado ou regenerado pelo instrutor, mostrando apenas dados públicos da academia, com proteção mínima por limite de tentativas por IP/email na V0, para interessados preencherem uma **Solicitação de Pré-Cadastro** sem virar **Aluno** automaticamente.
+Link compartilhável único e sem expiração automática por **Academia**, copiado para canais externos como grupo de WhatsApp ou representado por QR Code, que pode ser aberto por URL/deep link, lido pelo scanner de pré-cadastro do Expo sem exigir conta ou aberto pela PWA quando o app não estiver instalado; pode ser pausado, reativado ou regenerado pelo instrutor, mostrando apenas dados públicos da academia, com proteção mínima por limite de tentativas por IP/email na V0, para interessados preencherem uma **Solicitação de Pré-Cadastro** sem virar **Aluno** automaticamente.
 _Avoid_: convite do aluno, cadastro livre direto, matrícula automática, link de turma, link descartável por aluno, página pública com Pix ou dados internos, CAPTCHA obrigatório na V0
 
 **Solicitação de Pré-Cadastro**:
 Pedido criado por uma pessoa interessada a partir do **Link de Pré-Cadastro da Academia**, com estados em análise, aprovada ou rejeitada, contendo nome, data de nascimento, telefone/WhatsApp, email obrigatório não confirmado na V0, responsável quando menor e observação opcional, revisado pelo instrutor antes de virar ficha de **Aluno** e **Acesso do Aluno**; ao aprovar, o sistema cria automaticamente a conta/acesso para o email informado, mesmo sem confirmação prévia de posse do email na V0; para menor de idade, o email pode ser do aluno ou do responsável, mas será a conta que acessa a área do aluno após aprovação; enquanto em análise, fica somente leitura para o interessado; por **Academia**, não pode existir outra solicitação pendente ou aprovada com o mesmo email, nome e data de nascimento iguais a um **Aluno** existente sinalizam possível duplicidade que exige escolha explícita entre vincular ao aluno existente, criar novo aluno mesmo assim ou rejeitar como duplicado, uma solicitação rejeitada pode ser reenviada como nova tentativa, e a rejeição pode ter motivo opcional visível apenas ao instrutor.
 _Avoid_: aluno pendente, conta solta, lead genérico, matrícula confirmada, ficha completa de aluno, motivo público obrigatório, conta de responsável na V0, edição de solicitação pendente, confirmação de email obrigatória na V0
 
+**Link de Acompanhamento da Solicitação**:
+Link/token individual e opaco gerado ao enviar uma **Solicitação de Pré-Cadastro**, associado exclusivamente àquela solicitação, que permite ao interessado acompanhar o próprio status antes de ter **Acesso do Aluno**; pode ser salvo e copiado pelo interessado e deve abrir a experiência equivalente no Expo ou na PWA, sem permitir consulta por email/data de nascimento, acesso a outras solicitações ou edição de uma solicitação ainda pendente; permanece válido enquanto a solicitação está em análise e continua abrindo a página de status após aprovação ou rejeição; enquanto em análise mostra somente o status, quando aprovada apresenta na mesma experiência contínua a ação **Definir senha**, mas usa por baixo um token separado de **Link de Primeiro Acesso**, de uso único e com expiração de 7 dias, antes do **Aceite do Aluno**, e quando rejeitada mostra a rejeição sem expor motivo interno e permite iniciar nova solicitação pelo **Link de Pré-Cadastro da Academia**; não tem recuperação por email/data de nascimento, então o interessado deve salvá-lo/copiá-lo ou contatar a **Academia** se o perder.
+_Avoid_: consulta pública por email, token compartilhado da academia, edição de solicitação pendente, acesso ao cadastro de outro interessado
+
 **Link de Primeiro Acesso**:
-Link copiável com expiração de 7 dias gerado quando uma **Solicitação de Pré-Cadastro** é aprovada para que o instrutor envie por fora, normalmente WhatsApp, permitindo que a conta criada automaticamente, ainda sem login por senha antes do primeiro acesso, defina senha e acesse a área do aluno pela primeira vez; quando o email já pertence a uma conta existente, o acesso é vinculado a essa conta e o link leva ao login/área do aluno sem redefinir senha; é distinto de **Convite do Aluno** no domínio, embora possa reutilizar infraestrutura técnica de token de ativação.
+Link copiável com expiração de 7 dias gerado quando uma **Solicitação de Pré-Cadastro** é aprovada para que o instrutor envie por fora, normalmente WhatsApp, ou apresentado como a etapa final da mesma experiência contínua de acompanhamento no Expo/PWA, permitindo que a conta criada automaticamente, ainda sem login por senha antes do primeiro acesso, defina senha e acesse a área do aluno pela primeira vez; o token é de uso único; quando o email já pertence a uma conta existente, o acesso é vinculado a essa conta e o link leva ao login/área do aluno sem redefinir senha; é distinto de **Link de Acompanhamento da Solicitação** e de **Convite do Aluno** no domínio, embora possa reutilizar infraestrutura técnica de token de ativação.
 _Avoid_: senha temporária, email obrigatório de aprovação, convite do aluno para ficha pré-aprovada, duplicar conta por email
 
 **Notificação de Pré-Cadastro**:
@@ -101,7 +149,7 @@ Ação do **Aluno** para registrar a própria **Presença** em uma **Aula** usan
 _Avoid_: chamada manual do aluno, check-in livre
 
 **QR Code Dinâmico da Aula**:
-Código temporário e rotativo vinculado a uma **Aula**, exibido pelo instrutor para reduzir fraude na **Confirmação de Presença**, renovado a cada 30 segundos, válido durante toda a aula e por 15 minutos após o fim calculado a partir do início real da aula, ou até o encerramento manual pelo instrutor, com tolerância curta para o código anterior e sem exigir geolocalização na V0.
+Código temporário e rotativo vinculado a uma **Aula**, exibido pelo instrutor para reduzir fraude na **Confirmação de Presença**, renovado a cada 30 segundos, válido durante toda a aula e por 15 minutos após o fim calculado a partir do início real da aula, ou até o encerramento manual pelo instrutor, com tolerância curta para o código anterior, apontando o aluno para a URL canônica do portal e sem exigir geolocalização na V0.
 _Avoid_: link fixo, código permanente, geolocalização obrigatória
 
 **Aluno**:
@@ -117,7 +165,7 @@ _Avoid_: membro ativo, usuário ativo
 _Avoid_: deletado, cancelado, excluído
 
 **Aula**:
-Ocorrência concreta de treino criada quando o instrutor inicia a chamada de uma **Turma**, registrando o horário real de início e mantendo referência ao horário previsto para calcular o fim previsto com a duração padrão da turma; pode ser encerrada manualmente pelo instrutor.
+Ocorrência concreta de treino criada quando o instrutor inicia a chamada de uma **Turma**, registrando o horário real de início e mantendo referência ao horário previsto para calcular o fim previsto com a duração padrão da turma; é encerrada automaticamente ao fim calculado ou manualmente pelo instrutor.
 _Avoid_: turma, sessão genérica, aula prevista
 
 **Aula Avulsa**:
@@ -319,6 +367,25 @@ _Avoid_: tarefa, lembrete, prontuário, workflow, comentário do aluno, exclusã
 - Regenerar o link de primeiro acesso de uma **Conta Reservada** invalida o link anterior, cria nova expiração de 7 dias e registra **Auditoria Administrativa**
 - Um **Responsável da Academia** sem **Academia** acessa apenas o **Onboarding da Academia** no login normal
 - Uma **Academia** pode ter um ou mais **Responsáveis da Academia**, mas pode ficar temporariamente sem responsável após **Exclusão de Usuário** decidida por um **Administrador da Plataforma**
+- Um **Pareamento do Totem** concede a um **Totem da Academia** um **Modo Totem** revogável, vinculado à **Academia** e ao **Responsável da Academia** que autorizou o dispositivo
+- Qualquer **Responsável da Academia** pode parear ou revogar um **Totem da Academia** da própria **Academia**, pois os responsáveis têm os mesmos poderes operacionais
+- Um código de **Pareamento do Totem** expira em 10 minutos, deixa de valer após o uso e é invalidado quando outro código é gerado
+- Uma **Academia** pode ter vários **Totens da Academia** nomeados, e cada **Modo Totem** pode ser revogado individualmente sem afetar os demais dispositivos
+- O nome de um **Totem da Academia** é definido no **Pareamento do Totem** ou recebe um nome sugerido automaticamente para permitir identificação e revogação no gestor
+- O aplicativo do **Totem da Academia** é independente da interface e da entrega do gestor, mas usa a mesma API e a mesma fonte de dados para autorização, **Aulas** e **QR Code Dinâmico da Aula**
+- Um **Totem da Academia** opera somente dentro do **Modo Totem** e não acessa a área completa da **Academia**
+- Uma **Academia** pode ter várias **Aulas** simultaneamente em andamento; o **Totem da Academia** abre diretamente a única aula ativa ou exige seleção explícita quando há mais de uma
+- Quando há várias **Aulas** ativas, trocar a aula no **Totem da Academia** altera somente o QR exibido; não encerra, inicia novamente nem modifica as aulas
+- Sem **Aula** ativa, o **Totem da Academia** permite iniciar somente ocorrências previstas para o dia, incluindo **Aulas Avulsas** já cadastradas; criar uma aula sem ocorrência prevista continua sendo responsabilidade do gestor
+- Uma ocorrência prevista para hoje pode ser iniciada pelo **Totem da Academia** antes ou depois do horário previsto, mediante confirmação; o horário real do início passa a governar a duração e o encerramento automático
+- O **Modo Totem** permanece ativo após atualizar a página ou reiniciar o dispositivo e termina somente por revogação ou perda de validade da autorização
+- O **Modo Totem** exige conexão com o servidor para iniciar aulas, consultar aulas ativas e renovar o **QR Code Dinâmico da Aula**; sem conexão, o totem sinaliza indisponibilidade e não executa novas operações
+- Quando o **Modo Totem** é revogado ou o responsável perde acesso à **Academia**, o **Totem da Academia** apaga a autorização local, interrompe o QR e retorna à tela de **Pareamento do Totem**, sem conservar QR em cache
+- O **Totem da Academia** não oferece saída local comum; desvincular o dispositivo é uma ação do gestor, e apagar os dados do navegador é apenas um reset técnico
+- Uma **Aula** passa automaticamente de `active` para `ended` no servidor ao atingir o fim calculado por seu início real e duração; o encerramento manual continua permitido antes desse limite
+- O **Totem da Academia** não encerra **Aulas** manualmente; após o fim calculado, deixa de exibir a aula como ativa e o servidor aplica a janela de tolerância do **QR Code Dinâmico da Aula**
+- Após o encerramento automático de uma **Aula**, o **Totem da Academia** retorna à seleção das ocorrências do dia e nunca inicia a próxima automaticamente
+- O **QR Code Dinâmico da Aula** exibido pelo **Totem da Academia** sempre contém a URL canônica do **Acesso do Aluno**, nunca a URL do aplicativo do totem
 - A **Administração da Plataforma** deve apresentar responsáveis no plural, sem responsável principal; quando não houver nenhum, exibe **Sem responsável**
 - Bloquear o usuário de um **Responsável da Academia** impede login e revoga sessões, mas não inativa nem altera automaticamente a **Academia** ou seu histórico operacional
 - Uma **Exclusão de Academia** é independente de **Exclusão de Usuário**: excluir uma academia não exclui automaticamente as contas dos responsáveis ou alunos, apenas remove os vínculos e acessos associados à academia excluída
@@ -347,7 +414,7 @@ _Avoid_: tarefa, lembrete, prontuário, workflow, comentário do aluno, exclusã
 - Uma **Solicitação de Pré-Cadastro** só pode ser vinculada a um **Aluno** existente se ele ainda não tiver **Acesso do Aluno** ativo
 - Um **Aluno** pode ter **Acesso do Aluno** para consultar os próprios dados, incluindo mensalidades mesmo quando for menor de idade
 - Um **Acesso do Aluno** vincula exatamente uma conta de autenticação a exatamente um **Aluno** na V0
-- Uma conta com acesso de instrutor e **Acesso do Aluno** escolhe explicitamente a área ao entrar e pode trocar de área sem mudar os vínculos de domínio
+- Uma conta com acesso de instrutor e **Acesso do Aluno** escolhe explicitamente a área ao entrar e pode trocar de área sem mudar os vínculos de domínio; no Expo, a área de **Acesso do Aluno** abre nativamente e a área de **Responsável da Academia** encaminha para o painel web, que permanece fora do app nativo
 - Uma **Solicitação de Pré-Cadastro** com email de uma conta que já atua como instrutor pode ser aprovada, mas deve alertar o instrutor antes de criar o **Acesso do Aluno**
 - Um **Convite do Aluno** pertence a um **Aluno** já cadastrado
 - Um **Link de Pré-Cadastro da Academia** pertence a uma **Academia** e pode gerar muitas **Solicitações de Pré-Cadastro**
@@ -404,5 +471,18 @@ _Avoid_: tarefa, lembrete, prontuário, workflow, comentário do aluno, exclusã
 - "convite" agora tem duas intenções possíveis; resolvido: **Convite do Aluno** vincula acesso a **Aluno** existente, enquanto **Link de Pré-Cadastro da Academia** coleta **Solicitações de Pré-Cadastro** de interessados ainda não aprovados.
 - "usuário já tem conta" foi separado de **Aluno** e **Acesso do Aluno**; no pré-cadastro V0, a solicitação não exige confirmação de email antes da análise, e só a aprovação cria a ficha de **Aluno** e o **Acesso do Aluno**.
 - "super user" foi tratado como apelido técnico/informal; o termo de domínio é **Administrador da Plataforma**.
+- "mesmo login do instrutor" foi resolvido como mesma identidade e autoridade do **Responsável da Academia**, concedidas ao totem por **Pareamento do Totem** e expressas como **Modo Totem**, sem reutilizar a sessão completa nem expor a senha no dispositivo compartilhado.
+- "pareamento persistente" foi resolvido como autorização que sobrevive a refresh e reinício do tablet e permanece válida até revogação explícita ou expiração técnica da sessão; não há saída local comum.
+- "revogar o totem" foi resolvido como invalidar a autorização no servidor e exigir novo **Pareamento do Totem**, com remoção da autorização local e interrupção do QR na próxima comunicação possível.
+- "iPad antigo" foi concretizado como suporte oficial mínimo ao iPad de 7ª geração; o aplicativo do totem deve ser validado nesse dispositivo, sem transformar isso em promessa de compatibilidade com qualquer hardware legado.
+- "funcionar em qualquer tablet" não inclui operação offline: o **Totem da Academia** depende de conexão para manter o estado da aula e o QR Code confiáveis.
+- "alguma aula em andamento" foi resolvido como uma ou mais **Aulas** ativas; quando há mais de uma, o **Totem da Academia** não escolhe uma silenciosamente.
+- "iniciar a aula" foi delimitado a iniciar uma ocorrência do dia já prevista; o **Totem da Academia** não cadastra novas **Aulas Avulsas** nem altera a agenda.
+- "iniciar cedo ou tarde" foi resolvido como início manual permitido para qualquer ocorrência prevista no dia, usando o instante da confirmação como início real e sem início automático pelo relógio.
+- "o totem" foi resolvido como qualquer dispositivo nomeado e pareado da **Academia**; uma academia pode operar vários **Totens da Academia** em paralelo.
+- "outro app" foi resolvido como cliente independente na experiência e na entrega, não como backend ou domínio duplicado; a API do Tatamiq permanece a fonte única de verdade para o **Totem da Academia**.
+- "código de pareamento" foi resolvido como credencial curta, única e temporária para ativar o **Modo Totem**, não como senha reutilizável do dispositivo.
+- "deixar por tempo" foi resolvido como transição automática `active → ended` no servidor pelo início real mais a duração da **Aula**, mantendo o encerramento manual apenas como encerramento antecipado no gestor.
+- "origem do QR" foi resolvida como o endereço canônico do **Acesso do Aluno**; o domínio independente do **Totem da Academia** não é destino de confirmação de presença.
 - **Academia Suspensa** fica fora da primeira versão; bloqueio de acesso pela plataforma ocorre sobre usuários, não sobre a **Academia**.
 - "deletar usuário" foi resolvido como **Exclusão de Usuário**, com escolha explícita no momento da ação entre exclusão definitiva e exclusão controlada.

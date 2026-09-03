@@ -7,6 +7,7 @@ import {
   inviteSummaryResponseSchema,
   markSeenSchema,
   studentAttendancesResponseSchema,
+  studentDailyFeesResponseSchema,
   studentGraduationResponseSchema,
   studentIndicatorsResponseSchema,
   studentInvitePreviewSchema,
@@ -35,4 +36,5 @@ export class StudentAttendancesResponseDto extends createZodDto(studentAttendanc
 export class UpdateStudentProfileDto extends createZodDto(updateStudentProfileSchema) {}
 export class StudentGraduationResponseDto extends createZodDto(studentGraduationResponseSchema) {}
 export class StudentIndicatorsResponseDto extends createZodDto(studentIndicatorsResponseSchema) {}
+export class StudentDailyFeesResponseDto extends createZodDto(studentDailyFeesResponseSchema) {}
 export class MarkSeenDto extends createZodDto(markSeenSchema) {}

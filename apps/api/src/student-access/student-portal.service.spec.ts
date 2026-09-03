@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { projectStudentAttendanceHistory } from "./student-portal.service";
+import { projectStudentAttendanceHistory, projectStudentDailyFees } from "./student-portal.service";
 
 function attendanceRow(id: string, classGroupId: string) {
   return {
@@ -44,6 +44,36 @@ describe("projectStudentAttendanceHistory", () => {
       id: "attendance-2",
       classGroupName: "Turma group-2",
       isOutOfGroup: true,
+    });
+  });
+});
+
+describe("projectStudentDailyFees", () => {
+  it("exposes the snapshotted daily charge without leaking academy data", () => {
+    const result = projectStudentDailyFees([
+      {
+        id: "daily-1",
+        organizationId: "org-1",
+        studentId: "student-1",
+        attendanceDate: "2026-07-29",
+        amountInCents: 4500,
+        status: "open",
+        paidAt: null,
+        createdAt: new Date("2026-07-29T12:00:00.000Z"),
+        updatedAt: new Date("2026-07-29T12:00:00.000Z"),
+      },
+    ]);
+
+    expect(result).toEqual({
+      fees: [
+        {
+          id: "daily-1",
+          attendanceDate: "2026-07-29",
+          amountInCents: 4500,
+          status: "open",
+          paidAt: null,
+        },
+      ],
     });
   });
 });
