@@ -1,3 +1,48 @@
+# [0.14.0](https://github.com/marcosgenesis/tatamiq/compare/v0.13.0...v0.14.0) (2026-08-31)
+
+
+### Features
+
+* **landing:** rework copy, a11y and animations for conversion polish ([3abb1f6](https://github.com/marcosgenesis/tatamiq/commit/3abb1f68dae627fa7efbc5011cad246714a1ad0f))
+
+# [0.13.0](https://github.com/marcosgenesis/tatamiq/compare/v0.12.0...v0.13.0) (2026-08-26)
+
+
+### Bug Fixes
+
+* landing wpp ([604df61](https://github.com/marcosgenesis/tatamiq/commit/604df61099944daddd33ffde09ed0a7720a99e4e))
+
+
+### Features
+
+* **landing:** usa número comercial de WhatsApp nos CTAs ([07802d7](https://github.com/marcosgenesis/tatamiq/commit/07802d75a44d2cef1ccf83e36d97a5aa4be7c23c))
+
+# [0.12.0](https://github.com/marcosgenesis/tatamiq/compare/v0.11.0...v0.12.0) (2026-08-26)
+
+
+### Bug Fixes
+
+* **landing:** label logo for accessibility ([ba66cc8](https://github.com/marcosgenesis/tatamiq/commit/ba66cc8283dc78ed338a30948aff72baa289cdfe))
+
+
+### Features
+
+* **landing:** launch App do Sensei site ([d431812](https://github.com/marcosgenesis/tatamiq/commit/d4318123f6d67d88e8ac328a6808e137c9d32a93))
+
+# [0.11.0](https://github.com/marcosgenesis/tatamiq/compare/v0.10.3...v0.11.0) (2026-08-25)
+
+
+### Features
+
+* **landing:** add Tatamiq marketing landing page ([d7808a3](https://github.com/marcosgenesis/tatamiq/commit/d7808a34587b6376d9f47d68e336d676a5258045))
+
+## [0.10.3](https://github.com/marcosgenesis/tatamiq/compare/v0.10.2...v0.10.3) (2026-08-21)
+
+
+### Bug Fixes
+
+* **web:** support legacy iPad Safari via es2017 target and polyfills ([aca3d2e](https://github.com/marcosgenesis/tatamiq/commit/aca3d2e9d3cdd8d45f92bb95c30b616778d9ab39))
+
 ## [0.10.2](https://github.com/marcosgenesis/tatamiq/compare/v0.10.1...v0.10.2) (2026-07-31)
 
 
