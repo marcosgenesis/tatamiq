@@ -15,6 +15,7 @@
     "@aws-sdk/client-s3": "^3.1053.0",
     "@aws-sdk/s3-request-presigner": "^3.1053.0",
     "@better-auth/drizzle-adapter": "^1.6.18",
+    "@better-auth/expo": "^1.6.18",
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",

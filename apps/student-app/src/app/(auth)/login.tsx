@@ -1,7 +1,7 @@
 import { Link, useRouter } from "expo-router";
 import { useState } from "react";
 import {
-  Image,
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -14,8 +14,12 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import Logo from "../../../assets/app-do-sensei-logo.svg";
+import { authClient } from "../../lib/auth-client";
+
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const BRAND = "#ff4800";
+const MIN_PASSWORD_LENGTH = 8;
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -23,19 +27,39 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const emailInvalid = submitted && !EMAIL_REGEX.test(email.trim());
-  const passwordInvalid = submitted && password.length < 6;
+  const passwordInvalid = submitted && password.length < MIN_PASSWORD_LENGTH;
 
-  function handleSubmit() {
+  async function handleSubmit() {
     setSubmitted(true);
+    setError(null);
 
     const validEmail = EMAIL_REGEX.test(email.trim());
-    const validPassword = password.length >= 6;
+    const validPassword = password.length >= MIN_PASSWORD_LENGTH;
     if (!validEmail || !validPassword) return;
 
-    // TODO: trocar pelo adaptador de sessão nativa quando o slice de auth chegar.
-    router.replace("/aluno");
+    setIsSubmitting(true);
+    try {
+      const result = await authClient.signIn.email({
+        email: email.trim(),
+        password,
+        rememberMe,
+      });
+
+      if (result.error) {
+        setError("Não foi possível entrar. Confira seu e-mail e sua senha.");
+        return;
+      }
+
+      router.replace("/home");
+    } catch {
+      setError("Não foi possível conectar ao servidor. Tente novamente.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -51,15 +75,12 @@ export default function LoginScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View>
-            <Image
-              source={require("../../../assets/app-do-sensei-logo.png")}
-              accessibilityLabel="App do Sensei"
-              resizeMode="contain"
-              style={styles.logo}
-            />
+            <Logo accessibilityLabel="App do Sensei" width={61} height={65} />
 
             <Text style={styles.title}>Bem-vindo de volta</Text>
             <Text style={styles.subtitle}>Entre para continuar seus treinos.</Text>
+
+            {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
 
             <View style={styles.form}>
               <View style={styles.field}>
@@ -99,7 +120,7 @@ export default function LoginScreen() {
                   autoComplete="current-password"
                   textContentType="password"
                   returnKeyType="go"
-                  onSubmitEditing={handleSubmit}
+                  onSubmitEditing={() => void handleSubmit()}
                   style={[styles.input, passwordInvalid && styles.inputInvalid]}
                 />
                 {passwordInvalid ? (
@@ -133,13 +154,18 @@ export default function LoginScreen() {
 
               <Pressable
                 accessibilityRole="button"
-                onPress={handleSubmit}
+                disabled={isSubmitting}
+                onPress={() => void handleSubmit()}
                 style={({ pressed }) => [
                   styles.submitButton,
                   pressed && styles.submitButtonPressed,
                 ]}
               >
-                <Text style={styles.submitText}>Entrar</Text>
+                {isSubmitting ? (
+                  <ActivityIndicator color="#ffffff" />
+                ) : (
+                  <Text style={styles.submitText}>Entrar</Text>
+                )}
               </Pressable>
             </View>
           </View>
@@ -196,6 +222,18 @@ const styles = StyleSheet.create({
   },
   inputInvalid: { borderColor: "#c52d2d" },
   error: { marginTop: 5, color: "#c52d2d", fontSize: 12 },
+  errorBanner: {
+    marginTop: 20,
+    borderWidth: 1,
+    borderColor: "#e7b3b3",
+    borderRadius: 12,
+    backgroundColor: "#fff1f1",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    color: "#a62222",
+    fontSize: 13,
+    lineHeight: 18,
+  },
   optionsRow: {
     minHeight: 27,
     marginTop: 1,

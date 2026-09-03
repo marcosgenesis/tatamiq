@@ -16,14 +16,20 @@
     "lint": "biome check ."
   },
   "dependencies": {
+    "@better-auth/expo": "^1.6.18",
     "@gorhom/bottom-sheet": "^5.2.14",
+    "@hugeicons/core-free-icons": "^4.3.0",
+    "@hugeicons/react-native": "^1.0.16",
     "@tatamiq/contracts": "workspace:*",
     "@tatamiq/design-tokens": "workspace:*",
+    "better-auth": "^1.6.18",
     "expo": "~55.0.28",
     "expo-constants": "~55.0.17",
     "expo-dev-client": "~55.0.37",
     "expo-linking": "~55.0.16",
+    "expo-network": "^55.0.18",
     "expo-router": "~55.0.17",
+    "expo-secure-store": "^55.0.18",
     "heroui-native": "^1.0.9",
     "react": "19.2.0",
     "react-dom": "19.2.0",
@@ -42,6 +48,7 @@
   },
   "devDependencies": {
     "@types/react": "^19.2.14",
+    "react-native-svg-transformer": "1.5.2",
     "typescript": "^5.9.3"
   }
 }

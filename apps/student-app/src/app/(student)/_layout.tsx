@@ -1,9 +1,10 @@
-import { Tabs, useRouter } from "expo-router";
+import { Redirect, Tabs, useRouter } from "expo-router";
 import type { ComponentProps } from "react";
-import { Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Icon, type IconName } from "@/components/icon";
+import { authClient } from "@/lib/auth-client";
 
 type BottomTabBarProps = Parameters<NonNullable<ComponentProps<typeof Tabs>["tabBar"]>>[0];
 
@@ -80,6 +81,18 @@ function StudentTabBar({ state, navigation }: BottomTabBarProps) {
 }
 
 export default function StudentLayout() {
+  const session = authClient.useSession();
+
+  if (session.isPending) {
+    return (
+      <View className="flex-1 items-center justify-center bg-canvas">
+        <ActivityIndicator color="#F4531C" />
+      </View>
+    );
+  }
+
+  if (!session.data) return <Redirect href="/login" />;
+
   return (
     <Tabs
       initialRouteName="home"

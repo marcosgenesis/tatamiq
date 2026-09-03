@@ -7,7 +7,7 @@
     "scheme": "tatamiq-student",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "plugins": ["expo-dev-client", "expo-router"],
+    "plugins": ["expo-dev-client", "expo-router", "expo-secure-store"],
     "experiments": {
       "typedRoutes": true
     },
