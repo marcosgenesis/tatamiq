@@ -12,6 +12,7 @@ import {
   studentIndicatorsResponseSchema,
   studentInvitePreviewSchema,
   studentMeResponseSchema,
+  studentNextClassResponseSchema,
   studentScheduleResponseSchema,
   updateStudentProfileSchema,
 } from "@tatamiq/contracts";
@@ -26,6 +27,7 @@ export class AcceptStudentInviteResponseDto extends createZodDto(
   acceptStudentInviteResponseSchema,
 ) {}
 export class StudentMeResponseDto extends createZodDto(studentMeResponseSchema) {}
+export class StudentNextClassResponseDto extends createZodDto(studentNextClassResponseSchema) {}
 export class ConfirmQrAttendanceDto extends createZodDto(confirmQrAttendanceSchema) {}
 export class ConfirmQrAttendanceResponseDto extends createZodDto(
   confirmQrAttendanceResponseSchema,

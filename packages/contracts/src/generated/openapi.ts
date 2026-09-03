@@ -868,6 +868,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/student/next-class": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["StudentPortalController_nextClass"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/student/monthly-fees": {
         parameters: {
             query?: never;
@@ -2706,6 +2722,20 @@ export interface components {
                 durationMinutes: number;
             }[];
         };
+        StudentNextClassResponseDto: {
+            nextClass: {
+                id: string;
+                /** @enum {string} */
+                status: "scheduled" | "active" | "ended" | "cancelled";
+                /** @enum {string} */
+                source: "recurring" | "ad_hoc";
+                classGroupId: string;
+                classGroupName: string;
+                /** Format: date-time */
+                scheduledStartAt: string;
+                durationMinutes: number;
+            } | null;
+        };
         StudentMonthlyFeesResponseDto: {
             fees: {
                 id: string;
@@ -2782,6 +2812,7 @@ export interface components {
                 /** @enum {string} */
                 path: "adult" | "child";
                 position: number;
+                maxDegrees: number;
             };
             currentDegree: number;
             promotions: {
@@ -4844,6 +4875,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StudentMeResponseDto"];
+                };
+            };
+        };
+    };
+    StudentPortalController_nextClass: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentNextClassResponseDto"];
                 };
             };
         };

@@ -208,6 +208,7 @@ export class GraduationService {
         name: row.belt.name,
         path: row.belt.path as "adult" | "child",
         position: row.belt.position,
+        maxDegrees: row.belt.maxDegrees,
       },
       currentDegree: row.student.currentDegree,
       promotions: history,

@@ -32,6 +32,7 @@ import {
   StudentGraduationResponseDto,
   StudentIndicatorsResponseDto,
   StudentMeResponseDto,
+  StudentNextClassResponseDto,
   StudentScheduleResponseDto,
   UpdateStudentProfileDto,
 } from "./student-access.dto";
@@ -66,6 +67,12 @@ export class StudentPortalController {
   @ApiOkResponse({ type: StudentMeResponseDto })
   me(@ActorId() actorId: string): Promise<StudentMeResponseDto> {
     return this.studentAccessService.me(actorId);
+  }
+
+  @Get("next-class")
+  @ApiOkResponse({ type: StudentNextClassResponseDto })
+  nextClass(@ActorId() actorId: string): Promise<StudentNextClassResponseDto> {
+    return this.studentAccessService.nextClass(actorId);
   }
 
   @Get("monthly-fees")

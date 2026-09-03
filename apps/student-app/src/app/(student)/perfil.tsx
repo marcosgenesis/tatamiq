@@ -1,5 +1,6 @@
 import { useRouter } from "expo-router";
-import { Pressable, Text, View } from "react-native";
+import { useState } from "react";
+import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
 import { Badge } from "@/components/badge";
 import { Card } from "@/components/card";
 import { Icon } from "@/components/icon";
@@ -7,9 +8,33 @@ import { ListRow } from "@/components/list-row";
 import { ProgressRing } from "@/components/progress-ring";
 import { Screen } from "@/components/screen";
 import { ScreenHeader } from "@/components/screen-header";
+import { authClient } from "@/lib/auth-client";
 
 export default function PerfilScreen() {
   const router = useRouter();
+  const [isSigningOut, setIsSigningOut] = useState(false);
+
+  async function signOut() {
+    setIsSigningOut(true);
+    try {
+      const { error } = await authClient.signOut();
+
+      if (error) {
+        setIsSigningOut(false);
+        Alert.alert("Não foi possível sair", "Tente novamente em instantes.");
+      }
+    } catch {
+      setIsSigningOut(false);
+      Alert.alert("Não foi possível sair", "Tente novamente em instantes.");
+    }
+  }
+
+  function confirmSignOut() {
+    Alert.alert("Sair da conta", "Você precisará entrar novamente para acessar o app.", [
+      { text: "Cancelar", style: "cancel" },
+      { text: "Sair", style: "destructive", onPress: () => void signOut() },
+    ]);
+  }
 
   return (
     <Screen>
@@ -90,10 +115,19 @@ export default function PerfilScreen() {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Sair da conta"
+          accessibilityState={{ busy: isSigningOut, disabled: isSigningOut }}
+          disabled={isSigningOut}
+          onPress={confirmSignOut}
           className="-mt-2 h-12 flex-row items-center justify-center gap-3 rounded-full bg-danger-soft"
         >
-          <Icon name="log-out" color="#E5484D" size={22} strokeWidth={2.25} />
-          <Text className="text-base font-bold text-danger">Sair da conta</Text>
+          {isSigningOut ? (
+            <ActivityIndicator color="#E5484D" />
+          ) : (
+            <Icon name="log-out" color="#E5484D" size={22} strokeWidth={2.25} />
+          )}
+          <Text className="text-base font-bold text-danger">
+            {isSigningOut ? "Saindo..." : "Sair da conta"}
+          </Text>
         </Pressable>
       </View>
     </Screen>

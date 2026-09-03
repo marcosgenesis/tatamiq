@@ -1731,6 +1731,27 @@
         ]
       }
     },
+    "/student/next-class": {
+      "get": {
+        "operationId": "StudentPortalController_nextClass",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentNextClassResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "student-portal"
+        ]
+      }
+    },
     "/student/monthly-fees": {
       "get": {
         "operationId": "StudentPortalController_studentMonthlyFees",
@@ -7272,6 +7293,64 @@
           "upcomingClasses"
         ]
       },
+      "StudentNextClassResponseDto": {
+        "type": "object",
+        "properties": {
+          "nextClass": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "scheduled",
+                  "active",
+                  "ended",
+                  "cancelled"
+                ]
+              },
+              "source": {
+                "type": "string",
+                "enum": [
+                  "recurring",
+                  "ad_hoc"
+                ]
+              },
+              "classGroupId": {
+                "type": "string"
+              },
+              "classGroupName": {
+                "type": "string"
+              },
+              "scheduledStartAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "durationMinutes": {
+                "type": "integer",
+                "exclusiveMinimum": true,
+                "maximum": 9007199254740991,
+                "minimum": 0
+              }
+            },
+            "required": [
+              "id",
+              "status",
+              "source",
+              "classGroupId",
+              "classGroupName",
+              "scheduledStartAt",
+              "durationMinutes"
+            ],
+            "nullable": true
+          }
+        },
+        "required": [
+          "nextClass"
+        ]
+      },
       "StudentMonthlyFeesResponseDto": {
         "type": "object",
         "properties": {
@@ -7607,13 +7686,19 @@
                 "type": "integer",
                 "minimum": -9007199254740991,
                 "maximum": 9007199254740991
+              },
+              "maxDegrees": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
               }
             },
             "required": [
               "id",
               "name",
               "path",
-              "position"
+              "position",
+              "maxDegrees"
             ]
           },
           "currentDegree": {

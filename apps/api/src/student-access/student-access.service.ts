@@ -14,6 +14,7 @@ import type {
   StudentAccessState,
   StudentInvitePreview,
   StudentMeResponse,
+  StudentNextClassResponse,
 } from "@tatamiq/contracts";
 import {
   classCancellations,
@@ -372,6 +373,11 @@ export class StudentAccessService {
       classGroups: groups,
       upcomingClasses,
     };
+  }
+
+  async nextClass(userId: string): Promise<StudentNextClassResponse> {
+    const meData = await this.me(userId);
+    return { nextClass: meData.upcomingClasses[0] ?? null };
   }
 
   private async findStudent(organizationId: string, studentId: string): Promise<StudentRow> {

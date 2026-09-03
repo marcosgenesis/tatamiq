@@ -1,5 +1,6 @@
 import {
   ArrowLeft01Icon,
+  Award01Icon,
   Calendar01Icon,
   Camera01Icon,
   CheckmarkCircle02Icon,
@@ -28,6 +29,7 @@ export type IconName =
   | "user"
   | "qr-code"
   | "flame"
+  | "award"
   | "check-circle"
   | "chevron-right"
   | "arrow-left"
@@ -51,6 +53,7 @@ const icons = {
   user: UserIcon,
   "qr-code": QrCodeIcon,
   flame: FireIcon,
+  award: Award01Icon,
   "check-circle": CheckmarkCircle02Icon,
   "chevron-right": ChevronRightIcon,
   "arrow-left": ArrowLeft01Icon,

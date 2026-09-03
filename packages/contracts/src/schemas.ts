@@ -204,6 +204,10 @@ export const studentUpcomingClassSchema = z.object({
   durationMinutes: z.number().int().positive(),
 });
 
+export const studentNextClassResponseSchema = z.object({
+  nextClass: studentUpcomingClassSchema.nullable(),
+});
+
 export const studentMeResponseSchema = z.object({
   academy: z.object({
     id: z.string(),
@@ -239,6 +243,7 @@ export type StudentInvitePreview = z.infer<typeof studentInvitePreviewSchema>;
 export type AcceptStudentInviteInput = z.infer<typeof acceptStudentInviteSchema>;
 export type AcceptStudentInviteResponse = z.infer<typeof acceptStudentInviteResponseSchema>;
 export type StudentMeResponse = z.infer<typeof studentMeResponseSchema>;
+export type StudentNextClassResponse = z.infer<typeof studentNextClassResponseSchema>;
 export type InviteSummaryResponse = z.infer<typeof inviteSummaryResponseSchema>;
 
 // --- Academy Pre-registration ---
@@ -1064,7 +1069,13 @@ export type UpdateStudentProfileInput = z.infer<typeof updateStudentProfileSchem
 // --- Student Portal: Graduation View ---
 
 export const studentGraduationResponseSchema = z.object({
-  currentBelt: beltSchema.pick({ id: true, name: true, path: true, position: true }),
+  currentBelt: beltSchema.pick({
+    id: true,
+    name: true,
+    path: true,
+    position: true,
+    maxDegrees: true,
+  }),
   currentDegree: z.number().int(),
   promotions: z.array(promotionSchema),
 });

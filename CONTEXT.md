@@ -459,6 +459,10 @@ _Avoid_: tarefa, lembrete, prontuário, workflow, comentário do aluno, exclusã
 > **Dev:** "O primeiro fluxo deve atender a recepção, o financeiro ou o professor?"
 > **Domain expert:** "Primeiro o **Responsável da Academia**, que precisa acompanhar seus **Alunos** sem depender de uma equipe administrativa."
 
+**Resumo da Home do Aluno**:
+Projeção de leitura da área inicial do **Acesso do Aluno**, composta por dados reais da **Academia**, do **Aluno**, das próximas **Aulas**, da **Evolução**, das **Presenças** e das **Mensalidades**; não é uma entidade persistida nem uma nova fonte de verdade do domínio.
+_Avoid_: dashboard administrativo, snapshot persistido, dado demonstrativo, regra de negócio exclusiva da Home
+
 ## Flagged ambiguities
 
 - "gestão de alunos" foi delimitada inicialmente como **Presença**, **Evolução** e **Mensalidade**; cadastro e comunicação ficam como suporte, não como foco principal.
