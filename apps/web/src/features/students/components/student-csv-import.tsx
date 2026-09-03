@@ -1,9 +1,9 @@
-import { useMutation } from "@tanstack/react-query";
 import type {
   CsvImportConfirmInput,
   CsvImportPreviewInput,
   CsvImportPreviewResponse,
-} from "@tatamiq/contracts";
+} from "@appdosensei/contracts";
+import { useMutation } from "@tanstack/react-query";
 import { Download04Icon } from "hugeicons-react";
 import { useRef, useState } from "react";
 import { api } from "../../../api";

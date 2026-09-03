@@ -1,7 +1,7 @@
+import type { AcademyConfirmLogoInput } from "@appdosensei/contracts";
+import type { components } from "@appdosensei/contracts/generated";
 import { useQueryClient } from "@tanstack/react-query";
 import { Navigate, useNavigate } from "@tanstack/react-router";
-import type { AcademyConfirmLogoInput } from "@tatamiq/contracts";
-import type { components } from "@tatamiq/contracts/generated";
 import {
   ArrowRight01Icon,
   Cancel01Icon,
@@ -239,7 +239,7 @@ export function AcademyOnboardingPage() {
             <div className="flex items-center gap-3">
               <LogoIcon className="size-10" />
               <div>
-                <p className="text-lg font-semibold leading-none tracking-tight">Tatamiq</p>
+                <p className="text-lg font-semibold leading-none tracking-tight">App do Sensei</p>
                 <p className="mt-1 text-xs text-muted-foreground">Gestão para o tatame</p>
               </div>
             </div>

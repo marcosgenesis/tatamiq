@@ -66,7 +66,7 @@ function OperatorBrand() {
         <LogoIcon className="size-5" />
       </span>
       <span className="flex flex-col leading-none group-data-[collapsible=icon]:hidden">
-        <span className="text-[0.95rem] font-bold tracking-tight">tatamiq</span>
+        <span className="text-[0.95rem] font-bold tracking-tight">App do Sensei</span>
         <span className="mt-1 text-[0.6rem] font-bold uppercase tracking-[0.14em] text-primary">
           Operador
         </span>

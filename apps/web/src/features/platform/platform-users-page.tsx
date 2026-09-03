@@ -1,3 +1,4 @@
+import type { components } from "@appdosensei/contracts/generated";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, useNavigate } from "@tanstack/react-router";
 import {
@@ -6,7 +7,6 @@ import {
   type PaginationState,
   useReactTable,
 } from "@tanstack/react-table";
-import type { components } from "@tatamiq/contracts/generated";
 import { ArrowRight01Icon } from "hugeicons-react";
 import { type Dispatch, type SetStateAction, useMemo, useState } from "react";
 import { DataGrid, DataGridContainer } from "@/components/reui/data-grid/data-grid";

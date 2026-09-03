@@ -1,5 +1,5 @@
+import { appDoSenseiTokens } from "@appdosensei/design-tokens";
 import { useQueryClient } from "@tanstack/react-query";
-import { tatamiqTokens } from "@tatamiq/design-tokens";
 import { type BarcodeScanningResult, CameraView, useCameraPermissions } from "expo-camera";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -37,7 +37,7 @@ function ScannerCorner({ position }: { position: "tl" | "tr" | "bl" | "br" }) {
               borderBottomRightRadius: isLeft ? 0 : 18,
             }),
         ...(isLeft ? { borderLeftWidth: CORNER_WIDTH } : { borderRightWidth: CORNER_WIDTH }),
-        borderColor: tatamiqTokens.colors.brand,
+        borderColor: appDoSenseiTokens.colors.brand,
       }}
     />
   );
@@ -65,7 +65,7 @@ function ScannerFrame({
         pointerEvents="none"
         className="absolute left-[25px] right-[25px] top-1/2 h-[2px] bg-brand"
         style={{
-          shadowColor: tatamiqTokens.colors.brand,
+          shadowColor: appDoSenseiTokens.colors.brand,
           shadowOpacity: 0.85,
           shadowRadius: 8,
           shadowOffset: { width: 0, height: 0 },
@@ -128,7 +128,7 @@ export default function CheckInScreen() {
           pointerEvents="none"
           className="absolute -top-20 left-1/2 h-40 w-[280px] -translate-x-1/2 rounded-full bg-brand/[0.025]"
           style={{
-            shadowColor: tatamiqTokens.colors.brand,
+            shadowColor: appDoSenseiTokens.colors.brand,
             shadowOpacity: 0.06,
             shadowRadius: 70,
             shadowOffset: { width: 0, height: 60 },

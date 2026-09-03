@@ -1,5 +1,5 @@
+import type { Student } from "@appdosensei/contracts";
 import { useQueryClient } from "@tanstack/react-query";
-import type { Student } from "@tatamiq/contracts";
 import { Delete02Icon, FilterHorizontalIcon, PlusSignIcon, UserAdd01Icon } from "hugeicons-react";
 import { useMemo, useState } from "react";
 import { useAppShell } from "@/components/app-shell";

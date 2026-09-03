@@ -2,7 +2,7 @@ import {
   classSessionSchema,
   qrTokenResponseSchema,
   startRecurringClassSchema,
-} from "@tatamiq/contracts";
+} from "@appdosensei/contracts";
 import { createZodDto } from "nestjs-zod";
 
 export class ClassSessionDto extends createZodDto(classSessionSchema) {}

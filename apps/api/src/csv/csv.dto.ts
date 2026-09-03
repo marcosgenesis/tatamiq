@@ -3,7 +3,7 @@ import {
   csvImportConfirmSchema,
   csvImportPreviewResponseSchema,
   csvImportPreviewSchema,
-} from "@tatamiq/contracts";
+} from "@appdosensei/contracts";
 import { createZodDto } from "nestjs-zod";
 
 export class CsvImportPreviewDto extends createZodDto(csvImportPreviewSchema) {}

@@ -1,5 +1,5 @@
 {
-  "name": "@tatamiq/totem",
+  "name": "@appdosensei/totem",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -11,7 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@tatamiq/contracts": "workspace:*",
+    "@appdosensei/contracts": "workspace:*",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6"

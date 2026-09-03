@@ -1,4 +1,3 @@
-import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import {
   attendances,
   belts,
@@ -12,7 +11,8 @@ import {
   promotions,
   students,
   user,
-} from "@tatamiq/database";
+} from "@appdosensei/database";
+import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { and, count, desc, eq, ilike, inArray, isNotNull, isNull, or } from "drizzle-orm";
 import { seedIbjjfBelts } from "../belts/seed-belts";
 import { DATABASE } from "../database/database.module";

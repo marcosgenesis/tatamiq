@@ -20,10 +20,10 @@ test("platform admin covers dashboard, provision, admins, users, deletion, and s
   browser,
 }) => {
   test.setTimeout(90_000);
-  const provisionEmail = `platform-provision-${Date.now()}@tatamiq.local`;
-  const adminEmail = `platform-admin-${Date.now()}@tatamiq.local`;
-  const secondResponsibleEmail = `platform-responsible-${Date.now()}@tatamiq.local`;
-  const secondResponsiblePassword = "tatamiq123";
+  const provisionEmail = `platform-provision-${Date.now()}@appdosensei.local`;
+  const adminEmail = `platform-admin-${Date.now()}@appdosensei.local`;
+  const secondResponsibleEmail = `platform-responsible-${Date.now()}@appdosensei.local`;
+  const secondResponsiblePassword = "appdosensei123";
 
   await page.goto("/platform");
   await expect(page.getByRole("main").getByText("Visão geral")).toBeVisible();
@@ -61,7 +61,7 @@ test("platform admin covers dashboard, provision, admins, users, deletion, and s
   await page.getByRole("button", { name: "Adicionar responsável" }).click();
   await page
     .getByPlaceholder("E-mail do responsável")
-    .fill(`responsavel-extra-${Date.now()}@tatamiq.local`);
+    .fill(`responsavel-extra-${Date.now()}@appdosensei.local`);
   await page.getByPlaceholder("Nome do responsável (opcional)").fill("Responsável Extra E2E");
   await page.getByRole("button", { name: "Adicionar", exact: true }).click();
   await expect(page.getByText("Responsável Extra E2E")).toBeVisible();
@@ -107,7 +107,7 @@ test("platform admin covers dashboard, provision, admins, users, deletion, and s
   await expect(page.getByText("Conta", { exact: true })).toBeVisible();
   await expect(page.getByText("Academias (membro)", { exact: true })).toBeVisible();
 
-  await openPlatformUser(page, "aluno@tatamiq.local");
+  await openPlatformUser(page, "aluno@appdosensei.local");
   await expect(page.getByText("Acesso de aluno", { exact: true })).toBeVisible();
 
   await openPlatformUser(page, PLATFORM_FIXTURES.bannable.email);
@@ -216,9 +216,9 @@ test("platform admin removes one academy responsible while preserving another", 
 }) => {
   test.setTimeout(90_000);
   const remainingResponsible = {
-    email: `platform-remaining-${Date.now()}@tatamiq.local`,
+    email: `platform-remaining-${Date.now()}@appdosensei.local`,
     name: "Platform Remaining Responsible E2E",
-    password: "tatamiq123",
+    password: "appdosensei123",
   };
   await ensureStandalonePasswordUser(remainingResponsible);
 
@@ -254,7 +254,7 @@ test("platform admin removes one academy responsible while preserving another", 
   const removedPage = await removedContext.newPage();
   await signIn(removedPage, {
     email: PLATFORM_FIXTURES.academyOwner.email,
-    password: "tatamiq123",
+    password: "appdosensei123",
   });
   await expect(
     removedPage.getByRole("heading", { name: "Como se chama sua academia?" }),
@@ -265,7 +265,7 @@ test("platform admin removes one academy responsible while preserving another", 
 test("platform admin can leave an academy sem responsável with strong confirmation and recover it", async ({
   page,
 }) => {
-  const recoveredEmail = `platform-ownerless-recovered-${Date.now()}@tatamiq.local`;
+  const recoveredEmail = `platform-ownerless-recovered-${Date.now()}@appdosensei.local`;
 
   await openPlatformAcademy(page, PLATFORM_FIXTURES.academyOwner.academyName);
   await page.getByRole("button", { name: "Remover" }).click();

@@ -1,5 +1,5 @@
 {
-  "name": "@tatamiq/web",
+  "name": "@appdosensei/web",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -33,7 +33,7 @@
     "@tanstack/react-router": "latest",
     "@tanstack/react-table": "^8.21.3",
     "@tanstack/react-virtual": "^3.13.25",
-    "@tatamiq/contracts": "workspace:*",
+    "@appdosensei/contracts": "workspace:*",
     "@vitejs/plugin-react": "^4.7.0",
     "better-auth": "^1.6.18",
     "class-variance-authority": "^0.7.1",

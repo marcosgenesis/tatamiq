@@ -1,4 +1,3 @@
-import { BadRequestException, ConflictException, Inject, Injectable } from "@nestjs/common";
 import type {
   AdjustMonthlyFeeInput,
   ConfirmReceiptInput,
@@ -6,14 +5,15 @@ import type {
   ManualPaymentInput,
   RejectReceiptInput,
   WaiveMonthlyFeeInput,
-} from "@tatamiq/contracts";
+} from "@appdosensei/contracts";
 import {
   type Database,
   monthlyFeeEvents,
   monthlyFees,
   paymentReceipts,
   type students,
-} from "@tatamiq/database";
+} from "@appdosensei/database";
+import { BadRequestException, ConflictException, Inject, Injectable } from "@nestjs/common";
 import { and, desc, eq } from "drizzle-orm";
 import { AcademiaScope } from "../academy-scope/academia-scope.service";
 import { DATABASE } from "../database/database.module";

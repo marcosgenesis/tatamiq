@@ -1,4 +1,4 @@
-import { tatamiqTokens } from "@tatamiq/design-tokens";
+import { appDoSenseiTokens } from "@appdosensei/design-tokens";
 import { useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Card } from "@/components/card";
@@ -77,7 +77,7 @@ export default function GraduacaoScreen() {
                   style={{ backgroundColor: belt.color }}
                 >
                   {belt.current ? (
-                    <Icon name="check-circle" size={22} color={tatamiqTokens.colors.ink} />
+                    <Icon name="check-circle" size={22} color={appDoSenseiTokens.colors.ink} />
                   ) : null}
                 </View>
                 <Text
@@ -113,7 +113,12 @@ export default function GraduacaoScreen() {
               <Text className="text-[16px] font-bold text-ink">1º grau · Faixa Branca</Text>
               <Text className="mt-1 text-[14px] text-muted-ink">15 de março de 2025</Text>
               <Card className="mt-3 flex-row gap-3 rounded-[18px] px-4 py-3.5">
-                <Icon name="quote" size={20} color={tatamiqTokens.colors.brand} strokeWidth={2.2} />
+                <Icon
+                  name="quote"
+                  size={20}
+                  color={appDoSenseiTokens.colors.brand}
+                  strokeWidth={2.2}
+                />
                 <Text className="flex-1 text-[14px] leading-5 text-[#5E5953]">
                   Boa evolução na guarda e nas passagens. Continue firme.
                 </Text>
@@ -141,7 +146,7 @@ export default function GraduacaoScreen() {
 
 const styles = StyleSheet.create({
   scrollContent: {
-    backgroundColor: tatamiqTokens.colors.canvas,
+    backgroundColor: appDoSenseiTokens.colors.canvas,
     flexGrow: 1,
   },
   warmGlow: {
@@ -152,7 +157,7 @@ const styles = StyleSheet.create({
     height: 210,
     borderRadius: 105,
     backgroundColor: "rgba(244, 83, 28, 0.05)",
-    shadowColor: tatamiqTokens.colors.brandStrong,
+    shadowColor: appDoSenseiTokens.colors.brandStrong,
     shadowOpacity: 0.42,
     shadowRadius: 72,
     shadowOffset: { width: 0, height: 8 },
@@ -162,7 +167,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#EFEFEF",
   },
   dot: {
-    shadowColor: tatamiqTokens.colors.brand,
+    shadowColor: appDoSenseiTokens.colors.brand,
     shadowOpacity: 0.22,
     shadowRadius: 3,
     shadowOffset: { width: 0, height: 0 },

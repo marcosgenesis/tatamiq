@@ -1,4 +1,3 @@
-import { BadRequestException, Inject, Injectable } from "@nestjs/common";
 import {
   attendances,
   classGroups,
@@ -12,7 +11,8 @@ import {
   session,
   studentAccess,
   students,
-} from "@tatamiq/database";
+} from "@appdosensei/database";
+import { BadRequestException, Inject, Injectable } from "@nestjs/common";
 import { count, eq, inArray } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
 import { R2StorageService } from "../monthly-fees/r2-storage.service";

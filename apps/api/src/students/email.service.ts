@@ -51,7 +51,7 @@ export class EmailService {
 }
 
 function emailFrom(): string {
-  return process.env.EMAIL_FROM ?? "Tatamiq <noreply@tatamiq.com.br>";
+  return process.env.EMAIL_FROM ?? "App do Sensei <noreply@tatamiq.com.br>";
 }
 
 function isLocalEmailFallbackAllowed(env: NodeJS.ProcessEnv): boolean {

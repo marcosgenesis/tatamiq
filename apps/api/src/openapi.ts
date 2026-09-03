@@ -8,8 +8,8 @@ async function generateOpenApi() {
   const app = await createApp();
 
   const config = new DocumentBuilder()
-    .setTitle("Tatamiq API")
-    .setDescription("Tatamiq V0 API")
+    .setTitle("App do Sensei API")
+    .setDescription("App do Sensei V0 API")
     .setVersion("0.0.0")
     .build();
   const document = cleanupOpenApiDoc(SwaggerModule.createDocument(app, config));

@@ -1,4 +1,4 @@
-import type { StudentNextClassResponse } from "@tatamiq/contracts";
+import type { StudentNextClassResponse } from "@appdosensei/contracts";
 import { useRouter } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 import Svg, { Circle, Defs, LinearGradient, Rect, Stop } from "react-native-svg";

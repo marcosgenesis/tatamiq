@@ -1,5 +1,5 @@
+import type { StudentMonthlyFee } from "@appdosensei/contracts";
 import { useMutation } from "@tanstack/react-query";
-import type { StudentMonthlyFee } from "@tatamiq/contracts";
 import { Camera01Icon } from "hugeicons-react";
 import { FileTextIcon, ImageIcon } from "lucide-react";
 import { type ChangeEvent, type FormEvent, useEffect, useRef, useState } from "react";

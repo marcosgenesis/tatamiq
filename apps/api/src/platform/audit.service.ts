@@ -1,5 +1,5 @@
+import { adminAuditLogs, type Database, user } from "@appdosensei/database";
 import { Inject, Injectable } from "@nestjs/common";
-import { adminAuditLogs, type Database, user } from "@tatamiq/database";
 import { and, count, desc, eq, gte, lte } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
 

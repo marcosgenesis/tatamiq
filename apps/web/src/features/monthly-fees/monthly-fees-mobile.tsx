@@ -1,4 +1,4 @@
-import type { MonthlyFee } from "@tatamiq/contracts";
+import type { MonthlyFee } from "@appdosensei/contracts";
 import { MoreHorizontalIcon, PlusSignIcon } from "hugeicons-react";
 import { useState } from "react";
 import {

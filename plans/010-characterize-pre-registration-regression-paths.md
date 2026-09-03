@@ -109,8 +109,8 @@ Repo conventions to match:
 
 | Purpose | Command | Expected on success |
 |---|---|---|
-| Web unit tests | `pnpm --filter @tatamiq/web test -- src/features/students/pre-registrations-tab.test.tsx src/features/students/first-access-page.test.tsx` | exit 0 |
-| API unit tests | `pnpm --filter @tatamiq/api test -- src/students/pre-registration.service.spec.ts` | exit 0 |
+| Web unit tests | `pnpm --filter @appdosensei/web test -- src/features/students/pre-registrations-tab.test.tsx src/features/students/first-access-page.test.tsx` | exit 0 |
+| API unit tests | `pnpm --filter @appdosensei/api test -- src/students/pre-registration.service.spec.ts` | exit 0 |
 | E2E regression pass | `pnpm test:e2e -- tests/e2e/student-access.spec.ts --project=chromium --workers=1` | all tests pass |
 | Full typecheck | `pnpm typecheck` | exit 0 |
 
@@ -145,7 +145,7 @@ In `apps/api/src/students/pre-registration.service.spec.ts`, add focused tests f
 
 Reuse the existing mock DB helpers and the fake-time pattern already present in this spec.
 
-**Verify**: `pnpm --filter @tatamiq/api test -- src/students/pre-registration.service.spec.ts` → exit 0 with the new cases passing.
+**Verify**: `pnpm --filter @appdosensei/api test -- src/students/pre-registration.service.spec.ts` → exit 0 with the new cases passing.
 
 ### Step 2: Expand web branch coverage for approved requests and first-access states
 
@@ -157,7 +157,7 @@ Reuse the existing mock DB helpers and the fake-time pattern already present in 
 
 Keep the test style aligned with the lightweight Vitest/react rendering already used in this area; do not introduce a new test stack.
 
-**Verify**: `pnpm --filter @tatamiq/web test -- src/features/students/pre-registrations-tab.test.tsx src/features/students/first-access-page.test.tsx` → exit 0.
+**Verify**: `pnpm --filter @appdosensei/web test -- src/features/students/pre-registrations-tab.test.tsx src/features/students/first-access-page.test.tsx` → exit 0.
 
 ### Step 3: Deepen the browser spec around duplicate handling
 
@@ -197,8 +197,8 @@ Use these existing patterns as exemplars:
 
 ## Done criteria
 
-- [ ] `pnpm --filter @tatamiq/api test -- src/students/pre-registration.service.spec.ts` exits 0
-- [ ] `pnpm --filter @tatamiq/web test -- src/features/students/pre-registrations-tab.test.tsx src/features/students/first-access-page.test.tsx` exits 0
+- [ ] `pnpm --filter @appdosensei/api test -- src/students/pre-registration.service.spec.ts` exits 0
+- [ ] `pnpm --filter @appdosensei/web test -- src/features/students/pre-registrations-tab.test.tsx src/features/students/first-access-page.test.tsx` exits 0
 - [ ] `pnpm test:e2e -- tests/e2e/student-access.spec.ts --project=chromium --workers=1` exits 0
 - [ ] `pnpm typecheck` exits 0
 - [ ] No files outside the in-scope list are modified

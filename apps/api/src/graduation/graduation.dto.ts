@@ -6,7 +6,7 @@ import {
   listEligibleStudentsResponseSchema,
   listPromotionsResponseSchema,
   promotionSchema,
-} from "@tatamiq/contracts";
+} from "@appdosensei/contracts";
 import { createZodDto } from "nestjs-zod";
 
 export class PromotionDto extends createZodDto(promotionSchema) {}

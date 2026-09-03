@@ -10,9 +10,9 @@ test.beforeAll(() => {
 });
 
 const adultStudentName = "000 E2E Adulto CRUD";
-const adultStudentEmail = "adult.crud.e2e@tatamiq.local";
+const adultStudentEmail = "adult.crud.e2e@appdosensei.local";
 const minorStudentName = "000 E2E Menor CRUD";
-const minorStudentEmail = "minor.crud.e2e@tatamiq.local";
+const minorStudentEmail = "minor.crud.e2e@appdosensei.local";
 const fixtureStudentName = "000 E2E Carla CRUD";
 
 test("create a minor student with guardian and show guardian in the row", async ({ page }) => {
@@ -42,7 +42,7 @@ test("create a minor student with guardian and show guardian in the row", async 
   await page.getByLabel("Telefone do responsável", { exact: true }).fill("11999998888");
   await page
     .getByLabel("Email do responsável", { exact: true })
-    .fill("guardian.minor.crud.e2e@tatamiq.local");
+    .fill("guardian.minor.crud.e2e@appdosensei.local");
   await page.getByLabel("Parentesco", { exact: true }).fill("Mãe");
   await page.getByRole("button", { name: "Salvar aluno" }).click();
 

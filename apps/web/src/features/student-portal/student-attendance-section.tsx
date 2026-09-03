@@ -1,6 +1,6 @@
+import type { StudentAttendanceDto, StudentAttendancesResponse } from "@appdosensei/contracts";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import type { StudentAttendanceDto, StudentAttendancesResponse } from "@tatamiq/contracts";
 import { FireIcon, QrCodeIcon } from "hugeicons-react";
 import { api } from "../../api";
 import { Badge } from "../../components/ui/badge";

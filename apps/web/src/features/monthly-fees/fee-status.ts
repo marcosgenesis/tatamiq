@@ -1,4 +1,4 @@
-import type { MonthlyFee } from "@tatamiq/contracts";
+import type { MonthlyFee } from "@appdosensei/contracts";
 import type { StatusTone } from "@/components/mobile/mobile-ui";
 
 /** Canonical mapping from a fee's state to its status badge (tone + label). */

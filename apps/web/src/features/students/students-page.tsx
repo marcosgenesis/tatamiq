@@ -1,3 +1,4 @@
+import type { Student } from "@appdosensei/contracts";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   type ColumnDef,
@@ -5,7 +6,6 @@ import {
   type PaginationState,
   useReactTable,
 } from "@tanstack/react-table";
-import type { Student } from "@tatamiq/contracts";
 import { AlertCircle, MoreHorizontal, PlusCircle, UploadCloud } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";

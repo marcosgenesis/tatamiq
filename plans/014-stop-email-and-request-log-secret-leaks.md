@@ -17,7 +17,7 @@
 
 ## Why this matters
 
-Tatamiq uses httpOnly cookie sessions and first-access links for student onboarding. The current development email fallback logs complete email HTML; when that email contains a first-access URL, the raw access token can land in logs. The HTTP logger also uses default `nestjs-pino` request logging with no explicit cookie/header redaction. This plan makes logs useful for debugging without preserving bearer material, cookies, or one-time access links.
+App do Sensei uses httpOnly cookie sessions and first-access links for student onboarding. The current development email fallback logs complete email HTML; when that email contains a first-access URL, the raw access token can land in logs. The HTTP logger also uses default `nestjs-pino` request logging with no explicit cookie/header redaction. This plan makes logs useful for debugging without preserving bearer material, cookies, or one-time access links.
 
 ## Current state
 
@@ -45,7 +45,7 @@ const firstAccessUrl = `${webAppUrl()}/student/first-access/${rawToken}`;
 
 await this.emailService.send({
   to: request.email,
-  subject: `Seu acesso ao ${academy.name} no Tatamiq`,
+  subject: `Seu acesso ao ${academy.name} no App do Sensei`,
   html: buildFirstAccessEmailHtml(academy.name, request.name, firstAccessUrl),
 });
 ```
@@ -71,7 +71,7 @@ Existing convention to match: use Vitest spies for logging tests, as in `apps/ap
 | Purpose | Command | Expected on success |
 |---|---|---|
 | Install | `pnpm install` | exit 0 |
-| API tests | `pnpm --filter @tatamiq/api test -- src/students/email.service.spec.ts src/health/health.controller.spec.ts` | exit 0, targeted tests pass |
+| API tests | `pnpm --filter @appdosensei/api test -- src/students/email.service.spec.ts src/health/health.controller.spec.ts` | exit 0, targeted tests pass |
 | Typecheck | `pnpm typecheck` | exit 0, no TypeScript errors |
 | Lint | `pnpm lint` | exit 0; existing warnings may remain, no new errors |
 | Full tests | `pnpm test` | exit 0 |
@@ -130,7 +130,7 @@ if (!resendApiKey) {
 
 Add a small helper near `emailFrom()` and unit-test it through `EmailService.send` behavior; it does not need to be exported unless tests require it.
 
-**Verify**: `pnpm --filter @tatamiq/api test -- src/students/email.service.spec.ts` → exits 0.
+**Verify**: `pnpm --filter @appdosensei/api test -- src/students/email.service.spec.ts` → exits 0.
 
 ### Step 2: Update email service tests to prove secrets are not logged
 
@@ -141,7 +141,7 @@ In `apps/api/src/students/email.service.spec.ts`:
 - Add a test for production-like `NODE_ENV` with empty `RESEND_API_KEY`: it must not call `console.log` and must reject with a friendly error.
 - Keep the existing Resend test proving the provider path still sends the full HTML to Resend.
 
-**Verify**: `pnpm --filter @tatamiq/api test -- src/students/email.service.spec.ts` → exits 0 and includes the new non-leak tests.
+**Verify**: `pnpm --filter @appdosensei/api test -- src/students/email.service.spec.ts` → exits 0 and includes the new non-leak tests.
 
 ### Step 3: Redact request/response headers in the API logger
 
@@ -188,7 +188,7 @@ In `.env.example` and `apps/api/.env.example`, update the Resend comment so it s
 - Update `apps/api/src/students/email.service.spec.ts` as described above.
 - If practical without brittle logger internals, add a small assertion around logger configuration in a targeted API test. If that requires bootstrapping the entire Nest app just to inspect internal Pino options, skip it and rely on typecheck plus code review; do not add a fragile test.
 - Run:
-  - `pnpm --filter @tatamiq/api test -- src/students/email.service.spec.ts`
+  - `pnpm --filter @appdosensei/api test -- src/students/email.service.spec.ts`
   - `pnpm typecheck`
   - `pnpm lint`
   - `pnpm test`
@@ -201,7 +201,7 @@ All must hold:
 - [ ] Production-like env with missing `RESEND_API_KEY` does not log email payloads.
 - [ ] `LoggerModule` has explicit redaction for cookies and authorization-like headers.
 - [ ] `.env.example` and `apps/api/.env.example` explain that email fallback is local/test only.
-- [ ] `pnpm --filter @tatamiq/api test -- src/students/email.service.spec.ts` exits 0.
+- [ ] `pnpm --filter @appdosensei/api test -- src/students/email.service.spec.ts` exits 0.
 - [ ] `pnpm typecheck`, `pnpm lint`, and `pnpm test` exit 0.
 - [ ] No files outside the in-scope list are modified.
 - [ ] `plans/README.md` status row for Plan 014 is updated.

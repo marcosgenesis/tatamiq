@@ -2,7 +2,7 @@
 
 ## Context
 
-The student portal started as an online-first PWA and remains the web fallback for the Tatamiq student experience. The product decision for the MVP is now to make an Expo/React Native app the primary mobile surface for the complete **Acesso do Aluno**, including public pre-registration and activation flows, while keeping the PWA available when the app cannot be installed or opened.
+The student portal started as an online-first PWA and remains the web fallback for the App do Sensei student experience. The product decision for the MVP is now to make an Expo/React Native app the primary mobile surface for the complete **Acesso do Aluno**, including public pre-registration and activation flows, while keeping the PWA available when the app cannot be installed or opened.
 
 The migration must work with links shared outside the product, such as pre-registration links, student invitations, first-access links and class QR flows. It must also avoid forcing the Academy operational panel into the native app.
 

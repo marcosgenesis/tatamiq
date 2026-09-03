@@ -1,6 +1,6 @@
+import type { UpdateBeltInput } from "@appdosensei/contracts";
+import { belts, type Database } from "@appdosensei/database";
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
-import type { UpdateBeltInput } from "@tatamiq/contracts";
-import { belts, type Database } from "@tatamiq/database";
 import { and, eq } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
 import { seedIbjjfBelts } from "./seed-belts";

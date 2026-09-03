@@ -5,7 +5,7 @@ import {
   totemPairResponseSchema,
   totemQrResponseSchema,
   totemStateSchema,
-} from "@tatamiq/contracts";
+} from "@appdosensei/contracts";
 import { createZodDto } from "nestjs-zod";
 import { z } from "zod";
 

@@ -1,5 +1,5 @@
+import type { PaymentReceipt } from "@appdosensei/database";
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
-import type { PaymentReceipt } from "@tatamiq/database";
 import { R2StorageService } from "../monthly-fees/r2-storage.service";
 import type { PlatformSensitiveFileUrlDto } from "./platform.dto";
 import { PlatformAcademyService } from "./platform-academy.service";

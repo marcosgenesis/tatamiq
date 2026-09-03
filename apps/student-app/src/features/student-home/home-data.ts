@@ -5,7 +5,7 @@ import type {
   StudentMeResponse,
   StudentMonthlyFeesResponse,
   StudentNextClassResponse,
-} from "@tatamiq/contracts";
+} from "@appdosensei/contracts";
 
 import type { IconName } from "@/components/icon";
 

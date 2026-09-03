@@ -1,4 +1,4 @@
-import type { StudentGraduationResponse } from "@tatamiq/contracts";
+import type { StudentGraduationResponse } from "@appdosensei/contracts";
 import { Pressable, Text, View } from "react-native";
 
 import { Card } from "@/components/card";

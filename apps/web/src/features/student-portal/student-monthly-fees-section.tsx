@@ -1,5 +1,5 @@
+import type { StudentDailyFee, StudentMeResponse, StudentMonthlyFee } from "@appdosensei/contracts";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { StudentDailyFee, StudentMeResponse, StudentMonthlyFee } from "@tatamiq/contracts";
 import { Camera01Icon, CheckmarkCircle03Icon } from "hugeicons-react";
 import { useState } from "react";
 import { api } from "../../api";

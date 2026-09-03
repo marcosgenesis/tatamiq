@@ -69,7 +69,7 @@ Existing convention to match: `AttendancesService.checkOutOfGroup` checks for an
 | Purpose | Command | Expected on success |
 |---|---|---|
 | Install | `pnpm install` | exit 0 |
-| Targeted API tests | `pnpm --filter @tatamiq/api test -- src/student-access` | exit 0 |
+| Targeted API tests | `pnpm --filter @appdosensei/api test -- src/student-access` | exit 0 |
 | Typecheck | `pnpm typecheck` | exit 0 |
 | Lint | `pnpm lint` | exit 0; existing warnings may remain |
 | Full tests | `pnpm test` | exit 0 |
@@ -144,7 +144,7 @@ export function projectStudentAttendanceHistory(rows, activeClassGroupIds)
 
 and test that helper, while keeping DB query changes straightforward.
 
-**Verify**: `pnpm --filter @tatamiq/api test -- src/student-access/student-portal.service.spec.ts` → exits 0.
+**Verify**: `pnpm --filter @appdosensei/api test -- src/student-access/student-portal.service.spec.ts` → exits 0.
 
 ### Step 4: Ensure the web renders the flag
 
@@ -155,7 +155,7 @@ Inspect student attendance UI files. If the UI already displays a badge/text for
 
 Keep styling consistent with existing badges. Do not redesign the page.
 
-**Verify**: `pnpm --filter @tatamiq/web test` → exits 0; then `pnpm typecheck` → exits 0.
+**Verify**: `pnpm --filter @appdosensei/web test` → exits 0; then `pnpm typecheck` → exits 0.
 
 ### Step 5: Run full verification
 
@@ -196,4 +196,4 @@ Stop and report if:
 
 ## Maintenance notes
 
-This plan intentionally matches the current instructor roster semantics. If Tatamiq later needs historically precise out-of-group flags, implement that as a separate plan using `activeFrom`/`activeUntil` and attendance timestamps.
+This plan intentionally matches the current instructor roster semantics. If App do Sensei later needs historically precise out-of-group flags, implement that as a separate plan using `activeFrom`/`activeUntil` and attendance timestamps.

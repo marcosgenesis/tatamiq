@@ -1,6 +1,6 @@
+import type { AcademyConfirmLogoInput, AcademyProfile, BeltDto } from "@appdosensei/contracts";
+import type { components } from "@appdosensei/contracts/generated";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { AcademyConfirmLogoInput, AcademyProfile, BeltDto } from "@tatamiq/contracts";
-import type { components } from "@tatamiq/contracts/generated";
 import { AlertCircleIcon, Cancel01Icon, UserIcon } from "hugeicons-react";
 import { type FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";

@@ -1,4 +1,3 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import {
   account,
   type Database,
@@ -7,7 +6,8 @@ import {
   session,
   studentAccess,
   user,
-} from "@tatamiq/database";
+} from "@appdosensei/database";
+import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { count, eq } from "drizzle-orm";
 import { platformAdminUserIds } from "../auth";
 import { DATABASE } from "../database/database.module";
@@ -89,7 +89,7 @@ export class UserDeletionService {
       .update(user)
       .set({
         name: "Usuário excluído",
-        email: `deleted+${id}@tatamiq.local`,
+        email: `deleted+${id}@appdosensei.local`,
         image: null,
         role: null,
         banned: true,

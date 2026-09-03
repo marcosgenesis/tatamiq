@@ -1,4 +1,4 @@
-import type { PreRegistrationRequest } from "@tatamiq/contracts";
+import type { PreRegistrationRequest } from "@appdosensei/contracts";
 import {
   Alert01Icon,
   Copy01Icon,

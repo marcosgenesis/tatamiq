@@ -96,8 +96,8 @@ Repo conventions to match:
 
 | Purpose | Command | Expected on success |
 |---|---|---|
-| API tests | `pnpm --filter @tatamiq/api test -- src/students/pre-registration.service.spec.ts` | exit 0 |
-| Web tests | `pnpm --filter @tatamiq/web test -- src/features/students/first-access-page.test.tsx` | exit 0 |
+| API tests | `pnpm --filter @appdosensei/api test -- src/students/pre-registration.service.spec.ts` | exit 0 |
+| Web tests | `pnpm --filter @appdosensei/web test -- src/features/students/first-access-page.test.tsx` | exit 0 |
 | E2E regression | `pnpm test:e2e -- tests/e2e/student-access.spec.ts --project=chromium --workers=1` | all pass |
 | Typecheck | `pnpm typecheck` | exit 0 |
 
@@ -132,7 +132,7 @@ In `apps/api/src/students/pre-registration.service.ts`, preserve the current tok
 
 Use a small explicit response vocabulary rather than overloading boolean state in the frontend. Update or extend the service tests to cover both branches.
 
-**Verify**: `pnpm --filter @tatamiq/api test -- src/students/pre-registration.service.spec.ts` → exit 0.
+**Verify**: `pnpm --filter @appdosensei/api test -- src/students/pre-registration.service.spec.ts` → exit 0.
 
 ### Step 2: Honor the API redirect result in the first-access page
 
@@ -144,7 +144,7 @@ Preferred behavior:
 
 If direct navigation to `/student` turns out to be impossible because no auth session exists yet, do **not** improvise. Keep the API/frontend contract truthful by returning a login destination plus redirect hint instead.
 
-**Verify**: `pnpm --filter @tatamiq/web test -- src/features/students/first-access-page.test.tsx` → exit 0.
+**Verify**: `pnpm --filter @appdosensei/web test -- src/features/students/first-access-page.test.tsx` → exit 0.
 
 ### Step 3: Tighten the E2E around the existing-account branch
 
@@ -174,8 +174,8 @@ Run typecheck once after the API/web/E2E changes.
 
 - [ ] API no longer returns identical `redirectTo` values for both branches
 - [ ] `apps/web/src/features/students/first-access-page.tsx` navigates from the completion response instead of a hardcoded route
-- [ ] `pnpm --filter @tatamiq/api test -- src/students/pre-registration.service.spec.ts` exits 0
-- [ ] `pnpm --filter @tatamiq/web test -- src/features/students/first-access-page.test.tsx` exits 0
+- [ ] `pnpm --filter @appdosensei/api test -- src/students/pre-registration.service.spec.ts` exits 0
+- [ ] `pnpm --filter @appdosensei/web test -- src/features/students/first-access-page.test.tsx` exits 0
 - [ ] `pnpm test:e2e -- tests/e2e/student-access.spec.ts --project=chromium --workers=1` exits 0
 - [ ] `pnpm typecheck` exits 0
 - [ ] No files outside the in-scope list are modified

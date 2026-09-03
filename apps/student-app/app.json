@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "Tatamiq Student",
-    "slug": "tatamiq-student",
+    "name": "App do Sensei Student",
+    "slug": "appdosensei-student",
     "version": "0.1.0",
     "orientation": "portrait",
-    "scheme": "tatamiq-student",
+    "scheme": "appdosensei-student",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "plugins": [
@@ -14,7 +14,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Permita que o Tatamiq use a câmera para confirmar seu check-in."
+          "cameraPermission": "Permita que o App do Sensei use a câmera para confirmar seu check-in."
         }
       ]
     ],
@@ -25,13 +25,13 @@
       "bundler": "metro"
     },
     "ios": {
-      "bundleIdentifier": "com.tatamiq.student",
+      "bundleIdentifier": "com.appdosensei.student",
       "infoPlist": {
-        "NSCameraUsageDescription": "Permita que o Tatamiq use a câmera para confirmar seu check-in."
+        "NSCameraUsageDescription": "Permita que o App do Sensei use a câmera para confirmar seu check-in."
       }
     },
     "android": {
-      "package": "com.tatamiq.student"
+      "package": "com.appdosensei.student"
     }
   }
 }

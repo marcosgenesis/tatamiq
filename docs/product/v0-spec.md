@@ -30,7 +30,7 @@ Pessoa associada a um aluno menor de idade como contato e eventual pagador. Na V
 
 ### Administrador da Plataforma
 
-Pessoa interna do Tatamiq com permissão global para gerir usuários e academias fora da área operacional da academia.
+Pessoa interna do App do Sensei com permissão global para gerir usuários e academias fora da área operacional da academia.
 
 ## Plataforma e arquitetura de produto
 

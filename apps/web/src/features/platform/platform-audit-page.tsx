@@ -62,7 +62,7 @@ function exportCsv(entries: PlatformAuditLogEntry[]) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = "auditoria-tatamiq.csv";
+  link.download = "auditoria-appdosensei.csv";
   link.click();
   URL.revokeObjectURL(url);
 }

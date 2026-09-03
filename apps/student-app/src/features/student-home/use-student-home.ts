@@ -1,4 +1,3 @@
-import { useQueries } from "@tanstack/react-query";
 import type {
   StudentAttendancesResponse,
   StudentDailyFeesResponse,
@@ -6,7 +5,8 @@ import type {
   StudentMeResponse,
   StudentMonthlyFeesResponse,
   StudentNextClassResponse,
-} from "@tatamiq/contracts";
+} from "@appdosensei/contracts";
+import { useQueries } from "@tanstack/react-query";
 
 import { api } from "@/api";
 

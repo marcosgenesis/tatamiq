@@ -1,5 +1,5 @@
-import { createTatamiqClient } from "@tatamiq/contracts/client";
+import { createAppDoSenseiClient } from "@appdosensei/contracts/client";
 
 import { API_URL } from "./lib/config";
 
-export const api = createTatamiqClient(API_URL);
+export const api = createAppDoSenseiClient(API_URL);

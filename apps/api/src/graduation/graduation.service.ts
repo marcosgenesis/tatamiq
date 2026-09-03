@@ -1,4 +1,3 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type {
   CreatePromotionInput,
   DismissEligibilityInput,
@@ -8,7 +7,7 @@ import type {
   ListPromotionsResponse,
   PromotionDto,
   StudentGraduationResponse,
-} from "@tatamiq/contracts";
+} from "@appdosensei/contracts";
 import {
   attendances,
   belts,
@@ -16,7 +15,8 @@ import {
   organization,
   promotions,
   students,
-} from "@tatamiq/database";
+} from "@appdosensei/database";
+import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
 import { projectGraduationEligibility } from "./graduation-eligibility-projection";

@@ -30,10 +30,10 @@ This slice authenticates only the **Dono/Instrutor Solo**. **Acesso do Aluno** r
 - Organization creation is limited to one organization per user in V0.
 - Organization deletion is disabled in V0.
 - Better Auth Admin plugin is deferred.
-- **Aluno** will later be a Better Auth user linked through Tatamiq-owned StudentAccess, not an organization member.
+- **Aluno** will later be a Better Auth user linked through App do Sensei-owned StudentAccess, not an organization member.
 - `organization.invitation` is not used for **Convite do Aluno**.
 - `GET /me/context` is not included in this slice; the frontend uses Better Auth session and organization client APIs directly.
-- Better Auth endpoints stay outside Tatamiq's OpenAPI contracts for now.
+- Better Auth endpoints stay outside App do Sensei's OpenAPI contracts for now.
 - Frontend keeps separate clients: `apiClient` for product API and `authClient` for Better Auth.
 - Password policy follows Better Auth defaults in V0.
 - Email confirmation does not block V0 usage.
@@ -95,7 +95,7 @@ Remove:
 
 Public auth routes:
 
-- `/sign-in` — **Entrar no Tatamiq**;
+- `/sign-in` — **Entrar no App do Sensei**;
 - `/sign-up` — **Criar sua conta**;
 - `/forgot-password` — **Recuperar senha**;
 - `/reset-password` — **Definir nova senha**.
@@ -146,8 +146,8 @@ Remove the public demo academy endpoint and seed semantics.
 
 Create an explicit development seed for local/manual testing:
 
-- email: `dev@tatamiq.local`;
-- password: `tatamiq123`;
+- email: `dev@appdosensei.local`;
+- password: `appdosensei123`;
 - academy: **Academia de Teste**.
 
 This seed is development data, not a product feature or tenant default.
@@ -203,7 +203,7 @@ Browser validation with `agent-browser`:
 - [x] Instructor operational routes can use `@OrgRoles(["owner"])`.
 - [x] Better Auth Drizzle schema/migration is in place.
 - [x] Custom `academies` table and `/academies/demo` endpoint are removed.
-- [x] Dev seed creates `dev@tatamiq.local` and **Academia de Teste**.
+- [x] Dev seed creates `dev@appdosensei.local` and **Academia de Teste**.
 - [x] Web has `authClient` separate from product `apiClient`.
 - [x] Public auth pages exist with essential states.
 - [x] Academy onboarding creates and activates a Better Auth organization.

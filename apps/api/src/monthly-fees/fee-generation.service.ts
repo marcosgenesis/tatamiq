@@ -1,6 +1,6 @@
+import { type Database, member, monthlyFees, students } from "@appdosensei/database";
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import { Cron } from "@nestjs/schedule";
-import { type Database, member, monthlyFees, students } from "@tatamiq/database";
 import { and, eq, sql } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
 import { clampDueDay, formatDueDate } from "./monthly-fee-rules";

@@ -103,8 +103,8 @@ Repo conventions to follow:
 
 | Purpose | Command | Expected on success |
 |---|---|---|
-| Web tests | `pnpm --filter @tatamiq/web test -- src/features/students/pre-registrations-tab.test.tsx` | exit 0 |
-| API tests | `pnpm --filter @tatamiq/api test -- src/students/pre-registration.service.spec.ts` | exit 0 |
+| Web tests | `pnpm --filter @appdosensei/web test -- src/features/students/pre-registrations-tab.test.tsx` | exit 0 |
+| API tests | `pnpm --filter @appdosensei/api test -- src/students/pre-registration.service.spec.ts` | exit 0 |
 | E2E regression | `pnpm test:e2e -- tests/e2e/student-access.spec.ts --project=chromium --workers=1` | all pass |
 | Typecheck | `pnpm typecheck` | exit 0 |
 
@@ -157,7 +157,7 @@ Requirements:
 
 Add or update service tests to prove the token is rotated and the consumed flag is cleared.
 
-**Verify**: `pnpm --filter @tatamiq/api test -- src/students/pre-registration.service.spec.ts` → exit 0.
+**Verify**: `pnpm --filter @appdosensei/api test -- src/students/pre-registration.service.spec.ts` → exit 0.
 
 ### Step 3: Make the approved queue card render durable follow-up actions
 
@@ -173,7 +173,7 @@ Update the existing web unit tests to assert both branches:
 - approved request with an in-memory raw link;
 - approved request loaded from the queue without `approvalResult`.
 
-**Verify**: `pnpm --filter @tatamiq/web test -- src/features/students/pre-registrations-tab.test.tsx` → exit 0.
+**Verify**: `pnpm --filter @appdosensei/web test -- src/features/students/pre-registrations-tab.test.tsx` → exit 0.
 
 ### Step 4: Extend the E2E to cover reload durability
 
@@ -209,8 +209,8 @@ Run typecheck after the API, web, and E2E updates.
 
 - [ ] API exposes an instructor-only approved-request link-regeneration action with passing tests
 - [ ] Approved queue cards still show follow-up actions after reload
-- [ ] `pnpm --filter @tatamiq/api test -- src/students/pre-registration.service.spec.ts` exits 0
-- [ ] `pnpm --filter @tatamiq/web test -- src/features/students/pre-registrations-tab.test.tsx` exits 0
+- [ ] `pnpm --filter @appdosensei/api test -- src/students/pre-registration.service.spec.ts` exits 0
+- [ ] `pnpm --filter @appdosensei/web test -- src/features/students/pre-registrations-tab.test.tsx` exits 0
 - [ ] `pnpm test:e2e -- tests/e2e/student-access.spec.ts --project=chromium --workers=1` exits 0
 - [ ] `pnpm typecheck` exits 0
 - [ ] No files outside the in-scope list are modified

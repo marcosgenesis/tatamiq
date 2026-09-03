@@ -30,7 +30,7 @@ test("updates academy data, Pix config, uploads logo, and edits belt rules", asy
   await choosePixMode(page, "Chave Pix");
   await page.locator("#pix-key-type").click();
   await page.getByRole("option", { name: "Email" }).click();
-  await page.getByLabel("Chave Pix").fill("pix-chave@tatamiq.local");
+  await page.getByLabel("Chave Pix").fill("pix-chave@appdosensei.local");
   await page.getByRole("button", { name: "Salvar configurações" }).click();
   await expect(page.getByText("Configurações salvas com sucesso.")).toBeVisible();
 
@@ -38,7 +38,7 @@ test("updates academy data, Pix config, uploads logo, and edits belt rules", asy
   await choosePixMode(page, "Chave Pix");
   await expect
     .poll(() => page.getByLabel("Chave Pix").inputValue())
-    .toBe("pix-chave@tatamiq.local");
+    .toBe("pix-chave@appdosensei.local");
   await expect(page.locator("#pix-key-type")).toContainText("email");
 
   await choosePixMode(page, "Copia e cola");

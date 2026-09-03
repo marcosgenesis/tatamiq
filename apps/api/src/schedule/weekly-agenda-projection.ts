@@ -1,4 +1,4 @@
-import type { ScheduleOccurrence, WeeklyScheduleResponse } from "@tatamiq/contracts";
+import type { ScheduleOccurrence, WeeklyScheduleResponse } from "@appdosensei/contracts";
 import { findActiveRecurringCancellation } from "./schedule-cancellations";
 import {
   getMondayWeekStart,

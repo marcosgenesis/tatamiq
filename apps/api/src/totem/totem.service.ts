@@ -1,12 +1,5 @@
 import { createHash, randomBytes, randomInt } from "node:crypto";
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from "@nestjs/common";
-import type { ClassSession, ScheduleOccurrence } from "@tatamiq/contracts";
+import type { ClassSession, ScheduleOccurrence } from "@appdosensei/contracts";
 import {
   type Database,
   member,
@@ -14,7 +7,14 @@ import {
   totemDevices,
   totemPairingCodes,
   user,
-} from "@tatamiq/database";
+} from "@appdosensei/database";
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from "@nestjs/common";
 import { and, eq, gt, isNull } from "drizzle-orm";
 import { ClassesService } from "../classes/classes.service";
 import { DATABASE } from "../database/database.module";
@@ -121,7 +121,7 @@ export class TotemService {
       .from(organization)
       .where(eq(organization.id, codeRow.organizationId))
       .limit(1);
-    return { deviceToken: token, deviceName, academyName: academy?.name ?? "Tatamiq" };
+    return { deviceToken: token, deviceName, academyName: academy?.name ?? "App do Sensei" };
   }
 
   async authenticate(authorization: string | undefined): Promise<TotemAuth> {
@@ -178,7 +178,7 @@ export class TotemService {
     ]);
     return {
       deviceName: await this.deviceName(auth.deviceId),
-      academyName: academy[0]?.name ?? "Tatamiq",
+      academyName: academy[0]?.name ?? "App do Sensei",
       activeClasses: activeClasses.map((item) => toTotemOccurrence(item)),
       today: today.occurrences.map((item) => toTotemOccurrence(item)),
     };

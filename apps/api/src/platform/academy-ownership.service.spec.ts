@@ -60,7 +60,7 @@ describe("AcademyOwnershipService", () => {
     mock = createMockDb();
     reservedAccounts = {
       createOrReuse: vi.fn().mockResolvedValue({
-        user: { id: "owner-2", email: "second@tatamiq.local", name: "Second" },
+        user: { id: "owner-2", email: "second@appdosensei.local", name: "Second" },
         isNew: false,
         firstAccessLink: null,
       }),
@@ -74,7 +74,7 @@ describe("AcademyOwnershipService", () => {
       mock.setSelectResults([[{ id: "academy-1" }], []]);
 
       const result = await service.addResponsibleByEmail("academy-1", {
-        ownerEmail: "Second@Tatamiq.Local",
+        ownerEmail: "second@appdosensei.local",
         ownerName: "Second",
       });
 
@@ -86,14 +86,17 @@ describe("AcademyOwnershipService", () => {
         userId: "owner-2",
         role: "owner",
       });
-      expect(reservedAccounts.createOrReuse).toHaveBeenCalledWith("second@tatamiq.local", "Second");
+      expect(reservedAccounts.createOrReuse).toHaveBeenCalledWith(
+        "second@appdosensei.local",
+        "Second",
+      );
     });
 
     it("is idempotent when the responsible is already linked", async () => {
       mock.setSelectResults([[{ id: "academy-1" }], [{ id: "member-1" }]]);
 
       const result = await service.addResponsibleByEmail("academy-1", {
-        ownerEmail: "second@tatamiq.local",
+        ownerEmail: "second@appdosensei.local",
       });
 
       expect(result.ownerUserId).toBe("owner-2");
@@ -103,14 +106,14 @@ describe("AcademyOwnershipService", () => {
 
     it("returns a first access URL when adding a reserved account", async () => {
       reservedAccounts.createOrReuse.mockResolvedValueOnce({
-        user: { id: "reserved-1", email: "reserved@tatamiq.local", name: "Reserved" },
+        user: { id: "reserved-1", email: "reserved@appdosensei.local", name: "Reserved" },
         isNew: true,
         firstAccessLink: "raw-token",
       });
       mock.setSelectResults([[{ id: "academy-1" }], []]);
 
       const result = await service.addResponsibleByEmail("academy-1", {
-        ownerEmail: "reserved@tatamiq.local",
+        ownerEmail: "reserved@appdosensei.local",
         ownerName: "Reserved",
       });
 

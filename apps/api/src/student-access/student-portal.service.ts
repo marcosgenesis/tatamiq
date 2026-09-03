@@ -1,4 +1,3 @@
-import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type {
   MarkSeenInput,
   StudentAttendancesResponse,
@@ -6,7 +5,7 @@ import type {
   StudentIndicatorsResponse,
   StudentScheduleResponse,
   UpdateStudentProfileInput,
-} from "@tatamiq/contracts";
+} from "@appdosensei/contracts";
 import {
   attendances,
   classCancellations,
@@ -22,7 +21,8 @@ import {
   studentContactChanges,
   studentNotes,
   students,
-} from "@tatamiq/database";
+} from "@appdosensei/database";
+import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { and, desc, eq, gte, type InferSelectModel, inArray, isNull, lt, sql } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
 import { saoPauloDatePart, toSaoPauloScheduledStartAt } from "../schedule/schedule-rules";

@@ -35,7 +35,7 @@ Regras:
 - email + senha na V0;
 - confirmação de email não bloqueia uso;
 - recuperação de senha deve existir;
-- Tatamiq não mantém `password_hash` próprio;
+- App do Sensei não mantém `password_hash` próprio;
 - todo cadastro público da V0 cria uma conta de **Dono/Instrutor Solo**;
 - uma conta de aluno futura só se vincula a uma academia por **Acesso do Aluno**, não por membership administrativo.
 

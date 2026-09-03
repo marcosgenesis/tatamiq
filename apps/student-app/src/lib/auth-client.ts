@@ -9,8 +9,8 @@ export const authClient = createAuthClient({
   basePath: "/auth",
   plugins: [
     expoClient({
-      scheme: "tatamiq-student",
-      storagePrefix: "tatamiq-student",
+      scheme: "appdosensei-student",
+      storagePrefix: "appdosensei-student",
       storage: SecureStore,
     }),
   ],

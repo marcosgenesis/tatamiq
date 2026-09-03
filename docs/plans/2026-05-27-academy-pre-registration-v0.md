@@ -41,7 +41,7 @@ This is distinct from **Convite do Aluno**. A student invite gives portal access
   - create a new student anyway;
   - reject as duplicate.
 - Linking to an existing student is allowed only when that student has no active **Acesso do Aluno**.
-- If the request email belongs to an existing Tatamiq account, reuse that account.
+- If the request email belongs to an existing App do Sensei account, reuse that account.
 - If the request email belongs to an instructor account, allow approval but show a warning.
 - If no account exists, approval creates an account reserved for that email.
 - The auto-created account cannot log in with password until first access defines one.

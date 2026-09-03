@@ -38,7 +38,7 @@ function BrandMark({ academyName }: { academyName: string }) {
         <span className="text-lg font-black tracking-tighter">T</span>
       </div>
       <div>
-        <p className="text-base font-semibold leading-none tracking-tight">Tatamiq</p>
+        <p className="text-base font-semibold leading-none tracking-tight">App do Sensei</p>
         <p className="mt-1 text-xs text-sidebar-foreground/55">{academyName}</p>
       </div>
     </div>

@@ -1,5 +1,5 @@
+import { type Database, studentAcceptances, studentAccess } from "@appdosensei/database";
 import { BadRequestException, Injectable } from "@nestjs/common";
-import { type Database, studentAcceptances, studentAccess } from "@tatamiq/database";
 import { and, eq } from "drizzle-orm";
 
 export type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];

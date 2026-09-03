@@ -2,7 +2,7 @@
 
 ## Public name
 
-The product's public name is **App do Sensei**. Older internal references may still use **Tatamiq** while the rename is completed across the repository.
+The product's public name is **App do Sensei**. Repository identifiers and user-facing references use this name; legacy infrastructure identifiers are documented as migration follow-ups.
 
 ## Register
 

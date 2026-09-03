@@ -12,6 +12,6 @@ test("web app redirects unauthenticated users to sign in", async ({ page }) => {
   await page.goto("/");
 
   await expect(page).toHaveURL(/\/sign-in$/);
-  await expect(page.getByRole("heading", { name: "Entrar no Tatamiq" })).toBeVisible();
-  await expect(page.getByText("Tatamiq").first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Entrar no App do Sensei" })).toBeVisible();
+  await expect(page.getByText("App do Sensei").first()).toBeVisible();
 });

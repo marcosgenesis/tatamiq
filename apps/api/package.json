@@ -1,5 +1,5 @@
 {
-  "name": "@tatamiq/api",
+  "name": "@appdosensei/api",
   "version": "0.0.0",
   "private": true,
   "type": "commonjs",
@@ -21,8 +21,8 @@
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/schedule": "^6.1.3",
     "@nestjs/swagger": "latest",
-    "@tatamiq/contracts": "workspace:*",
-    "@tatamiq/database": "workspace:*",
+    "@appdosensei/contracts": "workspace:*",
+    "@appdosensei/database": "workspace:*",
     "@thallesp/nestjs-better-auth": "^2.6.0",
     "better-auth": "^1.6.18",
     "drizzle-orm": "^0.45.2",

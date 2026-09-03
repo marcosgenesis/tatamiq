@@ -178,8 +178,8 @@ function ScannerFallback({
 
       <ul className="mt-6 w-full max-w-sm space-y-2.5 text-left">
         <FallbackHint>
-          Reative a câmera nas configurações do navegador ou do celular (Ajustes → Tatamiq → Câmera)
-          e toque em Tentar de novo.
+          Reative a câmera nas configurações do navegador ou do celular (Ajustes → App do Sensei →
+          Câmera) e toque em Tentar de novo.
         </FallbackHint>
         <FallbackHint>
           Ou use a câmera do próprio celular apontando para o QR Code — o link abre o app

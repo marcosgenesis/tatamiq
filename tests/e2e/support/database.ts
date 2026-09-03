@@ -10,7 +10,7 @@ import {
   studentAccessInvites,
   user,
   verification,
-} from "@tatamiq/database";
+} from "@appdosensei/database";
 import { hashPassword } from "better-auth/crypto";
 import { and, desc, eq, like } from "drizzle-orm";
 
@@ -20,25 +20,25 @@ const db = createDatabase();
 
 export const PLATFORM_FIXTURES = {
   bannable: {
-    email: "platform.bannable.e2e@tatamiq.local",
+    email: "platform.bannable.e2e@appdosensei.local",
     name: "Platform Bannable E2E",
   },
   deleteDefinitive: {
-    email: "platform.delete.definitive.e2e@tatamiq.local",
+    email: "platform.delete.definitive.e2e@appdosensei.local",
     name: "Platform Delete Definitive E2E",
   },
   deletePreserve: {
-    email: "platform.delete.preserve.e2e@tatamiq.local",
+    email: "platform.delete.preserve.e2e@appdosensei.local",
     name: "Platform Delete Preserve E2E",
   },
   academyOwner: {
-    email: "platform.owner.e2e@tatamiq.local",
+    email: "platform.owner.e2e@appdosensei.local",
     name: "Platform Owner E2E",
     academyName: "Academia Platform Owner E2E",
     academySlug: "academia-platform-owner-e2e",
   },
   academySecondResponsible: {
-    email: "platform.owner.extra.e2e@tatamiq.local",
+    email: "platform.owner.extra.e2e@appdosensei.local",
     name: "Platform Owner Extra E2E",
   },
   ownerlessAcademy: {
@@ -46,15 +46,15 @@ export const PLATFORM_FIXTURES = {
     academySlug: "academia-sem-responsavel-e2e",
   },
   deleteMultiResponsible: {
-    email: "platform.delete.multi-responsible.e2e@tatamiq.local",
+    email: "platform.delete.multi-responsible.e2e@appdosensei.local",
     name: "Platform Delete Multi Responsible E2E",
-    remainingEmail: "platform.delete.remaining-responsible.e2e@tatamiq.local",
+    remainingEmail: "platform.delete.remaining-responsible.e2e@appdosensei.local",
     remainingName: "Platform Remaining Responsible E2E",
     academyName: "Academia Multi Responsible Delete E2E",
     academySlug: "academia-multi-responsible-delete-e2e",
   },
   deleteSoleResponsible: {
-    email: "platform.delete.sole-responsible.e2e@tatamiq.local",
+    email: "platform.delete.sole-responsible.e2e@appdosensei.local",
     name: "Platform Delete Sole Responsible E2E",
     academyName: "Academia Sole Responsible Delete E2E",
     academySlug: "academia-sole-responsible-delete-e2e",
@@ -75,7 +75,7 @@ export function assertE2eDatabaseIsLocal() {
 }
 
 export function runDatabaseScript(script: "db:migrate" | "db:seed" | "db:seed:e2e") {
-  execFileSync("pnpm", ["--filter", "@tatamiq/database", script], {
+  execFileSync("pnpm", ["--filter", "@appdosensei/database", script], {
     stdio: "inherit",
     env: process.env,
   });
@@ -138,7 +138,7 @@ export async function getLatestPasswordResetToken(email?: string) {
   return matchingRecord.identifier.slice("reset-password:".length);
 }
 
-export async function ensurePlatformFixtures(password = "tatamiq123") {
+export async function ensurePlatformFixtures(password = "appdosensei123") {
   await cleanupPlatformFixtures();
 
   const [devOrg] = await db

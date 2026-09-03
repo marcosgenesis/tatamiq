@@ -1,4 +1,4 @@
-export const tatamiqTokens = {
+export const appDoSenseiTokens = {
   colors: {
     canvas: "#F3F1EE",
     surface: "#FFFFFF",
@@ -26,4 +26,4 @@ export const tatamiqTokens = {
   },
 } as const;
 
-export type TatamiqTokens = typeof tatamiqTokens;
+export type AppDoSenseiTokens = typeof appDoSenseiTokens;

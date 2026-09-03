@@ -1,11 +1,4 @@
 import { randomBytes } from "node:crypto";
-import {
-  BadRequestException,
-  ForbiddenException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from "@nestjs/common";
 import type {
   AcceptStudentInviteInput,
   AcceptStudentInviteResponse,
@@ -15,7 +8,7 @@ import type {
   StudentInvitePreview,
   StudentMeResponse,
   StudentNextClassResponse,
-} from "@tatamiq/contracts";
+} from "@appdosensei/contracts";
 import {
   classCancellations,
   classGroupSchedules,
@@ -28,7 +21,14 @@ import {
   studentClassGroups,
   students,
   user,
-} from "@tatamiq/database";
+} from "@appdosensei/database";
+import {
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { and, eq, gte, inArray, isNull, lt } from "drizzle-orm";
 import { parseClassStatus } from "../class-status";
 import { DATABASE } from "../database/database.module";

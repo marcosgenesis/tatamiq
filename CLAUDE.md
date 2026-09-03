@@ -1,4 +1,4 @@
-# Tatamiq — instruções do projeto
+# App do Sensei — instruções do projeto
 
 ## Ícones (apps/web)
 

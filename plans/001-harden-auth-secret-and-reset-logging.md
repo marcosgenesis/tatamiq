@@ -16,7 +16,7 @@
 
 ## Why this matters
 
-Tatamiq uses Better Auth with httpOnly cookie sessions. If the API starts without `BETTER_AUTH_SECRET` outside local development, it currently falls back to a known hardcoded string. Password reset links are also logged in full; those URLs are bearer secrets and can be used by anyone with log access. This plan makes unsafe production configuration fail fast and removes secret URLs from normal logs while preserving developer ergonomics.
+App do Sensei uses Better Auth with httpOnly cookie sessions. If the API starts without `BETTER_AUTH_SECRET` outside local development, it currently falls back to a known hardcoded string. Password reset links are also logged in full; those URLs are bearer secrets and can be used by anyone with log access. This plan makes unsafe production configuration fail fast and removes secret URLs from normal logs while preserving developer ergonomics.
 
 ## Current state
 
@@ -31,12 +31,12 @@ Current excerpts:
 ```ts
 // apps/api/src/auth.ts:20-27
 export const auth = betterAuth({
-  appName: "Tatamiq",
+  appName: "App do Sensei",
   baseURL: apiUrl,
   basePath: "/auth",
   secret:
     process.env.BETTER_AUTH_SECRET ??
-    "dev-only-tatamiq-better-auth-secret-change-me-minimum-32-chars",
+    "dev-only-appdosensei-better-auth-secret-change-me-minimum-32-chars",
   trustedOrigins: [webUrl],
 ```
 
@@ -74,7 +74,7 @@ Repo conventions to match:
 | Purpose | Command | Expected on success |
 |---|---|---|
 | Install | `pnpm install --frozen-lockfile` | exit 0 |
-| Focused tests | `pnpm --filter @tatamiq/api test -- auth` | exit 0, new auth config tests pass |
+| Focused tests | `pnpm --filter @appdosensei/api test -- auth` | exit 0, new auth config tests pass |
 | Typecheck | `pnpm typecheck` | exit 0, no errors |
 | Lint | `pnpm lint` | exit 0 |
 | Full tests | `pnpm test` | exit 0 |
@@ -111,7 +111,7 @@ In `apps/api/src/auth.ts`, replace the inline `secret: process.env.BETTER_AUTH_S
 
 Then use `secret: resolveBetterAuthSecret()` in the `betterAuth` config.
 
-**Verify**: `pnpm --filter @tatamiq/api typecheck` → exits 0.
+**Verify**: `pnpm --filter @appdosensei/api typecheck` → exits 0.
 
 ### Step 2: Stop logging full password reset URLs
 
@@ -136,20 +136,20 @@ Create `apps/api/src/auth.spec.ts` or `apps/api/src/auth-config.spec.ts` testing
 
 Avoid importing `auth` itself if it makes test setup expensive; import only the helper if possible.
 
-**Verify**: `pnpm --filter @tatamiq/api test -- auth` → exits 0 and includes the new tests.
+**Verify**: `pnpm --filter @appdosensei/api test -- auth` → exits 0 and includes the new tests.
 
 ## Test plan
 
 - New focused unit tests in `apps/api/src/auth.spec.ts` or `apps/api/src/auth-config.spec.ts`.
 - Use `apps/api/src/students/email.service.spec.ts` as the style pattern for manipulating environment variables.
-- Verification: `pnpm --filter @tatamiq/api test -- auth`, then `pnpm test`.
+- Verification: `pnpm --filter @appdosensei/api test -- auth`, then `pnpm test`.
 
 ## Done criteria
 
 - [ ] `apps/api/src/auth.ts` no longer contains an inline production fallback for `BETTER_AUTH_SECRET`.
 - [ ] `apps/api/src/auth.ts` no longer logs the password reset `url`.
 - [ ] New tests cover local fallback and production fail-fast behavior.
-- [ ] `pnpm --filter @tatamiq/api test -- auth` exits 0.
+- [ ] `pnpm --filter @appdosensei/api test -- auth` exits 0.
 - [ ] `pnpm typecheck`, `pnpm lint`, and `pnpm test` exit 0.
 - [ ] No files outside the in-scope list are modified except `plans/README.md` status.
 

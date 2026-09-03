@@ -1,5 +1,5 @@
+import type { StudentGraduationResponse } from "@appdosensei/contracts";
 import { useQuery } from "@tanstack/react-query";
-import type { StudentGraduationResponse } from "@tatamiq/contracts";
 import { api } from "../../api";
 import { Badge } from "../../components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";

@@ -1,6 +1,6 @@
 const LOCAL_WEB_ORIGIN = "http://localhost:5173";
 const LOCAL_TOTEM_ORIGIN = "http://localhost:5174";
-const STUDENT_APP_ORIGINS = ["tatamiq-student://", "tatamiq-student://*"];
+const STUDENT_APP_ORIGINS = ["appdosensei-student://", "appdosensei-student://*"];
 
 function splitOrigins(value: string | undefined): string[] {
   return (value ?? "")

@@ -1,7 +1,7 @@
 import createClient from "openapi-fetch";
 import type { paths } from "./generated/openapi";
 
-export function createTatamiqClient(
+export function createAppDoSenseiClient(
   baseUrl: string,
   fetcher?: (input: Request) => Promise<Response>,
 ) {
@@ -12,4 +12,4 @@ export function createTatamiqClient(
   });
 }
 
-export type TatamiqClient = ReturnType<typeof createTatamiqClient>;
+export type AppDoSenseiClient = ReturnType<typeof createAppDoSenseiClient>;

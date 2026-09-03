@@ -1,4 +1,4 @@
-import { tatamiqTokens } from "@tatamiq/design-tokens";
+import { appDoSenseiTokens } from "@appdosensei/design-tokens";
 import { Text, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 
@@ -27,7 +27,7 @@ export function ProgressRing({
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke={tatamiqTokens.colors.border}
+          stroke={appDoSenseiTokens.colors.border}
           strokeWidth={strokeWidth}
           fill="none"
         />
@@ -35,7 +35,7 @@ export function ProgressRing({
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke={tatamiqTokens.colors.brand}
+          stroke={appDoSenseiTokens.colors.brand}
           strokeWidth={strokeWidth}
           fill="none"
           strokeDasharray={`${circumference} ${circumference}`}

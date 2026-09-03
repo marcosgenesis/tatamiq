@@ -1,5 +1,5 @@
 {
-  "name": "tatamiq",
+  "name": "appdosensei",
   "private": true,
   "packageManager": "pnpm@10.12.1",
   "engines": {
@@ -13,7 +13,7 @@
     "format": "biome format --write .",
     "test": "turbo test",
     "test:e2e": "playwright test",
-    "openapi:generate": "pnpm --filter @tatamiq/api openapi:generate && pnpm --filter @tatamiq/contracts openapi:generate",
+    "openapi:generate": "pnpm --filter @appdosensei/api openapi:generate && pnpm --filter @appdosensei/contracts openapi:generate",
     "release": "semantic-release",
     "release:dry-run": "semantic-release --dry-run",
     "prepare": "husky"

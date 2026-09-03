@@ -1,4 +1,4 @@
-import { studentGuardians, students } from "@tatamiq/database";
+import { studentGuardians, students } from "@appdosensei/database";
 import { describe, expect, it, vi } from "vitest";
 import { CsvService } from "./csv.service";
 import { ImportPreviewStore } from "./import-preview-store";

@@ -15,7 +15,7 @@ import {
   studentNextClassResponseSchema,
   studentScheduleResponseSchema,
   updateStudentProfileSchema,
-} from "@tatamiq/contracts";
+} from "@appdosensei/contracts";
 import { createZodDto } from "nestjs-zod";
 
 export class CreateStudentInviteResponseDto extends createZodDto(

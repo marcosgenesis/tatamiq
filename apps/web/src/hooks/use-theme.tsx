@@ -8,7 +8,7 @@ type ThemeContext = {
   setTheme: (theme: Theme) => void;
 };
 
-const STORAGE_KEY = "tatamiq-theme";
+const STORAGE_KEY = "appdosensei-theme";
 
 const ThemeContext = createContext<ThemeContext | null>(null);
 

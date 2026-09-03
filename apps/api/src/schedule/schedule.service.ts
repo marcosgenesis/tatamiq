@@ -1,11 +1,10 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type {
   CreateAdHocClassInput,
   CreateRecurringCancellationInput,
   ScheduleOccurrence,
   TodayScheduleResponse,
   WeeklyScheduleResponse,
-} from "@tatamiq/contracts";
+} from "@appdosensei/contracts";
 import {
   attendances,
   classCancellations,
@@ -15,7 +14,8 @@ import {
   classSessions,
   type Database,
   studentClassGroups,
-} from "@tatamiq/database";
+} from "@appdosensei/database";
+import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { and, eq, gte, inArray, isNull, lt } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
 import { saoPauloDatePart, toSaoPauloScheduledStartAt } from "./schedule-rules";

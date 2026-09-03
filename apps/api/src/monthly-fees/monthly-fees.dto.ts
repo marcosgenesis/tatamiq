@@ -13,7 +13,7 @@ import {
   studentMonthlyFeesResponseSchema,
   uploadUrlResponseSchema,
   waiveMonthlyFeeSchema,
-} from "@tatamiq/contracts";
+} from "@appdosensei/contracts";
 import { createZodDto } from "nestjs-zod";
 
 export class MonthlyFeeDto extends createZodDto(monthlyFeeSchema) {}

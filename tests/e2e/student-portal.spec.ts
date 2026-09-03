@@ -91,7 +91,7 @@ test("student sends a receipt, updates profile, and can check in with QR", async
   await page.getByRole("button", { name: "Perfil" }).click();
   await expect(page.getByRole("heading", { name: "Perfil" })).toBeVisible();
   await page.getByLabel("Telefone").fill("11977776666");
-  await page.getByLabel("E-mail").fill(`student-profile-${Date.now()}@tatamiq.local`);
+  await page.getByLabel("E-mail").fill(`student-profile-${Date.now()}@appdosensei.local`);
   await page.getByRole("button", { name: "Salvar alterações" }).click();
   await expect(page.getByText("Perfil atualizado com sucesso.")).toBeVisible();
 

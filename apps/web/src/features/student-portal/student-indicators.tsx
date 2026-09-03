@@ -1,5 +1,5 @@
+import type { MarkSeenInput, StudentIndicatorsResponse } from "@appdosensei/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { MarkSeenInput, StudentIndicatorsResponse } from "@tatamiq/contracts";
 import { api } from "../../api";
 import { authClient } from "../../lib/auth-client";
 import { studentQueryKey } from "../../lib/session-query-keys";

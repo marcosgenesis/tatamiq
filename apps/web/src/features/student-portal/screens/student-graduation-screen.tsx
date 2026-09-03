@@ -1,6 +1,6 @@
+import type { StudentGraduationResponse } from "@appdosensei/contracts";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import type { StudentGraduationResponse } from "@tatamiq/contracts";
 import { ArrowLeft01Icon, ChampionIcon, Tick02Icon } from "hugeicons-react";
 import { api } from "../../../api";
 import { Skeleton } from "../../../components/ui/skeleton";

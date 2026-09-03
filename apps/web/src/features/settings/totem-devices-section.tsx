@@ -1,5 +1,5 @@
+import type { components } from "@appdosensei/contracts/generated";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { components } from "@tatamiq/contracts/generated";
 import { Refresh01Icon, ShieldKeyIcon, Tablet01Icon, Unlink01Icon } from "hugeicons-react";
 import { useState } from "react";
 import { toast } from "sonner";

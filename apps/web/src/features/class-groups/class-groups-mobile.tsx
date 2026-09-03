@@ -1,5 +1,5 @@
+import type { ClassGroup } from "@appdosensei/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { ClassGroup } from "@tatamiq/contracts";
 import { Clock01Icon, InboxIcon, MoreVerticalIcon, PlusSignIcon } from "hugeicons-react";
 import { useMemo, useState } from "react";
 import { api } from "@/api";

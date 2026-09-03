@@ -95,8 +95,8 @@ Existing convention to match: contracts are Zod-first in `packages/contracts/src
 |---|---|---|
 | Install | `pnpm install` | exit 0 |
 | Generate API contracts | `pnpm openapi:generate` | exit 0; generated files updated if schemas changed |
-| Targeted API tests | `pnpm --filter @tatamiq/api test -- src/monthly-fees/monthly-fees.service.spec.ts` | exit 0 |
-| Web tests | `pnpm --filter @tatamiq/web test` | exit 0 |
+| Targeted API tests | `pnpm --filter @appdosensei/api test -- src/monthly-fees/monthly-fees.service.spec.ts` | exit 0 |
+| Web tests | `pnpm --filter @appdosensei/web test` | exit 0 |
 | Typecheck | `pnpm typecheck` | exit 0 |
 | Lint | `pnpm lint` | exit 0; existing warnings may remain |
 | Full tests | `pnpm test` | exit 0 |
@@ -144,7 +144,7 @@ In `packages/contracts/src/schemas.ts`:
 
 Keep existing fields for compatibility inside the codebase, but all web callers must send the new signature after this plan.
 
-**Verify**: `pnpm --filter @tatamiq/contracts typecheck` → exits 0.
+**Verify**: `pnpm --filter @appdosensei/contracts typecheck` → exits 0.
 
 ### Step 2: Implement upload key signing in the API
 
@@ -181,7 +181,7 @@ In `MonthlyFeesService.confirmReceipt`:
 
 Keep existing content type and 10 MB checks.
 
-**Verify**: `pnpm --filter @tatamiq/api test -- src/monthly-fees/monthly-fees.service.spec.ts` → exits 0 after Step 5 tests are added.
+**Verify**: `pnpm --filter @appdosensei/api test -- src/monthly-fees/monthly-fees.service.spec.ts` → exits 0 after Step 5 tests are added.
 
 ### Step 4: Issue and verify signatures for academy logos
 
@@ -211,7 +211,7 @@ In `apps/api/src/monthly-fees/monthly-fees.service.spec.ts`, add tests proving:
 
 If there is no academy service test scaffold, either create `apps/api/src/academy/academy.service.spec.ts` or include logo-signature coverage through a small helper export. Prefer service tests over controller tests.
 
-**Verify**: `pnpm --filter @tatamiq/api test -- src/monthly-fees/monthly-fees.service.spec.ts` → exits 0.
+**Verify**: `pnpm --filter @appdosensei/api test -- src/monthly-fees/monthly-fees.service.spec.ts` → exits 0.
 
 ### Step 6: Update web upload callers
 
@@ -225,7 +225,7 @@ After `api.POST(.../upload-url)`, include `uploadData.fileKeySignature` in the c
 
 Add a client-side file size guard for receipts and logos if one is missing, but do not rely on it as security enforcement.
 
-**Verify**: `pnpm --filter @tatamiq/web typecheck` → exits 0.
+**Verify**: `pnpm --filter @appdosensei/web typecheck` → exits 0.
 
 ### Step 7: Regenerate OpenAPI/client types
 

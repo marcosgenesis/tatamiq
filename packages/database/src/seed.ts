@@ -28,10 +28,10 @@ const forceReseed = process.argv.includes("--force");
 
 const db = createDatabase();
 
-const email = "dev@tatamiq.local";
-const password = "tatamiq123";
+const email = "dev@appdosensei.local";
+const password = "appdosensei123";
 const adminEmail = "marcosgenesisof@gmail.com";
-const studentEmail = "aluno@tatamiq.local";
+const studentEmail = "aluno@appdosensei.local";
 const academyName = "Legado Jiu Jitsu";
 const academySlug = "academia-de-teste-dev";
 

@@ -1,4 +1,4 @@
-import { beltSchema, listBeltsResponseSchema, updateBeltSchema } from "@tatamiq/contracts";
+import { beltSchema, listBeltsResponseSchema, updateBeltSchema } from "@appdosensei/contracts";
 import { createZodDto } from "nestjs-zod";
 
 export class BeltDto extends createZodDto(beltSchema) {}

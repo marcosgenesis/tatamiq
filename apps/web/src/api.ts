@@ -1,3 +1,3 @@
-import { createTatamiqClient } from "@tatamiq/contracts/client";
+import { createAppDoSenseiClient } from "@appdosensei/contracts/client";
 
-export const api = createTatamiqClient(import.meta.env.VITE_API_URL ?? "http://localhost:3100");
+export const api = createAppDoSenseiClient(import.meta.env.VITE_API_URL ?? "http://localhost:3100");

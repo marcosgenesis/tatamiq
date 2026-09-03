@@ -12,9 +12,9 @@ export interface StoragePort {
   removeItem(key: string): void;
 }
 
-const COMPLETED_KEY = "tatamiq.student.onboarding.completed";
-const STEP_KEY = "tatamiq.student.onboarding.step";
-const NUDGE_PREFIX = "tatamiq.student.nudge.";
+const COMPLETED_KEY = "appdosensei.student.onboarding.completed";
+const STEP_KEY = "appdosensei.student.onboarding.step";
+const NUDGE_PREFIX = "appdosensei.student.nudge.";
 
 export function nextStep(step: OnboardingStep): OnboardingStep {
   const index = ONBOARDING_STEPS.indexOf(step);

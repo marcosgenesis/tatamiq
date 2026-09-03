@@ -1,7 +1,7 @@
+import type { StudentGraduationResponse, StudentMeResponse } from "@appdosensei/contracts";
+import type { components } from "@appdosensei/contracts/generated";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import type { StudentGraduationResponse, StudentMeResponse } from "@tatamiq/contracts";
-import type { components } from "@tatamiq/contracts/generated";
 import {
   ArrowRight01Icon,
   ChampionIcon,

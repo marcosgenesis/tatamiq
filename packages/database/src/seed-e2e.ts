@@ -21,7 +21,7 @@ import {
 const db = createDatabase();
 type SeedDatabase = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-const DEV_USER_EMAIL = "dev@tatamiq.local";
+const DEV_USER_EMAIL = "dev@appdosensei.local";
 const DEV_ORG_SLUG = "academia-de-teste-dev";
 
 /**
@@ -72,7 +72,10 @@ const fixtureStudentIds = [
 ];
 const fixtureScheduleIds = [FIXTURE.recurringScheduleId, FIXTURE.cancelledScheduleId];
 const fixtureBeltIds = [FIXTURE.whiteBeltId, FIXTURE.blueBeltId, FIXTURE.childGreyBeltId];
-const createdStudentEmails = ["adult.crud.e2e@tatamiq.local", "minor.crud.e2e@tatamiq.local"];
+const createdStudentEmails = [
+  "adult.crud.e2e@appdosensei.local",
+  "minor.crud.e2e@appdosensei.local",
+];
 const graduationSessionIds = Array.from(
   { length: 31 },
   (_, index) => `e2e-grad-session-${index + 1}`,
@@ -95,7 +98,7 @@ const devOrganizationId = devOrganization?.id;
 
 if (!devUserId || !devOrganizationId) {
   console.error(
-    "Missing dev user or organization. Run pnpm --filter @tatamiq/database db:seed first.",
+    "Missing dev user or organization. Run pnpm --filter @appdosensei/database db:seed first.",
   );
   process.exit(1);
 }
@@ -247,7 +250,7 @@ async function createFixture(database: SeedDatabase, organizationId: string, use
       status: "active",
       inactiveAt: null,
       phone: null,
-      email: "ana.e2e@tatamiq.local",
+      email: "ana.e2e@appdosensei.local",
       monthlyAmountInCents: 25000,
       monthlyDueDay: 10,
       currentBeltId: FIXTURE.whiteBeltId,
@@ -264,7 +267,7 @@ async function createFixture(database: SeedDatabase, organizationId: string, use
       status: "active",
       inactiveAt: null,
       phone: null,
-      email: "bruno.e2e@tatamiq.local",
+      email: "bruno.e2e@appdosensei.local",
       monthlyAmountInCents: 25000,
       monthlyDueDay: 10,
       currentBeltId: FIXTURE.blueBeltId,
@@ -281,7 +284,7 @@ async function createFixture(database: SeedDatabase, organizationId: string, use
       status: "active",
       inactiveAt: null,
       phone: null,
-      email: "carla.crud.e2e@tatamiq.local",
+      email: "carla.crud.e2e@appdosensei.local",
       monthlyAmountInCents: 23000,
       monthlyDueDay: 15,
       currentBeltId: FIXTURE.childGreyBeltId,
@@ -298,7 +301,7 @@ async function createFixture(database: SeedDatabase, organizationId: string, use
       status: "active",
       inactiveAt: null,
       phone: null,
-      email: "graduation.eligible.e2e@tatamiq.local",
+      email: "graduation.eligible.e2e@appdosensei.local",
       monthlyAmountInCents: 21000,
       monthlyDueDay: 10,
       currentBeltId: FIXTURE.whiteBeltId,
@@ -315,7 +318,7 @@ async function createFixture(database: SeedDatabase, organizationId: string, use
       status: "active",
       inactiveAt: null,
       phone: null,
-      email: "graduation.fresh.e2e@tatamiq.local",
+      email: "graduation.fresh.e2e@appdosensei.local",
       monthlyAmountInCents: 21000,
       monthlyDueDay: 10,
       currentBeltId: FIXTURE.whiteBeltId,
@@ -330,7 +333,7 @@ async function createFixture(database: SeedDatabase, organizationId: string, use
     studentId: FIXTURE.crudFixtureStudentId,
     name: "E2E Guardiã Carla",
     phone: "11988887777",
-    email: "guardia.carla.e2e@tatamiq.local",
+    email: "guardia.carla.e2e@appdosensei.local",
     relationship: "Mãe",
     createdAt: now,
     updatedAt: now,
@@ -446,7 +449,7 @@ async function createFixture(database: SeedDatabase, organizationId: string, use
     .update(organization)
     .set({
       pixKeyType: "email",
-      pixKey: "pix.e2e@tatamiq.local",
+      pixKey: "pix.e2e@appdosensei.local",
       pixCopyPaste: null,
       logo: null,
     })

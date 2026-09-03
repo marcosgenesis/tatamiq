@@ -90,8 +90,8 @@ There is no existing rate-limit/throttling infrastructure in the audited API pac
 
 | Purpose | Command | Expected on success |
 |---|---|---|
-| API tests | `pnpm --filter @tatamiq/api test -- src/students/pre-registration.service.spec.ts` | exit 0 |
-| Web tests | `pnpm --filter @tatamiq/web test -- src/features/students/pre-registration-page.test.tsx` | exit 0 |
+| API tests | `pnpm --filter @appdosensei/api test -- src/students/pre-registration.service.spec.ts` | exit 0 |
+| Web tests | `pnpm --filter @appdosensei/web test -- src/features/students/pre-registration-page.test.tsx` | exit 0 |
 | E2E regression | `pnpm test:e2e -- tests/e2e/student-access.spec.ts --project=chromium --workers=1` | all pass |
 | Typecheck | `pnpm typecheck` | exit 0 |
 
@@ -146,7 +146,7 @@ Implementation requirements:
 
 If the controller needs request metadata, follow the existing `request.ip` pattern already used in platform controller code.
 
-**Verify**: `pnpm --filter @tatamiq/api test -- src/students/pre-registration.service.spec.ts` → exit 0 with new throttling tests.
+**Verify**: `pnpm --filter @appdosensei/api test -- src/students/pre-registration.service.spec.ts` → exit 0 with new throttling tests.
 
 ### Step 3: Surface throttling failures clearly on the public page
 
@@ -154,7 +154,7 @@ In `apps/web/src/features/students/pre-registration-page.tsx`, keep the current 
 
 If necessary, add a focused web test file for the throttled-error render branch.
 
-**Verify**: `pnpm --filter @tatamiq/web test -- src/features/students/pre-registration-page.test.tsx` → exit 0.
+**Verify**: `pnpm --filter @appdosensei/web test -- src/features/students/pre-registration-page.test.tsx` → exit 0.
 
 ### Step 4: Add a browser regression proving the abuse guard does not break the happy path
 
@@ -184,8 +184,8 @@ Run root typecheck after API/web/test changes.
 
 - [ ] Anonymous pre-registration submission now enforces a minimal per-IP/per-email throttle
 - [ ] The public page shows a specific user-safe throttling error
-- [ ] `pnpm --filter @tatamiq/api test -- src/students/pre-registration.service.spec.ts` exits 0
-- [ ] `pnpm --filter @tatamiq/web test -- src/features/students/pre-registration-page.test.tsx` exits 0
+- [ ] `pnpm --filter @appdosensei/api test -- src/students/pre-registration.service.spec.ts` exits 0
+- [ ] `pnpm --filter @appdosensei/web test -- src/features/students/pre-registration-page.test.tsx` exits 0
 - [ ] `pnpm test:e2e -- tests/e2e/student-access.spec.ts --project=chromium --workers=1` exits 0
 - [ ] `pnpm typecheck` exits 0
 - [ ] No files outside the in-scope list are modified

@@ -100,7 +100,7 @@ describe("UserDeletionService", () => {
     expect(preserve.dbMock.updateSet).toHaveBeenCalledWith(
       expect.objectContaining({
         name: "Usuário excluído",
-        email: "deleted+user-1@tatamiq.local",
+        email: "deleted+user-1@appdosensei.local",
         banned: true,
       }),
     );

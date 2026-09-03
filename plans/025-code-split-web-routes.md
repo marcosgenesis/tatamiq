@@ -70,8 +70,8 @@ Existing convention to match: React 19 + TanStack Router; route components are d
 | Purpose | Command | Expected on success |
 |---|---|---|
 | Install | `pnpm install` | exit 0 |
-| Web tests | `pnpm --filter @tatamiq/web test` | exit 0 |
-| Web build | `pnpm --filter @tatamiq/web build` | exit 0; initial chunk substantially smaller |
+| Web tests | `pnpm --filter @appdosensei/web test` | exit 0 |
+| Web build | `pnpm --filter @appdosensei/web build` | exit 0; initial chunk substantially smaller |
 | Typecheck | `pnpm typecheck` | exit 0 |
 | Lint | `pnpm lint` | exit 0; existing warnings may remain |
 | Full tests | `pnpm test` | exit 0 |
@@ -108,7 +108,7 @@ If available, use the `vercel-react-best-practices` skill for React lazy-loading
 Run:
 
 ```bash
-pnpm --filter @tatamiq/web build
+pnpm --filter @appdosensei/web build
 ```
 
 Record the largest JS chunks from the output in your notes. The advisor observed a single `index-*.js` around 2.04 MB raw / 612 KB gzip; exact hash may differ.
@@ -145,7 +145,7 @@ function lazyRoute<T extends Record<string, unknown>, K extends keyof T>(
 
 Adjust typing as needed; avoid `any` unless there is no practical alternative. If typing gets too complex, use explicit lazy declarations per page instead of a generic helper.
 
-**Verify**: `pnpm --filter @tatamiq/web typecheck` → exits 0 after Step 3.
+**Verify**: `pnpm --filter @appdosensei/web typecheck` → exits 0 after Step 3.
 
 ### Step 3: Convert route page imports to lazy imports
 
@@ -173,7 +173,7 @@ component: function PlatformAcademyRoute() {
 
 Do not lazy-load small shared layout components (`RootLayout`, `InstructorLayout`, `AppShell`, `SupportBanner`) unless the change is trivial. Keep `PlaceholderPage` static if that avoids complexity.
 
-**Verify**: `pnpm --filter @tatamiq/web typecheck` → exits 0.
+**Verify**: `pnpm --filter @appdosensei/web typecheck` → exits 0.
 
 ### Step 4: Preserve auth/layout behavior
 
@@ -186,14 +186,14 @@ Manually inspect these flows in code after lazy-loading:
 
 Do not move these guards into lazy page chunks.
 
-**Verify**: `pnpm --filter @tatamiq/web test` → exits 0.
+**Verify**: `pnpm --filter @appdosensei/web test` → exits 0.
 
 ### Step 5: Rebuild and compare chunk output
 
 Run:
 
 ```bash
-pnpm --filter @tatamiq/web build
+pnpm --filter @appdosensei/web build
 ```
 
 Expected result:
@@ -216,7 +216,7 @@ If route lazy-loading alone does not reduce the entry chunk enough, add conserva
 
 Do not overfit chunk names. Re-run build after any config change.
 
-**Verify**: `pnpm --filter @tatamiq/web build` → exits 0.
+**Verify**: `pnpm --filter @appdosensei/web build` → exits 0.
 
 ## Test plan
 
@@ -231,9 +231,9 @@ All must hold:
 
 - [ ] `App.tsx` no longer statically imports all route page components.
 - [ ] Route paths and auth/layout behavior remain unchanged.
-- [ ] `pnpm --filter @tatamiq/web build` exits 0.
+- [ ] `pnpm --filter @appdosensei/web build` exits 0.
 - [ ] The initial entry JS chunk is substantially smaller than the 2.04 MB / 612 KB gzip baseline; target less than 1 MB raw and less than 350 KB gzip.
-- [ ] `pnpm --filter @tatamiq/web test`, `pnpm typecheck`, `pnpm lint`, and `pnpm test` exit 0.
+- [ ] `pnpm --filter @appdosensei/web test`, `pnpm typecheck`, `pnpm lint`, and `pnpm test` exit 0.
 - [ ] No files outside the in-scope list are modified.
 - [ ] `plans/README.md` status row for Plan 025 is updated.
 

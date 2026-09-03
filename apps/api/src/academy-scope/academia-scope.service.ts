@@ -1,5 +1,5 @@
+import { type Database, monthlyFees, paymentReceipts, students } from "@appdosensei/database";
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { type Database, monthlyFees, paymentReceipts, students } from "@tatamiq/database";
 import { and, eq } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
 

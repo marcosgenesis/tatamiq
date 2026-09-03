@@ -17,7 +17,9 @@ export function registerAppUpdateChecks(win: Window = window): void {
     if (checking) return;
     checking = true;
     try {
-      const response = await win.fetch(`/?__tatamiq_update=${Date.now()}`, { cache: "no-store" });
+      const response = await win.fetch(`/?__appdosensei_update=${Date.now()}`, {
+        cache: "no-store",
+      });
       if (!response.ok) return;
 
       const html = await response.text();
@@ -42,7 +44,7 @@ export function registerAppUpdateChecks(win: Window = window): void {
 function normalizeScriptPath(src: string): string | null {
   if (!src) return null;
   try {
-    const url = new URL(src, "https://tatamiq.local");
+    const url = new URL(src, "https://appdosensei.local");
     if (!url.pathname.endsWith(".js") && !url.pathname.endsWith(".tsx")) return null;
     return url.pathname;
   } catch {

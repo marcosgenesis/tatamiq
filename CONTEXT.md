@@ -21,11 +21,11 @@ Ação executada por um **Administrador da Plataforma** para vincular uma conta 
 _Avoid_: transferência de academia, substituição automática de responsável, convite de aluno, suporte assistido
 
 **Operador da Plataforma**:
-Pessoa interna do Tatamiq autorizada a prestar suporte operacional a usuários e academias sem conhecer senhas nem acessar caixas de email; fora da primeira versão da administração interna.
+Pessoa interna do App do Sensei autorizada a prestar suporte operacional a usuários e academias sem conhecer senhas nem acessar caixas de email; fora da primeira versão da administração interna.
 _Avoid_: admin da academia, instrutor, suporte genérico, administrador sem contexto, papel obrigatório na V0
 
 **Administrador da Plataforma**:
-Pessoa interna do Tatamiq com permissão global para gerir usuários e academias da plataforma, incluindo impersonação, bloqueio, revogação de sessões, exclusão de usuários, alteração de papel global de administrador e ações destrutivas quando disponíveis; é o único papel interno ativo na primeira versão, e o bloqueio de um usuário não altera automaticamente academias ou dados operacionais associados.
+Pessoa interna do App do Sensei com permissão global para gerir usuários e academias da plataforma, incluindo impersonação, bloqueio, revogação de sessões, exclusão de usuários, alteração de papel global de administrador e ações destrutivas quando disponíveis; é o único papel interno ativo na primeira versão, e o bloqueio de um usuário não altera automaticamente academias ou dados operacionais associados.
 _Avoid_: dono da academia, owner da academia, instrutor, admin da academia, super user como termo de domínio
 
 **Auditoria Administrativa**:
@@ -45,7 +45,7 @@ Acesso temporário de até 1 hora e auditado em que um **Administrador da Plataf
 _Avoid_: login pelo email do cliente, acesso à senha, acesso oculto, backdoor, impersonação silenciosa, permissão global disfarçada, impersonar administrador
 
 **Administração da Plataforma**:
-Área operacional separada da área da **Academia**, acessada pela rota `/platform` e usada por **Administradores da Plataforma** para gerir o Tatamiq sem serem membros das academias atendidas; na primeira versão cobre dashboard operacional simples, academias, usuários, administradores da plataforma, auditoria administrativa e auditoria de suporte assistido, permite visualizar dados operacionais completos das academias, tem edição direta limitada a dados básicos de provisionamento da academia e busca simples por nome, email ou slug, e expõe ações destrutivas de academia apenas no detalhe da academia.
+Área operacional separada da área da **Academia**, acessada pela rota `/platform` e usada por **Administradores da Plataforma** para gerir o App do Sensei sem serem membros das academias atendidas; na primeira versão cobre dashboard operacional simples, academias, usuários, administradores da plataforma, auditoria administrativa e auditoria de suporte assistido, permite visualizar dados operacionais completos das academias, tem edição direta limitada a dados básicos de provisionamento da academia e busca simples por nome, email ou slug, e expõe ações destrutivas de academia apenas no detalhe da academia.
 _Avoid_: admin da academia, painel do instrutor, member role global, billing interno, relatório avançado, operação paralela de edição de dados da academia, filtros analíticos avançados, rota /admin, exclusão direta pela listagem
 
 **Acesso do Aluno**:
@@ -73,7 +73,7 @@ Componentes React DOM renderizados pelo Expo em uma WebView, usados somente quan
 _Avoid_: tratar componente DOM como componente nativo, colocar filhos nativos dentro dele, depender dele para navegação principal ou usar WebView como arquitetura do app inteiro
 
 **Autenticação nativa do Student App**:
-Integração do **Student App** com o plugin oficial `@better-auth/expo`, mantendo o modelo de sessão por cookie do backend do Tatamiq; no Expo, o cliente Better Auth persiste sessão e cookies com `expo-secure-store`, usa o scheme/deep link do app quando necessário e fornece o cookie para as requisições nativas autenticadas. Não cria uma autenticação Bearer paralela nem uma conta/sessão diferente da web.
+Integração do **Student App** com o plugin oficial `@better-auth/expo`, mantendo o modelo de sessão por cookie do backend do App do Sensei; no Expo, o cliente Better Auth persiste sessão e cookies com `expo-secure-store`, usa o scheme/deep link do app quando necessário e fornece o cookie para as requisições nativas autenticadas. Não cria uma autenticação Bearer paralela nem uma conta/sessão diferente da web.
 _Avoid_: `localStorage` ou `AsyncStorage` para credenciais, autenticação Bearer separada sem necessidade, sessão duplicada por plataforma, importar o cliente web sem o adaptador Expo
 
 **Roteamento do Student App**:
@@ -484,7 +484,7 @@ _Avoid_: dashboard administrativo, snapshot persistido, dado demonstrativo, regr
 - "iniciar a aula" foi delimitado a iniciar uma ocorrência do dia já prevista; o **Totem da Academia** não cadastra novas **Aulas Avulsas** nem altera a agenda.
 - "iniciar cedo ou tarde" foi resolvido como início manual permitido para qualquer ocorrência prevista no dia, usando o instante da confirmação como início real e sem início automático pelo relógio.
 - "o totem" foi resolvido como qualquer dispositivo nomeado e pareado da **Academia**; uma academia pode operar vários **Totens da Academia** em paralelo.
-- "outro app" foi resolvido como cliente independente na experiência e na entrega, não como backend ou domínio duplicado; a API do Tatamiq permanece a fonte única de verdade para o **Totem da Academia**.
+- "outro app" foi resolvido como cliente independente na experiência e na entrega, não como backend ou domínio duplicado; a API do App do Sensei permanece a fonte única de verdade para o **Totem da Academia**.
 - "código de pareamento" foi resolvido como credencial curta, única e temporária para ativar o **Modo Totem**, não como senha reutilizável do dispositivo.
 - "deixar por tempo" foi resolvido como transição automática `active → ended` no servidor pelo início real mais a duração da **Aula**, mantendo o encerramento manual apenas como encerramento antecipado no gestor.
 - "origem do QR" foi resolvida como o endereço canônico do **Acesso do Aluno**; o domínio independente do **Totem da Academia** não é destino de confirmação de presença.

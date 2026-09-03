@@ -1,6 +1,11 @@
+import type { PreRegistrationPublicProfile } from "@appdosensei/contracts";
+import {
+  academyPreRegistrationLinks,
+  belts,
+  type Database,
+  organization,
+} from "@appdosensei/database";
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import type { PreRegistrationPublicProfile } from "@tatamiq/contracts";
-import { academyPreRegistrationLinks, belts, type Database, organization } from "@tatamiq/database";
 import { asc, eq } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
 import { createLinkToken, parseLinkStatus } from "./pre-registration-link-rules";

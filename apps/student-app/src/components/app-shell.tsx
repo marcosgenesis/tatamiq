@@ -1,4 +1,4 @@
-import { tatamiqTokens } from "@tatamiq/design-tokens";
+import { appDoSenseiTokens } from "@appdosensei/design-tokens";
 import type { PropsWithChildren } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -10,7 +10,7 @@ type AppShellProps = PropsWithChildren<{
 
 export function AppShell({ eyebrow, title, children }: AppShellProps) {
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: tatamiqTokens.colors.canvas }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: appDoSenseiTokens.colors.canvas }}>
       <ScrollView
         className="flex-1"
         contentContainerClassName="gap-6 px-6 py-8"
@@ -22,7 +22,7 @@ export function AppShell({ eyebrow, title, children }: AppShellProps) {
           </Text>
           <Text
             className="text-4xl font-bold leading-tight"
-            style={{ color: tatamiqTokens.colors.ink }}
+            style={{ color: appDoSenseiTokens.colors.ink }}
           >
             {title}
           </Text>
