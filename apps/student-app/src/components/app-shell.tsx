@@ -10,7 +10,7 @@ type AppShellProps = PropsWithChildren<{
 
 export function AppShell({ eyebrow, title, children }: AppShellProps) {
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: tatamiqTokens.colors.canvas }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: tatamiqTokens.colors.canvas }}>
       <ScrollView
         className="flex-1"
         contentContainerClassName="gap-6 px-6 py-8"
