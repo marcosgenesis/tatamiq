@@ -5,6 +5,7 @@ import { Icon, type IconName } from "./icon";
 type ListRowProps = {
   icon: IconName;
   title: string;
+  className?: string;
   subtitle?: string;
   value?: ReactNode;
   showChevron?: boolean;
@@ -15,6 +16,7 @@ type ListRowProps = {
 export function ListRow({
   icon,
   title,
+  className = "",
   subtitle,
   value,
   showChevron = true,
@@ -26,7 +28,7 @@ export function ListRow({
     <Pressable
       disabled={!onPress}
       onPress={onPress}
-      className="min-h-20 flex-row items-center gap-4 px-1 py-3"
+      className={`min-h-20 flex-row items-center gap-4 px-1 py-3 ${className}`}
     >
       <View
         className={`h-12 w-12 items-center justify-center rounded-[14px] ${iconBackgroundClassName}`}
