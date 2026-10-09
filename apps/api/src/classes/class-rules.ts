@@ -1,4 +1,4 @@
-import type { ClassSessionStatus } from "@tatamiq/contracts";
+import type { ClassSessionStatus } from "@appdosensei/contracts";
 
 const VALID_TRANSITIONS: Record<string, ClassSessionStatus[]> = {
   scheduled: ["active", "cancelled"],

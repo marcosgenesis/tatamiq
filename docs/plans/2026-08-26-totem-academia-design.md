@@ -7,7 +7,7 @@ O **Totem da Academia** é um cliente web independente do gestor para apoiar o *
 ## Decisões validadas
 
 - Aplicativo web separado, acessado por URL própria, sem instalação obrigatória.
-- Mesma API e mesma fonte de dados do Tatamiq; não haverá backend ou regras de domínio duplicadas.
+- Mesma API e mesma fonte de dados do App do Sensei; não haverá backend ou regras de domínio duplicadas.
 - **Modo Totem** restrito, concedido por código curto de uso único, válido por 10 minutos; QR de pareamento é opcional.
 - Pareamento persistente até revogação, com nome do dispositivo e revogação individual. Não há saída local comum.
 - Online-required: iniciar, consultar estado e renovar QR exigem servidor.

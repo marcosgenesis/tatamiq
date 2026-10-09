@@ -1,11 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
 import type {
   StudentAttendancesResponse,
   StudentGraduationResponse,
   StudentMeResponse,
   StudentMonthlyFeesResponse,
-} from "@tatamiq/contracts";
+} from "@appdosensei/contracts";
+import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import {
   ArrowRight01Icon,
   Award01Icon,

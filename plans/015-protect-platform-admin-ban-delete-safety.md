@@ -17,7 +17,7 @@
 
 ## Why this matters
 
-The administrator removal flow protects Tatamiq from removing the last active **Administrador da Plataforma**, but the generic user management paths can still ban or delete the same account. That can lock maintainers out of the **Administração da Plataforma** or remove configured administrators in a way the dedicated admin UI forbids. This plan makes the user ban/delete paths respect the same safety invariant as administrator removal.
+The administrator removal flow protects App do Sensei from removing the last active **Administrador da Plataforma**, but the generic user management paths can still ban or delete the same account. That can lock maintainers out of the **Administração da Plataforma** or remove configured administrators in a way the dedicated admin UI forbids. This plan makes the user ban/delete paths respect the same safety invariant as administrator removal.
 
 ## Current state
 
@@ -56,7 +56,7 @@ await this.db
   .update(user)
   .set({
     name: "Usuário excluído",
-    email: `deleted+${id}@tatamiq.local`,
+    email: `deleted+${id}@appdosensei.local`,
     image: null,
     role: null,
 ```
@@ -85,7 +85,7 @@ Existing convention to match: platform service tests use Vitest with mock Drizzl
 | Purpose | Command | Expected on success |
 |---|---|---|
 | Install | `pnpm install` | exit 0 |
-| Targeted API tests | `pnpm --filter @tatamiq/api test -- src/platform/platform-admin.service.spec.ts src/platform/platform.controller.spec.ts` | exit 0 |
+| Targeted API tests | `pnpm --filter @appdosensei/api test -- src/platform/platform-admin.service.spec.ts src/platform/platform.controller.spec.ts` | exit 0 |
 | Typecheck | `pnpm typecheck` | exit 0 |
 | Lint | `pnpm lint` | exit 0; existing warnings may remain |
 | Full tests | `pnpm test` | exit 0 |
@@ -134,7 +134,7 @@ The method must:
 
 You may factor helper functions inside the same file if that keeps `removeAdministrator` and the new method consistent. Do not silently weaken `removeAdministrator`.
 
-**Verify**: `pnpm --filter @tatamiq/api test -- src/platform/platform-admin.service.spec.ts` → exits 0 after adding tests in Step 2.
+**Verify**: `pnpm --filter @appdosensei/api test -- src/platform/platform-admin.service.spec.ts` → exits 0 after adding tests in Step 2.
 
 ### Step 2: Add API tests for admin safety
 
@@ -147,7 +147,7 @@ In `apps/api/src/platform/platform-admin.service.spec.ts`, add focused tests for
 
 If existing mock utilities make this awkward, add a small local mock DB in the spec rather than changing production code for test convenience.
 
-**Verify**: `pnpm --filter @tatamiq/api test -- src/platform/platform-admin.service.spec.ts` → exits 0.
+**Verify**: `pnpm --filter @appdosensei/api test -- src/platform/platform-admin.service.spec.ts` → exits 0.
 
 ### Step 3: Call the safety check from ban and delete paths
 
@@ -176,7 +176,7 @@ If existing platform service/controller specs instantiate `PlatformUserService` 
 
 Prefer service-level tests over broad controller tests.
 
-**Verify**: `pnpm --filter @tatamiq/api test -- src/platform/platform-admin.service.spec.ts src/platform/platform.controller.spec.ts` → exits 0.
+**Verify**: `pnpm --filter @appdosensei/api test -- src/platform/platform-admin.service.spec.ts src/platform/platform.controller.spec.ts` → exits 0.
 
 ### Step 5: Add defensive UI messaging
 
@@ -188,14 +188,14 @@ In `apps/web/src/features/platform/platform-user-detail-page.tsx`, use the exist
 
 Do not add a full administrator-management redesign here.
 
-**Verify**: `pnpm --filter @tatamiq/web test` → exits 0 (it may report no affected tests but should exit 0), then `pnpm typecheck` → exits 0.
+**Verify**: `pnpm --filter @appdosensei/web test` → exits 0 (it may report no affected tests but should exit 0), then `pnpm typecheck` → exits 0.
 
 ## Test plan
 
 - Add `PlatformAdminService` unit coverage for the reusable guard.
 - Add or update service tests for `PlatformUserService.banUser` and `UserDeletionService.delete` if test scaffolding exists or is cheap to create.
 - Run:
-  - `pnpm --filter @tatamiq/api test -- src/platform/platform-admin.service.spec.ts src/platform/platform.controller.spec.ts`
+  - `pnpm --filter @appdosensei/api test -- src/platform/platform-admin.service.spec.ts src/platform/platform.controller.spec.ts`
   - `pnpm typecheck`
   - `pnpm lint`
   - `pnpm test`

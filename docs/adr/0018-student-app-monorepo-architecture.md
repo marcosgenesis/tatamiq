@@ -2,15 +2,15 @@
 
 ## Contexto
 
-O MVP do Tatamiq precisa substituir o uso principal da PWA no celular por um app Expo dedicado ao **Acesso do Aluno**, sem duplicar o backend, os contratos ou as regras do domínio. A PWA continua como fallback para os mesmos links HTTPS, enquanto o painel do **Responsável da Academia** permanece na web.
+O MVP do App do Sensei precisa substituir o uso principal da PWA no celular por um app Expo dedicado ao **Acesso do Aluno**, sem duplicar o backend, os contratos ou as regras do domínio. A PWA continua como fallback para os mesmos links HTTPS, enquanto o painel do **Responsável da Academia** permanece na web.
 
 O app precisa atender tanto rotas públicas sem sessão — pré-cadastro, acompanhamento, primeiro acesso e convite — quanto a área autenticada do aluno, incluindo QR Code de presença, agenda, mensalidades, evolução e perfil.
 
 ## Decisão
 
-- O app será um workspace separado em `apps/student-app`, com pacote `@tatamiq/student-app`. Um futuro app do instrutor poderá ser criado separadamente; não haverá um app móvel de papéis misturados no MVP.
+- O app será um workspace separado em `apps/student-app`, com pacote `@appdosensei/student-app`. Um futuro app do instrutor poderá ser criado separadamente; não haverá um app móvel de papéis misturados no MVP.
 - O app usará Expo Router em `src/app`, com grupos de rotas públicas, autenticação e área protegida do aluno. Os links públicos preservarão tokens opacos e a experiência contínua de acompanhamento, enquanto a definição de senha continuará usando o **Link de Primeiro Acesso** separado.
-- `apps/student-app` compartilhará `@tatamiq/contracts`, o cliente OpenAPI, tipos, schemas e regras puras. O cliente HTTP terá um adaptador nativo para anexar o cookie Better Auth obtido por `authClient.getCookie()` às requisições autenticadas; o web continuará usando `credentials: "include"`.
+- `apps/student-app` compartilhará `@appdosensei/contracts`, o cliente OpenAPI, tipos, schemas e regras puras. O cliente HTTP terá um adaptador nativo para anexar o cookie Better Auth obtido por `authClient.getCookie()` às requisições autenticadas; o web continuará usando `credentials: "include"`.
 - A autenticação nativa usará o plugin oficial `@better-auth/expo` no servidor e `expoClient` no app, com `expo-secure-store` para persistir sessão e cookies. O app usará um scheme próprio incluído nos `trustedOrigins` do backend. Não haverá uma autenticação Bearer paralela.
 - A camada visual será nativa e própria do app. NativeWind na trilha estável será usado para aproximar a linguagem Tailwind do web e compartilhar tokens/convenções, mas componentes DOM, shadcn e componentes de `apps/web` não serão importados pelo app nativo.
 - O baseline do MVP será Expo SDK 55, React Native 0.83 e React 19.2, com Expo Router da linha 55, módulos Expo instalados pela ferramenta de compatibilidade do SDK, `@better-auth/expo` alinhado à versão Better Auth do monorepo, NativeWind v4 estável com Tailwind 3.4.x no app e Node mínimo 22.22.1. SDKs posteriores e NativeWind v5 ficam para uma atualização deliberada.

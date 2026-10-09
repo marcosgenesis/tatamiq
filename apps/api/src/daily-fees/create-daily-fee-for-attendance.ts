@@ -1,4 +1,3 @@
-import { BadRequestException } from "@nestjs/common";
 import {
   attendances,
   classSessions,
@@ -6,7 +5,8 @@ import {
   dailyFees,
   organization,
   studentBillingPeriods,
-} from "@tatamiq/database";
+} from "@appdosensei/database";
+import { BadRequestException } from "@nestjs/common";
 import { and, eq, gte, isNull, lte, or } from "drizzle-orm";
 
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];

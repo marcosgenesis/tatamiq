@@ -12,7 +12,7 @@ RUN pnpm install --frozen-lockfile
 
 FROM deps AS build
 COPY . .
-RUN pnpm --filter @tatamiq/api build
+RUN pnpm --filter @appdosensei/api build
 
 FROM node:22-alpine AS runner
 WORKDIR /app
@@ -20,4 +20,4 @@ ENV NODE_ENV=production
 RUN corepack enable
 COPY --from=build /app .
 EXPOSE 3000
-CMD ["pnpm", "--filter", "@tatamiq/api", "start"]
+CMD ["pnpm", "--filter", "@appdosensei/api", "start"]

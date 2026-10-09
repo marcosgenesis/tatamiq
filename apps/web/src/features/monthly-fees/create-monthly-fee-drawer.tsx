@@ -1,6 +1,6 @@
+import type { Student } from "@appdosensei/contracts";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { Student } from "@tatamiq/contracts";
 import { AlertCircle, Info, Search, User, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";

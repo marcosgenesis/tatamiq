@@ -1,4 +1,4 @@
-import { belts, type Database } from "@tatamiq/database";
+import { belts, type Database } from "@appdosensei/database";
 
 type BeltSeed = {
   name: string;

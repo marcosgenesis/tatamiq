@@ -1,5 +1,5 @@
+import type { ClassGroup } from "@appdosensei/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { ClassGroup } from "@tatamiq/contracts";
 import {
   Archive02Icon,
   ArchiveArrowUpIcon,

@@ -1,11 +1,11 @@
-import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type {
   CreateStudentNoteInput,
   ListStudentNotesResponse,
   StudentNoteDto,
   UpdateStudentNoteInput,
-} from "@tatamiq/contracts";
-import { type Database, studentNotes } from "@tatamiq/database";
+} from "@appdosensei/contracts";
+import { type Database, studentNotes } from "@appdosensei/database";
+import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { AcademiaScope } from "../academy-scope/academia-scope.service";
 import { DATABASE } from "../database/database.module";

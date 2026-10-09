@@ -1,5 +1,5 @@
+import type { ScheduleOccurrence } from "@appdosensei/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { ScheduleOccurrence } from "@tatamiq/contracts";
 import {
   ArrowLeft01Icon,
   ArrowRight01Icon,

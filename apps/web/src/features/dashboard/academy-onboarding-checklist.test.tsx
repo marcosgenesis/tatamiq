@@ -1,4 +1,4 @@
-import type { AcademyOnboardingChecklist } from "@tatamiq/contracts";
+import type { AcademyOnboardingChecklist } from "@appdosensei/contracts";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import {

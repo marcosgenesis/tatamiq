@@ -68,7 +68,7 @@ Existing convention to match: platform audit tests use fake `AuditService.write`
 | Purpose | Command | Expected on success |
 |---|---|---|
 | Install | `pnpm install` | exit 0 |
-| Targeted platform tests | `pnpm --filter @tatamiq/api test -- src/platform/platform-audited-action.service.spec.ts src/platform/audit.service.spec.ts` | exit 0 |
+| Targeted platform tests | `pnpm --filter @appdosensei/api test -- src/platform/platform-audited-action.service.spec.ts src/platform/audit.service.spec.ts` | exit 0 |
 | Typecheck | `pnpm typecheck` | exit 0 |
 | Lint | `pnpm lint` | exit 0; existing warnings may remain |
 | Full tests | `pnpm test` | exit 0 |
@@ -144,13 +144,13 @@ In `apps/api/src/platform/platform-audited-action.service.spec.ts`, add tests fo
 
 Keep existing success tests unchanged.
 
-**Verify**: `pnpm --filter @tatamiq/api test -- src/platform/platform-audited-action.service.spec.ts` → exits 0.
+**Verify**: `pnpm --filter @appdosensei/api test -- src/platform/platform-audited-action.service.spec.ts` → exits 0.
 
 ### Step 4: Run platform audit service tests
 
 Run the audit service tests to confirm explicit `failure` support still behaves as expected.
 
-**Verify**: `pnpm --filter @tatamiq/api test -- src/platform/audit.service.spec.ts` → exits 0.
+**Verify**: `pnpm --filter @appdosensei/api test -- src/platform/audit.service.spec.ts` → exits 0.
 
 ### Step 5: Run full verification
 

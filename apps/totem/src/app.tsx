@@ -108,7 +108,7 @@ export function App() {
   if (screen === "select") {
     return (
       <ClassSelectionScreen
-        academyName={state?.academyName ?? "Tatamiq"}
+        academyName={state?.academyName ?? "App do Sensei"}
         classes={state?.activeClasses ?? []}
         deviceName={state?.deviceName}
         onSelect={(item) => {
@@ -121,7 +121,7 @@ export function App() {
   if (screen === "active" && selectedClass) {
     return (
       <ActiveClassScreen
-        academyName={state?.academyName ?? "Tatamiq"}
+        academyName={state?.academyName ?? "App do Sensei"}
         deviceName={state?.deviceName}
         item={selectedClass}
         qr={qr}
@@ -134,7 +134,7 @@ export function App() {
 
   return (
     <IdleScreen
-      academyName={state?.academyName ?? "Tatamiq"}
+      academyName={state?.academyName ?? "App do Sensei"}
       deviceName={state?.deviceName}
       classes={state?.today ?? []}
       error={error}
@@ -166,7 +166,7 @@ function PairingScreen({
     <main className="screen pairing-screen">
       <div className="brand-lockup">
         <span className="brand-mark">T</span>
-        <span>tatamiq</span>
+        <span>App do Sensei</span>
       </div>
       <section className="pairing-card">
         <div className="eyebrow">CONFIGURAÇÃO DO DISPOSITIVO</div>
@@ -469,7 +469,7 @@ function Header({
 function Footer() {
   return (
     <footer className="app-footer">
-      <span>tatamiq</span>
+      <span>App do Sensei</span>
       <span>Operação da academia</span>
     </footer>
   );

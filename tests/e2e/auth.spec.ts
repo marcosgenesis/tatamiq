@@ -3,9 +3,9 @@ import { getLatestPasswordResetToken } from "./support/database";
 
 test.describe.configure({ mode: "serial" });
 
-const signupEmail = `e2e-auth-${Date.now()}@tatamiq.local`;
-const initialPassword = "tatamiq123";
-const resetPassword = "tatamiq456";
+const signupEmail = `e2e-auth-${Date.now()}@appdosensei.local`;
+const initialPassword = "appdosensei123";
+const resetPassword = "appdosensei456";
 const displayName = "E2E Auth User";
 const academyName = "Academia E2E Auth";
 
@@ -51,7 +51,7 @@ test("sign-up flows through onboarding into the instructor panel", async ({ page
 test("invalid credentials show the expected sign-in error", async ({ page }) => {
   await page.goto("/sign-in");
 
-  await page.getByLabel("Email").fill("nao-existe@tatamiq.local");
+  await page.getByLabel("Email").fill("nao-existe@appdosensei.local");
   await page.getByLabel("Senha").fill("senha-invalida");
   await page.getByRole("button", { name: "Entrar" }).click();
 
@@ -67,7 +67,7 @@ test("sign-out returns to sign-in and sign-in works again", async ({ page }) => 
   await page.getByRole("menuitem", { name: "Sair" }).click();
 
   await expect(page).toHaveURL(/\/sign-in$/);
-  await expect(page.getByRole("heading", { name: "Entrar no Tatamiq" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Entrar no App do Sensei" })).toBeVisible();
 
   await signIn(page, initialPassword);
 });

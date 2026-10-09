@@ -1,6 +1,6 @@
 # Releases
 
-Tatamiq uses semantic-release for semantic versioning.
+App do Sensei uses semantic-release for semantic versioning.
 
 ## Versioning model
 

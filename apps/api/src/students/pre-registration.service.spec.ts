@@ -595,7 +595,7 @@ describe("PreRegistrationService", () => {
     ]);
 
     const result = await service.completeFirstAccess("token", {
-      password: "tatamiq456",
+      password: "appdosensei456",
       termsAccepted: true,
       termsVersion: "student-access-v1",
     });
@@ -689,7 +689,7 @@ describe("PreRegistrationService", () => {
       });
       expect(emailService.send).toHaveBeenCalledWith({
         to: "aluno@example.com",
-        subject: "Seu acesso ao Tatame Central no Tatamiq",
+        subject: "Seu acesso ao Tatame Central no App do Sensei",
         html: expect.stringContaining("Tatame Central"),
       });
       expect(emailService.send.mock.calls[0]?.[0].html).toContain("Aluno Teste");

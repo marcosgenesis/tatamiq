@@ -1,5 +1,5 @@
+import type { ScheduleOccurrence } from "@appdosensei/contracts";
 import { BadRequestException, UnauthorizedException } from "@nestjs/common";
-import type { ScheduleOccurrence } from "@tatamiq/contracts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { TotemService } from "./totem.service";
 

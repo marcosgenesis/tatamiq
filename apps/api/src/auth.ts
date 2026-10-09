@@ -1,12 +1,13 @@
+import { createDatabase } from "@appdosensei/database";
+import * as schema from "@appdosensei/database/schema";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
-import { createDatabase } from "@tatamiq/database";
-import * as schema from "@tatamiq/database/schema";
+import { expo } from "@better-auth/expo";
 import { betterAuth } from "better-auth";
 import { APIError } from "better-auth/api";
 import { admin, organization } from "better-auth/plugins";
 import { resolveAuthCookieOptions } from "./auth-cookies";
 import { seedIbjjfBelts } from "./belts/seed-belts";
-import { resolveWebOrigins } from "./web-origins";
+import { resolveTrustedOrigins } from "./web-origins";
 
 const MIN_NAME_LENGTH = 2;
 const MAX_NAME_LENGTH = 120;
@@ -47,11 +48,11 @@ export function normalizeOrganizationName(rawName: unknown): string {
 }
 
 const apiUrl = process.env.BETTER_AUTH_URL ?? "http://localhost:3100";
-const webOrigins = resolveWebOrigins();
+const trustedOrigins = resolveTrustedOrigins();
 
 const db = createDatabase();
 export const DEV_BETTER_AUTH_SECRET =
-  "dev-only-tatamiq-better-auth-secret-change-me-minimum-32-chars";
+  "dev-only-appdosensei-better-auth-secret-change-me-minimum-32-chars";
 
 export function platformAdminUserIds(): string[] {
   return (process.env.BETTER_AUTH_ADMIN_USER_IDS ?? process.env.PLATFORM_ADMIN_USER_IDS ?? "")
@@ -92,11 +93,11 @@ export function resolveQrTokenSecret(env: NodeJS.ProcessEnv = process.env): stri
 }
 
 export const auth = betterAuth({
-  appName: "Tatamiq",
+  appName: "App do Sensei",
   baseURL: apiUrl,
   basePath: "/auth",
   secret: resolveBetterAuthSecret(),
-  trustedOrigins: webOrigins,
+  trustedOrigins,
   advanced: resolveAuthCookieOptions(),
   database: drizzleAdapter(db, {
     provider: "pg",
@@ -124,6 +125,7 @@ export const auth = betterAuth({
     },
   },
   plugins: [
+    expo(),
     admin({
       adminUserIds: platformAdminUserIds(),
       impersonationSessionDuration: 60 * 60,

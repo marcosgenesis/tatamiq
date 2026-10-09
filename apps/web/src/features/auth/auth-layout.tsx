@@ -15,10 +15,10 @@ export function AuthLayout({ children }: PropsWithChildren) {
         <DecorIcon position="bottom-right" />
 
         <div className="w-full max-w-sm animate-in space-y-8">
-          <Link to="/" className="flex items-center gap-3" aria-label="Tatamiq">
+          <Link to="/" className="flex items-center gap-3" aria-label="App do Sensei">
             <LogoIcon className="size-10" />
             <div>
-              <p className="text-lg font-semibold leading-none tracking-tight">Tatamiq</p>
+              <p className="text-lg font-semibold leading-none tracking-tight">App do Sensei</p>
               <p className="mt-1 text-xs text-muted-foreground">Gestão para o tatame</p>
             </div>
           </Link>

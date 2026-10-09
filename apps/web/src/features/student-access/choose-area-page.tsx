@@ -162,7 +162,7 @@ export function ChooseAreaPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Selecione como você quer acessar o Tatamiq agora.
+            Selecione como você quer acessar o App do Sensei agora.
           </p>
           {hasPlatform ? (
             <Button className="w-full" onClick={() => (window.location.href = "/platform")}>

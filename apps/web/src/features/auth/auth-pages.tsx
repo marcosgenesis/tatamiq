@@ -93,7 +93,7 @@ export function SignInPage() {
   return (
     <AuthLayout>
       <div className="flex flex-col space-y-1">
-        <h1 className="font-bold text-2xl tracking-wide">Entrar no Tatamiq</h1>
+        <h1 className="font-bold text-2xl tracking-wide">Entrar no App do Sensei</h1>
         <p className="text-base text-muted-foreground">Acesse sua área de instrutor.</p>
       </div>
       <form className="flex flex-col gap-3" onSubmit={submit}>

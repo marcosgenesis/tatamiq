@@ -144,9 +144,9 @@ Before moving or removing `shadcn`, note that `apps/web/src/index.css` imports:
 @import "shadcn/tailwind.css";
 ```
 
-Therefore, do not simply move `shadcn` to `devDependencies` or remove it unless `pnpm --filter @tatamiq/web build` still resolves that CSS import. If the safe fix is a `hono` override, prefer that over breaking the CSS import.
+Therefore, do not simply move `shadcn` to `devDependencies` or remove it unless `pnpm --filter @appdosensei/web build` still resolves that CSS import. If the safe fix is a `hono` override, prefer that over breaking the CSS import.
 
-**Verify**: `pnpm --filter @tatamiq/web build` → exits 0 after any `shadcn` change.
+**Verify**: `pnpm --filter @appdosensei/web build` → exits 0 after any `shadcn` change.
 
 ### Step 4: Run audit until production vulnerabilities are gone or explicitly bounded
 

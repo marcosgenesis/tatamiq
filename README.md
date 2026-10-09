@@ -1,12 +1,12 @@
-# Tatamiq
+# App do Sensei
 
-Tatamiq is a V0-stage product for managing Brazilian Jiu-Jitsu students in small academies operated by a solo owner/instructor.
+App do Sensei is a V0-stage product for managing Brazilian Jiu-Jitsu students in small academies operated by a solo owner/instructor.
 
 The goal of the V0 is to let a pilot academy operate for one week without spreadsheets for the core workflows: students, class groups, attendance, graduation tracking, and monthly fees.
 
 ## Product scope
 
-Tatamiq V0 includes:
+App do Sensei V0 includes:
 
 - student and guardian management;
 - class groups and weekly agenda;

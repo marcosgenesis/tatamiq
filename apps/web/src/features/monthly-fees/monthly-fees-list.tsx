@@ -1,4 +1,4 @@
-import type { MonthlyFee } from "@tatamiq/contracts";
+import type { MonthlyFee } from "@appdosensei/contracts";
 import { MonthlyFeeRow } from "./monthly-fee-row";
 import { MonthlyFeesEmptyState } from "./monthly-fees-empty-state";
 

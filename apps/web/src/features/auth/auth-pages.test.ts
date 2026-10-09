@@ -60,8 +60,8 @@ describe("createPublicAccount", () => {
 
     const result = await createPublicAccount({
       name: "Novo Dono",
-      email: "novo-dono@tatamiq.local",
-      password: "tatamiq123",
+      email: "novo-dono@appdosensei.local",
+      password: "appdosensei123",
       signOut: vi.fn(async () => {
         calls.push("signOut");
       }),
@@ -82,8 +82,8 @@ describe("createPublicAccount", () => {
     await expect(
       createPublicAccount({
         name: "Novo Dono",
-        email: "novo-dono@tatamiq.local",
-        password: "tatamiq123",
+        email: "novo-dono@appdosensei.local",
+        password: "appdosensei123",
         signOut: vi.fn(async () => {
           throw new Error("not signed in");
         }),

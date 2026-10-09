@@ -1,4 +1,4 @@
-import type { MonthlyFee } from "@tatamiq/contracts";
+import type { MonthlyFee } from "@appdosensei/contracts";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { formatCurrency, formatDate, monthNames } from "../../lib/formatting";

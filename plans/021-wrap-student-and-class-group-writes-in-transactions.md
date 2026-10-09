@@ -84,7 +84,7 @@ type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 | Purpose | Command | Expected on success |
 |---|---|---|
 | Install | `pnpm install` | exit 0 |
-| Targeted API tests | `pnpm --filter @tatamiq/api test -- src/students src/class-groups` | exit 0 |
+| Targeted API tests | `pnpm --filter @appdosensei/api test -- src/students src/class-groups` | exit 0 |
 | Typecheck | `pnpm typecheck` | exit 0 |
 | Lint | `pnpm lint` | exit 0; existing warnings may remain |
 | Full tests | `pnpm test` | exit 0 |
@@ -152,7 +152,7 @@ In `StudentsService.update`:
 - Preserve current behavior but perform the student update and `replaceGuardian` inside one transaction.
 - Keep the read/validation before the transaction unless you need the current student row for Plan 020 inactive logic; if so, read once and pass through.
 
-**Verify**: `pnpm --filter @tatamiq/api test -- src/students` → exits 0.
+**Verify**: `pnpm --filter @appdosensei/api test -- src/students` → exits 0.
 
 ### Step 3: Wrap class-group create/update in transactions
 
@@ -166,7 +166,7 @@ In `ClassGroupsService.update`:
 
 Keep `archive` and `reactivate` unchanged unless you discover they already need multi-write behavior; they are single-row updates today.
 
-**Verify**: `pnpm --filter @tatamiq/api test -- src/class-groups` → exits 0.
+**Verify**: `pnpm --filter @appdosensei/api test -- src/class-groups` → exits 0.
 
 ### Step 4: Add regression tests for rollback behavior where practical
 

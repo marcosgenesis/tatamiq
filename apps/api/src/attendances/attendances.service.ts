@@ -1,17 +1,17 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type {
   AddManualAttendanceInput,
   Attendance,
   AttendanceRosterResponse,
   InvalidateAttendanceInput,
-} from "@tatamiq/contracts";
+} from "@appdosensei/contracts";
 import {
   attendances,
   classSessions,
   type Database,
   studentClassGroups,
   students,
-} from "@tatamiq/database";
+} from "@appdosensei/database";
+import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { and, eq, isNull } from "drizzle-orm";
 import {
   createDailyFeeForAttendance,

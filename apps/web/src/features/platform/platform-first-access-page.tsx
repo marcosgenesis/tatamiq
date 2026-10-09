@@ -27,7 +27,9 @@ export function PlatformFirstAccessPage({ token }: { token: string }) {
     <AuthLayout>
       <div className="space-y-2">
         <h1 className="font-semibold text-2xl tracking-tight">Primeiro acesso</h1>
-        <p className="text-muted-foreground text-sm">Crie sua senha para acessar o Tatamiq.</p>
+        <p className="text-muted-foreground text-sm">
+          Crie sua senha para acessar o App do Sensei.
+        </p>
       </div>
 
       <div className="mt-6 space-y-4 rounded-3xl border border-border bg-card/70 p-5">

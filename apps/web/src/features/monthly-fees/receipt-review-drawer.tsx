@@ -1,4 +1,4 @@
-import type { MonthlyFeeDetail } from "@tatamiq/contracts";
+import type { MonthlyFeeDetail } from "@appdosensei/contracts";
 import { Field } from "../../components/form-field";
 import { Button } from "../../components/ui/button";
 import {

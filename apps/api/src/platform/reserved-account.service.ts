@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
+import { account, type Database, user, verification } from "@appdosensei/database";
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { account, type Database, user, verification } from "@tatamiq/database";
 import { hashPassword } from "better-auth/crypto";
 import { eq } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";

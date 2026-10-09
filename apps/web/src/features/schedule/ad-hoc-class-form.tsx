@@ -1,4 +1,4 @@
-import type { ClassGroup } from "@tatamiq/contracts";
+import type { ClassGroup } from "@appdosensei/contracts";
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import { Button } from "../../components/ui/button";
 import { DateTimeField } from "../../components/ui/date-time-field";

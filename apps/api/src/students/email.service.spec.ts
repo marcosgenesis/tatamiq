@@ -15,7 +15,7 @@ describe("EmailService", () => {
       ...OLD_ENV,
       NODE_ENV: "development",
       RESEND_API_KEY: "",
-      EMAIL_FROM: "Tatamiq <dev@example.com>",
+      EMAIL_FROM: "App do Sensei <dev@example.com>",
     };
     const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
     const fetchSpy = vi.spyOn(globalThis, "fetch");
@@ -29,7 +29,7 @@ describe("EmailService", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
     expect(log).toHaveBeenCalledWith({
       event: "email_dev_fallback",
-      from: "Tatamiq <dev@example.com>",
+      from: "App do Sensei <dev@example.com>",
       to: "student@example.com",
       subject: "Primeiro acesso",
       htmlLength: "<p>Link</p>".length,
@@ -72,7 +72,7 @@ describe("EmailService", () => {
     process.env = {
       ...OLD_ENV,
       RESEND_API_KEY: "test-key",
-      EMAIL_FROM: "Tatamiq <mail@example.com>",
+      EMAIL_FROM: "App do Sensei <mail@example.com>",
     };
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue({
       ok: true,
@@ -94,7 +94,7 @@ describe("EmailService", () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: "Tatamiq <mail@example.com>",
+          from: "App do Sensei <mail@example.com>",
           to: "student@example.com",
           subject: "Primeiro acesso",
           html: "<p>Link</p>",

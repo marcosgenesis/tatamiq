@@ -1,11 +1,4 @@
-import {
-  BadRequestException,
-  ForbiddenException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from "@nestjs/common";
-import type { ConfirmQrAttendanceInput, ConfirmQrAttendanceResponse } from "@tatamiq/contracts";
+import type { ConfirmQrAttendanceInput, ConfirmQrAttendanceResponse } from "@appdosensei/contracts";
 import {
   attendances,
   classGroups,
@@ -14,7 +7,14 @@ import {
   studentAccess,
   studentClassGroups,
   students,
-} from "@tatamiq/database";
+} from "@appdosensei/database";
+import {
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { and, eq, isNull } from "drizzle-orm";
 import { resolveQrTokenSecret } from "../auth";
 import { parseClassStatus } from "../class-status";

@@ -1,6 +1,6 @@
+import type { ClassGroup } from "@appdosensei/contracts";
+import type { components } from "@appdosensei/contracts/generated";
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { ClassGroup } from "@tatamiq/contracts";
-import type { components } from "@tatamiq/contracts/generated";
 import {
   Calendar03Icon,
   Delete02Icon,

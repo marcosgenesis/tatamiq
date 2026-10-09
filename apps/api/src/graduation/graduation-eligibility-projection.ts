@@ -1,4 +1,4 @@
-import type { EligibleStudent, GraduationSummaryResponse } from "@tatamiq/contracts";
+import type { EligibleStudent, GraduationSummaryResponse } from "@appdosensei/contracts";
 import { calculateAge, calculateEligibility, monthsBetween } from "./eligibility-rules";
 
 type ProjectionStudent = {

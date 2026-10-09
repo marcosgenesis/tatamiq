@@ -14,7 +14,7 @@
 
 ## Goal
 
-Create the first working code scaffold for Tatamiq as a TypeScript monorepo. The scaffold should validate the chosen stack end-to-end without implementing core product domain flows yet.
+Create the first working code scaffold for App do Sensei as a TypeScript monorepo. The scaffold should validate the chosen stack end-to-end without implementing core product domain flows yet.
 
 ## Decisions
 
@@ -29,16 +29,16 @@ Create the first working code scaffold for Tatamiq as a TypeScript monorepo. The
 
 ```txt
 apps/
-  web/              # @tatamiq/web — Vite + React + TypeScript
-  api/              # @tatamiq/api — NestJS + TypeScript
+  web/              # @appdosensei/web — Vite + React + TypeScript
+  api/              # @appdosensei/api — NestJS + TypeScript
 packages/
-  database/         # @tatamiq/database — Drizzle schema, migrations, seed scripts
-  contracts/        # @tatamiq/contracts — Zod schemas, OpenAPI artifact, generated client
-  config/           # @tatamiq/config — shared TypeScript configs
+  database/         # @appdosensei/database — Drizzle schema, migrations, seed scripts
+  contracts/        # @appdosensei/contracts — Zod schemas, OpenAPI artifact, generated client
+  config/           # @appdosensei/config — shared TypeScript configs
 docs/
 ```
 
-Do not create `@tatamiq/types` yet. Shared types should come from contracts or database until a concrete need appears.
+Do not create `@appdosensei/types` yet. Shared types should come from contracts or database until a concrete need appears.
 
 ## Root tooling
 
@@ -67,7 +67,7 @@ Standard scripts:
 
 ## Shared config package
 
-`@tatamiq/config` should provide TypeScript configs:
+`@appdosensei/config` should provide TypeScript configs:
 
 - `tsconfig.base.json`
 - `tsconfig.web.json`
@@ -77,14 +77,14 @@ Biome stays configured at the repo root, not exported from the config package.
 
 ## Web app
 
-Create `apps/web` as `@tatamiq/web` using Vite + React + TypeScript.
+Create `apps/web` as `@appdosensei/web` using Vite + React + TypeScript.
 
 Configure in the scaffold:
 
 - Tailwind;
 - TanStack Router;
 - TanStack Query;
-- OpenAPI generated client consumption from `@tatamiq/contracts`;
+- OpenAPI generated client consumption from `@appdosensei/contracts`;
 - environment file example at `apps/web/.env.example`;
 - initial page that calls the API and displays:
   - API health status;
@@ -94,7 +94,7 @@ Do not configure ReUI or shadcn/ui in this scaffold step. They come next.
 
 ## API app
 
-Create `apps/api` as `@tatamiq/api` using NestJS + TypeScript.
+Create `apps/api` as `@appdosensei/api` using NestJS + TypeScript.
 
 Configure in the scaffold:
 
@@ -111,7 +111,7 @@ Do not implement Better Auth in this scaffold step. It is the next functional sl
 
 ## Database package
 
-Create `packages/database` as `@tatamiq/database`.
+Create `packages/database` as `@appdosensei/database`.
 
 Configure:
 
@@ -130,7 +130,7 @@ Do not create `users` or auth tables yet. Better Auth may impose or influence th
 
 ## Contracts package
 
-Create `packages/contracts` as `@tatamiq/contracts`.
+Create `packages/contracts` as `@appdosensei/contracts`.
 
 Configure:
 

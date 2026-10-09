@@ -1,6 +1,6 @@
+import type { EligibilityType } from "@appdosensei/contracts";
 import { Controller, Get, Inject, Param, Post, Query } from "@nestjs/common";
 import { ApiOkResponse, ApiQuery, ApiTags } from "@nestjs/swagger";
-import type { EligibilityType } from "@tatamiq/contracts";
 import { OrgRoles } from "@thallesp/nestjs-better-auth";
 import { AcademyId, ActorId } from "../academy-request";
 import { ZodBody } from "../zod-body.decorator";

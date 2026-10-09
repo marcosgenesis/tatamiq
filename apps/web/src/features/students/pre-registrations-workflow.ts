@@ -1,5 +1,5 @@
+import type { PreRegistrationLink } from "@appdosensei/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { PreRegistrationLink } from "@tatamiq/contracts";
 import { useState } from "react";
 import { toast } from "sonner";
 import { api } from "../../api";

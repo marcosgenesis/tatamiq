@@ -1,4 +1,4 @@
-import type { MonthlyFeeStatus } from "@tatamiq/contracts";
+import type { MonthlyFeeStatus } from "@appdosensei/contracts";
 
 const SAO_PAULO_TIME_ZONE = "America/Sao_Paulo";
 

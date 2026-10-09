@@ -1,5 +1,4 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import type { CsvImportConfirmResponse, CsvImportPreviewResponse } from "@tatamiq/contracts";
+import type { CsvImportConfirmResponse, CsvImportPreviewResponse } from "@appdosensei/contracts";
 import {
   attendances,
   belts,
@@ -9,7 +8,8 @@ import {
   monthlyFees,
   studentGuardians,
   students,
-} from "@tatamiq/database";
+} from "@appdosensei/database";
+import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
 import { isMinor } from "../students/student-rules";

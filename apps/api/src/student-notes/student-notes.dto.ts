@@ -3,7 +3,7 @@ import {
   listStudentNotesResponseSchema,
   studentNoteSchema,
   updateStudentNoteSchema,
-} from "@tatamiq/contracts";
+} from "@appdosensei/contracts";
 import { createZodDto } from "nestjs-zod";
 
 export class StudentNoteDto extends createZodDto(studentNoteSchema) {}

@@ -245,8 +245,8 @@ Web tests/manual validation:
 Validation commands:
 
 ```bash
-pnpm --filter @tatamiq/api typecheck
-pnpm --filter @tatamiq/web typecheck
+pnpm --filter @appdosensei/api typecheck
+pnpm --filter @appdosensei/web typecheck
 pnpm test
 ```
 

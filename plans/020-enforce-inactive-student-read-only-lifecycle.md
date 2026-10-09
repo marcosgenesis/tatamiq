@@ -70,7 +70,7 @@ Existing convention to match: pure domain rules are tested in small `*.spec.ts` 
 | Purpose | Command | Expected on success |
 |---|---|---|
 | Install | `pnpm install` | exit 0 |
-| Targeted API tests | `pnpm --filter @tatamiq/api test -- src/student-access/student-access-rules.spec.ts src/students/student-rules.spec.ts` | exit 0 |
+| Targeted API tests | `pnpm --filter @appdosensei/api test -- src/student-access/student-access-rules.spec.ts src/students/student-rules.spec.ts` | exit 0 |
 | Typecheck | `pnpm typecheck` | exit 0 |
 | Lint | `pnpm lint` | exit 0; existing warnings may remain |
 | Full tests | `pnpm test` | exit 0 |
@@ -127,7 +127,7 @@ Add tests proving:
 - inactive student after 12 months is blocked;
 - read-only state means profile writes are not allowed.
 
-**Verify**: `pnpm --filter @tatamiq/api test -- src/student-access/student-access-rules.spec.ts` → exits 0.
+**Verify**: `pnpm --filter @appdosensei/api test -- src/student-access/student-access-rules.spec.ts` → exits 0.
 
 ### Step 2: Block profile updates for read-only students
 
@@ -166,7 +166,7 @@ export function nextInactiveAt(input: {
 
 Then test it in a new `apps/api/src/students/student-rules.spec.ts` or an existing spec file.
 
-**Verify**: `pnpm --filter @tatamiq/api test -- src/students/student-rules.spec.ts` → exits 0.
+**Verify**: `pnpm --filter @appdosensei/api test -- src/students/student-rules.spec.ts` → exits 0.
 
 ### Step 4: Make inactivate idempotent
 

@@ -1,5 +1,5 @@
+import type { MonthlyFee } from "@appdosensei/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { MonthlyFee } from "@tatamiq/contracts";
 import { type FormEvent, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useAppShell } from "../../components/app-shell";

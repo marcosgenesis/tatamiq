@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { generateQrToken, verifyQrToken } from "./classes/qr-token";
 
-vi.mock("@tatamiq/database", () => ({
+vi.mock("@appdosensei/database", () => ({
   createDatabase: vi.fn(() => ({})),
 }));
 

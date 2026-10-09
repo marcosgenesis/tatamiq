@@ -63,7 +63,7 @@ Existing convention to match: API unit tests live next to the implementation as 
 | Purpose | Command | Expected on success |
 |---|---|---|
 | Install | `pnpm install` | exit 0 |
-| Targeted API tests | `pnpm --filter @tatamiq/api test -- src/monthly-fees/fee-generation.service.spec.ts` | exit 0 |
+| Targeted API tests | `pnpm --filter @appdosensei/api test -- src/monthly-fees/fee-generation.service.spec.ts` | exit 0 |
 | Typecheck | `pnpm typecheck` | exit 0 |
 | Lint | `pnpm lint` | exit 0; existing warnings may remain |
 | Full tests | `pnpm test` | exit 0 |
@@ -125,7 +125,7 @@ type FeeGenerationMode = { kind: "cron"; daysAheadLimit: number } | { kind: "cat
 
 Then replace the current date-window branch with mode-specific logic. Avoid changing `clampDueDay`, `formatDueDate`, or ADR-0009 status projection.
 
-**Verify**: `pnpm --filter @tatamiq/api test -- src/monthly-fees/fee-generation.service.spec.ts` → exits 0.
+**Verify**: `pnpm --filter @appdosensei/api test -- src/monthly-fees/fee-generation.service.spec.ts` → exits 0.
 
 ### Step 3: Remove non-null assertions while touching the loop
 

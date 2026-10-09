@@ -13,9 +13,9 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "paths": {
-      "@tatamiq/contracts": ["../../packages/contracts/src/index.ts"],
-      "@tatamiq/database": ["../../packages/database/src/index.ts"],
-      "@tatamiq/database/schema": ["../../packages/database/src/schema.ts"]
+      "@appdosensei/contracts": ["../../packages/contracts/src/index.ts"],
+      "@appdosensei/database": ["../../packages/database/src/index.ts"],
+      "@appdosensei/database/schema": ["../../packages/database/src/schema.ts"]
     },
     "incremental": true,
     "strictPropertyInitialization": false,

@@ -1,4 +1,4 @@
-import type { ScheduleOccurrence } from "@tatamiq/contracts";
+import type { ScheduleOccurrence } from "@appdosensei/contracts";
 
 /** Minutes since midnight for an occurrence's local start time ("HH:MM"). */
 export function localStartMinutes(occ: ScheduleOccurrence): number {

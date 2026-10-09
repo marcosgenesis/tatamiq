@@ -1,5 +1,5 @@
+import type { StudentScheduleClass, StudentScheduleResponse } from "@appdosensei/contracts";
 import { useQuery } from "@tanstack/react-query";
-import type { StudentScheduleClass, StudentScheduleResponse } from "@tatamiq/contracts";
 import { Calendar03Icon } from "hugeicons-react";
 import { api } from "../../api";
 import { Badge } from "../../components/ui/badge";

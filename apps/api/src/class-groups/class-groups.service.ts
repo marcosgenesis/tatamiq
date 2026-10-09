@@ -1,5 +1,8 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import type { ClassGroup, CreateClassGroupInput, UpdateClassGroupInput } from "@tatamiq/contracts";
+import type {
+  ClassGroup,
+  CreateClassGroupInput,
+  UpdateClassGroupInput,
+} from "@appdosensei/contracts";
 import {
   classGroupSchedules,
   classGroups,
@@ -7,7 +10,8 @@ import {
   type Database,
   studentClassGroups,
   students,
-} from "@tatamiq/database";
+} from "@appdosensei/database";
+import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
 import { normalizeClassGroupInput } from "./class-group-rules";

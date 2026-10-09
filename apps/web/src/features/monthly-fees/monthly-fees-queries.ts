@@ -1,4 +1,4 @@
-import type { CreateMonthlyFeeInput } from "@tatamiq/contracts";
+import type { CreateMonthlyFeeInput } from "@appdosensei/contracts";
 import { api } from "../../api";
 import { academyQueryKey } from "../../lib/academy-query-keys";
 import type { FeeStatusFilter } from "./monthly-fees-types";

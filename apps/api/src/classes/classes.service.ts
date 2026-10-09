@@ -1,6 +1,15 @@
+import type {
+  ClassSession,
+  QrTokenResponse,
+  StartRecurringClassInput,
+} from "@appdosensei/contracts";
+import {
+  classGroupSchedules,
+  classGroups,
+  classSessions,
+  type Database,
+} from "@appdosensei/database";
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import type { ClassSession, QrTokenResponse, StartRecurringClassInput } from "@tatamiq/contracts";
-import { classGroupSchedules, classGroups, classSessions, type Database } from "@tatamiq/database";
 import { and, eq } from "drizzle-orm";
 import { resolveQrTokenSecret } from "../auth";
 import { DATABASE } from "../database/database.module";

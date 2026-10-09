@@ -77,11 +77,11 @@ describe("PlatformAcademyService listAcademies", () => {
       responsibleRows: [
         {
           organizationId: "org-1",
-          user: { id: "user-1", name: "Ana Costa", email: "ana@tatamiq.local" },
+          user: { id: "user-1", name: "Ana Costa", email: "ana@appdosensei.local" },
         },
         {
           organizationId: "org-1",
-          user: { id: "user-2", name: "Beto Lima", email: "beto@tatamiq.local" },
+          user: { id: "user-2", name: "Beto Lima", email: "beto@appdosensei.local" },
         },
       ],
     });
@@ -93,8 +93,8 @@ describe("PlatformAcademyService listAcademies", () => {
     expect(byName.items[0]).toMatchObject({
       id: "org-1",
       responsibles: [
-        { id: "user-1", name: "Ana Costa", email: "ana@tatamiq.local" },
-        { id: "user-2", name: "Beto Lima", email: "beto@tatamiq.local" },
+        { id: "user-1", name: "Ana Costa", email: "ana@appdosensei.local" },
+        { id: "user-2", name: "Beto Lima", email: "beto@appdosensei.local" },
       ],
     });
     expect(byName.pagination).toMatchObject({ total: 1, totalPages: 1 });
@@ -119,18 +119,18 @@ describe("PlatformAcademyService listAcademies", () => {
       responsibleRows: [
         {
           organizationId: "org-1",
-          user: { id: "user-1", name: "Ana Costa", email: "ana@tatamiq.local" },
+          user: { id: "user-1", name: "Ana Costa", email: "ana@appdosensei.local" },
         },
         {
           organizationId: "org-1",
-          user: { id: "user-2", name: "Beto Lima", email: "beto@tatamiq.local" },
+          user: { id: "user-2", name: "Beto Lima", email: "beto@appdosensei.local" },
         },
       ],
     });
     const service = new PlatformAcademyService(db as never, {} as never);
 
     const byEmail = await service.listAcademies({
-      query: "beto@tatamiq.local",
+      query: "beto@appdosensei.local",
       page: 0,
       pageSize: 10,
     });
@@ -157,7 +157,7 @@ describe("PlatformAcademyService listAcademies", () => {
       responsibleRows: [
         {
           organizationId: "org-1",
-          user: { id: "user-1", name: "Ana Costa", email: "ana@tatamiq.local" },
+          user: { id: "user-1", name: "Ana Costa", email: "ana@appdosensei.local" },
         },
       ],
     });

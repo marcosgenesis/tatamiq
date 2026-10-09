@@ -4,7 +4,7 @@ import {
   scheduleOccurrenceSchema,
   todayScheduleResponseSchema,
   weeklyScheduleResponseSchema,
-} from "@tatamiq/contracts";
+} from "@appdosensei/contracts";
 import { createZodDto } from "nestjs-zod";
 
 export class ScheduleOccurrenceDto extends createZodDto(scheduleOccurrenceSchema) {}

@@ -10,7 +10,7 @@
 
 ## Goal
 
-Create the first real instructor-facing UI foundation for Tatamiq. This should replace the scaffold status dashboard with a product-shaped app shell, navigation, theme tokens, and placeholder dashboard sections aligned with the V0 scope.
+Create the first real instructor-facing UI foundation for App do Sensei. This should replace the scaffold status dashboard with a product-shaped app shell, navigation, theme tokens, and placeholder dashboard sections aligned with the V0 scope.
 
 ## Decisions
 
@@ -101,7 +101,7 @@ Placeholder cards:
 
 The sidebar/topbar should show:
 
-- Tatamiq brand;
+- App do Sensei brand;
 - temporary context: `Academia Demo`.
 
 ## E2E adjustment
@@ -118,7 +118,7 @@ Expected web assertions:
 - dashboard heading `Painel` is visible;
 - navigation labels are visible;
 - placeholder cards are visible;
-- `Tatamiq` and `Academia Demo` context are visible.
+- `App do Sensei` and `Academia Demo` context are visible.
 
 ## Acceptance criteria
 

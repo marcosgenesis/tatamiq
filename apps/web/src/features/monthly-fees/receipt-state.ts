@@ -1,4 +1,4 @@
-import type { MonthlyFeeDetail, PaymentReceipt, StudentMonthlyFee } from "@tatamiq/contracts";
+import type { MonthlyFeeDetail, PaymentReceipt, StudentMonthlyFee } from "@appdosensei/contracts";
 
 type FeeLike = Pick<StudentMonthlyFee, "status" | "isOverdue" | "lastReceipt">;
 

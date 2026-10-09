@@ -28,7 +28,7 @@ export type PairResponse = {
 };
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3100";
-const TOKEN_KEY = "tatamiq-totem-device-token";
+const TOKEN_KEY = "appdosensei-totem-device-token";
 
 export const deviceToken = {
   read: () => window.localStorage.getItem(TOKEN_KEY),

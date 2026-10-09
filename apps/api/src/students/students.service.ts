@@ -1,5 +1,4 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import type { CreateStudentInput, Student, UpdateStudentInput } from "@tatamiq/contracts";
+import type { CreateStudentInput, Student, UpdateStudentInput } from "@appdosensei/contracts";
 import {
   attendances,
   belts,
@@ -16,7 +15,8 @@ import {
   studentGuardians,
   studentNotes,
   students,
-} from "@tatamiq/database";
+} from "@appdosensei/database";
+import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { and, count, eq, inArray, ne, or, sql } from "drizzle-orm";
 import { BeltsService, toBeltDto } from "../belts/belts.service";
 import { dateInSaoPaulo } from "../daily-fees/create-daily-fee-for-attendance";

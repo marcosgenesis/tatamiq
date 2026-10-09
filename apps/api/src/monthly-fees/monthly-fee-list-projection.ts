@@ -1,4 +1,4 @@
-import type { ListMonthlyFeesResponse } from "@tatamiq/contracts";
+import type { ListMonthlyFeesResponse } from "@appdosensei/contracts";
 import { projectMonthlyFeeStatus } from "./monthly-fee-status-projection";
 
 export interface MonthlyFeeListProjectionFee {

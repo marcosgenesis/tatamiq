@@ -3,7 +3,7 @@ import {
   attendanceRosterResponseSchema,
   attendanceSchema,
   invalidateAttendanceSchema,
-} from "@tatamiq/contracts";
+} from "@appdosensei/contracts";
 import { createZodDto } from "nestjs-zod";
 
 export class AttendanceDto extends createZodDto(attendanceSchema) {}

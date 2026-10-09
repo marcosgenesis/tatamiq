@@ -1,4 +1,4 @@
-import type { components } from "@tatamiq/contracts/generated";
+import type { components } from "@appdosensei/contracts/generated";
 import { api } from "../../api";
 
 export type CreateAdHocPayload = components["schemas"]["CreateAdHocClassDto"];

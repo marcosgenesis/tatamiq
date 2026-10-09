@@ -1,3 +1,4 @@
+import { type Database, session, user } from "@appdosensei/database";
 import {
   BadRequestException,
   ForbiddenException,
@@ -5,7 +6,6 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { type Database, session, user } from "@tatamiq/database";
 import type { UserSession } from "@thallesp/nestjs-better-auth";
 import { count, eq, inArray, or } from "drizzle-orm";
 import { type auth, platformAdminUserIds } from "../auth";

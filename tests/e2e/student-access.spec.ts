@@ -18,9 +18,9 @@ test("pre-registration link lifecycle, approval, first access, and token guards"
   browser,
   page,
 }) => {
-  const requestEmail = `pre-reg-${Date.now()}@tatamiq.local`;
-  const expiredEmail = `pre-reg-expired-${Date.now()}@tatamiq.local`;
-  const password = "tatamiq456";
+  const requestEmail = `pre-reg-${Date.now()}@appdosensei.local`;
+  const expiredEmail = `pre-reg-expired-${Date.now()}@appdosensei.local`;
+  const password = "appdosensei456";
 
   await openPreRegistrations(page);
 
@@ -155,7 +155,7 @@ test("surfaces duplicate pre-registration decisions in the instructor queue", as
   browser,
   page,
 }) => {
-  const duplicateEmail = `pre-reg-duplicate-${Date.now()}@tatamiq.local`;
+  const duplicateEmail = `pre-reg-duplicate-${Date.now()}@appdosensei.local`;
 
   await openPreRegistrations(page);
   const publicPage = await browser.newPage();
@@ -182,7 +182,7 @@ test("surfaces duplicate pre-registration decisions in the instructor queue", as
 });
 
 test("rejects a pre-registration request with a reason", async ({ browser, page }) => {
-  const requestEmail = `pre-reg-reject-${Date.now()}@tatamiq.local`;
+  const requestEmail = `pre-reg-reject-${Date.now()}@appdosensei.local`;
 
   await openPreRegistrations(page);
   const publicPage = await browser.newPage();

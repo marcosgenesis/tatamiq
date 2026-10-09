@@ -1,5 +1,5 @@
+import type { Student } from "@appdosensei/contracts";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { Student } from "@tatamiq/contracts";
 import { useState } from "react";
 import { toast } from "sonner";
 import { api } from "../../api";

@@ -1,10 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
 import type {
   StudentAttendancesResponse,
   StudentGraduationResponse,
   StudentMeResponse,
-} from "@tatamiq/contracts";
+} from "@appdosensei/contracts";
+import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { api } from "../../api";
 import { Badge } from "../../components/ui/badge";

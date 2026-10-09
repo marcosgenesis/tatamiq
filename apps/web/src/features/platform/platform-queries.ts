@@ -1,5 +1,5 @@
+import type { components } from "@appdosensei/contracts/generated";
 import { queryOptions } from "@tanstack/react-query";
-import type { components } from "@tatamiq/contracts/generated";
 import { api } from "../../api";
 
 export type PlatformMe = components["schemas"]["PlatformMeDto"];
@@ -491,7 +491,7 @@ export async function startPlatformSupport(input: StartPlatformSupportInput) {
   return data;
 }
 
-const PENDING_SUPPORT_ACTIVATION_KEY = "tatamiq:pending-platform-support-activation";
+const PENDING_SUPPORT_ACTIVATION_KEY = "appdosensei:pending-platform-support-activation";
 
 export function queuePlatformSupportActivation(supportSessionId: string) {
   window.sessionStorage.setItem(PENDING_SUPPORT_ACTIVATION_KEY, supportSessionId);

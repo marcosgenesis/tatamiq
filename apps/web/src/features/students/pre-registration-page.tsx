@@ -1,6 +1,6 @@
+import type { BeltDto } from "@appdosensei/contracts";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import type { BeltDto } from "@tatamiq/contracts";
 import { CheckCircle, Info, ShieldAlert } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";

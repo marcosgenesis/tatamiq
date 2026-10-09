@@ -1,4 +1,4 @@
-import type { StudentGraduationResponse } from "@tatamiq/contracts";
+import type { StudentGraduationResponse } from "@appdosensei/contracts";
 import type { GraduationInput } from "./belt-progress";
 
 export function toGraduationInput(response: StudentGraduationResponse): GraduationInput {

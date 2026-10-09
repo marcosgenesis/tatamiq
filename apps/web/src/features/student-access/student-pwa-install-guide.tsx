@@ -28,7 +28,7 @@ type BeforeInstallPromptEvent = Event & {
 
 type NavigatorWithStandalone = Navigator & { standalone?: boolean };
 
-const DISMISSED_KEY = "tatamiq.student.pwa-install.dismissed";
+const DISMISSED_KEY = "appdosensei.student.pwa-install.dismissed";
 
 export function detectInstallBrowser(
   userAgent: string,
@@ -139,7 +139,7 @@ export function StudentPwaInstallGuide({ variant }: { variant: "banner" | "row" 
               <Smartphone className="size-5" aria-hidden="true" />
             </div>
             <button type="button" className="min-w-0 flex-1 text-left" onClick={openGuide}>
-              <p className="text-sm font-bold">Leve o Tatamiq com você</p>
+              <p className="text-sm font-bold">Leve o App do Sensei com você</p>
               <p className="mt-1 text-xs font-medium leading-relaxed text-white/60">
                 Adicione à tela inicial para abrir como um app e fazer check-in mais rápido.
               </p>
@@ -168,7 +168,7 @@ export function StudentPwaInstallGuide({ variant }: { variant: "banner" | "row" 
           <span className="grid size-9 place-items-center rounded-xl bg-primary/10 text-primary">
             <Download className="size-[1.05rem]" aria-hidden="true" />
           </span>
-          <span className="flex-1 text-sm font-semibold">Instalar Tatamiq no celular</span>
+          <span className="flex-1 text-sm font-semibold">Instalar App do Sensei no celular</span>
           <ChevronRight className="size-4 text-muted-foreground/60" aria-hidden="true" />
         </button>
       ) : null}
@@ -180,7 +180,7 @@ export function StudentPwaInstallGuide({ variant }: { variant: "banner" | "row" 
               <div className="mb-4 grid size-12 place-items-center rounded-2xl bg-primary text-primary-foreground">
                 <Smartphone className="size-6" aria-hidden="true" />
               </div>
-              <DialogTitle className="text-xl text-white">Instale o Tatamiq</DialogTitle>
+              <DialogTitle className="text-xl text-white">Instale o App do Sensei</DialogTitle>
               <DialogDescription className="mt-2 text-sm leading-relaxed text-white/60">
                 Tenha seu acesso de aluno na tela inicial, com abertura rápida e visual de app.
               </DialogDescription>
@@ -212,7 +212,7 @@ export function StudentPwaInstallGuide({ variant }: { variant: "banner" | "row" 
             ) : null}
 
             <p className="text-center text-xs font-medium text-muted-foreground">
-              Depois, abra o Tatamiq pelo ícone da tela inicial para usar como app.
+              Depois, abra o App do Sensei pelo ícone da tela inicial para usar como app.
             </p>
           </div>
         </DialogContent>

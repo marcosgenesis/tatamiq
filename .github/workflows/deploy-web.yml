@@ -30,7 +30,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build
-        run: pnpm --filter @tatamiq/web build
+        run: pnpm --filter @appdosensei/web build
         env:
           VITE_API_URL: ${{ vars.VITE_API_URL }}
 
@@ -63,7 +63,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build
-        run: pnpm --filter @tatamiq/web build
+        run: pnpm --filter @appdosensei/web build
         env:
           VITE_API_URL: ${{ vars.VITE_API_URL }}
 

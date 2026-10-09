@@ -1,4 +1,4 @@
-import type { Student } from "@tatamiq/contracts";
+import type { Student } from "@appdosensei/contracts";
 
 export const monthNames = [
   "Janeiro",

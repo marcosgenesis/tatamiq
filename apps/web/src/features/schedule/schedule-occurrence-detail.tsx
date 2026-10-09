@@ -1,6 +1,6 @@
+import type { ScheduleOccurrence } from "@appdosensei/contracts";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import type { ScheduleOccurrence } from "@tatamiq/contracts";
 import { Clock01Icon, UserMultiple02Icon } from "hugeicons-react";
 import { api } from "@/api";
 import { useAppShell } from "@/components/app-shell";

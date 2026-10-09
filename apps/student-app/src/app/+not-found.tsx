@@ -5,7 +5,7 @@ import { AppShell } from "@/components/app-shell";
 
 export default function NotFoundScreen() {
   return (
-    <AppShell eyebrow="Tatamiq Student" title="Página não encontrada">
+    <AppShell eyebrow="App do Sensei Student" title="Página não encontrada">
       <Text className="text-base leading-6 text-muted-ink">
         O link pode ter expirado ou ainda não fazer parte da jornada nativa.
       </Text>

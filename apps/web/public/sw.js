@@ -1,4 +1,4 @@
-const CACHE_NAME = "tatamiq-shell-v3";
+const CACHE_NAME = "appdosensei-shell-v3";
 const ASSET_FETCH_TIMEOUT_MS = 10000;
 const SHELL_ASSETS = [
   "/offline.html",

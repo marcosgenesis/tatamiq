@@ -1,6 +1,6 @@
+import type { components } from "@appdosensei/contracts/generated";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import type { components } from "@tatamiq/contracts/generated";
 import { Award01Icon, QrCodeIcon, Wallet01Icon } from "hugeicons-react";
 import { type ComponentType, type FormEvent, useMemo, useState } from "react";
 import { api } from "../../../api";
@@ -84,7 +84,7 @@ function WelcomeStep({ onStart, onSkip }: { onStart: () => void; onSkip: () => v
     <Shell dark>
       <div className="flex items-center gap-2.5 pt-2">
         <LogoIcon className="size-9 text-primary" />
-        <span className="text-[1.05rem] font-bold">tatamiq</span>
+        <span className="text-[1.05rem] font-bold">App do Sensei</span>
       </div>
       <div className="flex flex-1 flex-col justify-center">
         <h1 className="text-[1.85rem] font-bold leading-[1.12] tracking-tight text-balance">

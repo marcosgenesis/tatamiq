@@ -90,8 +90,8 @@ Repo conventions to match:
 | Purpose | Command | Expected on success |
 |---|---|---|
 | Install | `pnpm install --frozen-lockfile` | exit 0 |
-| Focused CSV tests | `pnpm --filter @tatamiq/api test -- csv` | exit 0, new CSV tests pass |
-| API tests | `pnpm --filter @tatamiq/api test` | exit 0 |
+| Focused CSV tests | `pnpm --filter @appdosensei/api test -- csv` | exit 0, new CSV tests pass |
+| API tests | `pnpm --filter @appdosensei/api test` | exit 0 |
 | Typecheck | `pnpm typecheck` | exit 0 |
 | Lint | `pnpm lint` | exit 0 |
 
@@ -126,7 +126,7 @@ Create `apps/api/src/csv/csv.service.spec.ts`. Instantiate `CsvService` directly
 
 Keep the mock narrow. It only needs to support the calls in the specific tests below. If mocking Drizzle chains becomes too brittle, extract pure CSV parsing/formatting helpers from `csv.service.ts` only if the extraction is minimal and behavior-preserving.
 
-**Verify**: `pnpm --filter @tatamiq/api test -- csv` → exits 0 or fails only because no tests are implemented yet; it must not fail to compile.
+**Verify**: `pnpm --filter @appdosensei/api test -- csv` → exits 0 or fails only because no tests are implemented yet; it must not fail to compile.
 
 ### Step 2: Characterize student import preview behavior
 
@@ -139,7 +139,7 @@ Add tests for `previewImport` covering current behavior:
 
 Use seeded mock data for `belts` and existing students. Do not assert exact UUID values; assert token is a non-empty string.
 
-**Verify**: `pnpm --filter @tatamiq/api test -- csv` → all CSV tests pass.
+**Verify**: `pnpm --filter @appdosensei/api test -- csv` → all CSV tests pass.
 
 ### Step 3: Characterize current attendance export shape
 
@@ -150,7 +150,7 @@ Add a test for `exportAttendances` that exposes the current column mismatch: par
 
 Name the test clearly as a characterization of current buggy behavior, e.g. `characterizes current attendance export extra empty column before invalidation flag`.
 
-**Verify**: `pnpm --filter @tatamiq/api test -- csv` → all CSV tests pass.
+**Verify**: `pnpm --filter @appdosensei/api test -- csv` → all CSV tests pass.
 
 ### Step 4: Characterize confirmImport direct insert behavior
 
@@ -162,7 +162,7 @@ Add a test for `confirmImport` that:
 
 Do not assert every generated UUID. Assert important persisted fields: `organizationId`, `name`, `email`, `currentBeltId`, guardian `name`, guardian `phone`.
 
-**Verify**: `pnpm --filter @tatamiq/api test -- csv` → all CSV tests pass.
+**Verify**: `pnpm --filter @appdosensei/api test -- csv` → all CSV tests pass.
 
 ## Test plan
 
@@ -177,8 +177,8 @@ New tests in `apps/api/src/csv/csv.service.spec.ts`:
 
 Final verification:
 
-- `pnpm --filter @tatamiq/api test -- csv`
-- `pnpm --filter @tatamiq/api test`
+- `pnpm --filter @appdosensei/api test -- csv`
+- `pnpm --filter @appdosensei/api test`
 - `pnpm typecheck`
 - `pnpm lint`
 
@@ -186,8 +186,8 @@ Final verification:
 
 - [ ] `apps/api/src/csv/csv.service.spec.ts` exists with the tests listed above.
 - [ ] No intentional CSV behavior changes are included in this plan.
-- [ ] `pnpm --filter @tatamiq/api test -- csv` exits 0.
-- [ ] `pnpm --filter @tatamiq/api test`, `pnpm typecheck`, and `pnpm lint` exit 0.
+- [ ] `pnpm --filter @appdosensei/api test -- csv` exits 0.
+- [ ] `pnpm --filter @appdosensei/api test`, `pnpm typecheck`, and `pnpm lint` exit 0.
 - [ ] `plans/README.md` status row updated.
 
 ## STOP conditions

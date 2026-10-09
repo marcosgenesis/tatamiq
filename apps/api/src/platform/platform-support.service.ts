@@ -1,4 +1,3 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import {
   type Database,
   member,
@@ -6,7 +5,8 @@ import {
   platformSupportSessions,
   studentAccess,
   user,
-} from "@tatamiq/database";
+} from "@appdosensei/database";
+import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { and, eq } from "drizzle-orm";
 import { platformAdminUserIds } from "../auth";
 import { DATABASE } from "../database/database.module";

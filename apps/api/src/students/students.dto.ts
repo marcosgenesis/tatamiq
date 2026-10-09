@@ -16,7 +16,7 @@ import {
   sendFirstAccessEmailResponseSchema,
   studentSchema,
   updateStudentSchema,
-} from "@tatamiq/contracts";
+} from "@appdosensei/contracts";
 import { createZodDto } from "nestjs-zod";
 
 export class StudentDto extends createZodDto(studentSchema) {}

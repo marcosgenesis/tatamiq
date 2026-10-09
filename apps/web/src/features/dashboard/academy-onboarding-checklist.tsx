@@ -1,6 +1,6 @@
+import type { AcademyOnboardingChecklist } from "@appdosensei/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import type { AcademyOnboardingChecklist } from "@tatamiq/contracts";
 import {
   Cancel01Icon,
   CheckListIcon,
@@ -45,7 +45,7 @@ const STEP_COPY: Record<ChecklistStepKey, { title: string; description: string }
   },
   firstAccessLinkSent: {
     title: "Enviar Link de Primeiro Acesso",
-    description: "Libere o acesso do aluno aprovado ao portal do Tatamiq.",
+    description: "Libere o acesso do aluno aprovado ao portal do App do Sensei.",
   },
 };
 

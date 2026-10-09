@@ -4,7 +4,7 @@ import {
   academyOnboardingChecklistSchema,
   academyProfileSchema,
   updateAcademySchema,
-} from "@tatamiq/contracts";
+} from "@appdosensei/contracts";
 import { createZodDto } from "nestjs-zod";
 
 export class AcademyProfileDto extends createZodDto(academyProfileSchema) {}

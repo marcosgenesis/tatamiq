@@ -1,7 +1,7 @@
 {
-  "name": "Tatamiq - Portal do Aluno",
-  "short_name": "Tatamiq",
-  "description": "Portal do aluno da academia no Tatamiq.",
+  "name": "App do Sensei - Portal do Aluno",
+  "short_name": "App do Sensei",
+  "description": "Portal do aluno da academia no App do Sensei.",
   "start_url": "/student",
   "scope": "/",
   "display": "standalone",

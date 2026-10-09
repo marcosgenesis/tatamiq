@@ -1,5 +1,5 @@
+import { createDatabase } from "@appdosensei/database";
 import { Module } from "@nestjs/common";
-import { createDatabase } from "@tatamiq/database";
 
 export const DATABASE = Symbol("DATABASE");
 

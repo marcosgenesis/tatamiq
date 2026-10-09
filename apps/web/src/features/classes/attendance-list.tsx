@@ -1,5 +1,5 @@
+import type { AttendanceRosterStudent } from "@appdosensei/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { AttendanceRosterStudent } from "@tatamiq/contracts";
 import { useState } from "react";
 import { api } from "../../api";
 import { useAppShell } from "../../components/app-shell";

@@ -3,7 +3,7 @@ import {
   createClassGroupSchema,
   listClassGroupsResponseSchema,
   updateClassGroupSchema,
-} from "@tatamiq/contracts";
+} from "@appdosensei/contracts";
 import { createZodDto } from "nestjs-zod";
 
 export class ClassGroupDto extends createZodDto(classGroupSchema) {}

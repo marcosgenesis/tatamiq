@@ -36,7 +36,7 @@ if (import.meta.env.PROD) {
         .register("/sw.js")
         .then((registration) => registration.update())
         .catch((error) => {
-          console.warn("Falha ao registrar service worker do Tatamiq", error);
+          console.warn("Falha ao registrar service worker do App do Sensei", error);
         });
     });
   }

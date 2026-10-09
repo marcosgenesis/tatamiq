@@ -17,7 +17,7 @@
 
 ## Why this matters
 
-Tatamiq V0 is explicitly in the `America/Sao_Paulo` timezone, but recurring class times are encoded as `...Z` UTC timestamps and the web calendar reads them with local `Date#getHours()`. A class configured for 19:30 can render as 16:30 for a Brazil user because 19:30Z is 16:30 in São Paulo. This plan centralizes schedule time conversion so wall-clock class times remain stable across API projections, class start, student portal, and the calendar layout.
+App do Sensei V0 is explicitly in the `America/Sao_Paulo` timezone, but recurring class times are encoded as `...Z` UTC timestamps and the web calendar reads them with local `Date#getHours()`. A class configured for 19:30 can render as 16:30 for a Brazil user because 19:30Z is 16:30 in São Paulo. This plan centralizes schedule time conversion so wall-clock class times remain stable across API projections, class start, student portal, and the calendar layout.
 
 ## Current state
 
@@ -68,8 +68,8 @@ Existing convention to match: schedule logic has pure helpers and tests (`apps/a
 | Purpose | Command | Expected on success |
 |---|---|---|
 | Install | `pnpm install` | exit 0 |
-| Targeted API tests | `pnpm --filter @tatamiq/api test -- src/schedule/schedule-rules.spec.ts src/schedule/weekly-agenda-projection.spec.ts` | exit 0 |
-| Targeted web tests | `pnpm --filter @tatamiq/web test -- src/features/schedule` | exit 0 or exits 0 with no matching tests |
+| Targeted API tests | `pnpm --filter @appdosensei/api test -- src/schedule/schedule-rules.spec.ts src/schedule/weekly-agenda-projection.spec.ts` | exit 0 |
+| Targeted web tests | `pnpm --filter @appdosensei/web test -- src/features/schedule` | exit 0 or exits 0 with no matching tests |
 | Typecheck | `pnpm typecheck` | exit 0 |
 | Lint | `pnpm lint` | exit 0; existing warnings may remain |
 | Full tests | `pnpm test` | exit 0 |
@@ -122,7 +122,7 @@ Add tests proving:
 - Formatting the resulting Date with `America/Sao_Paulo` returns `19:30`.
 - Date-only helper still returns the expected weekday for existing tests.
 
-**Verify**: `pnpm --filter @tatamiq/api test -- src/schedule/schedule-rules.spec.ts` → exits 0.
+**Verify**: `pnpm --filter @appdosensei/api test -- src/schedule/schedule-rules.spec.ts` → exits 0.
 
 ### Step 2: Use the helper in weekly/today schedule projections
 
@@ -133,7 +133,7 @@ In `apps/api/src/schedule/weekly-agenda-projection.ts`:
 
 Update `weekly-agenda-projection.spec.ts` expectations. The important assertion is not the exact UTC instant; it is that `startTime` and rendered São Paulo time match the configured schedule time.
 
-**Verify**: `pnpm --filter @tatamiq/api test -- src/schedule/weekly-agenda-projection.spec.ts` → exits 0.
+**Verify**: `pnpm --filter @appdosensei/api test -- src/schedule/weekly-agenda-projection.spec.ts` → exits 0.
 
 ### Step 3: Use the helper when starting recurring classes
 
@@ -151,7 +151,7 @@ const scheduledStartAt = new Date(toSaoPauloScheduledStartAt(input.scheduledDate
 
 Add or update class service/rules tests if an existing spec covers recurring start. If no test scaffold exists, rely on schedule projection tests plus E2E schedule flow.
 
-**Verify**: `pnpm --filter @tatamiq/api test -- src/classes` → exits 0.
+**Verify**: `pnpm --filter @appdosensei/api test -- src/classes` → exits 0.
 
 ### Step 4: Update student-facing schedule builders
 
@@ -179,7 +179,7 @@ export function localStartMinutes(occ: ScheduleOccurrence): number {
 
 Guard invalid values defensively if needed, but the contract already supplies `startTime`.
 
-**Verify**: `pnpm --filter @tatamiq/web test -- src/features/schedule` → exits 0 or no matching tests with exit 0; then `pnpm typecheck` → exits 0.
+**Verify**: `pnpm --filter @appdosensei/web test -- src/features/schedule` → exits 0 or no matching tests with exit 0; then `pnpm typecheck` → exits 0.
 
 ### Step 6: Add/adjust E2E assertion if local environment supports it
 

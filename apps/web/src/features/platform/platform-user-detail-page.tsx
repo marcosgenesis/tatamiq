@@ -1,6 +1,6 @@
+import type { components } from "@appdosensei/contracts/generated";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, useNavigate } from "@tanstack/react-router";
-import type { components } from "@tatamiq/contracts/generated";
 import { Delete02Icon, HeadphonesIcon } from "hugeicons-react";
 import { type ReactNode, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";

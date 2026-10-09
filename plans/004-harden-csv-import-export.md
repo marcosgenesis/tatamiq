@@ -96,8 +96,8 @@ Repo conventions to match:
 | Purpose | Command | Expected on success |
 |---|---|---|
 | Install | `pnpm install --frozen-lockfile` | exit 0 |
-| Focused CSV tests | `pnpm --filter @tatamiq/api test -- csv` | exit 0, updated CSV expectations pass |
-| API tests | `pnpm --filter @tatamiq/api test` | exit 0 |
+| Focused CSV tests | `pnpm --filter @appdosensei/api test -- csv` | exit 0, updated CSV expectations pass |
+| API tests | `pnpm --filter @appdosensei/api test` | exit 0 |
 | Typecheck | `pnpm typecheck` | exit 0 |
 | Lint | `pnpm lint` | exit 0 |
 
@@ -134,7 +134,7 @@ Modify `apps/api/src/csv/csv.service.spec.ts` from Plan 003 so desired behavior 
 
 For the atomicity test, mock `db.transaction(async (tx) => ...)` and assert the service uses the transaction object (`tx`) for inserts. You do not need to simulate a real database rollback; verify that multi-write work is inside a transaction and that an error propagates.
 
-**Verify**: `pnpm --filter @tatamiq/api test -- csv` → expected to fail before implementation because behavior has not been changed yet.
+**Verify**: `pnpm --filter @appdosensei/api test -- csv` → expected to fail before implementation because behavior has not been changed yet.
 
 ### Step 2: Make duplicate emails import-blocking
 
@@ -146,7 +146,7 @@ In `apps/api/src/csv/csv.service.ts`, change duplicate email preview behavior fr
 
 Be careful to normalize with `trim().toLowerCase()` consistently.
 
-**Verify**: `pnpm --filter @tatamiq/api test -- csv` → duplicate-email tests pass; other tests may still fail until later steps.
+**Verify**: `pnpm --filter @appdosensei/api test -- csv` → duplicate-email tests pass; other tests may still fail until later steps.
 
 ### Step 3: Wrap confirmImport in a transaction
 
@@ -160,7 +160,7 @@ Requirements:
 - Continue skipping rows that already have `row.errors.length > 0`.
 - Do not silently catch insert errors; let them propagate so the request fails rather than reporting a partial success.
 
-**Verify**: `pnpm --filter @tatamiq/api test -- csv` → transaction/atomicity tests pass; no CSV tests fail.
+**Verify**: `pnpm --filter @appdosensei/api test -- csv` → transaction/atomicity tests pass; no CSV tests fail.
 
 ### Step 4: Fix attendance CSV row shape
 
@@ -176,7 +176,7 @@ Expected data order:
 
 Do not change the header text unless tests prove it is wrong.
 
-**Verify**: `pnpm --filter @tatamiq/api test -- csv` → attendance export test passes with equal header/data column counts.
+**Verify**: `pnpm --filter @appdosensei/api test -- csv` → attendance export test passes with equal header/data column counts.
 
 ### Step 5: Run full API and monorepo verification
 
@@ -184,7 +184,7 @@ Run the normal checks.
 
 **Verify**:
 
-- `pnpm --filter @tatamiq/api test` → exit 0.
+- `pnpm --filter @appdosensei/api test` → exit 0.
 - `pnpm typecheck` → exit 0.
 - `pnpm lint` → exit 0.
 - `pnpm test` → exit 0.
@@ -201,8 +201,8 @@ Update `apps/api/src/csv/csv.service.spec.ts` to cover:
 
 Verification:
 
-- `pnpm --filter @tatamiq/api test -- csv`
-- `pnpm --filter @tatamiq/api test`
+- `pnpm --filter @appdosensei/api test -- csv`
+- `pnpm --filter @appdosensei/api test`
 - `pnpm typecheck`
 - `pnpm lint`
 - `pnpm test`

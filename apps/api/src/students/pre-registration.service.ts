@@ -1,13 +1,4 @@
 import { randomBytes } from "node:crypto";
-import {
-  BadRequestException,
-  ConflictException,
-  HttpException,
-  HttpStatus,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from "@nestjs/common";
 import type {
   ApprovePreRegistrationRequestInput,
   ApprovePreRegistrationResponse,
@@ -22,7 +13,7 @@ import type {
   PreRegistrationRequest,
   RejectPreRegistrationRequestInput,
   SendFirstAccessEmailResponse,
-} from "@tatamiq/contracts";
+} from "@appdosensei/contracts";
 import {
   academyPreRegistrationLinks,
   account,
@@ -35,7 +26,16 @@ import {
   studentGuardians,
   students,
   user,
-} from "@tatamiq/database";
+} from "@appdosensei/database";
+import {
+  BadRequestException,
+  ConflictException,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
 import { StudentAccessActivationService } from "../student-access/student-access-activation.service";
@@ -515,7 +515,7 @@ export class PreRegistrationService {
 
     await this.emailService.send({
       to: request.email,
-      subject: `Seu acesso ao ${academy.name} no Tatamiq`,
+      subject: `Seu acesso ao ${academy.name} no App do Sensei`,
       html: buildFirstAccessEmailHtml(academy.name, request.name, firstAccessLink),
     });
 
@@ -886,7 +886,7 @@ function buildFirstAccessEmailHtml(
     <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 16px;">
       <h2 style="margin: 0 0 8px;">Bem-vindo ao ${safeAcademyName}!</h2>
       <p>Olá ${safeStudentName},</p>
-      <p>Seu pré-cadastro foi aprovado. Use o link abaixo para configurar seu acesso ao Tatamiq:</p>
+      <p>Seu pré-cadastro foi aprovado. Use o link abaixo para configurar seu acesso ao App do Sensei:</p>
       <p style="margin: 24px 0;">
         <a href="${firstAccessUrl}" style="background: #18181b; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; display: inline-block;">
           Configurar meu acesso

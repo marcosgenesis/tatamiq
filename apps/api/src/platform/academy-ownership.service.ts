@@ -1,5 +1,5 @@
+import { type Database, member, organization } from "@appdosensei/database";
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { type Database, member, organization } from "@tatamiq/database";
 import { and, count, eq } from "drizzle-orm";
 import { DATABASE } from "../database/database.module";
 import { ReservedAccountService } from "./reserved-account.service";

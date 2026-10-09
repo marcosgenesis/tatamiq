@@ -1,4 +1,4 @@
-import type { PreRegistrationLink } from "@tatamiq/contracts";
+import type { PreRegistrationLink } from "@appdosensei/contracts";
 import { describe, expect, it, vi } from "vitest";
 import {
   preRegistrationLinkQueryKey,
